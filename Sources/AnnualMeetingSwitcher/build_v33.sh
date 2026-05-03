@@ -9,13 +9,17 @@ APP_NAME="LiveSwitcher"
 APP_BUNDLE_NAME="$APP_NAME.app"
 OUT_DIR="$HOME/Downloads"
 APP_BUNDLE="$OUT_DIR/$APP_BUNDLE_NAME"
-BUILD_DIR=".build/arm64-apple-macosx/release"
-BINARY="$BUILD_DIR/$APP_NAME"
 ICON_SRC="$SCRIPT_DIR/AppIcon.icns"
 ENTITLEMENTS_FILE="$SCRIPT_DIR/LiveSwitcher.entitlements"
 
 echo "Building $APP_NAME release app..."
 swift build -c release
+BINARY="$(swift build -c release --show-bin-path)/$APP_NAME"
+
+if [[ ! -x "$BINARY" ]]; then
+  echo "error: built binary not found at $BINARY" >&2
+  exit 1
+fi
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
@@ -45,7 +49,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.1.0</string>
+  <string>0.1.1</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>

@@ -310,7 +310,7 @@ struct HelpView: View {
                     "⌘⌥B：全局老板键快捷键（在任何窗口均可触发）"
                 ])
 
-                Text("Version 0.1.0 | HTML output · audio-safe switching · WKWebView cleanup")
+                Text("Version 0.1.1 | HTML output · audio-safe switching · WKWebView cleanup")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

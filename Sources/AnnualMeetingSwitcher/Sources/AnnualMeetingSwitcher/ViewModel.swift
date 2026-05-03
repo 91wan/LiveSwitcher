@@ -179,6 +179,7 @@ final class SwitcherViewModel: ObservableObject {
         static let bgmList = "bgmList_paths"
         static let bgmListCategories = "bgmList_categories"
         static let wallpapers = "backgroundWallpapers_paths"
+        static let activeWallpaper = "activeWallpaper_path"
         static let audioStrategy = "audioStrategy"
         static let speakerMode = "speakerMode"
     }
@@ -295,9 +296,10 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 持久化
 
     func saveData() {
-        let pushPaths = programItems.compactMap { $0.sourceURL?.path }
-        let pushSubtitles = programItems.compactMap { $0.subtitle }
-        let pushTitles = programItems.map { $0.title }
+        let persistentProgramItems = programItems.filter { $0.sourceURL != nil }
+        let pushPaths = persistentProgramItems.compactMap { $0.sourceURL?.path }
+        let pushSubtitles = persistentProgramItems.map { $0.subtitle }
+        let pushTitles = persistentProgramItems.map { $0.title }
         userDefaults.set(pushPaths, forKey: UDKeys.pushList)
         userDefaults.set(pushTitles, forKey: "pushList_titles")
         userDefaults.set(pushSubtitles, forKey: "pushList_subtitles")
@@ -311,6 +313,11 @@ final class SwitcherViewModel: ObservableObject {
 
         let wallpaperPaths = backgroundWallpapers.map { $0.path }
         userDefaults.set(wallpaperPaths, forKey: UDKeys.wallpapers)
+        if let activeWallpaperURL {
+            userDefaults.set(activeWallpaperURL.path, forKey: UDKeys.activeWallpaper)
+        } else {
+            userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
+        }
     }
 
     func loadData() {
@@ -349,7 +356,12 @@ final class SwitcherViewModel: ObservableObject {
             }
             // Bug1修复：loadData后恢复activeWallpaperURL，确保暂停/空闲时大屏显示壁纸而非黑屏
             if activeWallpaperURL == nil {
-                activeWallpaperURL = backgroundWallpapers.first
+                if let activePath = userDefaults.string(forKey: UDKeys.activeWallpaper) {
+                    let activeURL = URL(fileURLWithPath: activePath)
+                    activeWallpaperURL = backgroundWallpapers.contains(activeURL) ? activeURL : backgroundWallpapers.first
+                } else {
+                    activeWallpaperURL = backgroundWallpapers.first
+                }
             }
         }
 
@@ -717,6 +729,7 @@ final class SwitcherViewModel: ObservableObject {
 
     func setActiveWallpaper(url: URL) {
         activeWallpaperURL = url
+        saveData()
     }
 
     // MARK: - BGM 操作

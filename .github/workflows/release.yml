@@ -26,10 +26,14 @@ jobs:
 
       - name: Package App Bundle
         run: |
-          BUILD_DIR=".build/arm64-apple-macosx/release"
-          BINARY="$BUILD_DIR/LiveSwitcher"
+          BINARY="$(swift build -c release --show-bin-path)/LiveSwitcher"
           APP_BUNDLE="LiveSwitcher.app"
           ZIP_NAME="LiveSwitcher-macOS-${{ github.ref_name }}.zip"
+
+          if [ ! -x "$BINARY" ]; then
+            echo "error: built binary not found at $BINARY" >&2
+            exit 1
+          fi
 
           mkdir -p "$APP_BUNDLE/Contents/MacOS"
           mkdir -p "$APP_BUNDLE/Contents/Resources"
@@ -45,6 +49,7 @@ jobs:
           <plist version="1.0"><dict>
             <key>CFBundleDisplayName</key><string>LiveSwitcher</string>
             <key>CFBundleExecutable</key><string>LiveSwitcher</string>
+            <key>CFBundleIconFile</key><string>AppIcon</string>
             <key>CFBundleIdentifier</key><string>com.91wan.liveswitcher</string>
             <key>CFBundleName</key><string>LiveSwitcher</string>
             <key>CFBundlePackageType</key><string>APPL</string>
@@ -52,13 +57,19 @@ jobs:
             <key>CFBundleVersion</key><string>1</string>
             <key>LSMinimumSystemVersion</key><string>14.0</string>
             <key>NSAppleEventsUsageDescription</key><string>Allow AppleScript control for presentation playback.</string>
+            <key>NSAppleScriptEnabled</key><true/>
             <key>NSHighResolutionCapable</key><true/>
             <key>NSMicrophoneUsageDescription</key><string>Allow microphone access for audio monitoring.</string>
             <key>NSPrincipalClass</key><string>NSApplication</string>
           </dict></plist>
           PLIST
 
-          codesign --force --deep --sign - "$APP_BUNDLE"
+          if [ -f Sources/AnnualMeetingSwitcher/LiveSwitcher.entitlements ]; then
+            codesign --force --deep --sign - --entitlements Sources/AnnualMeetingSwitcher/LiveSwitcher.entitlements "$APP_BUNDLE"
+          else
+            codesign --force --deep --sign - "$APP_BUNDLE"
+          fi
+          codesign --verify --deep --strict "$APP_BUNDLE"
           zip -r "$ZIP_NAME" "$APP_BUNDLE"
           ls -lh "$ZIP_NAME"
 
@@ -70,7 +81,7 @@ jobs:
           body: |
             ## LiveSwitcher ${{ github.ref_name }}
 
-            First public source-available snapshot.
+            Public source-available macOS build.
 
             ### Install
             Download `LiveSwitcher-macOS-${{ github.ref_name }}.zip`, unzip it, and move `LiveSwitcher.app` to `/Applications`.
