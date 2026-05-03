@@ -1,0 +1,83 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build macOS App Release
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read Version
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Release Binary
+        run: swift build -c release
+
+      - name: Package App Bundle
+        run: |
+          BUILD_DIR=".build/arm64-apple-macosx/release"
+          BINARY="$BUILD_DIR/LiveSwitcher"
+          APP_BUNDLE="LiveSwitcher.app"
+          ZIP_NAME="LiveSwitcher-macOS-${{ github.ref_name }}.zip"
+
+          mkdir -p "$APP_BUNDLE/Contents/MacOS"
+          mkdir -p "$APP_BUNDLE/Contents/Resources"
+          cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/LiveSwitcher"
+
+          if [ -f Sources/AnnualMeetingSwitcher/AppIcon.icns ]; then
+            cp Sources/AnnualMeetingSwitcher/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+          fi
+
+          cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleDisplayName</key><string>LiveSwitcher</string>
+            <key>CFBundleExecutable</key><string>LiveSwitcher</string>
+            <key>CFBundleIdentifier</key><string>com.91wan.liveswitcher</string>
+            <key>CFBundleName</key><string>LiveSwitcher</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>${{ steps.version.outputs.VERSION }}</string>
+            <key>CFBundleVersion</key><string>1</string>
+            <key>LSMinimumSystemVersion</key><string>14.0</string>
+            <key>NSAppleEventsUsageDescription</key><string>Allow AppleScript control for presentation playback.</string>
+            <key>NSHighResolutionCapable</key><true/>
+            <key>NSMicrophoneUsageDescription</key><string>Allow microphone access for audio monitoring.</string>
+            <key>NSPrincipalClass</key><string>NSApplication</string>
+          </dict></plist>
+          PLIST
+
+          codesign --force --deep --sign - "$APP_BUNDLE"
+          zip -r "$ZIP_NAME" "$APP_BUNDLE"
+          ls -lh "$ZIP_NAME"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "LiveSwitcher ${{ github.ref_name }}"
+          body: |
+            ## LiveSwitcher ${{ github.ref_name }}
+
+            First public source-available snapshot.
+
+            ### Install
+            Download `LiveSwitcher-macOS-${{ github.ref_name }}.zip`, unzip it, and move `LiveSwitcher.app` to `/Applications`.
+
+            The app is ad-hoc signed and not notarized. macOS may require opening it from System Settings → Privacy & Security → Open Anyway.
+          files: LiveSwitcher-macOS-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

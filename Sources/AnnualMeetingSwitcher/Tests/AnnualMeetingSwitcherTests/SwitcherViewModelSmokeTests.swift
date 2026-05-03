@@ -1,0 +1,2143 @@
+import AppKit
+import SwiftUI
+import XCTest
+@testable import LiveSwitcher
+
+@MainActor
+final class SwitcherViewModelSmokeTests: XCTestCase {
+    private final class OutputWindowControllerSpy: OutputWindowControlling {
+        private(set) var mountCount = 0
+        private(set) var showCount = 0
+        private(set) var hideCount = 0
+        private(set) var lastShowScreenWasNil = false
+        private(set) var lastShowFullScreen = false
+
+        func mountAnyView(rootView: AnyView) {
+            mountCount += 1
+        }
+
+        func show(on screen: NSScreen?, fullScreen: Bool) {
+            showCount += 1
+            lastShowScreenWasNil = (screen == nil)
+            lastShowFullScreen = fullScreen
+        }
+
+        func hide() {
+            hideCount += 1
+        }
+    }
+
+    private func makeViewModel(userDefaults: UserDefaults? = nil, loadPersistedData: Bool = false) -> SwitcherViewModel {
+        SwitcherViewModel(
+            loadPersistedData: loadPersistedData,
+            enableSystemVolumeObserver: false,
+            userDefaults: userDefaults ?? .standard
+        )
+    }
+
+    private func makeIsolatedDefaults() -> (suiteName: String, defaults: UserDefaults) {
+        let suiteName = "LiveSwitcherTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return (suiteName, defaults)
+    }
+
+    private func makeTempFileURL(ext: String) throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        FileManager.default.createFile(atPath: url.path, contents: Data("stub".utf8))
+        return url
+    }
+
+    private func makeEmptyTempFileURL(ext: String) throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        FileManager.default.createFile(atPath: url.path, contents: Data())
+        return url
+    }
+
+    private func makeWallpaperURL() throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("png")
+
+        let image = NSImage(size: NSSize(width: 8, height: 8))
+        image.lockFocus()
+        NSColor.systemBlue.setFill()
+        NSBezierPath(rect: NSRect(x: 0, y: 0, width: 8, height: 8)).fill()
+        image.unlockFocus()
+
+        let tiffData = try XCTUnwrap(image.tiffRepresentation)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: tiffData))
+        let pngData = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+        try pngData.write(to: url)
+        return url
+    }
+
+    func testLoopModeCyclesThroughExpectedSequence() {
+        let viewModel = makeViewModel()
+
+        XCTAssertEqual(viewModel.bgmPlayMode, .loopAll)
+
+        viewModel.toggleLoopMode()
+        XCTAssertEqual(viewModel.bgmPlayMode, .loopOne)
+
+        viewModel.toggleLoopMode()
+        XCTAssertEqual(viewModel.bgmPlayMode, .sequential)
+
+        viewModel.toggleLoopMode()
+        XCTAssertEqual(viewModel.bgmPlayMode, .loopAll)
+    }
+
+    func testBGMVolumeAdjustmentsClampBetweenZeroAndOne() {
+        let viewModel = makeViewModel()
+
+        viewModel.bgmVolume = 0.02
+        viewModel.bgmVolumeDown()
+        XCTAssertEqual(viewModel.bgmVolume, 0.0, accuracy: 0.0001)
+
+        viewModel.bgmVolume = 0.98
+        viewModel.bgmVolumeUp()
+        XCTAssertEqual(viewModel.bgmVolume, 1.0, accuracy: 0.0001)
+    }
+
+    func testMoveBGMItemsWithinCategoryDoesNotReorderOtherCategories() {
+        let viewModel = makeViewModel()
+        let warmA = BGMItem(title: "Warm A", url: URL(fileURLWithPath: "/tmp/warm-a.mp3"), category: .warmUp)
+        let ambient = BGMItem(title: "Ambient", url: URL(fileURLWithPath: "/tmp/ambient.mp3"), category: .ambient)
+        let warmB = BGMItem(title: "Warm B", url: URL(fileURLWithPath: "/tmp/warm-b.mp3"), category: .warmUp)
+        let exit = BGMItem(title: "Exit", url: URL(fileURLWithPath: "/tmp/exit.mp3"), category: .exit)
+        let warmC = BGMItem(title: "Warm C", url: URL(fileURLWithPath: "/tmp/warm-c.mp3"), category: .warmUp)
+        viewModel.bgmItems = [warmA, ambient, warmB, exit, warmC]
+
+        viewModel.moveBGMItems(in: .warmUp, from: IndexSet(integer: 2), to: 0)
+
+        XCTAssertEqual(viewModel.bgmItems, [warmC, ambient, warmA, exit, warmB])
+    }
+
+    func testTickerAndLowerThirdStateTransitions() {
+        let viewModel = makeViewModel()
+
+        viewModel.startTicker(text: "欢迎光临")
+        XCTAssertTrue(viewModel.isTickerActive)
+        XCTAssertEqual(viewModel.tickerText, "欢迎光临")
+
+        viewModel.stopTicker()
+        XCTAssertFalse(viewModel.isTickerActive)
+
+        viewModel.showLowerThird(name: "主持人", title: "开场")
+        XCTAssertTrue(viewModel.isLowerThirdVisible)
+        XCTAssertEqual(viewModel.lowerThirdName, "主持人")
+        XCTAssertEqual(viewModel.lowerThirdTitle, "开场")
+
+        viewModel.dismissLowerThird()
+        XCTAssertFalse(viewModel.isLowerThirdVisible)
+    }
+
+    func testCountdownStartAndStopResetState() {
+        let viewModel = makeViewModel()
+
+        viewModel.startCountdown(seconds: 10, title: "即将开始")
+        XCTAssertTrue(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownTitle, "即将开始")
+        XCTAssertEqual(viewModel.countdownSeconds, 10)
+
+        viewModel.stopCountdown()
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 0)
+    }
+
+    func testMixedStrategyKeepsMediaAndBGMChannelsActive() {
+        let viewModel = makeViewModel()
+
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.25
+        viewModel.audioStrategy = .mixed
+        viewModel.currentProgramItem = ProgramItem(
+            title: "片头",
+            subtitle: "MP4",
+            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+        )
+        viewModel.avCoordinator.isPlaying = true
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
+    }
+
+    func testFollowProgramFallsBackToBGMWhenMediaIsNotPlaying() {
+        let viewModel = makeViewModel()
+
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.25
+        viewModel.audioStrategy = .followProgram
+        viewModel.currentProgramItem = ProgramItem(
+            title: "片头",
+            subtitle: "MP4",
+            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+        )
+
+        viewModel.avCoordinator.isPlaying = false
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
+
+        viewModel.avCoordinator.isPlaying = true
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+    }
+
+    func testFollowSourceAndSpeakerModeDoNotResurrectMutedBGM() {
+        let viewModel = makeViewModel()
+
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.9
+        viewModel.audioStrategy = .followSource
+        viewModel.currentProgramItem = ProgramItem(
+            title: "网页",
+            subtitle: "HTML",
+            sourceURL: URL(fileURLWithPath: "/tmp/lobby.html")
+        )
+        viewModel.toggleSpeakerMode()
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0, accuracy: 0.0001)
+    }
+
+    func testPanicModeRestoresSeparateFallbackVolume() async throws {
+        let viewModel = makeViewModel()
+        viewModel.avCoordinator.volume = 0.6
+        viewModel.bgmFallbackPlayer.volume = 0.33
+
+        viewModel.togglePanicMode()
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0, accuracy: 0.0001)
+
+        viewModel.togglePanicMode()
+        try await Task.sleep(nanoseconds: 450_000_000)
+
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.6, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.33, accuracy: 0.01)
+    }
+
+    func testAudioStrategyPersistsAcrossViewModelInstances() {
+        let (suiteName, defaults) = makeIsolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let writer = makeViewModel(userDefaults: defaults)
+        writer.audioStrategy = .followSource
+
+        let reader = makeViewModel(userDefaults: defaults, loadPersistedData: true)
+        XCTAssertEqual(reader.audioStrategy, .followSource)
+    }
+
+    func testSpeakerModePersistsAcrossViewModelInstances() {
+        let (suiteName, defaults) = makeIsolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let writer = makeViewModel(userDefaults: defaults)
+        writer.toggleSpeakerMode()
+
+        let reader = makeViewModel(userDefaults: defaults, loadPersistedData: true)
+        XCTAssertTrue(reader.isSpeakerMode)
+    }
+
+    func testBroadcastToggleShowsAndHidesOutputWindowThroughController() {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+
+        viewModel.handleBroadcastToggle()
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertFalse(outputSpy.lastShowScreenWasNil)
+        XCTAssertEqual(outputSpy.lastShowFullScreen, NSScreen.screens.count > 1)
+
+        viewModel.handleBroadcastToggle()
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+    }
+
+    func testBroadcastToggleCycleDoesNotClearCurrentHTMLPresentationState() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.switchToProgram(htmlItem)
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+    }
+
+    func testBroadcastToggleCycleDoesNotClearCurrentActiveDeckPresentationState() {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        var presentFrontDeckInvocationCount = 0
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.switchToProgram(activeDeckItem)
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+    }
+
+    func testBroadcastToggleCycleDoesNotInterruptCurrentVideoPlaybackState() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+    }
+
+    func testShowOutputWindowReusesExistingControllerAcrossMultipleShows() {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        var factoryInvocationCount = 0
+
+        viewModel.outputWindowControllerFactory = {
+            factoryInvocationCount += 1
+            return outputSpy
+        }
+
+        viewModel.showOutputWindow()
+        viewModel.showOutputWindow()
+
+        XCTAssertEqual(factoryInvocationCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 2)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchingToKeynoteStopsPreviousVideoAndInvokesPresentationHandler() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: keynoteURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        var presentedURL: URL?
+        viewModel.keynotePresentationHandler = { url in
+            presentedURL = url
+        }
+
+        let videoItem = ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL)
+        let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+
+        viewModel.currentHTMLURL = htmlURL
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(keynoteItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentedURL, keynoteURL)
+    }
+
+    func testSwitchingToInvalidKeynoteDoesNotInterruptCurrentPlayback() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let invalidKeynoteURL = try makeEmptyTempFileURL(ext: "key")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: invalidKeynoteURL)
+        }
+
+        var presentedURL: URL?
+        var invalidDeckAlertURL: URL?
+        viewModel.keynotePresentationHandler = { url in
+            presentedURL = url
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckAlertURL = url
+        }
+
+        let videoItem = ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL)
+        let invalidKeynoteItem = ProgramItem(title: "损坏主持稿", subtitle: "KEY", sourceURL: invalidKeynoteURL)
+
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(invalidKeynoteItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertNil(presentedURL)
+        XCTAssertEqual(invalidDeckAlertURL, invalidKeynoteURL)
+    }
+
+    func testSwitchingToPPTXStopsPreviousVideoAndInvokesOpenHandler() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let pptxURL = try makeTempFileURL(ext: "pptx")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: pptxURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        var openedURL: URL?
+        viewModel.pptxOpenHandler = { url in
+            openedURL = url
+        }
+
+        let videoItem = ProgramItem(title: "宣传片", subtitle: "MP4", sourceURL: videoURL)
+        let pptxItem = ProgramItem(title: "流程稿", subtitle: "PPTX", sourceURL: pptxURL)
+
+        viewModel.currentHTMLURL = htmlURL
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(pptxItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, pptxItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(openedURL, pptxURL)
+    }
+
+    func testSwitchingToVideoClearsHTMLAndStartsPlayback() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        viewModel.isBroadcasting = true
+        viewModel.currentHTMLURL = htmlURL
+
+        let videoItem = ProgramItem(title: "开场片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testSwitchingToHTMLStopsVideoAndPromotesHTMLAsCurrentProgram() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        let videoItem = ProgramItem(title: "宣传片", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(videoItem)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testSwitchingToUnsupportedProgramDoesNotMutateCurrentOutputState() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let unsupportedURL = try makeTempFileURL(ext: "txt")
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: unsupportedURL)
+        }
+
+        let currentItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        let unsupportedItem = ProgramItem(title: "说明文档", subtitle: "TXT", sourceURL: unsupportedURL)
+        viewModel.switchToProgram(unsupportedItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testSwitchingFromVideoToHTMLWhileBroadcastingDoesNotReopenOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchingFromHTMLToVideoWhileBroadcastingDoesNotReopenOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: videoURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+
+        viewModel.switchToProgram(htmlItem)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(videoItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testEndingHTMLClearsProgramAndFallsBackToWallpaperState() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let htmlItem = ProgramItem(title: "主视觉", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNotNil(viewModel.backgroundImage)
+
+        viewModel.endHTMLPresentation()
+
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testEndingHTMLWhileBroadcastingDoesNotHideOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(htmlItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.endHTMLPresentation()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRepeatedEndingHTMLWhileBroadcastingIsIdempotent() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(htmlItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.endHTMLPresentation()
+        viewModel.endHTMLPresentation()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRemovingCurrentProgramClearsPlaybackAndListState() throws {
+        let viewModel = makeViewModel()
+        let currentVideoURL = try makeTempFileURL(ext: "mp4")
+        let standbyVideoURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: currentVideoURL)
+            try? FileManager.default.removeItem(at: standbyVideoURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentVideoURL)
+        let standbyItem = ProgramItem(title: "备用节目", subtitle: "MP4", sourceURL: standbyVideoURL)
+        viewModel.addProgramItem(currentItem)
+        viewModel.addProgramItem(standbyItem)
+        viewModel.switchToProgram(currentItem)
+
+        viewModel.removeProgramItem(withID: currentItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems.count, 1)
+        XCTAssertEqual(viewModel.programItems.first, standbyItem)
+    }
+
+    func testRemovingCurrentHTMLProgramClearsHTMLAndReturnsToIdleState() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let standbyVideoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: standbyVideoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let standbyItem = ProgramItem(title: "备用片头", subtitle: "MP4", sourceURL: standbyVideoURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.addProgramItem(standbyItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+
+        viewModel.removeProgramItem(withID: htmlItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertEqual(viewModel.programItems, [standbyItem])
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testRemovingCurrentVideoWhileBroadcastingDoesNotHideOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.removeProgramItem(withID: videoItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRemovingCurrentHTMLWhileBroadcastingDoesNotHideOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.switchToProgram(htmlItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.removeProgramItem(withID: htmlItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRepeatedRemovalOfCurrentHTMLWhileBroadcastingIsIdempotent() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.switchToProgram(htmlItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.removeProgramItem(withID: htmlItem.id)
+        viewModel.removeProgramItem(withID: htmlItem.id)
+
+        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testToggleMainVideoPlaybackPausesAndResumesCurrentVideo() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+
+        viewModel.toggleMainVideoPlayback()
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+
+        viewModel.toggleMainVideoPlayback()
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+    }
+
+    func testToggleMainVideoPlaybackIsNoOpForCurrentHTMLProgram() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testToggleMainVideoPlaybackIsNoOpWithoutCurrentProgram() {
+        let viewModel = makeViewModel()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testToggleMainVideoPlaybackForDeckProgramInvokesDeckStopHandler() throws {
+        let viewModel = makeViewModel()
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer { try? FileManager.default.removeItem(at: keynoteURL) }
+
+        let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        var stopInvocationCount = 0
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.currentProgramItem = keynoteItem
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(stopInvocationCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testToggleMainVideoPlaybackForActiveDeckWithoutSourceInvokesDeckStopHandler() {
+        let viewModel = makeViewModel()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        var stopInvocationCount = 0
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.currentProgramItem = activeDeckItem
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(stopInvocationCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+    }
+
+    func testTogglePauseSwitchesToRequestedProgramWhenItemIsNotCurrent() throws {
+        let viewModel = makeViewModel()
+        let currentVideoURL = try makeTempFileURL(ext: "mp4")
+        let targetVideoURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: currentVideoURL)
+            try? FileManager.default.removeItem(at: targetVideoURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentVideoURL)
+        let targetItem = ProgramItem(title: "目标节目", subtitle: "MP4", sourceURL: targetVideoURL)
+
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, currentVideoURL)
+
+        viewModel.togglePause(for: targetItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, targetItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, targetVideoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testTogglePauseProgramSwitchWhileBroadcastingDoesNotReopenOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let currentVideoURL = try makeTempFileURL(ext: "mp4")
+        let targetHTMLURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: currentVideoURL)
+            try? FileManager.default.removeItem(at: targetHTMLURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let currentItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: currentVideoURL)
+        let targetItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: targetHTMLURL)
+
+        viewModel.switchToProgram(currentItem)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.togglePause(for: targetItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, targetItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, targetHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testTogglePauseForCurrentProgramTogglesPlaybackState() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePause(for: videoItem)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+
+        viewModel.togglePause(for: videoItem)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+    }
+
+    func testTogglePauseForCurrentHTMLProgramIsNoOp() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePause(for: htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testTogglePauseForCurrentActiveDeckInvokesDeckStopHandler() {
+        let viewModel = makeViewModel()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        var stopInvocationCount = 0
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.currentProgramItem = activeDeckItem
+
+        viewModel.togglePause(for: activeDeckItem)
+
+        XCTAssertEqual(stopInvocationCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testTogglePauseForCurrentDeckProgramInvokesDeckStopHandler() throws {
+        let viewModel = makeViewModel()
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer { try? FileManager.default.removeItem(at: keynoteURL) }
+
+        let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        var stopInvocationCount = 0
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.currentProgramItem = keynoteItem
+
+        viewModel.togglePause(for: keynoteItem)
+
+        XCTAssertEqual(stopInvocationCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testTogglePauseSwitchesToActiveDeckWithoutSourceWhenItemIsNotCurrent() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePause(for: activeDeckItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+    }
+
+    func testTogglePauseSwitchesFromCurrentHTMLToDifferentHTMLProgram() throws {
+        let viewModel = makeViewModel()
+        let firstHTMLURL = try makeTempFileURL(ext: "html")
+        let secondHTMLURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: firstHTMLURL)
+            try? FileManager.default.removeItem(at: secondHTMLURL)
+        }
+
+        let currentItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: firstHTMLURL)
+        let targetItem = ProgramItem(title: "主视觉", subtitle: "HTML", sourceURL: secondHTMLURL)
+
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, firstHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+
+        viewModel.togglePause(for: targetItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, targetItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, secondHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testTogglePauseSwitchesFromCurrentHTMLToDeckProgram() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: keynoteURL)
+        }
+
+        var presentedURL: URL?
+        viewModel.keynotePresentationHandler = { url in
+            presentedURL = url
+        }
+
+        let currentItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let targetItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+
+        viewModel.togglePause(for: targetItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, targetItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentedURL, keynoteURL)
+    }
+
+    func testTogglePauseSwitchesFromCurrentDeckToHTMLProgram() throws {
+        let viewModel = makeViewModel()
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: keynoteURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        var presentedURL: URL?
+        viewModel.keynotePresentationHandler = { url in
+            presentedURL = url
+        }
+
+        let currentItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        let targetItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentedURL, keynoteURL)
+
+        viewModel.togglePause(for: targetItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, targetItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testSwitchToProgramAtUsesIndexedProgramItemAndIgnoresInvalidIndex() throws {
+        let viewModel = makeViewModel()
+        let firstURL = try makeTempFileURL(ext: "mp4")
+        let secondURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+
+        let firstItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: firstURL)
+        let secondItem = ProgramItem(title: "正片", subtitle: "MP4", sourceURL: secondURL)
+        viewModel.addProgramItem(firstItem)
+        viewModel.addProgramItem(secondItem)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, secondItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(at: 9)
+        XCTAssertEqual(viewModel.currentProgramItem, secondItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondURL)
+
+        viewModel.switchToProgram(at: -1)
+        XCTAssertEqual(viewModel.currentProgramItem, secondItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondURL)
+    }
+
+    func testSwitchToProgramAtInvalidIndexDoesNotInterruptCurrentHTMLPresentation() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(htmlItem)
+
+        viewModel.switchToProgram(at: 9)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testSwitchToProgramAtInvalidIndexDoesNotInterruptCurrentActiveDeckPresentation() {
+        let viewModel = makeViewModel()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        var presentFrontDeckInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        viewModel.addProgramItem(activeDeckItem)
+        viewModel.switchToProgram(activeDeckItem)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+
+        viewModel.switchToProgram(at: 2)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+    }
+
+    func testSwitchToProgramAtInvalidIndexIsNoOpWhenProgramListIsEmpty() {
+        let viewModel = makeViewModel()
+
+        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(at: 0)
+
+        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testSeekProgramItemToStartOnlyTargetsCurrentProgram() throws {
+        let viewModel = makeViewModel()
+        let currentURL = try makeTempFileURL(ext: "mp4")
+        let otherURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: currentURL)
+            try? FileManager.default.removeItem(at: otherURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
+        let otherItem = ProgramItem(title: "其他节目", subtitle: "MP4", sourceURL: otherURL)
+        var seekToStartCount = 0
+        viewModel.programSeekToStartHandler = {
+            seekToStartCount += 1
+        }
+
+        viewModel.switchToProgram(currentItem)
+        viewModel.seekProgramItemToStart(otherItem)
+        XCTAssertEqual(seekToStartCount, 0)
+
+        viewModel.seekProgramItemToStart(currentItem)
+        XCTAssertEqual(seekToStartCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+    }
+
+    func testSeekProgramItemToEndOnlyTargetsCurrentProgram() throws {
+        let viewModel = makeViewModel()
+        let currentURL = try makeTempFileURL(ext: "mp4")
+        let otherURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: currentURL)
+            try? FileManager.default.removeItem(at: otherURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
+        let otherItem = ProgramItem(title: "其他节目", subtitle: "MP4", sourceURL: otherURL)
+        var seekToEndCount = 0
+        viewModel.programSeekToEndHandler = {
+            seekToEndCount += 1
+        }
+
+        viewModel.switchToProgram(currentItem)
+        viewModel.seekProgramItemToEnd(otherItem)
+        XCTAssertEqual(seekToEndCount, 0)
+
+        viewModel.seekProgramItemToEnd(currentItem)
+        XCTAssertEqual(seekToEndCount, 1)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+    }
+
+    func testSeekProgramItemToStartIsNoOpForCurrentHTMLProgram() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        var seekToStartCount = 0
+        viewModel.programSeekToStartHandler = {
+            seekToStartCount += 1
+        }
+
+        viewModel.switchToProgram(htmlItem)
+        viewModel.seekProgramItemToStart(htmlItem)
+
+        XCTAssertEqual(seekToStartCount, 0)
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+    }
+
+    func testSeekProgramItemToEndIsNoOpForCurrentDeckProgram() throws {
+        let viewModel = makeViewModel()
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer { try? FileManager.default.removeItem(at: keynoteURL) }
+
+        let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        var seekToEndCount = 0
+        viewModel.programSeekToEndHandler = {
+            seekToEndCount += 1
+        }
+        viewModel.keynotePresentationHandler = { _ in }
+
+        viewModel.switchToProgram(keynoteItem)
+        viewModel.seekProgramItemToEnd(keynoteItem)
+
+        XCTAssertEqual(seekToEndCount, 0)
+        XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testRemovingNonCurrentProgramDoesNotInterruptCurrentPlayback() throws {
+        let viewModel = makeViewModel()
+        let currentURL = try makeTempFileURL(ext: "mp4")
+        let otherURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: currentURL)
+            try? FileManager.default.removeItem(at: otherURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
+        let otherItem = ProgramItem(title: "待删节目", subtitle: "MP4", sourceURL: otherURL)
+        viewModel.addProgramItem(currentItem)
+        viewModel.addProgramItem(otherItem)
+        viewModel.switchToProgram(currentItem)
+
+        viewModel.removeProgramItem(withID: otherItem.id)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, currentURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [currentItem])
+    }
+
+    func testRemovingUnknownProgramIDDoesNotInterruptCurrentHTMLPresentation() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(htmlItem)
+
+        viewModel.removeProgramItem(withID: UUID())
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [htmlItem])
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testRemovingNonCurrentHTMLProgramDoesNotInterruptCurrentVideoPlayback() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(currentItem)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.switchToProgram(currentItem)
+
+        viewModel.removeProgramItem(withID: htmlItem.id)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [currentItem])
+    }
+
+    func testRemovingNonCurrentDeckProgramDoesNotInterruptCurrentHTMLPresentation() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: keynoteURL)
+        }
+
+        let currentItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let deckItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        viewModel.addProgramItem(currentItem)
+        viewModel.addProgramItem(deckItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(currentItem)
+
+        viewModel.removeProgramItem(withID: deckItem.id)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [currentItem])
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testRemovingCurrentActiveDeckItemReturnsToIdleState() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        viewModel.addProgramItem(activeDeckItem)
+        viewModel.addProgramItem(videoItem)
+
+        viewModel.switchToProgram(activeDeckItem)
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+
+        viewModel.removeProgramItem(withID: activeDeckItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [videoItem])
+    }
+
+    func testRemovingCurrentActiveDeckWhileBroadcastingDoesNotHideOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let standbyVideoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.addProgramItem(activeDeckItem)
+        viewModel.addProgramItem(standbyVideoItem)
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.removeProgramItem(withID: activeDeckItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(viewModel.programItems, [standbyVideoItem])
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRemovingCurrentVideoThenInvalidIndexKeepsIdleState() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.switchToProgram(videoItem)
+
+        viewModel.removeProgramItem(withID: videoItem.id)
+        viewModel.switchToProgram(at: 0)
+
+        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testRemovingCurrentHTMLThenInvalidIndexKeepsWallpaperFallbackState() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(htmlItem)
+
+        viewModel.removeProgramItem(withID: htmlItem.id)
+        viewModel.switchToProgram(at: 0)
+
+        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testMoveProgramItemsDoesNotInterruptCurrentProgramState() throws {
+        let viewModel = makeViewModel()
+        let firstURL = try makeTempFileURL(ext: "mp4")
+        let secondURL = try makeTempFileURL(ext: "mp4")
+        let thirdURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+            try? FileManager.default.removeItem(at: thirdURL)
+        }
+
+        let firstItem = ProgramItem(title: "A", subtitle: "MP4", sourceURL: firstURL)
+        let secondItem = ProgramItem(title: "B", subtitle: "MP4", sourceURL: secondURL)
+        let thirdItem = ProgramItem(title: "C", subtitle: "MP4", sourceURL: thirdURL)
+        viewModel.addProgramItem(firstItem)
+        viewModel.addProgramItem(secondItem)
+        viewModel.addProgramItem(thirdItem)
+
+        viewModel.switchToProgram(secondItem)
+        XCTAssertEqual(viewModel.currentProgramItem, secondItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.moveProgramItems(from: IndexSet(integer: 2), to: 0)
+
+        XCTAssertEqual(viewModel.currentProgramItem, secondItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.programItems, [thirdItem, firstItem, secondItem])
+    }
+
+    func testMoveProgramItemsDoesNotInterruptCurrentHTMLPresentationState() throws {
+        let viewModel = makeViewModel()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let secondHTMLURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: secondHTMLURL)
+        }
+
+        let currentItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let middleItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let lastItem = ProgramItem(title: "主视觉", subtitle: "HTML", sourceURL: secondHTMLURL)
+        viewModel.addProgramItem(currentItem)
+        viewModel.addProgramItem(middleItem)
+        viewModel.addProgramItem(lastItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(currentItem)
+
+        viewModel.moveProgramItems(from: IndexSet(integer: 2), to: 0)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(viewModel.programItems, [lastItem, currentItem, middleItem])
+    }
+
+    func testMoveProgramItemsDoesNotInterruptCurrentActiveDeckPresentationState() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let standbyDeckItem = ProgramItem(title: "副主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        viewModel.addProgramItem(activeDeckItem)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(standbyDeckItem)
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(activeDeckItem)
+
+        viewModel.moveProgramItems(from: IndexSet(integer: 2), to: 0)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(viewModel.programItems, [standbyDeckItem, activeDeckItem, videoItem])
+    }
+
+    func testSwitchToProgramAtSupportsHTMLBranch() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(htmlItem)
+
+        viewModel.switchToProgram(at: 0)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testSwitchToProgramAtSupportsDeckBranch() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let keynoteURL = try makeTempFileURL(ext: "key")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: keynoteURL)
+        }
+
+        var presentedURL: URL?
+        viewModel.keynotePresentationHandler = { url in
+            presentedURL = url
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(keynoteItem)
+
+        viewModel.switchToProgram(at: 0)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentedURL, keynoteURL)
+    }
+
+    func testSwitchToProgramAtSupportsActiveDeckBranchWithoutSourceURL() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(activeDeckItem)
+
+        viewModel.switchToProgram(at: 0)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+    }
+
+    func testSwitchToProgramAtWhileBroadcastingDoesNotReopenOutputWindowForHTMLBranch() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(htmlItem)
+
+        viewModel.switchToProgram(at: 0)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchToProgramAtWhileBroadcastingDoesNotReopenOutputWindowForActiveDeckBranch() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(activeDeckItem)
+
+        viewModel.switchToProgram(at: 0)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(at: 1)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchingToActiveDeckItemWithoutSourceURLStopsPreviousVideo() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+        }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+
+        viewModel.currentHTMLURL = htmlURL
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(activeDeckItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+    }
+
+    func testSwitchingFromVideoToActiveDeckWhileBroadcastingDoesNotReopenOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(activeDeckItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchingFromActiveDeckToHTMLWhileBroadcastingDoesNotReopenOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let htmlURL = try makeTempFileURL(ext: "html")
+        defer { try? FileManager.default.removeItem(at: htmlURL) }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.handleBroadcastToggle()
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+
+        viewModel.switchToProgram(htmlItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
+        XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testMultiStepProgramSwitchWhileBroadcastingReusesSingleOutputWindowController() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let secondVideoURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: secondVideoURL)
+        }
+
+        var presentFrontDeckInvocationCount = 0
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+
+        let openingVideo = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let closingVideo = ProgramItem(title: "片尾", subtitle: "MP4", sourceURL: secondVideoURL)
+
+        viewModel.switchToProgram(openingVideo)
+        viewModel.handleBroadcastToggle()
+        viewModel.switchToProgram(htmlItem)
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.switchToProgram(closingVideo)
+
+        XCTAssertEqual(viewModel.currentProgramItem, closingVideo)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondVideoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testPlaybackEndedAfterMultiStepProgramSwitchKeepsOutputWindowVisible() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let openingVideoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let closingVideoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: openingVideoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: closingVideoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+
+        let openingVideo = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: openingVideoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+        let closingVideo = ProgramItem(title: "片尾", subtitle: "MP4", sourceURL: closingVideoURL)
+
+        viewModel.switchToProgram(openingVideo)
+        viewModel.handleBroadcastToggle()
+        viewModel.switchToProgram(htmlItem)
+        viewModel.switchToProgram(closingVideo)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testEndingHTMLAfterBroadcastedProgramSwitchKeepsOutputWindowVisible() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
+
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+        viewModel.switchToProgram(htmlItem)
+
+        viewModel.endHTMLPresentation()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRemovingCurrentActiveDeckAfterProgramSwitchKeepsOutputWindowVisible() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(activeDeckItem)
+
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+        viewModel.switchToProgram(activeDeckItem)
+
+        viewModel.removeProgramItem(withID: activeDeckItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(viewModel.programItems, [videoItem])
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testPlaybackEndedClearsCurrentProgramAndReturnsToWallpaper() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let videoItem = ProgramItem(title: "片尾视频", subtitle: "MP4", sourceURL: videoURL)
+
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(videoItem)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.handlePlaybackEnded()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testPlaybackEndedCallbackUsesCoordinatorHookToReturnToWallpaper() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let videoItem = ProgramItem(title: "片尾视频", subtitle: "MP4", sourceURL: videoURL)
+
+        viewModel.isBroadcasting = true
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testPlaybackEndedWhileBroadcastingDoesNotHideOutputWindow() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let videoItem = ProgramItem(title: "片尾视频", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testRepeatedPlaybackEndedCallbacksRemainIdleAndKeepOutputWindowVisible() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let wallpaperURL = try makeWallpaperURL()
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: wallpaperURL)
+        }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.setActiveWallpaper(url: wallpaperURL)
+        let videoItem = ProgramItem(title: "片尾视频", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNotNil(viewModel.backgroundImage)
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.showCount, 1)
+        XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+}

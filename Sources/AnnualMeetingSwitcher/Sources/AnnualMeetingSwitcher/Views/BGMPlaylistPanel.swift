@@ -1,0 +1,377 @@
+import SwiftUI
+import UniformTypeIdentifiers
+
+// MARK: - 音乐播放列表面板（V20：独立一栏，夹在监视器与音频推子之间）
+
+struct BGMPlaylistPanel: View {
+    @EnvironmentObject var viewModel: SwitcherViewModel
+    @State private var bgmCategory: BGMCategory = .warmUp
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(spacing: 0) {
+                // ── 标题行 ──
+                headerRow
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
+                    .padding(.bottom, 10)
+
+                // ── BGM 五颗大媒体控制键（V20：移至列表上部，新增"跳回开头"）──
+                bgmControlButtons
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 8)
+
+                // ── V24 新增：BGM 播放进度条 ──
+                bgmProgressBar
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 12)
+
+                Divider()
+
+                // ── 分类选择器 ──
+                categoryPicker
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+
+                // ── 曲目列表 ──
+                bgmList
+                    .padding(.horizontal, 16)
+
+                // ── 状态指示 ──
+                statusRow
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+
+                // ── 添加音乐按钮（绝对底部）──
+                addMusicButton
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
+            }
+        }
+        .frame(minWidth: 260, idealWidth: 272, maxWidth: 292)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: Color.black.opacity(0.07), radius: 8, x: 0, y: 2)
+    }
+
+    // MARK: - 标题行
+
+    private var headerRow: some View {
+        ZStack {
+            VStack(spacing: 2) {
+                Text("音乐播放机")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                Text("\(viewModel.bgmItems.count) 首已入库")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+
+            HStack {
+                Spacer()
+                Text(viewModel.isBGMPlaying ? "PLAY" : "READY")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundColor(viewModel.isBGMPlaying ? .white : .indigo)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(viewModel.isBGMPlaying ? Color.indigo : Color.indigo.opacity(0.12))
+                    )
+            }
+        }
+    }
+
+    // MARK: - BGM 五颗大媒体控制键（V20 新增"跳回开头"）
+
+    private var bgmControlButtons: some View {
+        HStack(spacing: 8) {
+            Spacer()
+
+            // 跳回开头（V20 新增）
+            Button(action: { viewModel.seekBGMToBeginning() }) {
+                Image(systemName: "backward.end.alt.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.primary)
+                    .frame(width: 32, height: 32)
+                    .background(controlDiskFill)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help("跳回开头")
+
+            // 上一首
+            Button(action: { viewModel.playPreviousBGM() }) {
+                Image(systemName: "backward.end.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.primary)
+                    .frame(width: 32, height: 32)
+                    .background(controlDiskFill)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help("上一首")
+
+            // 播放 / 暂停
+            Button(action: {
+                if let current = viewModel.currentBGMItem {
+                    viewModel.toggleBGM(current)
+                } else if let first = viewModel.bgmItems.first {
+                    viewModel.toggleBGM(first)
+                }
+            }) {
+                Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    .font(.system(size: 34))
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.plain)
+            .help(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
+
+            // 下一首
+            Button(action: { viewModel.playNextBGM() }) {
+                Image(systemName: "forward.end.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.primary)
+                    .frame(width: 32, height: 32)
+                    .background(controlDiskFill)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help("下一首")
+
+            // 循环模式
+            Button(action: { viewModel.toggleLoopMode() }) {
+                Image(systemName: viewModel.bgmPlayMode == .loopOne ? "repeat.1" : "repeat")
+                    .font(.system(size: 20))
+                    .foregroundColor(viewModel.bgmPlayMode == .sequential ? .secondary : .blue)
+                    .frame(width: 32, height: 32)
+                    .background(controlDiskFill)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .help(viewModel.bgmPlayMode.rawValue)
+
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+    }
+
+    // MARK: - V24 BGM 播放进度条（可拖拽）
+
+    private var bgmProgressBar: some View {
+        VStack(spacing: 4) {
+            // 可拖拽进度滑块
+            Slider(
+                value: Binding(
+                    get: { viewModel.bgmProgress },
+                    set: { newVal in
+                        viewModel.bgmProgress = newVal
+                        if let player = viewModel.bgmAudioPlayer {
+                            player.currentTime = player.duration * newVal
+                            viewModel.bgmCurrentTime = player.currentTime
+                        }
+                    }
+                ),
+                in: 0...1
+            )
+            .tint(.blue)
+            .frame(height: 20)
+            .disabled(viewModel.currentBGMItem == nil)
+
+            // 时间标签行
+            HStack {
+                Text(formatTime(viewModel.bgmCurrentTime))
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.secondary)
+                Spacer()
+                if let dur = viewModel.bgmDuration {
+                    Text(formatTime(dur))
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("--:--")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        guard seconds.isFinite && seconds >= 0 else { return "0:00" }
+        let s = Int(seconds)
+        let m = s / 60
+        let r = s % 60
+        return String(format: "%d:%02d", m, r)
+    }
+
+    // MARK: - 分类选择器
+
+    private var categoryPicker: some View {
+        HStack {
+            Text("当前分类")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .foregroundColor(.secondary)
+            Spacer()
+            Picker("", selection: $bgmCategory) {
+                ForEach(BGMCategory.allCases, id: \.self) { cat in
+                    Text(cat.rawValue).tag(cat)
+                }
+            }
+            .pickerStyle(.menu)
+            .labelsHidden()
+            .font(.system(size: 15))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+    }
+
+    // MARK: - 曲目列表
+
+    private var bgmList: some View {
+        let filteredBGM = viewModel.bgmItems.filter { $0.category == bgmCategory }
+
+        return Group {
+            if filteredBGM.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "music.note.list")
+                        .font(.system(size: 32, weight: .thin))
+                        .foregroundColor(Color.secondary.opacity(0.5))
+                    Text("暂无曲目")
+                        .font(.title3)
+                        .foregroundColor(Color.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 20)
+                .background(Color(NSColor.controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                List {
+                    ForEach(filteredBGM) { bgm in
+                        HStack(spacing: 6) {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 16))
+                                .foregroundColor(Color.secondary.opacity(0.6))
+                                .frame(width: 20)
+                                .help("拖动此图标可排序")
+                            BGMItemRow(bgm: bgm, viewModel: viewModel)
+                        }
+                        .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
+                    }
+                    .onMove { from, to in
+                        viewModel.moveBGMItems(in: bgmCategory, from: from, to: to)
+                    }
+                }
+                .listStyle(.plain)
+                .frame(height: min(CGFloat(filteredBGM.count) * 52, 280))
+                .background(Color(NSColor.controlBackgroundColor))
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+            }
+        }
+    }
+
+    // MARK: - 添加音乐按钮
+
+    private var addMusicButton: some View {
+        Button {
+            openMusicPicker()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 16, weight: .bold))
+                Text("添加音乐文件")
+                    .font(.system(size: 16, weight: .bold))
+                Spacer()
+                Image(systemName: "arrow.up.doc.fill")
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color.blue, Color.indigo],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+        )
+        .buttonStyle(.plain)
+    }
+
+    // MARK: - 状态指示行
+
+    private var statusRow: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(viewModel.bgmItems.isEmpty ? Color.secondary.opacity(0.4) : Color.green)
+                .frame(width: 8, height: 8)
+            Text(viewModel.bgmItems.isEmpty ? "引擎已停止" : "BGM 已就绪")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var controlDiskFill: some View {
+        Circle()
+            .fill(Color.white)
+            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+    }
+
+    // MARK: - 文件选择
+
+    private func openMusicPicker() {
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.title = "选择音乐文件"
+            panel.allowsMultipleSelection = true
+            panel.canChooseDirectories = false
+            panel.allowedContentTypes = [.audio, .mp3, .wav]
+            guard panel.runModal() == .OK else { return }
+            for url in panel.urls {
+                let title = url.deletingPathExtension().lastPathComponent
+                // 同名去重：同分类下已有同名曲目则跳过
+                let isDuplicate = viewModel.bgmItems.contains {
+                    $0.category == self.bgmCategory && $0.title == title
+                }
+                guard !isDuplicate else { continue }
+                let bgm = BGMItem(
+                    title: title,
+                    url: url,
+                    category: self.bgmCategory
+                )
+                viewModel.addBGMItem(bgm)
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+
+#Preview {
+    BGMPlaylistPanel()
+        .environmentObject(SwitcherViewModel())
+        .padding()
+        .background(Color(NSColor.windowBackgroundColor))
+}

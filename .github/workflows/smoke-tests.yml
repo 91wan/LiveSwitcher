@@ -1,0 +1,22 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  swiftpm-smoke-tests:
+    name: SwiftPM Smoke Tests
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Swift Version
+        run: swift --version
+
+      - name: Run Smoke Tests
+        run: swift test
