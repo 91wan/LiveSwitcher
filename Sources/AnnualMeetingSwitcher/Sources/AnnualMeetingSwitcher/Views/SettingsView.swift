@@ -1,22 +1,28 @@
 import SwiftUI
 
-// MARK: - 设置页面（叠层控制 · 系统设置）
+// MARK: - 叠层 / 字幕页面
 
 struct SettingsView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                // ── 内容（限宽居中）──
-                VStack(spacing: 20) {
-                    OverlayControlPanel()
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("叠层 / 字幕")
+                        .font(.system(size: 28, weight: .bold))
+                        .foregroundStyle(.primary)
+                    Text("集中管理人名条、倒计时和游动字幕，所有控件都直接作用于输出大屏。")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: 800)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 32)
+
+                OverlayControlPanel()
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: 800, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 26)
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

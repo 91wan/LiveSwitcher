@@ -149,6 +149,45 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.countdownSeconds, 0)
     }
 
+    func testOverlayStartMethodsRejectUnsafeInput() {
+        let viewModel = makeViewModel()
+
+        viewModel.startTicker(text: "   ")
+        XCTAssertFalse(viewModel.isTickerActive)
+
+        viewModel.showLowerThird(name: "   ", title: "主持")
+        XCTAssertFalse(viewModel.isLowerThirdVisible)
+
+        viewModel.startCountdown(seconds: 0, title: "即将开始")
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 0)
+
+        viewModel.startCountdown(seconds: -5, title: "即将开始")
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 0)
+    }
+
+    func testClearAllOverlaysResetsCountdownTickerAndLowerThird() {
+        let viewModel = makeViewModel()
+
+        viewModel.startCountdown(seconds: 30, title: "准备开始")
+        viewModel.startTicker(text: "欢迎光临")
+        viewModel.showLowerThird(name: "主持人", title: "开场")
+
+        XCTAssertTrue(viewModel.isCountdownActive)
+        XCTAssertTrue(viewModel.isTickerActive)
+        XCTAssertTrue(viewModel.isLowerThirdVisible)
+
+        viewModel.clearAllOverlays()
+
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 0)
+        XCTAssertFalse(viewModel.isTickerActive)
+        XCTAssertFalse(viewModel.isLowerThirdVisible)
+        XCTAssertEqual(viewModel.lowerThirdName, "")
+        XCTAssertEqual(viewModel.lowerThirdTitle, "")
+    }
+
     func testMixedStrategyKeepsMediaAndBGMChannelsActive() {
         let viewModel = makeViewModel()
 

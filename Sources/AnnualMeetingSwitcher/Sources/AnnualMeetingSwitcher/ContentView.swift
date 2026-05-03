@@ -51,7 +51,7 @@ struct ContentView: View {
                     .opacity(selectedTab == 1 ? 1 : 0)
                     .allowsHitTesting(selectedTab == 1)
 
-                // 设置页面（限宽居中，绝不撑爆窗口）
+                // 叠层 / 字幕页面（限宽居中，绝不撑爆窗口）
                 SettingsView()
                     .frame(maxWidth: 800, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -102,7 +102,7 @@ struct ContentView: View {
         HStack(spacing: 6) {
             navigationTab(title: "预览 / 切换", systemName: "play.square.stack.fill", tag: 0)
             navigationTab(title: "音频混音", systemName: "slider.horizontal.3", tag: 1)
-            navigationTab(title: "设置", systemName: "gearshape.fill", tag: 2)
+            navigationTab(title: "叠层 / 字幕", systemName: "rectangle.3.group.bubble.left.fill", tag: 2)
         }
         .padding(5)
         .background(
@@ -145,6 +145,7 @@ struct ContentView: View {
             .shadow(color: selectedTab == tag ? StudioTheme.accent.opacity(0.28) : .clear, radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
+        .focusable(false)
     }
 }
 

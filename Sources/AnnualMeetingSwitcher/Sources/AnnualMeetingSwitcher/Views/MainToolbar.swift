@@ -149,6 +149,7 @@ struct MainToolbar: View {
                 )
         }
         .buttonStyle(.plain)
+        .focusable(false)
         .help("使用说明")
     }
 
@@ -310,7 +311,7 @@ struct HelpView: View {
                     "⌘⌥B：全局老板键快捷键（在任何窗口均可触发）"
                 ])
 
-                Text("Version 0.1.1 | HTML output · audio-safe switching · WKWebView cleanup")
+                Text("Version 0.1.2 | overlay controls · README polish · UI matrix")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

@@ -1,345 +1,388 @@
 import SwiftUI
 
-// MARK: - V27: 叠层控制面板（主控台 UI）
-// V27 新增：Lower Third 人名条控制区
+// MARK: - 叠层控制面板
 
 struct OverlayControlPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
 
-    // 倒计时输入状态
-    @State private var countdownMinutes: Int       = 10
-    @State private var countdownSecs: Int          = 0
-    @State private var countdownTitleInput: String = "活动即将开始"
+    @State private var countdownMinutes = 10
+    @State private var countdownSecs = 0
+    @State private var countdownTitleInput = "活动即将开始"
 
-    // 游动字幕输入状态
-    @State private var tickerInput: String         = "Welcome · The program will begin shortly"
-    @State private var tickerSpeedIndex: Int       = 1   // 0慢/1中/2快
+    @State private var tickerInput = "Welcome · The program will begin shortly"
+    @State private var tickerSpeedIndex = 1
 
-    // V27: Lower Third 输入状态
-    @State private var ltNameInput: String         = ""
-    @State private var ltTitleInput: String        = ""
+    @State private var ltNameInput = ""
+    @State private var ltTitleInput = ""
 
     private let tickerSpeeds: [(String, Double)] = [
         ("慢", 55), ("中", 85), ("快", 130)
     ]
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-
-                // ── 标题 ──
-                panelHeader
-
-                Divider()
-
-                // ── V27: 下三分之一条（人名条）区 ──
-                lowerThirdSection
-
-                Divider()
-
-                // ── 倒计时区 ──
-                countdownSection
-
-                Divider()
-
-                // ── 游动字幕区 ──
-                tickerSection
-
-                Spacer(minLength: 0)
-            }
-            .padding(14)
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+    private var trimmedLowerThirdName: String {
+        ltNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    // MARK: - 标题区
+    private var trimmedTickerText: String {
+        tickerInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private var countdownTotalSeconds: Int {
+        countdownMinutes * 60 + countdownSecs
+    }
+
+    private var activeOverlayCount: Int {
+        [
+            viewModel.isLowerThirdVisible,
+            viewModel.isCountdownActive,
+            viewModel.isTickerActive
+        ].filter { $0 }.count
+    }
+
+    private var hasActiveOverlay: Bool {
+        activeOverlayCount > 0
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            panelHeader
+            lowerThirdSection
+            countdownSection
+            tickerSection
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(Color.white.opacity(0.78))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .stroke(Color.white.opacity(0.9), lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+    }
 
     private var panelHeader: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "film.stack")
-                .font(.system(size: 16))
-                .foregroundColor(.secondary)
-            Text("叠层控制")
-                .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.primary)
-        }
-        .padding(.top, 2)
-    }
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(StudioTheme.accent.opacity(0.12))
+                Image(systemName: "rectangle.3.group.bubble.left.fill")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundStyle(StudioTheme.accent)
+            }
+            .frame(width: 48, height: 48)
 
-    // MARK: - V27: 下三分之一条区
+            VStack(alignment: .leading, spacing: 6) {
+                Text("叠层控制")
+                    .font(.system(size: 24, weight: .bold))
+                    .foregroundStyle(.primary)
+                Text("人名条、倒计时和游动字幕会直接叠加到输出大屏。")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            VStack(alignment: .trailing, spacing: 8) {
+                statusBadge(
+                    title: activeOverlayCount == 0 ? "全部关闭" : "\(activeOverlayCount) 个上屏",
+                    isLive: hasActiveOverlay
+                )
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        viewModel.clearAllOverlays()
+                    }
+                } label: {
+                    Text("全部下屏 / Clear all")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(hasActiveOverlay ? .white : .secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(
+                            Capsule(style: .continuous)
+                                .fill(hasActiveOverlay ? Color.red : Color.black.opacity(0.06))
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(!hasActiveOverlay)
+            }
+        }
+    }
 
     private var lowerThirdSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // 区标题
-            HStack(spacing: 6) {
-                Label("人名条（Lower Third）", systemImage: "person.text.rectangle")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.secondary)
-                Spacer()
-                // 状态指示灯
-                Circle()
-                    .fill(viewModel.isLowerThirdVisible ? Color.green : Color.gray.opacity(0.4))
-                    .frame(width: 8, height: 8)
-            }
+        overlaySection(
+            title: "人名条（Lower Third）",
+            systemImage: "person.text.rectangle",
+            isLive: viewModel.isLowerThirdVisible
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                TextField("嘉宾姓名", text: $ltNameInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
 
-            // 姓名输入
-            TextField("嘉宾姓名", text: $ltNameInput)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
+                TextField("职务 / 单位（可留空）", text: $ltTitleInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
 
-            // 职务/头衔输入
-            TextField("职务 / 单位（可留空）", text: $ltTitleInput)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 13))
-
-            // 快捷操作按钮组
-            HStack(spacing: 8) {
-                // 上屏按钮
-                Button(action: {
-                    guard !ltNameInput.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.showLowerThird(name: ltNameInput, title: ltTitleInput)
-                    }
-                }) {
-                    Label("上屏", systemImage: "arrow.up.to.line")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(viewModel.isLowerThirdVisible ? Color.gray : Color.red)
-                .cornerRadius(8)
-                .disabled(viewModel.isLowerThirdVisible || ltNameInput.trimmingCharacters(in: .whitespaces).isEmpty)
-                .opacity((viewModel.isLowerThirdVisible || ltNameInput.trimmingCharacters(in: .whitespaces).isEmpty) ? 0.5 : 1.0)
-
-                // 退场按钮
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.dismissLowerThird()
-                    }
-                }) {
-                    Label("退场", systemImage: "arrow.down.to.line")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(Color.gray)
-                .cornerRadius(8)
-                .disabled(!viewModel.isLowerThirdVisible)
-                .opacity(viewModel.isLowerThirdVisible ? 1.0 : 0.5)
-            }
-
-            // 当前上屏预览（上屏中时展示）
-            if viewModel.isLowerThirdVisible {
-                HStack(spacing: 6) {
-                    Rectangle()
-                        .fill(Color.red)
-                        .frame(width: 3)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.lowerThirdName)
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                        if !viewModel.lowerThirdTitle.isEmpty {
-                            Text(viewModel.lowerThirdTitle)
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
+                HStack(spacing: 10) {
+                    overlayActionButton(
+                        title: "上屏",
+                        systemImage: "arrow.up.to.line",
+                        fill: .red,
+                        isDisabled: viewModel.isLowerThirdVisible || trimmedLowerThirdName.isEmpty
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.showLowerThird(name: ltNameInput, title: ltTitleInput)
                         }
                     }
-                    Spacer()
-                    Text("● 直播中")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.green)
+
+                    overlayActionButton(
+                        title: "退场",
+                        systemImage: "arrow.down.to.line",
+                        fill: .gray,
+                        isDisabled: !viewModel.isLowerThirdVisible
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            viewModel.dismissLowerThird()
+                        }
+                    }
                 }
-                .padding(8)
-                .background(Color(NSColor.controlBackgroundColor))
-                .cornerRadius(6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.red.opacity(0.4), lineWidth: 1)
-                )
+
+                if viewModel.isLowerThirdVisible {
+                    currentLowerThirdPreview
+                }
             }
         }
     }
-
-    // MARK: - 倒计时区
 
     private var countdownSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("倒计时", systemImage: "timer")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
+        overlaySection(
+            title: "倒计时",
+            systemImage: "timer",
+            isLive: viewModel.isCountdownActive
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                TextField("标题（如：活动即将开始）", text: $countdownTitleInput)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 13))
 
-            // 标题文本
-            TextField("标题（如：活动即将开始）", text: $countdownTitleInput)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12))
-
-            // 时间输入：分钟 + 秒（直接输入数字）
-            HStack(spacing: 8) {
-                // 分钟输入框
-                HStack(spacing: 4) {
-                    TextField("10", value: $countdownMinutes, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 52)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    Text("分")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-
-                Text(":")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.secondary)
-
-                // 秒输入框
-                HStack(spacing: 4) {
-                    TextField("00", value: $countdownSecs, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 52)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 14, weight: .medium, design: .monospaced))
-                    Text("秒")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-            }
-
-            // 实时剩余（激活时显示）
-            if viewModel.isCountdownActive {
-                HStack {
-                    Text("剩余: \(formattedTime(viewModel.countdownSeconds))")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundColor(.orange)
+                HStack(spacing: 8) {
+                    numberInput(title: "分", value: $countdownMinutes)
+                    Text(":")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.secondary)
+                    numberInput(title: "秒", value: $countdownSecs)
                     Spacer()
-                }
-            }
-
-            // 开始/停止按钮
-            HStack(spacing: 8) {
-                Button(action: {
-                    let total = countdownMinutes * 60 + countdownSecs
-                    guard total > 0 else { return }
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.startCountdown(seconds: total, title: countdownTitleInput)
+                    if viewModel.isCountdownActive {
+                        Text("剩余 \(formattedTime(viewModel.countdownSeconds))")
+                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.orange)
                     }
-                }) {
-                    Label("开始", systemImage: "play.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(Color.orange)
-                .cornerRadius(8)
-                .disabled(viewModel.isCountdownActive)
-                .opacity(viewModel.isCountdownActive ? 0.5 : 1.0)
 
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.stopCountdown()
+                HStack(spacing: 10) {
+                    overlayActionButton(
+                        title: "开始",
+                        systemImage: "play.fill",
+                        fill: .orange,
+                        isDisabled: viewModel.isCountdownActive || countdownTotalSeconds <= 0
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.startCountdown(seconds: countdownTotalSeconds, title: countdownTitleInput)
+                        }
                     }
-                }) {
-                    Label("停止", systemImage: "stop.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
+
+                    overlayActionButton(
+                        title: "停止",
+                        systemImage: "stop.fill",
+                        fill: .gray,
+                        isDisabled: !viewModel.isCountdownActive
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.stopCountdown()
+                        }
+                    }
                 }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(Color.gray)
-                .cornerRadius(8)
-                .disabled(!viewModel.isCountdownActive)
-                .opacity(viewModel.isCountdownActive ? 1.0 : 0.5)
             }
         }
     }
 
-    // MARK: - 游动字幕区
-
     private var tickerSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label("游动字幕", systemImage: "text.badge.star")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
+        overlaySection(
+            title: "游动字幕",
+            systemImage: "text.badge.star",
+            isLive: viewModel.isTickerActive
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                TextEditor(text: $tickerInput)
+                    .font(.system(size: 13))
+                    .frame(height: 76)
+                    .padding(6)
+                    .background(Color.white.opacity(0.68))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                    )
 
-            // 文本输入
-            TextEditor(text: $tickerInput)
-                .font(.system(size: 12))
-                .frame(height: 60)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color(NSColor.separatorColor), lineWidth: 1)
-                )
-
-            // 速度选择
-            HStack {
-                Text("速度:")
-                    .font(.system(size: 12))
-                    .foregroundColor(.secondary)
-                Picker("", selection: $tickerSpeedIndex) {
-                    ForEach(0..<tickerSpeeds.count, id: \.self) { i in
-                        Text(tickerSpeeds[i].0).tag(i)
+                HStack {
+                    Text("速度")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.secondary)
+                    Picker("", selection: $tickerSpeedIndex) {
+                        ForEach(0..<tickerSpeeds.count, id: \.self) { index in
+                            Text(tickerSpeeds[index].0).tag(index)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: tickerSpeedIndex) { _, index in
+                        viewModel.tickerSpeed = tickerSpeeds[index].1
                     }
                 }
-                .pickerStyle(.segmented)
-                .onChange(of: tickerSpeedIndex) { _, idx in
-                    viewModel.tickerSpeed = tickerSpeeds[idx].1
-                }
-            }
 
-            // 开始/停止按钮
-            HStack(spacing: 8) {
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.startTicker(text: tickerInput)
+                HStack(spacing: 10) {
+                    overlayActionButton(
+                        title: "开始",
+                        systemImage: "play.fill",
+                        fill: .purple,
+                        isDisabled: viewModel.isTickerActive || trimmedTickerText.isEmpty
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.startTicker(text: tickerInput)
+                        }
                     }
-                }) {
-                    Label("开始", systemImage: "play.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(Color.purple)
-                .cornerRadius(8)
-                .disabled(viewModel.isTickerActive)
-                .opacity(viewModel.isTickerActive ? 0.5 : 1.0)
 
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.stopTicker()
+                    overlayActionButton(
+                        title: "停止",
+                        systemImage: "stop.fill",
+                        fill: .gray,
+                        isDisabled: !viewModel.isTickerActive
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            viewModel.stopTicker()
+                        }
                     }
-                }) {
-                    Label("停止", systemImage: "stop.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.plain)
-                .padding(.vertical, 7)
-                .background(Color.gray)
-                .cornerRadius(8)
-                .disabled(!viewModel.isTickerActive)
-                .opacity(viewModel.isTickerActive ? 1.0 : 0.5)
             }
         }
+    }
+
+    private var currentLowerThirdPreview: some View {
+        HStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color.red)
+                .frame(width: 4)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(viewModel.lowerThirdName)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if !viewModel.lowerThirdTitle.isEmpty {
+                    Text(viewModel.lowerThirdTitle)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+            Text("LIVE")
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .foregroundStyle(.green)
+        }
+        .padding(10)
+        .background(Color.red.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.red.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private func overlaySection<Content: View>(
+        title: String,
+        systemImage: String,
+        isLive: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Label(title, systemImage: systemImage)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                statusBadge(title: isLive ? "LIVE" : "OFF", isLive: isLive)
+            }
+
+            content()
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color.white.opacity(0.72))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(isLive ? Color.green.opacity(0.30) : Color.black.opacity(0.05), lineWidth: 1)
+        )
+    }
+
+    private func statusBadge(title: String, isLive: Bool) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(isLive ? Color.green : Color.gray.opacity(0.45))
+                .frame(width: 7, height: 7)
+            Text(title)
+                .font(.system(size: 11, weight: .black, design: .rounded))
+        }
+        .foregroundStyle(isLive ? Color.green : Color.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Capsule(style: .continuous)
+                .fill(isLive ? Color.green.opacity(0.12) : Color.black.opacity(0.05))
+        )
+    }
+
+    private func numberInput(title: String, value: Binding<Int>) -> some View {
+        HStack(spacing: 4) {
+            TextField("0", value: value, format: .number)
+                .textFieldStyle(.roundedBorder)
+                .frame(width: 58)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 14, weight: .medium, design: .monospaced))
+            Text(title)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func overlayActionButton(
+        title: String,
+        systemImage: String,
+        fill: Color,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(isDisabled ? Color.gray.opacity(0.45) : fill)
+                )
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
     }
 
     private func formattedTime(_ seconds: Int) -> String {
-        let m = max(seconds, 0) / 60
-        let s = max(seconds, 0) % 60
-        return String(format: "%02d:%02d", m, s)
+        let minutes = max(seconds, 0) / 60
+        let remainingSeconds = max(seconds, 0) % 60
+        return String(format: "%02d:%02d", minutes, remainingSeconds)
     }
 }

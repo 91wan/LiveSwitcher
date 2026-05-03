@@ -1,51 +1,86 @@
+<div align="center">
+
 # LiveSwitcher
 
-LiveSwitcher is a native macOS live-event switching console for small stages,
-meetups, presentations, and event rooms. It combines a program playlist,
-external-display output, local HTML presentation output, background music
-control, emergency blackout, wallpapers, and lightweight overlays in one
-SwiftUI app.
+**A native macOS live-event switching console for small stages, meetups, presentations, and event rooms.**
 
-LiveSwitcher 是一个原生 macOS 现场播控切换台，适合小型舞台、会议、演示和活动空间使用。它把节目播放列表、外接屏输出、本地 HTML 展示、背景音乐控制、紧急黑屏、壁纸和轻量字幕叠加整合在一个 SwiftUI 应用里。
+**面向小型舞台、会议、演示和活动空间的原生 macOS 现场播控切换台。**
 
-Version: `v0.1.1`
-版本：`v0.1.1`
-Platform: macOS 14.0+ on Apple Silicon
-平台：macOS 14.0+，Apple Silicon
-Distribution: source available, no license granted
-分发方式：源码公开可见，但未授予开源许可证
+[![Release](https://img.shields.io/github/v/release/91wan/LiveSwitcher?label=release&color=0A84FF)](https://github.com/91wan/LiveSwitcher/releases)
+![macOS](https://img.shields.io/badge/macOS-14%2B-444444)
+![SwiftPM](https://img.shields.io/badge/build-SwiftPM-FA7343)
+![Apple Silicon](https://img.shields.io/badge/tested-Apple%20Silicon-111111)
+![No License](https://img.shields.io/badge/license-no%20license-lightgrey)
 
-## Features / 功能
+English | [中文](#中文说明) | [Install](#install--安装) | [FAQ](#faq--常见问题)
 
-- Program playlist for video, audio, Keynote, PPTX, and local HTML files.
-- 支持视频、音频、Keynote、PPTX 和本地 HTML 文件的节目播放列表。
-- External display output with wallpaper fallback and emergency blackout.
-- 支持外接屏输出、壁纸回退和紧急黑屏。
-- Program monitor with live/preview-oriented switching state.
-- 提供面向导播场景的 Program Monitor 和预监/切换状态。
-- Background music playlist, master volume, media volume, and BGM volume.
-- 支持背景音乐列表、主音量、媒体音量和 BGM 音量控制。
-- Presenter mode to reduce BGM while keeping the program source active.
-- 支持主讲人模式，在保留节目源的同时压低 BGM。
-- HTML full-screen output through `WKWebView` with local asset access.
-- 通过 `WKWebView` 输出本地 HTML 全屏展示，并支持本地资源访问。
-- Lower-third, ticker, and countdown overlays.
-- 支持姓名条、滚动字幕和倒计时叠加层。
-- Page-clicker interception mode for presentation workflows.
-- 支持翻页笔拦截模式，适配演示流程。
+</div>
 
-## Requirements / 系统要求
+---
 
-- macOS 14.0 or later.
-- macOS 14.0 或更高版本。
-- Apple Silicon Mac.
-- Apple Silicon Mac。
-- Xcode 15 or Command Line Tools.
-- Xcode 15 或 Command Line Tools。
-- Accessibility permission for page-clicker interception mode.
-- 翻页笔拦截模式需要辅助功能权限。
-- Apple Events permission when controlling presentation apps.
-- 控制 Keynote 等演示应用时可能需要 Apple Events 权限。
+## Screenshots
+
+| Preview / Switching | Audio Mixer | Overlays / Subtitles |
+| --- | --- | --- |
+| ![Preview and switching](docs/assets/readme/preview-switch.png) | ![Audio mixer](docs/assets/readme/audio-mixer.png) | ![Overlays and subtitles](docs/assets/readme/overlays.png) |
+
+## What It Does
+
+LiveSwitcher combines the tools usually spread across a playlist, a presentation app, a music player, and a display switcher into one focused macOS app.
+
+- Build a program queue from video, audio, Keynote, PPTX, and local HTML files.
+- Switch content to an external display with wallpaper fallback.
+- Keep background music ready with master, media, and BGM volume control.
+- Use emergency blackout for stage-safe cut-to-black and mute.
+- Add practical overlays: lower third, countdown, and scrolling ticker.
+- Use PPT/page-clicker interception when presentation control needs to stay routed to the show app.
+
+## 中文说明
+
+LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和外接屏切换能力收在一个 macOS App 里，目标是让小型活动现场更稳、更直观。
+
+- 支持把视频、音频、Keynote、PPTX 和本地 HTML 加入节目队列。
+- 支持切换到外接屏，并在无节目时回退到待机壁纸。
+- 支持背景音乐、主音量、媒体音量和 BGM 音量控制。
+- 支持老板键：一键切黑副屏并静音。
+- 支持实用叠层：人名条、倒计时、游动字幕。
+- 支持 PPT/翻页笔拦截，让演示控制更贴近现场流程。
+
+## Install / 安装
+
+Download the latest release zip from [Releases](https://github.com/91wan/LiveSwitcher/releases), unzip it, and move `LiveSwitcher.app` to `/Applications`.
+
+从 [Releases](https://github.com/91wan/LiveSwitcher/releases) 下载最新 zip，解压后把 `LiveSwitcher.app` 拖到 `/Applications`。
+
+Current release asset:
+
+当前发布资产：
+
+```text
+LiveSwitcher-macOS-v0.1.2.zip
+```
+
+Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
+
+注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
+
+## Permissions / 权限
+
+LiveSwitcher can run without special permissions for basic playlist and monitor work. Some workflows need macOS permissions:
+
+LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分现场流程需要 macOS 权限：
+
+| Permission | Why it is needed |
+| --- | --- |
+| Accessibility | Required for PPT/page-clicker interception. |
+| Apple Events | Required when controlling Keynote or compatible presentation apps. |
+| Microphone | Reserved for audio-monitoring workflows. |
+
+| 权限 | 用途 |
+| --- | --- |
+| 辅助功能 | PPT/翻页笔拦截需要此权限。 |
+| Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
+| 麦克风 | 为音频监听类流程保留。 |
 
 ## Build, Test, Run / 构建、测试、运行
 
@@ -55,11 +90,10 @@ cd LiveSwitcher
 
 swift build
 swift test
-
 ./script/build_and_run.sh --verify
 ```
 
-Daily shortcuts / 日常快捷命令：
+Daily shortcuts / 日常命令：
 
 ```bash
 make build
@@ -68,44 +102,23 @@ make test
 bash Sources/AnnualMeetingSwitcher/build_v33.sh
 ```
 
-`./script/build_and_run.sh --verify` builds `dist/LiveSwitcher.app`, launches it,
-and verifies that the app process remains running.
+`./script/build_and_run.sh --verify` builds `dist/LiveSwitcher.app`, launches it, and verifies that the app process remains running.
 
 `./script/build_and_run.sh --verify` 会构建 `dist/LiveSwitcher.app`，启动应用，并确认应用进程能够持续运行。
 
-## Release Install Notes / 发布版安装说明
+## UI Verification / UI 验证
 
-The current public release ships as `LiveSwitcher-macOS-v0.1.1.zip` containing
-`LiveSwitcher.app`.
+This repository keeps real UI verification screenshots under:
 
-当前公开发布版为 `LiveSwitcher-macOS-v0.1.1.zip`，压缩包内包含 `LiveSwitcher.app`。
+本仓库保留真实 UI 复测截图：
 
-The app is ad-hoc signed and not notarized. On first launch, macOS Gatekeeper may
-show a warning. Open it from **System Settings -> Privacy & Security -> Open
-Anyway**, or build from source locally.
+```text
+docs/assets/ui-matrix/2026-05-03/
+```
 
-应用使用 ad-hoc 签名，尚未经过 Apple notarization。首次启动时，macOS Gatekeeper 可能会显示安全提示。可以在 **系统设置 -> 隐私与安全性 -> 仍要打开** 中允许打开，或直接从源码本地构建。
+The matrix covers three window sizes (`1360x760`, `1440x800`, maximized) across three tabs: preview/switching, audio mixer, and overlays/subtitles.
 
-## Permissions / 权限
-
-Page-clicker interception mode requires Accessibility permission:
-
-翻页笔拦截模式需要辅助功能权限：
-
-1. Open **System Settings -> Privacy & Security -> Accessibility**.
-2. Add `LiveSwitcher.app`.
-3. Enable the permission.
-4. Restart the app.
-
-1. 打开 **系统设置 -> 隐私与安全性 -> 辅助功能**。
-2. 添加 `LiveSwitcher.app`。
-3. 开启权限。
-4. 重启应用。
-
-Presentation automation may also request Apple Events permission when controlling
-Keynote or compatible presentation apps.
-
-控制 Keynote 或兼容演示应用时，系统也可能请求 Apple Events 权限。
+矩阵覆盖三个窗口尺寸（`1360x760`、`1440x800`、最大化）和三个页面：预览/切换、音频混音、叠层/字幕。
 
 ## Repository Shape / 仓库结构
 
@@ -113,28 +126,47 @@ Keynote or compatible presentation apps.
 .
 ├── Package.swift
 ├── Makefile
+├── README.md
+├── docs/assets/
 ├── script/build_and_run.sh
 ├── Sources/AnnualMeetingSwitcher/
 │   ├── Package.swift
 │   ├── build_v33.sh
 │   ├── LiveSwitcher.entitlements
 │   └── Sources/AnnualMeetingSwitcher/
-│       ├── App.swift
-│       ├── AppConfiguration.swift
-│       ├── ContentView.swift
-│       ├── ViewModel.swift
-│       ├── Engines/
-│       ├── Models/
-│       ├── Output/
-│       └── Views/
 └── .github/workflows/
     ├── smoke-tests.yml
     └── release.yml
 ```
 
+## FAQ / 常见问题
+
+### Is LiveSwitcher notarized?
+
+No. The public release is ad-hoc signed but not notarized. Expect Gatekeeper to require manual approval on first launch.
+
+没有。当前公开发布版是 ad-hoc 签名，但未 notarized。首次启动时通常需要在系统设置里手动允许。
+
+### Does it support Windows or Linux?
+
+No. LiveSwitcher is a native macOS SwiftUI app.
+
+不支持。LiveSwitcher 是原生 macOS SwiftUI App。
+
+### Can I use it without a second display?
+
+Yes. You can prepare playlists, music, wallpapers, and overlays on a single Mac. External display output is only required for live projection workflows.
+
+可以。单屏也能准备节目列表、音乐、壁纸和叠层。只有现场投屏时才需要外接显示器。
+
+### Why are Keynote/PPT permissions required?
+
+Presentation control relies on macOS automation and accessibility APIs. macOS requires explicit user permission for those actions.
+
+因为演示控制依赖 macOS 自动化和辅助功能 API。macOS 会要求用户明确授权。
+
 ## No License / 无许可证
 
-No open-source license is provided. The code is publicly visible, but all rights
-are reserved by the repository owner unless a license is added later.
+No open-source license is provided. The code is publicly visible, but all rights are reserved by the repository owner unless a license is added later.
 
 本仓库未提供开源许可证。代码虽然公开可见，但在未来添加许可证之前，仓库所有者保留全部权利。

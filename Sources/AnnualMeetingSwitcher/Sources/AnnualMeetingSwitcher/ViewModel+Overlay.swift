@@ -9,7 +9,10 @@ extension SwitcherViewModel {
 
     /// 启动倒计时（秒数，标题）
     func startCountdown(seconds: Int, title: String = "活动即将开始") {
-        countdownTitle    = title
+        guard seconds > 0 else { return }
+
+        let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        countdownTitle    = trimmedTitle.isEmpty ? "活动即将开始" : trimmedTitle
         countdownSeconds  = seconds
         isCountdownActive = true
 
@@ -41,7 +44,10 @@ extension SwitcherViewModel {
 
     /// 启动游动字幕
     func startTicker(text: String) {
-        tickerText     = text
+        let trimmedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedText.isEmpty else { return }
+
+        tickerText     = trimmedText
         isTickerActive = true
     }
 
@@ -54,13 +60,25 @@ extension SwitcherViewModel {
 
     /// 显示人名条（弹簧飞入）
     func showLowerThird(name: String, title: String) {
-        lowerThirdName    = name
-        lowerThirdTitle   = title
+        let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+
+        lowerThirdName    = trimmedName
+        lowerThirdTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)
         isLowerThirdVisible = true
     }
 
     /// 隐藏人名条（退场动画后消失）
     func dismissLowerThird() {
         isLowerThirdVisible = false
+    }
+
+    /// 一键清空所有大屏叠层
+    func clearAllOverlays() {
+        stopCountdown()
+        stopTicker()
+        dismissLowerThird()
+        lowerThirdName = ""
+        lowerThirdTitle = ""
     }
 }
