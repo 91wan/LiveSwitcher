@@ -1,5 +1,8 @@
 LiveSwitcher UI matrix verification - 2026-05-04
+Version target: v0.2.0
 Sizes: 1360x760, 1440x800, maximized 1470x900
 Tabs: preview-switch, audio-mixer, overlays
-Captured screenshots: 9 matrix PNG files
-Manual spot check: top nav/buttons visible; preview rails balanced; BGM list visible in preview; overlay/audio pages reachable.
+Captured screenshots: 9 matrix PNG files (*-v020.png)
+Automation: app launched through ./script/build_and_run.sh --verify; tab switching used Computer Use accessibility; screenshots captured with screencapture.
+Manual spot check: top navigation, speaker mode, panic, PPT, and help controls are visible; preview rails remain balanced; Program Monitor remains the central visual anchor; preview BGM list is visible; audio and overlay pages are reachable.
+Hardware note: physical external-display unplug behavior was not re-tested in this matrix pass; state-machine coverage remains in SwitcherViewModelSmokeTests.

@@ -39,15 +39,15 @@ enum SecondScreenSelector {
         return nonMain[0]
     }
 
-    /// 兼容旧调用：只用于构造未显示窗口；真正 show 必须使用 pickExternal。
-    static func pick() -> NSScreen {
+    /// 只用于构造隐藏窗口的初始 screen；真正投射路径必须使用 pickExternal()。
+    static func pickInitialWindowScreen() -> NSScreen {
         pickExternal() ?? NSScreen.main ?? NSScreen.screens[0]
     }
 }
 
 // MARK: - 推流大屏窗口控制器
 // 副屏适配版（仅副屏适配相关改动，其余保持 V24 原始逻辑）：
-// - 使用 SecondScreenSelector.pick() 智能识别 1080P 副屏
+// - 使用 SecondScreenSelector.pickExternal() 智能识别 1080P 副屏
 // - 利用 macOS screen mirroring 通知（NSApplication.didChangeScreenParametersNotification）
 //   监听屏幕热插拔，自动将推流窗口迁移到正确副屏
 // - 副屏 frame 在系统坐标系中可能是负数区间，始终用 targetScreen.frame（全局坐标系）
@@ -65,7 +65,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 
     convenience init() {
         // 使用智能副屏选择器（识别 1080P 副屏）
-        let targetScreen = SecondScreenSelector.pick()
+        let targetScreen = SecondScreenSelector.pickInitialWindowScreen()
 
         // targetScreen.frame 是全局坐标系的 rect，可能是负数起点，这完全正常
         let screenFrame = targetScreen.frame

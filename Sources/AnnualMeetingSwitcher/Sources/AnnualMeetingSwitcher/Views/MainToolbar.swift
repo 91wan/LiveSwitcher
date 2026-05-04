@@ -391,15 +391,17 @@ struct HelpView: View {
                 ])
 
                 HelpSectionView(title: "⌨️ 键盘快捷键", items: [
+                    "⌘⌥M：切换主讲人模式，压低媒体声道和 BGM，突出现场人声",
+                    "⌘⌥B：老板键，一键切黑副屏并静音",
+                    "⌘⌥P：切换 PPT 模式，接管翻页笔/方向键",
                     "数字键 1-9：快速切换对应播放列表编号的信号源",
                     "空格键：暂停/继续当前媒体播放",
                     "[ / ] 键：BGM 音量减小 / 增大",
                     ", 键：快速切换 BGM 播放/暂停",
-                    "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）",
-                    "⌘⌥B：全局老板键快捷键（在任何窗口均可触发）"
+                    "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
                 ])
 
-                Text("Version 0.1.2 | overlay controls · README polish · UI matrix")
+                Text("Version 0.2.0 | live safety · BGM takeover · desktop commands")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

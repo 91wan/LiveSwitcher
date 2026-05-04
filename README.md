@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.1.2.zip
+LiveSwitcher-macOS-v0.2.0.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -81,6 +81,22 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | 辅助功能 | PPT/翻页笔拦截需要此权限。 |
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
+
+## What's New in v0.2.0 / v0.2.0 更新
+
+- Live safety: projection now fails closed when no external display is available, and stops projection if the external display is disconnected.
+- Speaker mode: one action ducks both media/video audio and BGM to keep live speech clear.
+- BGM takeover: playing BGM temporarily fades media audio down and fades BGM in without changing the saved audio strategy.
+- Wallpaper import: the wallpaper tray accepts real Finder image drops and filters non-image files.
+- Playback option: video can optionally auto-advance only to the immediately next video item; it never auto-opens HTML, PPTX, or Keynote.
+- Desktop controls: speaker mode, panic blackout, and PPT mode are available from the macOS menu with keyboard shortcuts.
+
+- 现场安全：无外接屏时不会投射，外接屏断开时立即停止投射，避免主屏被黑屏窗口覆盖。
+- 主讲人模式：一键同时压低媒体/视频声道和 BGM，让现场人声更突出。
+- BGM 接管：播放 BGM 时临时淡出媒体声、淡入 BGM，不改变用户保存的混音策略。
+- 壁纸导入：“拖入图片”支持 Finder 图片拖入，并拒绝非图片文件。
+- 播放选项：可选择视频播毕后只自动播放紧邻的下一条视频，不自动打开 HTML、PPTX 或 Keynote。
+- 桌面控制：主讲人模式、老板键、PPT 模式加入 macOS 菜单和快捷键。
 
 ## Build, Test, Run / 构建、测试、运行
 
@@ -114,6 +130,7 @@ This repository keeps real UI verification screenshots under:
 
 ```text
 docs/assets/ui-matrix/2026-05-03/
+docs/assets/ui-matrix/2026-05-04/
 ```
 
 The matrix covers three window sizes (`1360x760`, `1440x800`, maximized) across three tabs: preview/switching, audio mixer, and overlays/subtitles.
