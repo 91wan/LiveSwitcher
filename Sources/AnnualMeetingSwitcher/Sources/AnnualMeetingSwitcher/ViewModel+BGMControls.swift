@@ -29,7 +29,7 @@ extension SwitcherViewModel {
     /// 切换主讲人模式：开启时将 BGM 压低至 7%，关闭时恢复到用户设定音量
     func toggleSpeakerMode() {
         isSpeakerMode.toggle()
-        applyAudioRouting(bgmFadeDuration: 2.0)
+        applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
     }
 
     // Toggle loop mode: loopAll → loopOne → sequential → loopAll

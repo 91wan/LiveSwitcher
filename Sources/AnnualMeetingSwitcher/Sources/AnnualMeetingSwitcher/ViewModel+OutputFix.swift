@@ -2,9 +2,9 @@ import AppKit
 
 extension SwitcherViewModel {
     func handleSafeBroadcastToggle() {
-        let screens = NSScreen.screens
-        if screens.count > 1 {
+        if externalScreenProvider() != nil {
             // 接了副屏，正常推流
+            broadcastSafetyNotice = nil
             isBroadcasting.toggle()
             if isBroadcasting {
                 showOutputWindow()
@@ -12,6 +12,7 @@ extension SwitcherViewModel {
                 hideOutputWindow()
             }
         } else {
+            broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
             // 没有接副屏（只有主屏），弹出防呆警告！
             let alert = NSAlert()
             alert.messageText = "未检测到外接屏幕"

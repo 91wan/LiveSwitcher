@@ -6,6 +6,7 @@ import XCTest
 @MainActor
 final class SwitcherViewModelSmokeTests: XCTestCase {
     private final class OutputWindowControllerSpy: OutputWindowControlling {
+        var onExternalDisplayUnavailable: (() -> Void)?
         private(set) var mountCount = 0
         private(set) var showCount = 0
         private(set) var hideCount = 0
@@ -33,6 +34,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             enableSystemVolumeObserver: false,
             userDefaults: userDefaults ?? .standard
         )
+        viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
         viewModel.keynotePresentationHandler = { _ in }
         viewModel.pptxOpenHandler = { _ in }
         viewModel.activeDeckPresentationHandler = {}
@@ -270,6 +272,52 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.056, accuracy: 0.0001)
     }
 
+    func testSpeakerModeDucksMediaAudioWithoutLiftingLowerUserFader() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.audioStrategy = .mixed
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+
+        viewModel.toggleSpeakerMode()
+
+        XCTAssertTrue(viewModel.isSpeakerMode)
+        XCTAssertEqual(viewModel.audioStrategy, .mixed)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.056, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.056, accuracy: 0.0001)
+
+        viewModel.mediaVolume = 0.02
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.016, accuracy: 0.0001)
+    }
+
+    func testSpeakerModeDoesNotRaiseMediaAudioDuringBGMTakeover() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.audioStrategy = .mixed
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let bgmURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: bgmURL)
+        }
+
+        viewModel.switchToProgram(ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.toggleBGM(BGMItem(title: "暖场音乐", url: bgmURL, category: .warmUp))
+        viewModel.toggleSpeakerMode()
+
+        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertTrue(viewModel.isSpeakerMode)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+    }
+
     func testBGMPlaybackTemporarilyTakesOverMediaAudioWithoutChangingStrategy() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
@@ -432,6 +480,20 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertTrue(reader.isSpeakerMode)
     }
 
+    func testAutoPlayNextVideoPreferencePersistsAcrossViewModelInstances() {
+        let (suiteName, defaults) = makeIsolatedDefaults()
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let defaultReader = makeViewModel(userDefaults: defaults, loadPersistedData: true)
+        XCTAssertFalse(defaultReader.autoPlayNextVideoOnEnd)
+
+        let writer = makeViewModel(userDefaults: defaults)
+        writer.autoPlayNextVideoOnEnd = true
+
+        let reader = makeViewModel(userDefaults: defaults, loadPersistedData: true)
+        XCTAssertTrue(reader.autoPlayNextVideoOnEnd)
+    }
+
     func testProgramPersistenceKeepsFileItemMetadataAlignedWhenActiveDeckItemsAreSkipped() throws {
         let (suiteName, defaults) = makeIsolatedDefaults()
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -482,6 +544,22 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertNotNil(reader.backgroundImage)
     }
 
+    func testWallpaperImportRejectsNonImageFiles() throws {
+        let viewModel = makeViewModel()
+        let wallpaperURL = try makeWallpaperURL()
+        let textURL = try makeTempFileURL(ext: "txt")
+        defer {
+            try? FileManager.default.removeItem(at: wallpaperURL)
+            try? FileManager.default.removeItem(at: textURL)
+        }
+
+        viewModel.addWallpaper(url: wallpaperURL)
+        viewModel.addWallpaper(url: textURL)
+
+        XCTAssertEqual(viewModel.backgroundWallpapers, [wallpaperURL])
+        XCTAssertNil(viewModel.activeWallpaperURL)
+    }
+
     func testBroadcastToggleShowsAndHidesOutputWindowThroughController() {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
@@ -493,12 +571,33 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(outputSpy.mountCount, 1)
         XCTAssertEqual(outputSpy.showCount, 1)
         XCTAssertFalse(outputSpy.lastShowScreenWasNil)
-        XCTAssertEqual(outputSpy.lastShowFullScreen, NSScreen.screens.count > 1)
+        XCTAssertTrue(outputSpy.lastShowFullScreen)
 
         viewModel.handleBroadcastToggle()
         XCTAssertFalse(viewModel.isBroadcasting)
         XCTAssertEqual(outputSpy.hideCount, 1)
         XCTAssertEqual(outputSpy.mountCount, 1)
+    }
+
+    func testExternalDisplayLossStopsBroadcastAndKeepsCurrentProgram() throws {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        let videoItem = ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL)
+        viewModel.switchToProgram(videoItem)
+        viewModel.handleBroadcastToggle()
+
+        viewModel.handleExternalDisplayLost()
+
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+        XCTAssertEqual(viewModel.broadcastSafetyNotice, "副屏已断开，投射已停止")
     }
 
     func testBroadcastToggleCycleDoesNotClearCurrentHTMLPresentationState() throws {
@@ -2280,6 +2379,91 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
         XCTAssertNotNil(viewModel.backgroundImage)
         XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testPlaybackEndedAutoPlaysNextVideoOnlyWhenEnabled() throws {
+        let viewModel = makeViewModel()
+        let firstVideoURL = try makeTempFileURL(ext: "mp4")
+        let secondVideoURL = try makeTempFileURL(ext: "mov")
+        defer {
+            try? FileManager.default.removeItem(at: firstVideoURL)
+            try? FileManager.default.removeItem(at: secondVideoURL)
+        }
+
+        let firstVideo = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: firstVideoURL)
+        let secondVideo = ProgramItem(title: "下一条", subtitle: "MOV", sourceURL: secondVideoURL)
+        viewModel.addProgramItem(firstVideo)
+        viewModel.addProgramItem(secondVideo)
+        viewModel.autoPlayNextVideoOnEnd = true
+        viewModel.switchToProgram(firstVideo)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertEqual(viewModel.currentProgramItem, secondVideo)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, secondVideoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNil(viewModel.currentHTMLURL)
+    }
+
+    func testPlaybackEndedDoesNotAutoOpenNonVideoNextProgram() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let htmlURL = try makeTempFileURL(ext: "html")
+        let pptxURL = try makeTempFileURL(ext: "pptx")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: htmlURL)
+            try? FileManager.default.removeItem(at: pptxURL)
+        }
+        var openedPPTXCount = 0
+        viewModel.pptxOpenHandler = { _ in openedPPTXCount += 1 }
+
+        let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let htmlItem = ProgramItem(title: "大屏页", subtitle: "HTML", sourceURL: htmlURL)
+        let pptxItem = ProgramItem(title: "汇报", subtitle: "PPTX", sourceURL: pptxURL)
+        viewModel.addProgramItem(videoItem)
+        viewModel.addProgramItem(htmlItem)
+        viewModel.addProgramItem(pptxItem)
+        viewModel.autoPlayNextVideoOnEnd = true
+        viewModel.switchToProgram(videoItem)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(openedPPTXCount, 0)
+    }
+
+    func testPlaybackEndedDoesNotAutoAdvanceToAudioProgram() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let audioURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: audioURL)
+        }
+
+        let firstVideo = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
+        let nextAudio = ProgramItem(title: "暖场音乐", subtitle: "MP3", sourceURL: audioURL)
+        viewModel.addProgramItem(firstVideo)
+        viewModel.addProgramItem(nextAudio)
+        viewModel.autoPlayNextVideoOnEnd = true
+        viewModel.switchToProgram(firstVideo)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNotEqual(viewModel.avCoordinator.currentURL, audioURL)
     }
 
     func testPlaybackEndedCallbackUsesCoordinatorHookToReturnToWallpaper() throws {

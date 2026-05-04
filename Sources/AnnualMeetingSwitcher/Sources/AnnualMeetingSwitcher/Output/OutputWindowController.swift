@@ -3,6 +3,7 @@ import SwiftUI
 import Combine
 
 protocol OutputWindowControlling: AnyObject {
+    var onExternalDisplayUnavailable: (() -> Void)? { get set }
     func mountAnyView(rootView: AnyView)
     func show(on screen: NSScreen?, fullScreen: Bool)
     func hide()
@@ -10,19 +11,19 @@ protocol OutputWindowControlling: AnyObject {
 
 // MARK: - 副屏识别工具（MacBook screen mirroring 适配）
 // 副屏规格：1080P（确认实测分辨率）
-// 识别策略：优先找分辨率匹配 1080P 的非主屏；次选任意非主屏；无副屏时用主屏
+// 识别策略：优先找分辨率匹配 1080P 的非主屏；次选任意非主屏；无副屏时返回 nil
 
 enum SecondScreenSelector {
     /// 选取最佳副屏：
     /// 1. 优先匹配 1080P（或 backingScaleFactor 换算后等效 1080P）的非主屏
     /// 2. 其次取任意非主屏
-    /// 3. 无副屏时返回主屏（单屏模式）
-    static func pick() -> NSScreen {
+    /// 3. 无副屏时返回 nil，禁止回落主屏全屏
+    static func pickExternal() -> NSScreen? {
         let screens = NSScreen.screens
-        guard screens.count > 1 else {
-            return NSScreen.main ?? screens[0]
-        }
-        let nonMain = screens.filter { $0 != screens[0] }
+        guard screens.count > 1 else { return nil }
+        let mainScreen = NSScreen.main ?? screens[0]
+        let nonMain = screens.filter { $0 != mainScreen }
+        guard !nonMain.isEmpty else { return nil }
 
         // 优先：物理分辨率匹配 1080P 副屏
         let targetExact = nonMain.first { screen in
@@ -36,6 +37,11 @@ enum SecondScreenSelector {
 
         // 次选：任意非主屏
         return nonMain[0]
+    }
+
+    /// 兼容旧调用：只用于构造未显示窗口；真正 show 必须使用 pickExternal。
+    static func pick() -> NSScreen {
+        pickExternal() ?? NSScreen.main ?? NSScreen.screens[0]
     }
 }
 
@@ -53,6 +59,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 
     // MARK: - 屏幕变化监听（screen mirroring 热插拔适配）
     private var screenChangeObserver: NSObjectProtocol?
+    var onExternalDisplayUnavailable: (() -> Void)?
 
     // MARK: - Init
 
@@ -108,7 +115,11 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     /// 自动将推流窗口迁移到最佳副屏
     private func handleScreenChange() {
         guard let w = window, w.isVisible else { return }
-        let targetScreen = SecondScreenSelector.pick()
+        guard let targetScreen = SecondScreenSelector.pickExternal() else {
+            hide()
+            onExternalDisplayUnavailable?()
+            return
+        }
         let screenFrame = targetScreen.frame
         if w.frame != screenFrame {
             w.setFrame(screenFrame, display: true)
@@ -150,9 +161,13 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     func show(on screen: NSScreen? = nil, fullScreen: Bool = false) {
         guard let w = window else { return }
 
-        // 确定目标屏幕：优先使用传入的 screen 参数，否则用智能副屏选择器
-        // screen mirroring 适配：SecondScreenSelector 会优先识别 1080P 副屏
-        let targetScreen: NSScreen = screen ?? SecondScreenSelector.pick()
+        // 确定目标屏幕：优先使用传入的外接屏，否则用智能副屏选择器。
+        // 无副屏时直接隐藏并回调，绝不回落主屏全屏。
+        guard let targetScreen = screen ?? SecondScreenSelector.pickExternal() else {
+            hide()
+            onExternalDisplayUnavailable?()
+            return
+        }
 
         // 副屏在全局坐标系中的精确 frame（可能是负数起点，完全正常）
         let screenFrame = targetScreen.frame

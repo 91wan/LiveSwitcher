@@ -11,6 +11,7 @@ struct LeftPanel: View {
         VStack(spacing: 10) {
             // ── 标题行（Issue #3: 改叫"播放列表"）──
             headerRow
+            autoPlayOptionRow
 
             // ── 拖拽放入大框 ──
             dropZone
@@ -53,6 +54,33 @@ struct LeftPanel: View {
         .studioCard(cornerRadius: 28)
         // ── 键盘快捷键 1-9 绑定 ──
         .background(ShortcutKeyHandler(viewModel: viewModel))
+    }
+
+    private var autoPlayOptionRow: some View {
+        Toggle(isOn: $viewModel.autoPlayNextVideoOnEnd) {
+            HStack(spacing: 7) {
+                Image(systemName: "forward.end.fill")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.blue)
+                Text("播毕自动下一条视频")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+            }
+        }
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.66))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(Color.white.opacity(0.82), lineWidth: 1)
+        )
+        .help("仅当前节目播毕且下一条也是视频时自动播放；不会自动打开 HTML、PPT 或 Keynote。")
     }
 
     // MARK: - 标题行
@@ -214,10 +242,10 @@ struct LeftPanel: View {
                         .font(.system(size: 12, weight: .black, design: .rounded))
                         .foregroundColor(.secondary)
                     HStack(spacing: 6) {
-                        Image(systemName: NSScreen.screens.count > 1 ? "display.2" : "display")
+                        Image(systemName: SecondScreenSelector.pickExternal() != nil ? "display.2" : "display")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.secondary)
-                        Text(NSScreen.screens.count > 1 ? "屏幕 2（副屏）" : "屏幕 1（主屏）")
+                        Text(SecondScreenSelector.pickExternal() != nil ? "外接屏幕" : "未接副屏")
                             .font(.system(size: 15, weight: .bold))
                             .foregroundColor(.primary)
                     }
@@ -265,6 +293,24 @@ struct LeftPanel: View {
             }
             .buttonStyle(.plain)
             .focusable(false)
+
+            if let notice = viewModel.broadcastSafetyNotice {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 11, weight: .bold))
+                    Text(notice)
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .lineLimit(2)
+                }
+                .foregroundStyle(Color.orange)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Color.orange.opacity(0.10))
+                )
+            }
         }
         .padding(14)
         .background(

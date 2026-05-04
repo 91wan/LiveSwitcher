@@ -2,6 +2,7 @@ import SwiftUI
 import Combine
 import AppKit
 import AVFoundation
+import UniformTypeIdentifiers
 import Carbon         // V25: 翻页拦截器 CGEventTap
 import ApplicationServices // V25: AXIsProcessTrusted
 
@@ -61,6 +62,7 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 推流状态
 
     @Published var isBroadcasting: Bool = false
+    @Published var broadcastSafetyNotice: String?
 
     // MARK: - HTML 大屏展示
 
@@ -97,6 +99,7 @@ final class SwitcherViewModel: ObservableObject {
 
     @Published var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = 2.0
+    private let speakerModeDuckedRatio: Float = 0.07
 
     // MARK: - 背景壁纸（多张）
 
@@ -127,6 +130,13 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
+    /// 视频播毕后仅自动播放队列里的紧邻下一条视频；默认关闭，避免现场自动打开演示文件。
+    @Published var autoPlayNextVideoOnEnd: Bool = false {
+        didSet {
+            userDefaults.set(autoPlayNextVideoOnEnd, forKey: UDKeys.autoPlayNextVideoOnEnd)
+        }
+    }
+
     /// BGM 进度（0.0 ~ 1.0），由定时器驱动
     @Published var bgmProgress: Double = 0.0
     @Published var bgmCurrentTime: Double = 0.0
@@ -144,6 +154,9 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 推流窗口
 
     private var outputWindowController: OutputWindowControlling?
+    var externalScreenProvider: () -> NSScreen? = {
+        SecondScreenSelector.pickExternal()
+    }
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
@@ -186,6 +199,7 @@ final class SwitcherViewModel: ObservableObject {
         static let activeWallpaper = "activeWallpaper_path"
         static let audioStrategy = "audioStrategy"
         static let speakerMode = "speakerMode"
+        static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
     }
 
     // MARK: - Init
@@ -247,15 +261,17 @@ final class SwitcherViewModel: ObservableObject {
     func effectiveMediaOutputVolume() -> Float {
         guard !isBGMAudioTakeoverActive else { return 0 }
         guard shouldOutputMediaAudio else { return 0 }
-        return Float(masterVolume * mediaVolume)
+        return duckedVolumeIfNeeded(Float(masterVolume * mediaVolume))
     }
 
     func effectiveBGMOutputVolume() -> Float {
         guard isBGMAudioTakeoverActive || shouldOutputBGM else { return 0 }
-        if isSpeakerMode {
-            return 0.07 * Float(masterVolume)
-        }
-        return Float(masterVolume * bgmVolume)
+        return duckedVolumeIfNeeded(Float(masterVolume * bgmVolume))
+    }
+
+    private func duckedVolumeIfNeeded(_ volume: Float) -> Float {
+        guard isSpeakerMode else { return volume }
+        return min(volume, Float(masterVolume) * speakerModeDuckedRatio)
     }
 
     func applyAudioRouting(mediaFadeDuration: Double? = nil, bgmFadeDuration: Double? = nil) {
@@ -453,6 +469,10 @@ final class SwitcherViewModel: ObservableObject {
         if userDefaults.object(forKey: UDKeys.speakerMode) != nil {
             isSpeakerMode = userDefaults.bool(forKey: UDKeys.speakerMode)
         }
+
+        if userDefaults.object(forKey: UDKeys.autoPlayNextVideoOnEnd) != nil {
+            autoPlayNextVideoOnEnd = userDefaults.bool(forKey: UDKeys.autoPlayNextVideoOnEnd)
+        }
     }
 
     // MARK: - 播毕回调绑定
@@ -551,10 +571,37 @@ final class SwitcherViewModel: ObservableObject {
 
     /// 当前节目播毕后的最小状态回退。
     func handlePlaybackEnded() {
+        if autoPlayNextVideoIfPossible() {
+            return
+        }
+
         withAnimation(.easeInOut(duration: 0.5)) {
             currentHTMLURL = nil
             currentProgramItem = nil
         }
+    }
+
+    private func autoPlayNextVideoIfPossible() -> Bool {
+        guard autoPlayNextVideoOnEnd,
+              let currentProgramItem,
+              let currentIndex = programItems.firstIndex(where: { $0.id == currentProgramItem.id }) else {
+            return false
+        }
+
+        let nextIndex = currentIndex + 1
+        guard programItems.indices.contains(nextIndex) else { return false }
+
+        let nextItem = programItems[nextIndex]
+        guard isVideoProgramItem(nextItem) else { return false }
+
+        switchToProgram(nextItem)
+        return true
+    }
+
+    private func isVideoProgramItem(_ item: ProgramItem) -> Bool {
+        guard item.sourceKind == .media,
+              let ext = item.sourceURL?.pathExtension.lowercased() else { return false }
+        return ["mp4", "mov", "m4v", "avi"].contains(ext)
     }
 
     /// Fix Issue #3: 打开并立即放映 Keynote 文件
@@ -793,10 +840,13 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - 壁纸库操作
 
-    func addWallpaper(url: URL) {
-        guard !backgroundWallpapers.contains(url) else { return }
+    @discardableResult
+    func addWallpaper(url: URL) -> Bool {
+        guard isSupportedWallpaperImage(url) else { return false }
+        guard !backgroundWallpapers.contains(url) else { return true }
         backgroundWallpapers.append(url)
         saveData()
+        return true
     }
 
     func removeWallpaper(url: URL) {
@@ -808,8 +858,16 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func setActiveWallpaper(url: URL) {
+        guard backgroundWallpapers.contains(url) else { return }
         activeWallpaperURL = url
         saveData()
+    }
+
+    private func isSupportedWallpaperImage(_ url: URL) -> Bool {
+        guard url.isFileURL else { return false }
+        guard FileManager.default.fileExists(atPath: url.path) else { return false }
+        guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
+        return type.conforms(to: .image)
     }
 
     // MARK: - BGM 操作
@@ -992,23 +1050,34 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func showOutputWindow() {
+        guard let targetScreen = externalScreenProvider() else {
+            handleExternalDisplayLost()
+            return
+        }
+
         if outputWindowController == nil {
             outputWindowController = outputWindowControllerFactory()
+            outputWindowController?.onExternalDisplayUnavailable = { [weak self] in
+                self?.handleExternalDisplayLost()
+            }
             let outputView = AnyView(
                 OutputView()
                     .environmentObject(self)
             )
             outputWindowController?.mountAnyView(rootView: outputView)
         }
-        // 副屏适配：使用 SecondScreenSelector 智能识别 1080P 副屏
-        // macOS screen mirroring 机制：多屏时自动找最佳副屏，单屏时用主屏
-        let targetScreen = SecondScreenSelector.pick()
-        let hasSecondScreen = NSScreen.screens.count > 1
-        outputWindowController?.show(on: targetScreen, fullScreen: hasSecondScreen)
+        broadcastSafetyNotice = nil
+        outputWindowController?.show(on: targetScreen, fullScreen: true)
     }
 
     func hideOutputWindow() {
         outputWindowController?.hide()
+    }
+
+    func handleExternalDisplayLost() {
+        isBroadcasting = false
+        outputWindowController?.hide()
+        broadcastSafetyNotice = "副屏已断开，投射已停止"
     }
 
     // MARK: - System Volume Observer

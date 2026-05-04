@@ -212,7 +212,7 @@ struct RightPanel: View {
             channelVolumeTitle(compact: compact)
             mixerFader(
                 title: "源 A",
-                subtitle: "媒体",
+                subtitle: viewModel.isSpeakerMode ? "主讲人压限中" : "媒体",
                 value: $viewModel.mediaVolume,
                 tint: .blue
             )

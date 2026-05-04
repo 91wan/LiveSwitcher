@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - Main view
 
@@ -624,26 +625,88 @@ struct WallpaperGalleryRow: View {
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [.image, .png, .jpeg, .gif]
         guard panel.runModal() == .OK else { return }
+        var firstAcceptedURL: URL?
         for url in panel.urls {
-            viewModel.addWallpaper(url: url)
+            if viewModel.addWallpaper(url: url), firstAcceptedURL == nil {
+                firstAcceptedURL = url
+            }
         }
-        if let first = panel.urls.first {
-            viewModel.setActiveWallpaper(url: first)
+        if let firstAcceptedURL {
+            viewModel.setActiveWallpaper(url: firstAcceptedURL)
         }
     }
 
     private func handleWallpaperDrop(providers: [NSItemProvider]) -> Bool {
+        var didRequestImport = false
+
         for provider in providers {
-            provider.loadItem(forTypeIdentifier: "public.file-url", options: nil) { item, _ in
-                guard let data = item as? Data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
-                DispatchQueue.main.async {
-                    viewModel.addWallpaper(url: url)
-                    viewModel.setActiveWallpaper(url: url)
+            if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
+                didRequestImport = true
+                provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                    guard let url = decodeDroppedFileURL(item) else { return }
+                    importWallpaperOnMain(url)
+                }
+                continue
+            }
+
+            if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+                didRequestImport = true
+                provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, _ in
+                    guard let url,
+                          let persistedURL = persistDroppedWallpaperFile(from: url) else { return }
+                    importWallpaperOnMain(persistedURL)
                 }
             }
         }
-        return true
+
+        return didRequestImport
+    }
+
+    private func decodeDroppedFileURL(_ item: Any?) -> URL? {
+        if let url = item as? URL {
+            return url
+        }
+        if let data = item as? Data {
+            return URL(dataRepresentation: data, relativeTo: nil)
+        }
+        if let string = item as? String {
+            return URL(string: string) ?? URL(fileURLWithPath: string)
+        }
+        return nil
+    }
+
+    private func persistDroppedWallpaperFile(from sourceURL: URL) -> URL? {
+        let fileManager = FileManager.default
+        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+
+        let directoryURL = appSupportURL
+            .appendingPathComponent("LiveSwitcher", isDirectory: true)
+            .appendingPathComponent("Wallpapers", isDirectory: true)
+
+        do {
+            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+            let fallbackExtension = sourceURL.pathExtension.isEmpty ? "png" : sourceURL.pathExtension
+            let destinationURL = directoryURL
+                .appendingPathComponent(UUID().uuidString)
+                .appendingPathExtension(fallbackExtension)
+            if fileManager.fileExists(atPath: destinationURL.path) {
+                try fileManager.removeItem(at: destinationURL)
+            }
+            try fileManager.copyItem(at: sourceURL, to: destinationURL)
+            return destinationURL
+        } catch {
+            return nil
+        }
+    }
+
+    private func importWallpaperOnMain(_ url: URL) {
+        DispatchQueue.main.async {
+            if viewModel.addWallpaper(url: url) {
+                viewModel.setActiveWallpaper(url: url)
+            }
+        }
     }
 }
 
