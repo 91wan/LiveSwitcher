@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.1.zip
+LiveSwitcher-macOS-v0.2.2.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -81,6 +81,26 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | 辅助功能 | PPT/翻页笔拦截需要此权限。 |
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
+
+## What's New in v0.2.2 / v0.2.2 更新
+
+- Live Preflight: the `?` popover now includes a runtime readiness panel for display, audio, playback, overlays, and live controls.
+- Copy Report: operators can copy a plain-text preflight report for handoff, incident review, support, or GitHub issue/debug notes.
+- Hardware honesty: no external display is shown as not ready; hardware checks never fake-pass.
+
+- 现场检查：`?` 弹窗新增运行态检查面板，覆盖显示、音频、播放、叠层和现场控制状态。
+- 复制报告：现场人员可以复制纯文本检查报告，用于复盘、支持沟通或 GitHub issue/debug 记录。
+- 硬件诚实：未检测到外接屏时明确显示未就绪，硬件检查不会假通过。
+
+## Live Preflight / 现场检查
+
+Open the `?` button, switch from `Help` to `Preflight`, and review the live state before projection. The panel reads current runtime state, including external display availability, projection state, current program, BGM readiness/takeover, speaker mode, panic blackout, PPT mode, overlays, wallpaper fallback, auto-next video, and effective media/BGM volume.
+
+点击顶部 `?` 按钮，从 `Help` 切到 `Preflight`，即可在投射前检查当前运行状态。面板读取真实状态，包括外接屏、投射、当前节目、BGM 准备/BGM 接管、主讲人模式、老板键、PPT 模式、叠层、壁纸回退、自动下一条视频，以及媒体/BGM 实际输出音量。
+
+Use `Copy Report` to copy a plain-text report. It is intended for operator handoff, incident review, support, or GitHub issue/debug notes. It is not a replacement for hardware unplug testing. External-display unplug validation still belongs to the manual checklist in [`docs/qa/live-regression-v0.2.1.md`](docs/qa/live-regression-v0.2.1.md).
+
+使用 `Copy Report` 可复制纯文本检查报告。它适合现场交接、故障复盘、issue/debug 记录；但不能替代硬件拔线复测。外接屏断开测试仍以 [`docs/qa/live-regression-v0.2.1.md`](docs/qa/live-regression-v0.2.1.md) 的人工清单为准。
 
 ## What's New in v0.2.1 / v0.2.1 更新
 

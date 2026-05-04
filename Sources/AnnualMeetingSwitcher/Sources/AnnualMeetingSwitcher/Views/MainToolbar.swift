@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - 主工具栏
@@ -354,62 +355,214 @@ struct MainToolbar: View {
 // MARK: - 使用说明弹窗
 
 struct HelpView: View {
+    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @State private var selectedPanel: HelpPanel = .help
+    @State private var copiedReport = false
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // 标题
-                HStack(spacing: 8) {
-                    Text("❓")
-                        .font(.system(size: 22))
-                    Text("LiveSwitcher · Help")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.primary)
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
+                Text("LiveSwitcher")
+                    .font(.system(size: 16, weight: .black))
+
+                Spacer()
+
+                Picker("", selection: $selectedPanel) {
+                    Text("Help").tag(HelpPanel.help)
+                    Text("Preflight").tag(HelpPanel.preflight)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 210)
+            }
+            .padding(.horizontal, 22)
+            .padding(.vertical, 16)
+
+            Divider()
+
+            ScrollView {
+                Group {
+                    switch selectedPanel {
+                    case .help:
+                        helpContent
+                    case .preflight:
+                        preflightContent
+                    }
+                }
+                .padding(24)
+            }
+        }
+        .frame(width: 520, height: 560)
+    }
+
+    private var helpContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HelpSectionView(title: "常用必备功能（绿灯亮起 = 功能已开启）", items: [
+                "主讲人模式：顶部【主讲人】按钮，开启后按钮变绿，媒体声道和 BGM 压至 7% 突出人声",
+                "PPT翻页笔：顶部【PPT模式】开启后按钮变绿，翻页笔方向键控制 WPS/PPT 翻页（需辅助功能权限，开启失败时 App 会自动引导设置）",
+                "投射副屏：左侧底部【投射：关/开】，无外接屏时不会投射；副屏断开会立即停止投射",
+                "老板键：顶部【老板键】紧急切黑副屏并静音，开启后按钮变红，再点恢复"
+            ])
+
+            HelpSectionView(title: "视频与音频操作", items: [
+                "添加视频：左侧【选择视频】按钮，支持 MP4/MOV/AVI 等格式，支持拖拽入列",
+                "添加HTML大屏：左侧【选择 HTML】绿色按钮，选择 HTML 文件，点击即推流至副屏全屏展示",
+                "切换画面：点击播放列表中的项目立即切换大屏（切换时自动淡出音频防止音画撕裂）",
+                "背景音乐：预览页右侧【现场 BGM】可直接播控当前曲目、查看列表、拖动进度，并一键跳到完整音乐库",
+                "音频混音：顶部切换至【音频混音】页面，可管理 BGM 列表、音频策略，以及主音量 / 媒体 / BGM 三路推子"
+            ])
+
+            HelpSectionView(title: "壁纸与叠层", items: [
+                "背景壁纸：中栏底部【壁纸库】，导入图片后点击即激活为大屏背景",
+                "倒计时叠层：叠层控制面板开启【倒计时】，直接输入分钟/秒数（默认10分钟），叠加显示在大屏",
+                "游动字幕：叠层控制面板开启【游动字幕】，输入内容后在大屏顶部横向滚动（字体已放大）",
+                "下三分之一：叠层控制面板开启【人名条】，展示嘉宾姓名/职位，点击上屏/退场控制显示"
+            ])
+
+            HelpSectionView(title: "键盘快捷键", items: [
+                "⌘⌥M：切换主讲人模式，压低媒体声道和 BGM，突出现场人声",
+                "⌘⌥B：老板键，一键切黑副屏并静音",
+                "⌘⌥P：切换 PPT 模式，接管翻页笔/方向键",
+                "数字键 1-9：快速切换对应播放列表编号的信号源",
+                "空格键：暂停/继续当前媒体播放",
+                "[ / ] 键：BGM 音量减小 / 增大",
+                ", 键：快速切换 BGM 播放/暂停",
+                "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
+            ])
+
+            Text("Version 0.2.2 | live preflight · neutral demos · safety checks")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 10)
+        }
+    }
+
+    private var preflightContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 5) {
+                    Text("Live Preflight / 现场检查")
+                        .font(.system(size: 18, weight: .black))
+                    Text("Reads the current runtime state. Use it before a show, then copy the report if you need an issue/debug note.")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
                 }
 
-                Divider()
+                Spacer()
 
-                HelpSectionView(title: "🔥 常用必备功能（绿灯亮起 = 功能已开启）", items: [
-                    "主讲人模式：顶部【主讲人】按钮，开启后按钮变绿，媒体声道和 BGM 压至 7% 突出人声",
-                    "PPT翻页笔：顶部【PPT模式】开启后按钮变绿，翻页笔方向键控制 WPS/PPT 翻页（需辅助功能权限，开启失败时 App 会自动引导设置）",
-                    "投射副屏：左侧底部【投射：关/开】，无外接屏时不会投射；副屏断开会立即停止投射",
-                    "老板键：顶部【老板键】紧急切黑副屏并静音，开启后按钮变红，再点恢复"
-                ])
-
-                HelpSectionView(title: "🎬 视频与音频操作", items: [
-                    "添加视频：左侧【选择视频】按钮，支持 MP4/MOV/AVI 等格式，支持拖拽入列",
-                    "添加HTML大屏：左侧【选择 HTML】绿色按钮，选择 HTML 文件，点击即推流至副屏全屏展示",
-                    "切换画面：点击播放列表中的项目立即切换大屏（切换时自动淡出音频防止音画撕裂）",
-                    "背景音乐：预览页右侧【现场 BGM】可直接播控当前曲目、查看列表、拖动进度，并一键跳到完整音乐库",
-                    "音频混音：顶部切换至【音频混音】页面，可管理 BGM 列表、音频策略，以及主音量 / 媒体 / BGM 三路推子"
-                ])
-
-                HelpSectionView(title: "🎭 壁纸与叠层", items: [
-                    "背景壁纸：中栏底部【壁纸库】，导入图片后点击即激活为大屏背景",
-                    "倒计时叠层：叠层控制面板开启【倒计时】，直接输入分钟/秒数（默认10分钟），叠加显示在大屏",
-                    "游动字幕：叠层控制面板开启【游动字幕】，输入内容后在大屏顶部横向滚动（字体已放大）",
-                    "下三分之一：叠层控制面板开启【人名条】，展示嘉宾姓名/职位，点击上屏/退场控制显示"
-                ])
-
-                HelpSectionView(title: "⌨️ 键盘快捷键", items: [
-                    "⌘⌥M：切换主讲人模式，压低媒体声道和 BGM，突出现场人声",
-                    "⌘⌥B：老板键，一键切黑副屏并静音",
-                    "⌘⌥P：切换 PPT 模式，接管翻页笔/方向键",
-                    "数字键 1-9：快速切换对应播放列表编号的信号源",
-                    "空格键：暂停/继续当前媒体播放",
-                    "[ / ] 键：BGM 音量减小 / 增大",
-                    ", 键：快速切换 BGM 播放/暂停",
-                    "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
-                ])
-
-                Text("Version 0.2.1 | live QA · neutral demos · safety checks")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.top, 10)
+                Button(action: copyPreflightReport) {
+                    Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
-            .padding(24)
+
+            ForEach(LivePreflightGroup.allCases, id: \.self) { group in
+                let checks = viewModel.livePreflightChecks.filter { $0.group == group }
+                if !checks.isEmpty {
+                    PreflightGroupView(group: group, checks: checks)
+                }
+            }
         }
-        .frame(width: 420, height: 500)
+    }
+
+    private func copyPreflightReport() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(viewModel.livePreflightReportText(), forType: .string)
+        copiedReport = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_400_000_000)
+            copiedReport = false
+        }
+    }
+}
+
+private enum HelpPanel {
+    case help
+    case preflight
+}
+
+private struct PreflightGroupView: View {
+    let group: LivePreflightGroup
+    let checks: [LivePreflightCheck]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(group.displayTitle)
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 8) {
+                ForEach(checks) { check in
+                    PreflightRowView(check: check)
+                }
+            }
+        }
+    }
+}
+
+private struct PreflightRowView: View {
+    let check: LivePreflightCheck
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(statusColor)
+                .frame(width: 18, height: 18)
+
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 7) {
+                    Text(check.title)
+                        .font(.system(size: 13, weight: .bold))
+                    Text(check.status.displayTitle)
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .foregroundStyle(statusColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(statusColor.opacity(0.12), in: Capsule())
+                }
+
+                Text(check.message)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.84))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(statusColor.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var statusColor: Color {
+        switch check.status {
+        case .pass:
+            return .green
+        case .warn:
+            return .orange
+        case .fail:
+            return .red
+        }
+    }
+
+    private var iconName: String {
+        switch check.status {
+        case .pass:
+            return "checkmark.circle.fill"
+        case .warn:
+            return "exclamationmark.triangle.fill"
+        case .fail:
+            return "xmark.octagon.fill"
+        }
     }
 }
 
