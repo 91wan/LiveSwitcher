@@ -206,11 +206,10 @@ struct RightPanel: View {
     // MARK: - 通道音量（Issue #8: 真实挂载到音频节点，不是空壳变量）
 
     private var channelVolumeCard: some View {
-        VStack(alignment: .leading, spacing: mode == .liveQuick ? 10 : 14) {
-            Text("现场推子")
-                .font(.system(size: mode == .liveQuick ? 18 : 20, weight: .bold))
-                .foregroundColor(.primary)
+        let compact = mode == .liveQuick
 
+        return VStack(alignment: .leading, spacing: compact ? 10 : 14) {
+            channelVolumeTitle(compact: compact)
             mixerFader(
                 title: "源 A",
                 subtitle: "媒体",
@@ -225,49 +224,9 @@ struct RightPanel: View {
                 tint: .purple
             )
 
-            // 顶部主控区是主入口；这里保留状态和辅助切换，避免两个大 CTA 抢焦点。
-            Button(action: {
-                viewModel.toggleSpeakerMode()
-            }) {
-                HStack(spacing: 8) {
-                    Image(systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(viewModel.isSpeakerMode ? .green : .secondary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("主讲人状态")
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundColor(.primary)
-                        Text(viewModel.isSpeakerMode ? "顶部主控已开启 · BGM 7%" : "从顶部主控一键开启")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Text(viewModel.isSpeakerMode ? "ON" : "切换")
-                        .font(.system(size: 11, weight: .black, design: .rounded))
-                        .foregroundColor(viewModel.isSpeakerMode ? .green : .blue)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 5)
-                        .background((viewModel.isSpeakerMode ? Color.green : Color.blue).opacity(0.1))
-                        .clipShape(Capsule())
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, mode == .liveQuick ? 9 : 10)
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.58))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke((viewModel.isSpeakerMode ? Color.green : Color.white).opacity(0.34), lineWidth: 1)
-                )
-            }
-            .buttonStyle(.plain)
-            .focusable(false)
-            .help(viewModel.isSpeakerMode ? "关闭主讲人模式并恢复 BGM" : "开启主讲人模式，BGM 压低至 7%")
-            .padding(.top, mode == .liveQuick ? 4 : 10)
+            SpeakerModeStatusRow(viewModel: viewModel, compact: compact)
         }
-        .padding(mode == .liveQuick ? 14 : 18)
+        .padding(compact ? 14 : 18)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.white.opacity(0.7))
@@ -276,6 +235,12 @@ struct RightPanel: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color.white.opacity(0.84), lineWidth: 1)
         )
+    }
+
+    private func channelVolumeTitle(compact: Bool) -> some View {
+        Text("现场推子")
+            .font(.system(size: compact ? 18 : 20, weight: .bold))
+            .foregroundColor(.primary)
     }
 
 
@@ -348,6 +313,65 @@ private extension RightPanel {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(tint.opacity(0.06))
         )
+    }
+}
+
+private struct SpeakerModeStatusRow: View {
+    @ObservedObject var viewModel: SwitcherViewModel
+    let compact: Bool
+
+    var body: some View {
+        Button(action: {
+            viewModel.toggleSpeakerMode()
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(viewModel.isSpeakerMode ? .green : .secondary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("主讲人状态")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text(viewModel.isSpeakerMode ? "顶部主控已开启 · BGM 7%" : "从顶部主控一键开启")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                statusPill
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, compact ? 9 : 10)
+            .frame(maxWidth: .infinity)
+            .background(rowBackground)
+            .overlay(rowBorder)
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help(viewModel.isSpeakerMode ? "关闭主讲人模式并恢复 BGM" : "开启主讲人模式，BGM 压低至 7%")
+        .padding(.top, compact ? 4 : 10)
+    }
+
+    private var statusPill: some View {
+        Text(viewModel.isSpeakerMode ? "ON" : "切换")
+            .font(.system(size: 11, weight: .black, design: .rounded))
+            .foregroundColor(viewModel.isSpeakerMode ? .green : .blue)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background((viewModel.isSpeakerMode ? Color.green : Color.blue).opacity(0.1))
+            .clipShape(Capsule())
+    }
+
+    private var rowBackground: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color.white.opacity(0.58))
+    }
+
+    private var rowBorder: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke((viewModel.isSpeakerMode ? Color.green : Color.white).opacity(0.34), lineWidth: 1)
     }
 }
 
