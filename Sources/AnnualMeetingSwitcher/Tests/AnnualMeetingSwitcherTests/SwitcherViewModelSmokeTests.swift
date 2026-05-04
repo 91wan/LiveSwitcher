@@ -560,6 +560,15 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertNil(viewModel.activeWallpaperURL)
     }
 
+    func testWallpaperDropSupportDecodesPlainStringPathAsFileURL() {
+        let path = "/tmp/my image.png"
+
+        let decodedURL = WallpaperDropSupport.decodeFileURL(from: path)
+
+        XCTAssertEqual(decodedURL, URL(fileURLWithPath: path))
+        XCTAssertTrue(decodedURL?.isFileURL == true)
+    }
+
     func testBroadcastToggleShowsAndHidesOutputWindowThroughController() {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
@@ -598,6 +607,22 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
         XCTAssertEqual(outputSpy.hideCount, 1)
         XCTAssertEqual(viewModel.broadcastSafetyNotice, "副屏已断开，投射已停止")
+    }
+
+    func testBroadcastToggleWithoutExternalDisplayFailsClosedBeforeCreatingOutputWindow() {
+        let viewModel = makeViewModel()
+        var factoryInvocationCount = 0
+        viewModel.externalScreenProvider = { nil }
+        viewModel.outputWindowControllerFactory = {
+            factoryInvocationCount += 1
+            return OutputWindowControllerSpy()
+        }
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(factoryInvocationCount, 0)
+        XCTAssertEqual(viewModel.broadcastSafetyNotice, "未检测到外接屏幕，未开始投射")
     }
 
     func testBroadcastToggleCycleDoesNotClearCurrentHTMLPresentationState() throws {

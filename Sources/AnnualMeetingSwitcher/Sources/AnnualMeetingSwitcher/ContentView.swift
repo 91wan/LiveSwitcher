@@ -553,6 +553,31 @@ struct ProgramMonitorView: View {
 
 // MARK: - 壁纸库横向滚动行
 
+enum WallpaperDropSupport {
+    static func decodeFileURL(from item: Any?) -> URL? {
+        if let url = item as? URL {
+            return url.isFileURL ? url : nil
+        }
+
+        if let data = item as? Data,
+           let url = URL(dataRepresentation: data, relativeTo: nil) {
+            return url.isFileURL ? url : nil
+        }
+
+        if let string = item as? String {
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let url = URL(string: trimmed), url.isFileURL {
+                return url
+            }
+            guard trimmed.hasPrefix("/") || trimmed.hasPrefix("~") else { return nil }
+            let expandedPath = NSString(string: trimmed).expandingTildeInPath
+            return URL(fileURLWithPath: expandedPath)
+        }
+
+        return nil
+    }
+}
+
 struct WallpaperGalleryRow: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var isDroppingWallpaper = false
@@ -643,7 +668,7 @@ struct WallpaperGalleryRow: View {
             if provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) {
                 didRequestImport = true
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                    guard let url = decodeDroppedFileURL(item) else { return }
+                    guard let url = WallpaperDropSupport.decodeFileURL(from: item) else { return }
                     importWallpaperOnMain(url)
                 }
                 continue
@@ -660,19 +685,6 @@ struct WallpaperGalleryRow: View {
         }
 
         return didRequestImport
-    }
-
-    private func decodeDroppedFileURL(_ item: Any?) -> URL? {
-        if let url = item as? URL {
-            return url
-        }
-        if let data = item as? Data {
-            return URL(dataRepresentation: data, relativeTo: nil)
-        }
-        if let string = item as? String {
-            return URL(string: string) ?? URL(fileURLWithPath: string)
-        }
-        return nil
     }
 
     private func persistDroppedWallpaperFile(from sourceURL: URL) -> URL? {

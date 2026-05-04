@@ -1041,6 +1041,11 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 推流控制
 
     func handleBroadcastToggle() {
+        if !isBroadcasting, externalScreenProvider() == nil {
+            broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
+            return
+        }
+
         isBroadcasting.toggle()
         if isBroadcasting {
             showOutputWindow()
