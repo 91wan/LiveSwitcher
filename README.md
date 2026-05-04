@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.0.zip
+LiveSwitcher-macOS-v0.2.1.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -82,7 +82,17 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## What's New in v0.2.0 / v0.2.0 更新
+## What's New in v0.2.1 / v0.2.1 更新
+
+- Public hygiene: README and UI matrix screenshots now use neutral demo data only.
+- Regression QA: a live-event checklist covers projection, external-display loss, speaker mode, BGM takeover, wallpaper drops, auto-next video, and shortcuts.
+- Copy alignment: speaker mode documentation now consistently says it ducks both media/video audio and BGM.
+
+- 公开素材卫生：README 和 UI 矩阵截图统一使用中性演示数据。
+- 现场回归：新增覆盖投射、副屏断开、主讲人、BGM 接管、壁纸拖入、自动下一条视频和快捷键的复测清单。
+- 文案对齐：主讲人模式说明统一为同时压低媒体/视频声道和 BGM。
+
+## v0.2 Live Safety Baseline / v0.2 现场安全基线
 
 - Live safety: projection now fails closed when no external display is available, and stops projection if the external display is disconnected.
 - Speaker mode: one action ducks both media/video audio and BGM to keep live speech clear.
@@ -131,6 +141,7 @@ This repository keeps real UI verification screenshots under:
 ```text
 docs/assets/ui-matrix/2026-05-03/
 docs/assets/ui-matrix/2026-05-04/
+docs/assets/ui-matrix/2026-05-04-v021/
 ```
 
 The matrix covers three window sizes (`1360x760`, `1440x800`, maximized) across three tabs: preview/switching, audio mixer, and overlays/subtitles.

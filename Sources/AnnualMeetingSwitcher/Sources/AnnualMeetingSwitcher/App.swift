@@ -4,7 +4,7 @@ import SwiftUI
 // Do NOT add @main here.
 
 struct LiveSwitcherApp: App {
-    @StateObject private var viewModel = SwitcherViewModel()
+    @StateObject private var viewModel = Self.makeViewModel()
 
     var body: some Scene {
         WindowGroup {
@@ -32,5 +32,15 @@ struct LiveSwitcherApp: App {
             }
         }
         .windowResizability(.contentMinSize)
+    }
+
+    private static func makeViewModel() -> SwitcherViewModel {
+        let environment = ProcessInfo.processInfo.environment
+        guard let suiteName = environment["LIVESWITCHER_USER_DEFAULTS_SUITE"],
+              !suiteName.isEmpty,
+              let userDefaults = UserDefaults(suiteName: suiteName) else {
+            return SwitcherViewModel()
+        }
+        return SwitcherViewModel(userDefaults: userDefaults)
     }
 }

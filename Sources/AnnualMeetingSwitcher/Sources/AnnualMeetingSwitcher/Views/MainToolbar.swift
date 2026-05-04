@@ -36,13 +36,13 @@ struct MainToolbar: View {
             HStack(spacing: 10) {
                 liveControlButton(
                     title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
-                    subtitle: viewModel.isSpeakerMode ? "BGM 7%" : "压低 BGM",
+                    subtitle: viewModel.isSpeakerMode ? "声道 7%" : "压低声道",
                     systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
                     tint: speakerTint,
                     isCritical: false,
                     help: viewModel.isSpeakerMode
-                        ? "主讲人模式已开启：BGM 已压低至 7%，再次点击恢复"
-                        : "主讲人模式：一键压低 BGM，突出现场人声"
+                        ? "主讲人模式已开启：媒体声道和 BGM 已压低至 7%，再次点击恢复"
+                        : "主讲人模式：一键压低媒体声道和 BGM，突出现场人声"
                 ) {
                     viewModel.toggleSpeakerMode()
                 }
@@ -81,7 +81,7 @@ struct MainToolbar: View {
             HStack(spacing: 8) {
                 compactToolbarButton(
                     title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
-                    subtitle: viewModel.isSpeakerMode ? "BGM 7%" : "压低 BGM",
+                    subtitle: viewModel.isSpeakerMode ? "声道 7%" : "压低声道",
                     systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
                     fill: speakerTint
                 ) {
@@ -369,9 +369,9 @@ struct HelpView: View {
                 Divider()
 
                 HelpSectionView(title: "🔥 常用必备功能（绿灯亮起 = 功能已开启）", items: [
-                    "主讲人模式：顶部【主讲人】按钮，开启后按钮变绿，BGM 压至 7% 突出人声",
+                    "主讲人模式：顶部【主讲人】按钮，开启后按钮变绿，媒体声道和 BGM 压至 7% 突出人声",
                     "PPT翻页笔：顶部【PPT模式】开启后按钮变绿，翻页笔方向键控制 WPS/PPT 翻页（需辅助功能权限，开启失败时 App 会自动引导设置）",
-                    "投射副屏：左侧底部【投射：关/开】，开启后按钮变绿，画面推至现场大屏 (1080P)",
+                    "投射副屏：左侧底部【投射：关/开】，无外接屏时不会投射；副屏断开会立即停止投射",
                     "老板键：顶部【老板键】紧急切黑副屏并静音，开启后按钮变红，再点恢复"
                 ])
 
@@ -379,7 +379,7 @@ struct HelpView: View {
                     "添加视频：左侧【选择视频】按钮，支持 MP4/MOV/AVI 等格式，支持拖拽入列",
                     "添加HTML大屏：左侧【选择 HTML】绿色按钮，选择 HTML 文件，点击即推流至副屏全屏展示",
                     "切换画面：点击播放列表中的项目立即切换大屏（切换时自动淡出音频防止音画撕裂）",
-                    "背景音乐：预览页中栏【BGM快控】可直接播控当前曲目、拖动进度，并一键跳到完整音乐库",
+                    "背景音乐：预览页右侧【现场 BGM】可直接播控当前曲目、查看列表、拖动进度，并一键跳到完整音乐库",
                     "音频混音：顶部切换至【音频混音】页面，可管理 BGM 列表、音频策略，以及主音量 / 媒体 / BGM 三路推子"
                 ])
 
@@ -401,7 +401,7 @@ struct HelpView: View {
                     "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
                 ])
 
-                Text("Version 0.2.0 | live safety · BGM takeover · desktop commands")
+                Text("Version 0.2.1 | live QA · neutral demos · safety checks")
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .center)

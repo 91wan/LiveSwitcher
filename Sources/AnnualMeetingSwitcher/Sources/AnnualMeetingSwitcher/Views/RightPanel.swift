@@ -333,7 +333,7 @@ private struct SpeakerModeStatusRow: View {
                     Text("主讲人状态")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.primary)
-                    Text(viewModel.isSpeakerMode ? "顶部主控已开启 · BGM 7%" : "从顶部主控一键开启")
+                    Text(viewModel.isSpeakerMode ? "顶部主控已开启 · 声道 7%" : "从顶部主控一键开启")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundColor(.secondary)
                 }
@@ -350,7 +350,7 @@ private struct SpeakerModeStatusRow: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help(viewModel.isSpeakerMode ? "关闭主讲人模式并恢复 BGM" : "开启主讲人模式，BGM 压低至 7%")
+        .help(viewModel.isSpeakerMode ? "关闭主讲人模式并恢复媒体声道和 BGM" : "开启主讲人模式，媒体声道和 BGM 压低至 7%")
         .padding(.top, compact ? 4 : 10)
     }
 
