@@ -1,0 +1,5 @@
+LiveSwitcher UI matrix verification - 2026-05-04
+Sizes: 1360x760, 1440x800, maximized 1470x900
+Tabs: preview-switch, audio-mixer, overlays
+Captured screenshots: 9 matrix PNG files
+Manual spot check: top nav/buttons visible; preview rails balanced; BGM list visible in preview; overlay/audio pages reachable.

@@ -34,24 +34,43 @@ struct MainToolbar: View {
     private var embeddedToolbarActionCluster: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 10) {
-                embeddedActionButton(
-                    title: "老板键",
+                liveControlButton(
+                    title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
+                    subtitle: viewModel.isSpeakerMode ? "BGM 7%" : "压低 BGM",
+                    systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
+                    tint: speakerTint,
+                    isCritical: false,
+                    help: viewModel.isSpeakerMode
+                        ? "主讲人模式已开启：BGM 已压低至 7%，再次点击恢复"
+                        : "主讲人模式：一键压低 BGM，突出现场人声"
+                ) {
+                    viewModel.toggleSpeakerMode()
+                }
+
+                liveControlButton(
+                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
+                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
                     systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    tint: viewModel.isPanicMode
-                        ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                        : Color(red: 0.18, green: 0.42, blue: 0.88)
+                    tint: panicTint,
+                    isCritical: viewModel.isPanicMode,
+                    help: viewModel.isPanicMode
+                        ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
+                        : "老板键（紧急）：一键切黑副屏并静音所有音频"
                 ) {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         viewModel.togglePanicMode()
                     }
                 }
 
-                embeddedActionButton(
+                liveControlButton(
                     title: viewModel.isPageInterceptEnabled ? "PPT: 开" : "PPT: 关",
+                    subtitle: viewModel.isPageInterceptEnabled ? "翻页接管" : "点击开启",
                     systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                    tint: viewModel.isPageInterceptEnabled
-                        ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                        : Color(red: 0.18, green: 0.42, blue: 0.88)
+                    tint: pptTint,
+                    isCritical: false,
+                    help: viewModel.isPageInterceptEnabled
+                        ? "PPT 模式已开启：翻页笔按键将转发给演示软件"
+                        : "PPT 模式：开启翻页笔接管，可能需要辅助功能权限"
                 ) {
                     viewModel.isPageInterceptEnabled.toggle()
                 }
@@ -61,12 +80,19 @@ struct MainToolbar: View {
 
             HStack(spacing: 8) {
                 compactToolbarButton(
+                    title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
+                    subtitle: viewModel.isSpeakerMode ? "BGM 7%" : "压低 BGM",
+                    systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
+                    fill: speakerTint
+                ) {
+                    viewModel.toggleSpeakerMode()
+                }
+
+                compactToolbarButton(
                     title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
-                    subtitle: viewModel.isPanicMode ? "已切黑" : "紧急切黑",
+                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
                     systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    fill: viewModel.isPanicMode
-                        ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                        : Color(red: 0.18, green: 0.42, blue: 0.88)
+                    fill: panicTint
                 ) {
                     withAnimation(.easeInOut(duration: 0.25)) {
                         viewModel.togglePanicMode()
@@ -75,11 +101,9 @@ struct MainToolbar: View {
 
                 compactToolbarButton(
                     title: viewModel.isPageInterceptEnabled ? "PPT: 开" : "PPT: 关",
-                    subtitle: viewModel.isPageInterceptEnabled ? "翻页已接管" : "点击开启",
+                    subtitle: viewModel.isPageInterceptEnabled ? "翻页接管" : "点击开启",
                     systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                    fill: viewModel.isPageInterceptEnabled
-                        ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                        : Color(red: 0.18, green: 0.42, blue: 0.88)
+                    fill: pptTint
                 ) {
                     viewModel.isPageInterceptEnabled.toggle()
                 }
@@ -87,6 +111,24 @@ struct MainToolbar: View {
                 helpButton
             }
         }
+    }
+
+    private var speakerTint: Color {
+        viewModel.isSpeakerMode
+            ? Color(red: 0.05, green: 0.65, blue: 0.35)
+            : Color(red: 0.18, green: 0.42, blue: 0.88)
+    }
+
+    private var panicTint: Color {
+        viewModel.isPanicMode
+            ? Color(red: 0.88, green: 0.16, blue: 0.12)
+            : Color(red: 0.18, green: 0.42, blue: 0.88)
+    }
+
+    private var pptTint: Color {
+        viewModel.isPageInterceptEnabled
+            ? Color(red: 0.05, green: 0.65, blue: 0.35)
+            : Color(red: 0.18, green: 0.42, blue: 0.88)
     }
 
     // MARK: - V25: 翻页拦截开关
@@ -261,6 +303,52 @@ struct MainToolbar: View {
         .buttonStyle(.plain)
         .focusable(false)
     }
+
+    private func liveControlButton(
+        title: String,
+        subtitle: String,
+        systemName: String,
+        tint: Color,
+        isCritical: Bool,
+        help: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                Image(systemName: systemName)
+                    .font(.system(size: 16, weight: .black))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .black))
+                    Text(subtitle)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .opacity(0.88)
+                }
+            }
+            .foregroundStyle(.white)
+            .frame(width: 112, height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: isCritical
+                                ? [tint, Color(red: 0.98, green: 0.36, blue: 0.2)]
+                                : [tint, tint.opacity(0.82)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(Color.white.opacity(isCritical ? 0.46 : 0.18), lineWidth: 1)
+            )
+            .shadow(color: tint.opacity(isCritical ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help(help)
+    }
 }
 
 // MARK: - 使用说明弹窗
@@ -281,10 +369,10 @@ struct HelpView: View {
                 Divider()
 
                 HelpSectionView(title: "🔥 常用必备功能（绿灯亮起 = 功能已开启）", items: [
-                    "主讲人模式：右侧【主讲人模式】按钮，开启后整个按钮变绿，BGM 压至 7% 突出人声",
+                    "主讲人模式：顶部【主讲人】按钮，开启后按钮变绿，BGM 压至 7% 突出人声",
                     "PPT翻页笔：顶部【PPT模式】开启后按钮变绿，翻页笔方向键控制 WPS/PPT 翻页（需辅助功能权限，开启失败时 App 会自动引导设置）",
                     "投射副屏：左侧底部【投射：关/开】，开启后按钮变绿，画面推至现场大屏 (1080P)",
-                    "老板键：顶部【老板键】一键副屏全黑并静音，开启后按钮变绿，再点恢复"
+                    "老板键：顶部【老板键】紧急切黑副屏并静音，开启后按钮变红，再点恢复"
                 ])
 
                 HelpSectionView(title: "🎬 视频与音频操作", items: [

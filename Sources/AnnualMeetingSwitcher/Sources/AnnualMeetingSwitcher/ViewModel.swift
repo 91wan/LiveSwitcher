@@ -96,6 +96,7 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 转场配置
 
     @Published var crossfadeDuration: Double = 3.0
+    var liveAudioFadeDuration: Double = 2.0
 
     // MARK: - 背景壁纸（多张）
 
@@ -116,6 +117,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var bgmItems: [BGMItem] = []
     @Published var currentBGMItem: BGMItem?
     @Published var isBGMPlaying: Bool = false
+    @Published var isBGMAudioTakeoverActive: Bool = false
     @Published var bgmPlayMode: BGMPlayMode = .loopAll
 
     /// V26.3: 主讲人模式（一键压限 BGM）
@@ -157,6 +159,8 @@ final class SwitcherViewModel: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
     private var bgmProgressTimer: Timer?
+    private var mediaVolumeFadeTask: Task<Void, Never>?
+    private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     private var systemVolumeObserver: SystemVolumeObserver?
 
     // MARK: - V25: 翻页拦截器状态
@@ -225,6 +229,8 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     deinit {
+        mediaVolumeFadeTask?.cancel()
+        bgmFallbackVolumeFadeTask?.cancel()
         systemVolumeObserver?.stop()
     }
 
@@ -239,20 +245,27 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func effectiveMediaOutputVolume() -> Float {
+        guard !isBGMAudioTakeoverActive else { return 0 }
         guard shouldOutputMediaAudio else { return 0 }
         return Float(masterVolume * mediaVolume)
     }
 
     func effectiveBGMOutputVolume() -> Float {
-        guard shouldOutputBGM else { return 0 }
+        guard isBGMAudioTakeoverActive || shouldOutputBGM else { return 0 }
         if isSpeakerMode {
             return 0.07 * Float(masterVolume)
         }
         return Float(masterVolume * bgmVolume)
     }
 
-    func applyAudioRouting(bgmFadeDuration: Double? = nil) {
-        avCoordinator.volume = effectiveMediaOutputVolume()
+    func applyAudioRouting(mediaFadeDuration: Double? = nil, bgmFadeDuration: Double? = nil) {
+        let effectiveMedia = effectiveMediaOutputVolume()
+        if let mediaFadeDuration {
+            fadeMediaVolume(to: effectiveMedia, duration: mediaFadeDuration)
+        } else {
+            mediaVolumeFadeTask?.cancel()
+            avCoordinator.volume = effectiveMedia
+        }
 
         let effectiveBGM = effectiveBGMOutputVolume()
         if let bgmFadeDuration, let bgmAudioPlayer {
@@ -260,7 +273,74 @@ final class SwitcherViewModel: ObservableObject {
         } else {
             bgmAudioPlayer?.volume = effectiveBGM
         }
-        bgmFallbackPlayer.volume = effectiveBGM
+
+        if let bgmFadeDuration {
+            fadeBGMFallbackVolume(to: effectiveBGM, duration: bgmFadeDuration)
+        } else {
+            bgmFallbackVolumeFadeTask?.cancel()
+            bgmFallbackPlayer.volume = effectiveBGM
+        }
+    }
+
+    private func fadeMediaVolume(to targetVolume: Float, duration: Double) {
+        mediaVolumeFadeTask?.cancel()
+        guard duration > 0 else {
+            avCoordinator.volume = targetVolume
+            return
+        }
+
+        mediaVolumeFadeTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let startVolume = self.avCoordinator.volume
+            await self.runLinearFade(
+                from: startVolume,
+                to: targetVolume,
+                duration: duration
+            ) { [weak self] volume in
+                self?.avCoordinator.volume = volume
+            }
+        }
+    }
+
+    private func fadeBGMFallbackVolume(to targetVolume: Float, duration: Double) {
+        bgmFallbackVolumeFadeTask?.cancel()
+        guard duration > 0 else {
+            bgmFallbackPlayer.volume = targetVolume
+            return
+        }
+
+        bgmFallbackVolumeFadeTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let startVolume = self.bgmFallbackPlayer.volume
+            await self.runLinearFade(
+                from: startVolume,
+                to: targetVolume,
+                duration: duration
+            ) { [weak self] volume in
+                self?.bgmFallbackPlayer.volume = volume
+            }
+        }
+    }
+
+    private func runLinearFade(
+        from startVolume: Float,
+        to targetVolume: Float,
+        duration: Double,
+        apply: @escaping (Float) -> Void
+    ) async {
+        let steps = 20
+        let stepDuration = UInt64((duration / Double(steps)) * 1_000_000_000)
+
+        for step in 1...steps {
+            if Task.isCancelled { return }
+            let progress = Float(step) / Float(steps)
+            apply(startVolume + (targetVolume - startVolume) * progress)
+            try? await Task.sleep(nanoseconds: stepDuration)
+        }
+
+        if !Task.isCancelled {
+            apply(targetVolume)
+        }
     }
 
     private var currentProgramIsMediaSource: Bool {
@@ -743,9 +823,13 @@ final class SwitcherViewModel: ObservableObject {
         bgmItems.removeAll { $0.id == item.id }
         if currentBGMItem?.id == item.id {
             stopBGMTimer()
+            isBGMAudioTakeoverActive = false
+            fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: liveAudioFadeDuration)
             bgmAudioPlayer?.stop()
             bgmAudioPlayer?.delegate = nil
             bgmAudioPlayer = nil
+            bgmFallbackVolumeFadeTask?.cancel()
+            bgmFallbackPlayer.volume = 0
             bgmFallbackPlayer.pause()
             bgmFallbackPlayer.replaceCurrentItem(with: nil)
             currentBGMItem = nil
@@ -785,37 +869,56 @@ final class SwitcherViewModel: ObservableObject {
     func toggleBGM(_ item: BGMItem) {
         if currentBGMItem?.id == item.id {
             if isBGMPlaying {
-                // 淡出后暂停
-                let fadeDur = crossfadeDuration
+                // BGM 停止时只解除临时接管，不改变用户选择的混音策略。
+                let fadeDur = liveAudioFadeDuration
+                isBGMPlaying = false
+                isBGMAudioTakeoverActive = false
+                fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
                 bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
-                DispatchQueue.main.asyncAfter(deadline: .now() + fadeDur) {
+                Task { @MainActor in
+                    if fadeDur > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
+                    }
                     capturedPlayer?.pause()
                 }
-                bgmFallbackPlayer.pause()
-                isBGMPlaying = false
+                fadeBGMFallbackVolume(to: 0, duration: fadeDur)
+                let stoppingItemID = item.id
+                Task { @MainActor [weak self] in
+                    if fadeDur > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
+                    }
+                    guard let self else { return }
+                    if self.currentBGMItem?.id == stoppingItemID && !self.isBGMPlaying {
+                        self.bgmFallbackPlayer.pause()
+                    }
+                }
                 stopBGMTimer()
             } else {
-                // 淡入恢复播放
-                let fadeDur = crossfadeDuration
-                let effectiveBGM = Float(masterVolume * bgmVolume)
-                let targetVolume: Float = isSpeakerMode ? 0.07 * Float(masterVolume) : effectiveBGM
+                // BGM 恢复播放时临时接管现场音频：媒体淡出，BGM 淡入。
+                let fadeDur = liveAudioFadeDuration
+                isBGMPlaying = true
+                isBGMAudioTakeoverActive = true
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.play()
-                bgmAudioPlayer?.setVolume(targetVolume, fadeDuration: fadeDur)
+                bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
-                isBGMPlaying = true
+                applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
                 startBGMTimer()
             }
         } else {
             stopBGMTimer()
-            let fadeDur = crossfadeDuration
+            let fadeDur = liveAudioFadeDuration
 
-            // Bug Fix #1: 切歌时使用 crossfadeDuration 淡出旧曲目
+            // 切歌时取消旧 fallback fade，避免旧任务回写新曲目的目标音量。
+            bgmFallbackVolumeFadeTask?.cancel()
             if let oldPlayer = bgmAudioPlayer {
                 oldPlayer.setVolume(0, fadeDuration: fadeDur)
                 let capturedOld = oldPlayer
-                DispatchQueue.main.asyncAfter(deadline: .now() + fadeDur) {
+                Task { @MainActor in
+                    if fadeDur > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
+                    }
                     capturedOld.stop()
                 }
             }
@@ -825,6 +928,8 @@ final class SwitcherViewModel: ObservableObject {
             bgmFallbackPlayer.replaceCurrentItem(with: nil)
 
             currentBGMItem = item
+            isBGMPlaying = true
+            isBGMAudioTakeoverActive = true
             let targetVolume = effectiveBGMOutputVolume()
 
             if let player = try? AVAudioPlayer(contentsOf: item.url) {
@@ -839,13 +944,13 @@ final class SwitcherViewModel: ObservableObject {
             } else {
                 let avItem = AVPlayerItem(url: item.url)
                 bgmFallbackPlayer.replaceCurrentItem(with: avItem)
-                bgmFallbackPlayer.volume = targetVolume
+                bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
                 bgmDuration = nil
             }
             bgmProgress = 0
             bgmCurrentTime = 0
-            isBGMPlaying = true
+            applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
             startBGMTimer()
         }
     }

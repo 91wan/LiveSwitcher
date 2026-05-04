@@ -15,6 +15,8 @@ enum StudioTheme {
     static let orange = Color(red: 1.00, green: 0.57, blue: 0.15)
     static let pink = Color(red: 0.84, green: 0.24, blue: 0.83)
 
+    static let directorRailWidth: CGFloat = 348
+
     static let canvasGradient = LinearGradient(
         colors: [canvasTop, canvasBottom],
         startPoint: .top,

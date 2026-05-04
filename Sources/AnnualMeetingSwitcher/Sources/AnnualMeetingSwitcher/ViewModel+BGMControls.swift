@@ -52,6 +52,8 @@ extension SwitcherViewModel {
         // 单曲循环（numberOfLoops == -1）不会触发 delegate
         guard let current = currentBGMItem else {
             isBGMPlaying = false
+            isBGMAudioTakeoverActive = false
+            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
         }
@@ -59,6 +61,8 @@ extension SwitcherViewModel {
         let items = bgmItems.filter { $0.category == current.category }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
             isBGMPlaying = false
+            isBGMAudioTakeoverActive = false
+            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
         }
@@ -69,6 +73,8 @@ extension SwitcherViewModel {
         // 顺序播放：到最后一首时停止
         if bgmPlayMode == .sequential && index == items.count - 1 {
             isBGMPlaying = false
+            isBGMAudioTakeoverActive = false
+            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
         }

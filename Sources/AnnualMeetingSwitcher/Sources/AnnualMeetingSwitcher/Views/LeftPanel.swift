@@ -49,7 +49,7 @@ struct LeftPanel: View {
             outputScreenModule
         }
         .padding(16)
-        .frame(minWidth: 280, idealWidth: 292, maxWidth: 310)
+        .frame(width: StudioTheme.directorRailWidth)
         .studioCard(cornerRadius: 28)
         // ── 键盘快捷键 1-9 绑定 ──
         .background(ShortcutKeyHandler(viewModel: viewModel))
@@ -181,7 +181,7 @@ struct LeftPanel: View {
             }
         }
         .listStyle(.plain)
-        .frame(maxHeight: 320)
+        .frame(maxHeight: 300)
         .scrollContentBackground(.hidden)
         .background(Color.white.opacity(0.7))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

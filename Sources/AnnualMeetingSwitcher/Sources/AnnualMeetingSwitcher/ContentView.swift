@@ -16,25 +16,20 @@ struct ContentView: View {
                 StudioTheme.canvasGradient
                     .ignoresSafeArea()
 
-                // 主工作区（左 | 监视器 | BGM列表 | 右侧控制）- 常驻内存
-                HStack(alignment: .top, spacing: 10) {
-                    // 左侧：播放列表
+                // 主工作区（节目队列 | Program 监视器 | 现场控制）- 常驻内存
+                HStack(alignment: .top, spacing: 12) {
                     LeftPanel()
+                        .frame(width: StudioTheme.directorRailWidth)
                         .layoutPriority(1)
 
-                    // 中央：Program Monitor + 壁纸库
                     ProgramMonitorView()
-                        .frame(minWidth: 460, idealWidth: 540, maxWidth: .infinity, maxHeight: .infinity)
-                        .layoutPriority(2)
+                        .frame(minWidth: 500, idealWidth: 720, maxWidth: .infinity, maxHeight: .infinity)
+                        .layoutPriority(3)
 
-                    // BGM 音乐库恢复主工作区原位置
-                    BGMPlaylistPanel()
-                        .layoutPriority(1)
-
-                    // 右侧：现场快调（主音量 / 通道推子 / 主讲人模式）
-                    RightPanel(mode: .liveQuick) {
+                    LiveControlColumn {
                         selectedTab = 1
                     }
+                    .frame(width: StudioTheme.directorRailWidth)
                     .layoutPriority(1)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -73,22 +68,13 @@ struct ContentView: View {
     }
 
     private var primaryNavigationBar: some View {
-        ViewThatFits(in: .horizontal) {
-            ZStack {
-                navigationTabCluster
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                MainToolbar(embedded: true)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-
-            HStack(spacing: 14) {
-                navigationTabCluster
-                Spacer(minLength: 12)
-                MainToolbar(embedded: true)
-                    .fixedSize(horizontal: true, vertical: false)
-            }
+        HStack(spacing: 16) {
+            Spacer(minLength: 0)
+            navigationTabCluster
+                .layoutPriority(1)
+            Spacer(minLength: 16)
+            MainToolbar(embedded: true)
+                .layoutPriority(2)
         }
         .padding(.horizontal, 18)
         .padding(.top, 16)
@@ -146,6 +132,44 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
+    }
+}
+
+// MARK: - 右侧：现场控制区
+
+struct LiveControlColumn: View {
+    let onOpenMixer: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("现场控制区")
+                        .font(.system(size: 20, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("音量 / BGM / 主讲人")
+                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+                Text("LIVE")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.1), in: Capsule())
+            }
+            .padding(.horizontal, 4)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 12) {
+                    BGMPlaylistPanel(mode: .liveDock)
+                    RightPanel(mode: .liveQuick, onOpenMixer: onOpenMixer)
+                }
+                .padding(.bottom, 4)
+            }
+        }
+        .frame(maxHeight: .infinity)
     }
 }
 

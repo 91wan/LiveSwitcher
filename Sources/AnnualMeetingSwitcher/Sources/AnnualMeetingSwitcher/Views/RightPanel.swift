@@ -39,27 +39,40 @@ struct RightPanel: View {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: mode == .liveQuick ? 10 : 14) {
-                // ── 主音量卡片（Issue #7: 联控 AVPlayer + BGM）──
-                masterVolumeCard
-
-                if mode == .fullMixer {
-                    // ── 音频策略选择器 ──
-                    audioStrategyCard
-                } else {
-                    quickMixStatusCard
+        Group {
+            if mode == .liveQuick {
+                panelContent
+            } else {
+                ScrollView(.vertical, showsIndicators: false) {
+                    panelContent
                 }
-
-                // ── 通道音量（Issue #8: 真实挂载到音频节点）──
-                channelVolumeCard
-                // （V20：背景音乐列表已移至独立的音乐播放列表面板）
-
             }
-            .padding(.bottom, mode == .liveQuick ? 8 : 12)
         }
-        .frame(minWidth: 280, idealWidth: 292, maxWidth: 310)
+        .frame(
+            minWidth: mode == .liveQuick ? 0 : 280,
+            idealWidth: mode == .liveQuick ? 312 : 292,
+            maxWidth: mode == .liveQuick ? .infinity : 310
+        )
         .studioCard(cornerRadius: 28)
+    }
+
+    private var panelContent: some View {
+        VStack(spacing: mode == .liveQuick ? 10 : 14) {
+            // ── 主音量卡片（Issue #7: 联控 AVPlayer + BGM）──
+            masterVolumeCard
+
+            if mode == .fullMixer {
+                // ── 音频策略选择器 ──
+                audioStrategyCard
+            } else {
+                quickMixStatusCard
+            }
+
+            // ── 通道音量（Issue #8: 真实挂载到音频节点）──
+            channelVolumeCard
+            // （V20：背景音乐列表已移至独立的音乐播放列表面板）
+        }
+        .padding(.bottom, mode == .liveQuick ? 8 : 12)
     }
 
     // MARK: - 主音量卡片（Issue #7: 联控 AVPlayer + BGM）
@@ -212,45 +225,46 @@ struct RightPanel: View {
                 tint: .purple
             )
 
-            // MARK: - V26.3: 主讲人模式按钮（一键压限 BGM）
+            // 顶部主控区是主入口；这里保留状态和辅助切换，避免两个大 CTA 抢焦点。
             Button(action: {
                 viewModel.toggleSpeakerMode()
             }) {
                 HStack(spacing: 8) {
                     Image(systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(viewModel.isSpeakerMode ? .green : .secondary)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("主讲人模式")
-                            .font(.system(size: 16, weight: .bold))
-                        Text(viewModel.isSpeakerMode ? "BGM 已压低至 7%" : "一键压低 BGM")
-                            .font(.system(size: 12, weight: .medium))
-                            .opacity(0.9)
+                        Text("主讲人状态")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundColor(.primary)
+                        Text(viewModel.isSpeakerMode ? "顶部主控已开启 · BGM 7%" : "从顶部主控一键开启")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
                     }
                     Spacer()
-                    Text(viewModel.isSpeakerMode ? "ON" : "OFF")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .padding(.horizontal, 8)
+                    Text(viewModel.isSpeakerMode ? "ON" : "切换")
+                        .font(.system(size: 11, weight: .black, design: .rounded))
+                        .foregroundColor(viewModel.isSpeakerMode ? .green : .blue)
+                        .padding(.horizontal, 9)
                         .padding(.vertical, 5)
-                        .background(Color.white.opacity(0.16))
+                        .background((viewModel.isSpeakerMode ? Color.green : Color.blue).opacity(0.1))
                         .clipShape(Capsule())
                 }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, mode == .liveQuick ? 10 : 12)
+                .padding(.horizontal, 12)
+                .padding(.vertical, mode == .liveQuick ? 9 : 10)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(viewModel.isSpeakerMode
-                              ? Color(red: 0.05, green: 0.65, blue: 0.35)  // 开启：深绿
-                              : Color(red: 0.18, green: 0.42, blue: 0.88)) // 关闭：蓝色
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.white.opacity(0.58))
                 )
-                .shadow(color: viewModel.isSpeakerMode
-                        ? Color.green.opacity(0.4)
-                        : Color.blue.opacity(0.3),
-                        radius: 6, x: 0, y: 3)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke((viewModel.isSpeakerMode ? Color.green : Color.white).opacity(0.34), lineWidth: 1)
+                )
             }
             .buttonStyle(.plain)
             .focusable(false)
+            .help(viewModel.isSpeakerMode ? "关闭主讲人模式并恢复 BGM" : "开启主讲人模式，BGM 压低至 7%")
             .padding(.top, mode == .liveQuick ? 4 : 10)
         }
         .padding(mode == .liveQuick ? 14 : 18)
@@ -370,6 +384,7 @@ struct LargeChannelFaderRow: View {
 struct BGMItemRow: View {
     let bgm: BGMItem
     @ObservedObject var viewModel: SwitcherViewModel
+    var compact: Bool = false
     @State private var isHovered = false
 
     /// V24 Fix #1: 只要是当前曲目就高亮，不管播放还是暂停
@@ -391,22 +406,23 @@ struct BGMItemRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 // Issue #6: .title3 或更大
                 Text(bgm.title)
-                    .font(.title3)
+                    .font(compact ? .system(size: 14, weight: .semibold) : .title3)
                     .fontWeight(isCurrentTrack ? .semibold : .regular)
                     .foregroundColor(isCurrentTrack ? .blue : .primary)
                     .lineLimit(1)
                 Text(bgm.category.rawValue)
-                    .font(.system(size: 12))
+                    .font(.system(size: compact ? 11 : 12))
                     .foregroundColor(.secondary)
             }
+            .layoutPriority(1)
 
             Spacer()
 
-            HStack(spacing: 10) {
+            HStack(spacing: compact ? 8 : 10) {
                 // Issue #6: 按钮也放大
                 Button(action: { viewModel.toggleBGM(bgm) }) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: 16))
+                        .font(.system(size: compact ? 14 : 16))
                         .foregroundColor(isCurrentTrack ? .blue : .secondary)
                 }
                 .buttonStyle(.plain)
@@ -414,7 +430,7 @@ struct BGMItemRow: View {
 
                 Button(action: { viewModel.removeBGMItem(bgm) }) {
                     Image(systemName: "trash")
-                        .font(.system(size: 14))
+                        .font(.system(size: compact ? 13 : 14))
                         .foregroundColor(.red)
                 }
                 .buttonStyle(.plain)
@@ -422,7 +438,7 @@ struct BGMItemRow: View {
             }
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 8)
+        .padding(.vertical, compact ? 6 : 8)
         .background(isCurrentTrack ? Color.blue.opacity(0.08) : (isHovered ? Color.gray.opacity(0.06) : Color.clear))
         .clipShape(RoundedRectangle(cornerRadius: 6))
         .onHover { isHovered = $0 }
