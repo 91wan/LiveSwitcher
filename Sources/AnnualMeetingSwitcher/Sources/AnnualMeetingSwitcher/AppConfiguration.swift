@@ -5,7 +5,7 @@ enum AppConfiguration {
     /// 应用显示名称
     static let appName = "LiveSwitcher"
     /// 应用版本
-    static let appVersion = "0.2.4"
+    static let appVersion = "0.2.5"
     /// 统一 Bundle Identifier
     static let bundleIdentifier = "com.91wan.liveswitcher"
     /// 窗口最小宽度

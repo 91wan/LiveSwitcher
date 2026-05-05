@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.4.zip
+LiveSwitcher-macOS-v0.2.5.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -81,6 +81,26 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | 辅助功能 | PPT/翻页笔拦截需要此权限。 |
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
+
+## What's New in v0.2.5 / v0.2.5 更新
+
+- Preflight Focus: the `? -> Preflight` panel now separates `Needs attention` from `All checks`.
+- Faster triage: when fail/warn rows exist, operators see those actionable rows first instead of scrolling the full checklist.
+- Action feedback: safe one-click actions now confirm `Overlays cleared` or `Panic turned off` after they run.
+
+- 现场检查聚焦：`? -> Preflight` 面板新增 `Needs attention` 和 `All checks` 两种视图。
+- 更快排障：存在 fail/warn 时，现场人员优先看到需要处理的行，不必先滚完整检查列表。
+- 操作反馈：安全一键操作执行后会显示 `Overlays cleared` 或 `Panic turned off`。
+
+## Preflight Focus / 现场检查聚焦
+
+Use `Needs attention` before a show. It filters the live checklist to only failed and warning rows, while `All checks` remains available for a full audit. `Copy Report` always copies the complete report, not the filtered view.
+
+开演前优先查看 `Needs attention`。它只显示失败和警告项；如需完整审计，可切到 `All checks`。`Copy Report` 始终复制完整报告，不受当前过滤视图影响。
+
+See [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md) for the operator workflow.
+
+现场操作流程见 [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)。
 
 ## What's New in v0.2.4 / v0.2.4 更新
 

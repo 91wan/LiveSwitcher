@@ -379,6 +379,8 @@ struct HelpView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     @State private var selectedPanel: HelpPanel = .help
     @State private var copiedReport = false
+    @State private var preflightListMode: PreflightListMode = .needsAttention
+    @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
 
     var body: some View {
@@ -451,7 +453,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.4 | preflight summary · operator readiness")
+            Text("Version 0.2.5 | preflight focus · operator attention")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -459,7 +461,10 @@ struct HelpView: View {
         }
     }
 
+    @ViewBuilder
     private var preflightContent: some View {
+        let checks = preflightDisplayedChecks
+
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
@@ -482,15 +487,74 @@ struct HelpView: View {
 
             PreflightSummaryCard(summary: viewModel.livePreflightSummary)
 
+            VStack(alignment: .leading, spacing: 8) {
+                Picker("", selection: $preflightListMode) {
+                    Text("Needs attention").tag(PreflightListMode.needsAttention)
+                    Text("All checks").tag(PreflightListMode.allChecks)
+                }
+                .pickerStyle(.segmented)
+
+                if preflightListMode == .needsAttention {
+                    Text("Shows only fail and warn rows, so the operator sees what must be handled first.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if let preflightActionMessage {
+                Text(preflightActionMessage)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.green)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+
+            if checks.isEmpty {
+                PreflightEmptyAttentionView()
+            }
+
             ForEach(LivePreflightGroup.allCases, id: \.self) { group in
-                let checks = viewModel.livePreflightChecks.filter { $0.group == group }
-                if !checks.isEmpty {
+                let groupChecks = checks.filter { $0.group == group }
+                if !groupChecks.isEmpty {
                     PreflightGroupView(
                         group: group,
-                        checks: checks,
-                        onAction: onPreflightAction
+                        checks: groupChecks,
+                        onAction: handlePreflightRowAction
                     )
                 }
+            }
+        }
+    }
+
+    private var preflightDisplayedChecks: [LivePreflightCheck] {
+        switch preflightListMode {
+        case .needsAttention:
+            return LivePreflightCheck.attentionChecks(from: viewModel.livePreflightChecks)
+        case .allChecks:
+            return viewModel.livePreflightChecks
+        }
+    }
+
+    private func handlePreflightRowAction(_ action: LivePreflightActionKind) {
+        onPreflightAction(action)
+        switch action {
+        case .clearOverlays:
+            showPreflightActionMessage("Overlays cleared")
+        case .turnOffPanic:
+            showPreflightActionMessage("Panic turned off")
+        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
+            break
+        }
+    }
+
+    private func showPreflightActionMessage(_ message: String) {
+        preflightActionMessage = message
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            if preflightActionMessage == message {
+                preflightActionMessage = nil
             }
         }
     }
@@ -509,6 +573,35 @@ struct HelpView: View {
 private enum HelpPanel {
     case help
     case preflight
+}
+
+private enum PreflightListMode: Hashable {
+    case needsAttention
+    case allChecks
+}
+
+private struct PreflightEmptyAttentionView: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 17, weight: .black))
+                .foregroundStyle(.green)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("No rows need attention")
+                    .font(.system(size: 13, weight: .bold))
+                Text("Switch to All checks if you want to audit every passing row.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.green.opacity(0.18), lineWidth: 1)
+        )
+    }
 }
 
 private struct PreflightSummaryCard: View {

@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.2.4",
+            appVersion: "0.2.5",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -115,6 +115,30 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertGreaterThan(summary.passCount, 0)
     }
 
+    func testAttentionChecksOnlyReturnsWarningsAndFailures() {
+        var snapshot = readySnapshot()
+        snapshot.hasExternalDisplay = false
+        snapshot.autoPlayNextVideoOnEnd = true
+
+        let checks = LivePreflightCheck.build(from: snapshot)
+        let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
+
+        XCTAssertFalse(attentionChecks.isEmpty)
+        XCTAssertTrue(attentionChecks.allSatisfy { $0.status != .pass })
+        XCTAssertTrue(attentionChecks.contains { $0.id == "display.external" && $0.status == .fail })
+        XCTAssertTrue(attentionChecks.contains { $0.id == "playback.auto-next" && $0.status == .warn })
+        XCTAssertFalse(attentionChecks.contains { $0.id == "audio.volumes" })
+    }
+
+    func testAttentionChecksEmptyWhenReadySnapshotHasNoWarningsOrFailures() {
+        let checks = LivePreflightCheck.build(from: readySnapshot())
+        let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
+        let summary = LivePreflightSummary.make(from: checks)
+
+        XCTAssertEqual(summary.status, .pass)
+        XCTAssertTrue(attentionChecks.isEmpty)
+    }
+
     func testExternalDisplayPresentPassesDisplayReadiness() {
         let viewModel = makeViewModel()
 
@@ -138,6 +162,9 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(panic.actionKind, .turnOffPanic)
         XCTAssertEqual(panic.actionLabel, "Turn off panic")
         XCTAssertTrue(panic.message.localizedStandardContains("Panic blackout is active"))
+
+        let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
+        XCTAssertTrue(attentionChecks.contains(panic))
 
         XCTAssertTrue(viewModel.performLivePreflightAction(.turnOffPanic))
         XCTAssertFalse(viewModel.isPanicMode)
@@ -216,6 +243,9 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(overlays.actionLabel, "Clear overlays")
         XCTAssertTrue(overlays.message.localizedStandardContains("3 overlays active"))
 
+        let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
+        XCTAssertTrue(attentionChecks.contains(overlays))
+
         XCTAssertTrue(viewModel.performLivePreflightAction(.clearOverlays))
         XCTAssertFalse(viewModel.isCountdownActive)
         XCTAssertFalse(viewModel.isTickerActive)
@@ -272,7 +302,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.4"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.5"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))

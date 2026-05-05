@@ -124,6 +124,10 @@ struct LivePreflightCheck: Identifiable, Equatable {
         ]
     }
 
+    static func attentionChecks(from checks: [LivePreflightCheck]) -> [LivePreflightCheck] {
+        checks.filter { $0.status != .pass }
+    }
+
     private static func displayCheck(_ snapshot: LivePreflightSnapshot) -> LivePreflightCheck {
         if snapshot.hasExternalDisplay {
             return LivePreflightCheck(
