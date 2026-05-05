@@ -7,6 +7,9 @@ struct MainToolbar: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var showHelp = false
     var embedded: Bool = false
+    var onOpenPreview: () -> Void = {}
+    var onOpenAudioMixer: () -> Void = {}
+    var onOpenOverlays: () -> Void = {}
 
     var body: some View {
         Group {
@@ -28,7 +31,25 @@ struct MainToolbar: View {
             }
         }
         .popover(isPresented: $showHelp, arrowEdge: .bottom) {
-            HelpView()
+            HelpView(onPreflightAction: handlePreflightAction)
+        }
+    }
+
+    private func handlePreflightAction(_ action: LivePreflightActionKind) {
+        switch action {
+        case .clearOverlays, .turnOffPanic:
+            viewModel.performLivePreflightAction(action)
+        case .openPreview:
+            onOpenPreview()
+            showHelp = false
+        case .openAudioMixer:
+            onOpenAudioMixer()
+            showHelp = false
+        case .openOverlays:
+            onOpenOverlays()
+            showHelp = false
+        case .needsHardware, .manualReview:
+            break
         }
     }
 
@@ -358,6 +379,7 @@ struct HelpView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     @State private var selectedPanel: HelpPanel = .help
     @State private var copiedReport = false
+    var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -429,7 +451,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.2 | live preflight · neutral demos · safety checks")
+            Text("Version 0.2.3 | live preflight actions · safe one-click fixes")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -461,7 +483,11 @@ struct HelpView: View {
             ForEach(LivePreflightGroup.allCases, id: \.self) { group in
                 let checks = viewModel.livePreflightChecks.filter { $0.group == group }
                 if !checks.isEmpty {
-                    PreflightGroupView(group: group, checks: checks)
+                    PreflightGroupView(
+                        group: group,
+                        checks: checks,
+                        onAction: onPreflightAction
+                    )
                 }
             }
         }
@@ -486,6 +512,7 @@ private enum HelpPanel {
 private struct PreflightGroupView: View {
     let group: LivePreflightGroup
     let checks: [LivePreflightCheck]
+    let onAction: (LivePreflightActionKind) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -495,7 +522,7 @@ private struct PreflightGroupView: View {
 
             VStack(spacing: 8) {
                 ForEach(checks) { check in
-                    PreflightRowView(check: check)
+                    PreflightRowView(check: check, onAction: onAction)
                 }
             }
         }
@@ -504,6 +531,7 @@ private struct PreflightGroupView: View {
 
 private struct PreflightRowView: View {
     let check: LivePreflightCheck
+    let onAction: (LivePreflightActionKind) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -528,6 +556,17 @@ private struct PreflightRowView: View {
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                if let actionLabel = check.actionLabel, let actionKind = check.actionKind {
+                    Button(actionLabel) {
+                        onAction(actionKind)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(!actionKind.isEnabledInPreflightUI)
+                    .help(preflightActionHelp(for: actionKind))
+                    .padding(.top, 3)
+                }
             }
 
             Spacer(minLength: 0)
@@ -562,6 +601,25 @@ private struct PreflightRowView: View {
             return "exclamationmark.triangle.fill"
         case .fail:
             return "xmark.octagon.fill"
+        }
+    }
+
+    private func preflightActionHelp(for action: LivePreflightActionKind) -> String {
+        switch action {
+        case .clearOverlays:
+            return "Clear countdown, ticker, and lower-third overlays."
+        case .turnOffPanic:
+            return "Turn off active panic blackout."
+        case .openPreview:
+            return "Open the Preview / Switch page."
+        case .openAudioMixer:
+            return "Open the Audio Mixer page."
+        case .openOverlays:
+            return "Open the Overlays / Captions page."
+        case .needsHardware:
+            return "Requires external display hardware. This action is not automatic."
+        case .manualReview:
+            return "Manual operator review only. This action does not change app state."
         }
     }
 }

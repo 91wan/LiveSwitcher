@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.2.zip
+LiveSwitcher-macOS-v0.2.3.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -81,6 +81,32 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | 辅助功能 | PPT/翻页笔拦截需要此权限。 |
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
+
+## What's New in v0.2.3 / v0.2.3 更新
+
+- Preflight Actions: the `? -> Preflight` panel now recommends one safe action per actionable warning.
+- Safe one-click fixes: operators can clear active overlays or turn off panic blackout directly from Preflight.
+- Guided navigation: non-mutating actions open the relevant existing page: preview, audio mixer, or overlays.
+- Hardware honesty remains strict: external-display checks stay disabled/manual and never fake-pass.
+
+- 现场检查操作：`? -> Preflight` 面板现在会为可处理的警告给出一个安全建议操作。
+- 安全一键修复：现场人员可直接从 Preflight 清空叠层或关闭老板键黑屏。
+- 引导跳转：非修改类操作只跳转到现有页面：预览、音频混音或叠层。
+- 硬件诚实保持严格：外接屏检查仍为禁用/人工项，不会假通过。
+
+## Preflight Actions / 现场检查操作
+
+Preflight actions follow a **Safe One-Click** rule. Only reversible safety fixes mutate state: `Clear overlays` clears countdown, ticker, and lower third; `Turn off panic` disables an active panic blackout. Hardware-required checks are disabled and must be handled manually.
+
+现场检查操作遵循 **Safe One-Click / 安全一键** 规则。只有可逆的安全修复会直接改状态：`Clear overlays` 会清空倒计时、游动字幕和人名条；`Turn off panic` 会关闭已激活的老板键黑屏。需要硬件的检查项保持禁用，必须人工处理。
+
+Navigation actions such as `Open preview` and `Open audio mixer` only switch to existing tabs and close the popover. They do not change playlists, audio strategy, external-display state, wallpaper library, or playback behavior.
+
+`Open preview`、`Open audio mixer` 等跳转类操作只切到已有页面并关闭弹窗，不会修改节目列表、音频策略、外接屏状态、壁纸库或播放行为。
+
+See [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md) for the operator workflow and safety limits.
+
+操作流程和安全边界见 [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md)。
 
 ## What's New in v0.2.2 / v0.2.2 更新
 

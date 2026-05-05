@@ -7,7 +7,7 @@ APP_BINARY_NAME="LiveSwitcher"
 APP_DISPLAY_NAME="LiveSwitcher"
 BUNDLE_ID="com.91wan.liveswitcher"
 MIN_SYSTEM_VERSION="14.0"
-MARKETING_VERSION="0.2.2"
+MARKETING_VERSION="0.2.3"
 BUILD_VERSION="1"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

@@ -74,7 +74,12 @@ struct ContentView: View {
             navigationTabCluster
                 .layoutPriority(1)
             Spacer(minLength: 16)
-            MainToolbar(embedded: true)
+            MainToolbar(
+                embedded: true,
+                onOpenPreview: { selectedTab = 0 },
+                onOpenAudioMixer: { selectedTab = 1 },
+                onOpenOverlays: { selectedTab = 2 }
+            )
                 .layoutPriority(2)
         }
         .padding(.horizontal, 18)

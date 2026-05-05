@@ -47,8 +47,14 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(display.group, .display)
         XCTAssertEqual(display.status, .fail)
+        XCTAssertEqual(display.actionKind, .needsHardware)
+        XCTAssertEqual(display.actionLabel, "Needs hardware")
         XCTAssertTrue(display.message.localizedStandardContains("Needs hardware"))
         XCTAssertTrue(display.message.localizedStandardContains("Do not project"))
+
+        let beforeSnapshot = viewModel.livePreflightSnapshot
+        XCTAssertFalse(viewModel.performLivePreflightAction(.needsHardware))
+        XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
     }
 
     func testExternalDisplayPresentPassesDisplayReadiness() {
@@ -71,7 +77,12 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(panic.group, .controls)
         XCTAssertEqual(panic.status, .fail)
+        XCTAssertEqual(panic.actionKind, .turnOffPanic)
+        XCTAssertEqual(panic.actionLabel, "Turn off panic")
         XCTAssertTrue(panic.message.localizedStandardContains("Panic blackout is active"))
+
+        XCTAssertTrue(viewModel.performLivePreflightAction(.turnOffPanic))
+        XCTAssertFalse(viewModel.isPanicMode)
     }
 
     func testSpeakerModeActiveReportsMediaAndBGMDucking() {
@@ -99,6 +110,8 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(takeover.group, .audio)
         XCTAssertEqual(takeover.status, .warn)
+        XCTAssertEqual(takeover.actionKind, .openAudioMixer)
+        XCTAssertEqual(takeover.actionLabel, "Open audio mixer")
         XCTAssertTrue(takeover.message.localizedStandardContains("Media audio is muted by BGM takeover"))
     }
 
@@ -111,6 +124,8 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(bgm.group, .audio)
         XCTAssertEqual(bgm.status, .warn)
+        XCTAssertEqual(bgm.actionKind, .openAudioMixer)
+        XCTAssertEqual(bgm.actionLabel, "Open audio mixer")
         XCTAssertTrue(bgm.message.localizedStandardContains("No BGM tracks loaded"))
     }
 
@@ -123,6 +138,8 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(wallpaper.group, .playback)
         XCTAssertEqual(wallpaper.status, .warn)
+        XCTAssertEqual(wallpaper.actionKind, .openPreview)
+        XCTAssertEqual(wallpaper.actionLabel, "Open preview")
         XCTAssertTrue(wallpaper.message.localizedStandardContains("No wallpaper fallback"))
     }
 
@@ -137,7 +154,57 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(overlays.group, .overlays)
         XCTAssertEqual(overlays.status, .warn)
+        XCTAssertEqual(overlays.actionKind, .clearOverlays)
+        XCTAssertEqual(overlays.actionLabel, "Clear overlays")
         XCTAssertTrue(overlays.message.localizedStandardContains("3 overlays active"))
+
+        XCTAssertTrue(viewModel.performLivePreflightAction(.clearOverlays))
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertFalse(viewModel.isTickerActive)
+        XCTAssertFalse(viewModel.isLowerThirdVisible)
+        XCTAssertEqual(viewModel.lowerThirdName, "")
+        XCTAssertEqual(viewModel.lowerThirdTitle, "")
+    }
+
+    func testAutoNextWarningRecommendsPreviewReview() {
+        let viewModel = makeViewModel()
+        viewModel.autoPlayNextVideoOnEnd = true
+
+        let checks = LivePreflightCheck.build(from: viewModel.livePreflightSnapshot)
+        let autoNext = check("playback.auto-next", in: checks)
+
+        XCTAssertEqual(autoNext.group, .playback)
+        XCTAssertEqual(autoNext.status, .warn)
+        XCTAssertEqual(autoNext.actionKind, .openPreview)
+        XCTAssertEqual(autoNext.actionLabel, "Open preview")
+    }
+
+    func testPPTModeUsesManualReviewActionWithoutMutatingState() {
+        let viewModel = makeViewModel()
+        viewModel.isPageInterceptEnabled = true
+
+        let checks = LivePreflightCheck.build(from: viewModel.livePreflightSnapshot)
+        let ppt = check("controls.ppt", in: checks)
+
+        XCTAssertEqual(ppt.group, .controls)
+        XCTAssertEqual(ppt.status, .pass)
+        XCTAssertEqual(ppt.actionKind, .manualReview)
+        XCTAssertEqual(ppt.actionLabel, "Manual review")
+
+        let beforeSnapshot = viewModel.livePreflightSnapshot
+        XCTAssertFalse(viewModel.performLivePreflightAction(.manualReview))
+        XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
+    }
+
+    func testNavigationActionsDoNotMutateViewModelState() {
+        let viewModel = makeViewModel()
+        viewModel.startTicker(text: "Welcome")
+        let beforeSnapshot = viewModel.livePreflightSnapshot
+
+        XCTAssertFalse(viewModel.performLivePreflightAction(.openPreview))
+        XCTAssertFalse(viewModel.performLivePreflightAction(.openAudioMixer))
+        XCTAssertFalse(viewModel.performLivePreflightAction(.openOverlays))
+        XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
     }
 
     func testPlainTextReportContainsVersionAndNoPrivatePaths() {
@@ -147,8 +214,10 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.2"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.3"))
         XCTAssertTrue(report.contains("Display"))
+        XCTAssertTrue(report.contains("Action: Needs hardware"))
+        XCTAssertTrue(report.contains("Action: Clear overlays"))
         XCTAssertFalse(report.localizedStandardContains("/Users/" + "liuchangxi"))
         XCTAssertFalse(report.localizedStandardContains("Ditu" + "LiveSwitcher"))
         XCTAssertFalse(report.localizedStandardContains("com." + "didu"))

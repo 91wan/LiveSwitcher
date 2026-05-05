@@ -40,6 +40,25 @@ enum LivePreflightStatus: String {
     }
 }
 
+enum LivePreflightActionKind: String, Equatable {
+    case clearOverlays
+    case turnOffPanic
+    case openPreview
+    case openAudioMixer
+    case openOverlays
+    case needsHardware
+    case manualReview
+
+    var isEnabledInPreflightUI: Bool {
+        switch self {
+        case .needsHardware, .manualReview:
+            return false
+        case .clearOverlays, .turnOffPanic, .openPreview, .openAudioMixer, .openOverlays:
+            return true
+        }
+    }
+}
+
 struct LivePreflightSnapshot: Equatable {
     var appVersion: String
     var hasExternalDisplay: Bool
@@ -67,6 +86,26 @@ struct LivePreflightCheck: Identifiable, Equatable {
     let status: LivePreflightStatus
     let title: String
     let message: String
+    let actionLabel: String?
+    let actionKind: LivePreflightActionKind?
+
+    init(
+        id: String,
+        group: LivePreflightGroup,
+        status: LivePreflightStatus,
+        title: String,
+        message: String,
+        actionLabel: String? = nil,
+        actionKind: LivePreflightActionKind? = nil
+    ) {
+        self.id = id
+        self.group = group
+        self.status = status
+        self.title = title
+        self.message = message
+        self.actionLabel = actionLabel
+        self.actionKind = actionKind
+    }
 
     static func build(from snapshot: LivePreflightSnapshot) -> [LivePreflightCheck] {
         [
@@ -101,7 +140,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             group: .display,
             status: .fail,
             title: "External Display",
-            message: "Needs hardware: no external display detected. Do not project."
+            message: "Needs hardware: no external display detected. Do not project.",
+            actionLabel: "Needs hardware",
+            actionKind: .needsHardware
         )
     }
 
@@ -112,7 +153,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .display,
                 status: .fail,
                 title: "Projection State",
-                message: "Projection reports active without an external display. Stop projection before the show."
+                message: "Projection reports active without an external display. Stop projection before the show.",
+                actionLabel: "Needs hardware",
+                actionKind: .needsHardware
             )
         }
 
@@ -132,7 +175,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .display,
                 status: .warn,
                 title: "Projection State",
-                message: "Projection is off. Last notice: \(notice)"
+                message: "Projection is off. Last notice: \(notice)",
+                actionLabel: "Open preview",
+                actionKind: .openPreview
             )
         }
 
@@ -141,7 +186,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             group: .display,
             status: .warn,
             title: "Projection State",
-            message: "Projection is off. Confirm the external display before going live."
+            message: "Projection is off. Confirm the external display before going live.",
+            actionLabel: "Open preview",
+            actionKind: .openPreview
         )
     }
 
@@ -152,7 +199,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .audio,
                 status: .warn,
                 title: "BGM Library",
-                message: "No BGM tracks loaded. Add walk-in or fallback music before a live run."
+                message: "No BGM tracks loaded. Add walk-in or fallback music before a live run.",
+                actionLabel: "Open audio mixer",
+                actionKind: .openAudioMixer
             )
         }
 
@@ -192,7 +241,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .audio,
                 status: .warn,
                 title: "BGM Takeover",
-                message: "Media audio is muted by BGM takeover while BGM plays."
+                message: "Media audio is muted by BGM takeover while BGM plays.",
+                actionLabel: "Open audio mixer",
+                actionKind: .openAudioMixer
             )
         }
 
@@ -234,7 +285,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .playback,
                 status: .warn,
                 title: "Current Program",
-                message: "\(snapshot.programItemCount) program item(s) queued, but no current program is selected."
+                message: "\(snapshot.programItemCount) program item(s) queued, but no current program is selected.",
+                actionLabel: "Open preview",
+                actionKind: .openPreview
             )
         }
 
@@ -243,7 +296,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             group: .playback,
             status: .warn,
             title: "Current Program",
-            message: "No program items loaded."
+            message: "No program items loaded.",
+            actionLabel: "Open preview",
+            actionKind: .openPreview
         )
     }
 
@@ -254,7 +309,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .playback,
                 status: .warn,
                 title: "Wallpaper Fallback",
-                message: "No wallpaper fallback is loaded. Add at least one neutral standby image."
+                message: "No wallpaper fallback is loaded. Add at least one neutral standby image.",
+                actionLabel: "Open preview",
+                actionKind: .openPreview
             )
         }
 
@@ -275,7 +332,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             title: "Auto-next Video",
             message: snapshot.autoPlayNextVideoOnEnd
                 ? "Auto-next video is enabled. Verify the next video order before the show."
-                : "Auto-next video is off. Video end will return to standby/fallback."
+                : "Auto-next video is off. Video end will return to standby/fallback.",
+            actionLabel: snapshot.autoPlayNextVideoOnEnd ? "Open preview" : nil,
+            actionKind: snapshot.autoPlayNextVideoOnEnd ? .openPreview : nil
         )
     }
 
@@ -286,7 +345,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .overlays,
                 status: .warn,
                 title: "Active Overlays",
-                message: "\(snapshot.activeOverlayCount) overlays active. Clear overlays if the stage should start clean."
+                message: "\(snapshot.activeOverlayCount) overlays active. Clear overlays if the stage should start clean.",
+                actionLabel: "Clear overlays",
+                actionKind: .clearOverlays
             )
         }
 
@@ -306,7 +367,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 group: .controls,
                 status: .fail,
                 title: "Panic Blackout",
-                message: "Panic blackout is active. Output is blacked out and audio is muted."
+                message: "Panic blackout is active. Output is blacked out and audio is muted.",
+                actionLabel: "Turn off panic",
+                actionKind: .turnOffPanic
             )
         }
 
@@ -327,7 +390,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             title: "PPT Mode",
             message: snapshot.isPageInterceptEnabled
                 ? "PPT mode is on. Page-clicker keys are intercepted for presentation control."
-                : "PPT mode is off. Enable it only when page-clicker takeover is needed."
+                : "PPT mode is off. Enable it only when page-clicker takeover is needed.",
+            actionLabel: "Manual review",
+            actionKind: .manualReview
         )
     }
 
@@ -357,7 +422,8 @@ enum LivePreflightReport {
             guard !groupedChecks.isEmpty else { continue }
             lines.append("[\(group.rawValue)]")
             lines.append(contentsOf: groupedChecks.map { check in
-                "- \(check.status.rawValue) \(check.title): \(LivePreflightCheck.safeReportText(check.message))"
+                let actionText = check.actionLabel.map { " Action: \($0)." } ?? ""
+                return "- \(check.status.rawValue) \(check.title): \(LivePreflightCheck.safeReportText(check.message))\(actionText)"
             })
             lines.append("")
         }

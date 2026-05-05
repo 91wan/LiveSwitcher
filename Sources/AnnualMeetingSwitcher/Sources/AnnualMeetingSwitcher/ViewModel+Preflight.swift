@@ -44,6 +44,21 @@ extension SwitcherViewModel {
             checks: LivePreflightCheck.build(from: snapshot)
         )
     }
+
+    @discardableResult
+    func performLivePreflightAction(_ action: LivePreflightActionKind) -> Bool {
+        switch action {
+        case .clearOverlays:
+            clearAllOverlays()
+            return true
+        case .turnOffPanic:
+            guard isPanicMode else { return false }
+            togglePanicMode()
+            return true
+        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
+            return false
+        }
+    }
 }
 
 private extension ProgramSourceKind {
