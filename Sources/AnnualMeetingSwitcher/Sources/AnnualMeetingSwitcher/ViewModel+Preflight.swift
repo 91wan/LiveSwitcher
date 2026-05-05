@@ -37,6 +37,10 @@ extension SwitcherViewModel {
         LivePreflightCheck.build(from: livePreflightSnapshot)
     }
 
+    var livePreflightSummary: LivePreflightSummary {
+        LivePreflightSummary.make(from: livePreflightChecks)
+    }
+
     func livePreflightReportText() -> String {
         let snapshot = livePreflightSnapshot
         return LivePreflightReport.makePlainText(

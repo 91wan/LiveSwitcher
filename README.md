@@ -57,7 +57,7 @@ Current release asset:
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.3.zip
+LiveSwitcher-macOS-v0.2.4.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -81,6 +81,26 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | 辅助功能 | PPT/翻页笔拦截需要此权限。 |
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
+
+## What's New in v0.2.4 / v0.2.4 更新
+
+- Preflight Summary: the `? -> Preflight` panel now starts with an overall `Ready`, `Needs review`, or `Not ready` status.
+- Fast counts: operators can see pass/warn/fail totals before reading detailed rows.
+- Report summary: `Copy Report` now includes the overall readiness result and pass/warn/fail counts.
+
+- 现场检查总览：`? -> Preflight` 面板顶部新增 `Ready`、`Needs review`、`Not ready` 总状态。
+- 快速计数：现场人员无需先读完整列表，就能看到 pass/warn/fail 数量。
+- 报告总览：`Copy Report` 现在包含总就绪状态和 pass/warn/fail 计数。
+
+## Preflight Summary / 现场检查总览
+
+The summary card is intentionally deterministic: any failed row makes the app `Not ready`; warnings without failures show `Needs review`; all passing rows show `Ready`. It is a fast triage signal, not a substitute for hardware tests.
+
+总览卡片采用确定性规则：只要有失败项就是 `Not ready`；无失败但有警告就是 `Needs review`；全部通过才是 `Ready`。它用于快速判断风险，不替代硬件复测。
+
+See [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md) for the pass/warn/fail interpretation.
+
+pass/warn/fail 的解释见 [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)。
 
 ## What's New in v0.2.3 / v0.2.3 更新
 

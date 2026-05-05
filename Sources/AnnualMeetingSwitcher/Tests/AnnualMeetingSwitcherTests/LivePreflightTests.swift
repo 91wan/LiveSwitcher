@@ -19,6 +19,29 @@ final class LivePreflightTests: XCTestCase {
         return viewModel
     }
 
+    private func readySnapshot() -> LivePreflightSnapshot {
+        LivePreflightSnapshot(
+            appVersion: "0.2.4",
+            hasExternalDisplay: true,
+            isBroadcasting: true,
+            broadcastSafetyNotice: nil,
+            programItemCount: 1,
+            currentProgramTitle: "Opening Video",
+            currentProgramSource: "Media",
+            bgmItemCount: 1,
+            isBGMPlaying: false,
+            isBGMAudioTakeoverActive: false,
+            isSpeakerMode: false,
+            isPanicMode: false,
+            isPageInterceptEnabled: false,
+            activeOverlayCount: 0,
+            wallpaperCount: 1,
+            autoPlayNextVideoOnEnd: false,
+            effectiveMediaVolume: 0.5,
+            effectiveBGMVolume: 0.5
+        )
+    }
+
     private func check(
         _ id: String,
         in checks: [LivePreflightCheck],
@@ -55,6 +78,41 @@ final class LivePreflightTests: XCTestCase {
         let beforeSnapshot = viewModel.livePreflightSnapshot
         XCTAssertFalse(viewModel.performLivePreflightAction(.needsHardware))
         XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
+    }
+
+    func testSummaryFailsWhenAnyCheckFails() {
+        var snapshot = readySnapshot()
+        snapshot.hasExternalDisplay = false
+        snapshot.isBroadcasting = false
+
+        let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: snapshot))
+
+        XCTAssertEqual(summary.status, .fail)
+        XCTAssertEqual(summary.title, "Not ready")
+        XCTAssertEqual(summary.failCount, 1)
+        XCTAssertGreaterThan(summary.warnCount, 0)
+    }
+
+    func testSummaryWarnsWhenChecksHaveWarningsButNoFailures() {
+        var snapshot = readySnapshot()
+        snapshot.autoPlayNextVideoOnEnd = true
+
+        let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: snapshot))
+
+        XCTAssertEqual(summary.status, .warn)
+        XCTAssertEqual(summary.title, "Needs review")
+        XCTAssertEqual(summary.failCount, 0)
+        XCTAssertGreaterThan(summary.warnCount, 0)
+    }
+
+    func testSummaryPassesWhenAllChecksPass() {
+        let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: readySnapshot()))
+
+        XCTAssertEqual(summary.status, .pass)
+        XCTAssertEqual(summary.title, "Ready")
+        XCTAssertEqual(summary.failCount, 0)
+        XCTAssertEqual(summary.warnCount, 0)
+        XCTAssertGreaterThan(summary.passCount, 0)
     }
 
     func testExternalDisplayPresentPassesDisplayReadiness() {
@@ -214,7 +272,8 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.4"))
+        XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
         XCTAssertTrue(report.contains("Action: Clear overlays"))

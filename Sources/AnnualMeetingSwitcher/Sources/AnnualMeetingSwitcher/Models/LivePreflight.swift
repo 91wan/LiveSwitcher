@@ -407,10 +407,58 @@ struct LivePreflightCheck: Identifiable, Equatable {
     }
 }
 
+struct LivePreflightSummary: Equatable {
+    let status: LivePreflightStatus
+    let title: String
+    let message: String
+    let passCount: Int
+    let warnCount: Int
+    let failCount: Int
+
+    static func make(from checks: [LivePreflightCheck]) -> LivePreflightSummary {
+        let passCount = checks.filter { $0.status == .pass }.count
+        let warnCount = checks.filter { $0.status == .warn }.count
+        let failCount = checks.filter { $0.status == .fail }.count
+
+        if failCount > 0 {
+            return LivePreflightSummary(
+                status: .fail,
+                title: "Not ready",
+                message: "\(failCount) blocking issue(s). Resolve fail rows before projection.",
+                passCount: passCount,
+                warnCount: warnCount,
+                failCount: failCount
+            )
+        }
+
+        if warnCount > 0 {
+            return LivePreflightSummary(
+                status: .warn,
+                title: "Needs review",
+                message: "\(warnCount) warning(s). Confirm the intended show state before going live.",
+                passCount: passCount,
+                warnCount: warnCount,
+                failCount: failCount
+            )
+        }
+
+        return LivePreflightSummary(
+            status: .pass,
+            title: "Ready",
+            message: "All preflight checks are passing for the current runtime state.",
+            passCount: passCount,
+            warnCount: warnCount,
+            failCount: failCount
+        )
+    }
+}
+
 enum LivePreflightReport {
     static func makePlainText(snapshot: LivePreflightSnapshot, checks: [LivePreflightCheck]) -> String {
+        let summary = LivePreflightSummary.make(from: checks)
         var lines: [String] = [
             "LiveSwitcher Preflight v\(snapshot.appVersion)",
+            "Overall: \(summary.status.rawValue) - \(summary.title) (\(summary.passCount) pass, \(summary.warnCount) warn, \(summary.failCount) fail)",
             "External display: \(snapshot.hasExternalDisplay ? "detected" : "not detected")",
             "Projection: \(snapshot.isBroadcasting ? "on" : "off")",
             "Effective volumes: media \(formatPercent(snapshot.effectiveMediaVolume)), BGM \(formatPercent(snapshot.effectiveBGMVolume))",

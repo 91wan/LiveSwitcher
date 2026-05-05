@@ -451,7 +451,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.3 | live preflight actions · safe one-click fixes")
+            Text("Version 0.2.4 | preflight summary · operator readiness")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -465,7 +465,7 @@ struct HelpView: View {
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Live Preflight / 现场检查")
                         .font(.system(size: 18, weight: .black))
-                    Text("Reads the current runtime state. Use it before a show, then copy the report if you need an issue/debug note.")
+                    Text("Reads the current runtime state. Use the summary first, then review fail/warn rows before a show.")
                         .font(.system(size: 12, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -479,6 +479,8 @@ struct HelpView: View {
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
             }
+
+            PreflightSummaryCard(summary: viewModel.livePreflightSummary)
 
             ForEach(LivePreflightGroup.allCases, id: \.self) { group in
                 let checks = viewModel.livePreflightChecks.filter { $0.group == group }
@@ -507,6 +509,85 @@ struct HelpView: View {
 private enum HelpPanel {
     case help
     case preflight
+}
+
+private struct PreflightSummaryCard: View {
+    let summary: LivePreflightSummary
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 13) {
+            Image(systemName: iconName)
+                .font(.system(size: 22, weight: .black))
+                .foregroundStyle(statusColor)
+                .frame(width: 30, height: 30)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(summary.title)
+                        .font(.system(size: 15, weight: .black))
+
+                    Text(summary.status.displayTitle)
+                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .foregroundStyle(statusColor)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(statusColor.opacity(0.12), in: Capsule())
+                }
+
+                Text(summary.message)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 6) {
+                countPill("P", summary.passCount, .green)
+                countPill("W", summary.warnCount, .orange)
+                countPill("F", summary.failCount, .red)
+            }
+        }
+        .padding(13)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(statusColor.opacity(0.08))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(statusColor.opacity(0.22), lineWidth: 1)
+        )
+    }
+
+    private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
+        Text("\(label) \(count)")
+            .font(.system(size: 10, weight: .black, design: .rounded))
+            .foregroundStyle(color)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.10), in: Capsule())
+    }
+
+    private var statusColor: Color {
+        switch summary.status {
+        case .pass:
+            return .green
+        case .warn:
+            return .orange
+        case .fail:
+            return .red
+        }
+    }
+
+    private var iconName: String {
+        switch summary.status {
+        case .pass:
+            return "checkmark.seal.fill"
+        case .warn:
+            return "exclamationmark.triangle.fill"
+        case .fail:
+            return "xmark.octagon.fill"
+        }
+    }
 }
 
 private struct PreflightGroupView: View {
