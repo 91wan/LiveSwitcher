@@ -61,6 +61,16 @@ extension SwitcherViewModel {
         )
     }
 
+    func liveSupportReportText(generatedAt: Date = Date()) -> String {
+        let snapshot = liveDiagnosticsSnapshot
+        return LiveSupportReport.makePlainText(
+            snapshot: snapshot,
+            checks: LivePreflightCheck.build(from: snapshot.preflight),
+            events: supportEvents,
+            generatedAt: generatedAt
+        )
+    }
+
     @discardableResult
     func performLivePreflightAction(_ action: LivePreflightActionKind) -> Bool {
         let didMutate: Bool
@@ -79,6 +89,10 @@ extension SwitcherViewModel {
             didMutate = false
         }
         LiveSwitcherTelemetry.preflightAction(action, didMutateState: didMutate)
+        recordSupportEvent(
+            kind: .preflightAction,
+            detail: "\(action.rawValue), mutated=\(didMutate)"
+        )
         return didMutate
     }
 }

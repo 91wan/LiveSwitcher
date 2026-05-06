@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.2.7.zip
+LiveSwitcher-macOS-v0.2.8.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,13 +55,13 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.2.7
+## What's New in v0.2.8
 
-- Diagnostics report: `? -> Preflight` now provides `Copy Diagnostics` and `Save...` for sanitized support handoff.
-- Privacy-first output: diagnostics include version, runtime environment, preflight status, and live state counts without raw media paths or filenames.
-- Debug telemetry: key live-control and diagnostics actions emit concise unified-log events without private payloads.
+- Support report: `? -> Preflight` now provides `Copy Support` and `Save Support...` for sanitized issue handoff.
+- Text-only export: the report combines runtime diagnostics, full preflight, and recent sanitized live-control events.
+- Privacy-first output: support reports exclude screenshots, system logs, local paths, raw media filenames, file URLs, customer content, overlay text, and media titles.
 
-See [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md) for the operator workflow.
+See [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md) for the operator workflow.
 
 ## Live Preflight
 
@@ -69,12 +69,13 @@ Open the `?` button, switch from `Help` to `Preflight`, and review the live stat
 
 Use `Needs attention` before a show. It filters the live checklist to only failed and warning rows, while `All checks` remains available for a full audit. `Copy Report` always copies the complete report, not the filtered view.
 
-Use `Copy Diagnostics` or `Save...` when reporting a bug. Diagnostics are text-only and sanitized: they include runtime state, app version, preflight status, and counts, but not local file paths, raw media filenames, or customer content.
+Use `Copy Support` or `Save Support...` when reporting a bug. Support reports are text-only and sanitized: they include runtime diagnostics, full preflight, and recent event kinds, but not local file paths, raw media filenames, file URLs, screenshots, system logs, overlay text, or customer content.
 
 Related guides:
 
+- [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)
+- [`docs/qa/release-hygiene-v0.2.8.md`](docs/qa/release-hygiene-v0.2.8.md)
 - [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)
-- [`docs/qa/release-hygiene-v0.2.6.md`](docs/qa/release-hygiene-v0.2.6.md)
 - [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)
 - [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)
 - [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md)

@@ -30,6 +30,7 @@ extension SwitcherViewModel {
     func toggleSpeakerMode() {
         isSpeakerMode.toggle()
         LiveSwitcherTelemetry.speakerModeChanged(isOn: isSpeakerMode)
+        recordSupportEvent(kind: .speakerModeChanged, detail: "isOn=\(isSpeakerMode)")
         applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
     }
 
@@ -54,6 +55,8 @@ extension SwitcherViewModel {
         guard let current = currentBGMItem else {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
@@ -63,6 +66,8 @@ extension SwitcherViewModel {
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
@@ -76,6 +81,7 @@ extension SwitcherViewModel {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
             LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return

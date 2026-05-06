@@ -122,6 +122,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var isBGMPlaying: Bool = false
     @Published var isBGMAudioTakeoverActive: Bool = false
     @Published var bgmPlayMode: BGMPlayMode = .loopAll
+    @Published private(set) var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
     @Published var isSpeakerMode: Bool = false {
@@ -175,6 +176,7 @@ final class SwitcherViewModel: ObservableObject {
     private var mediaVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     private var systemVolumeObserver: SystemVolumeObserver?
+    private let supportEventLimit = 80
 
     // MARK: - V25: 翻页拦截器状态
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
@@ -932,6 +934,7 @@ final class SwitcherViewModel: ObservableObject {
                 isBGMPlaying = false
                 isBGMAudioTakeoverActive = false
                 LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+                recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
                 fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
                 bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
@@ -959,6 +962,7 @@ final class SwitcherViewModel: ObservableObject {
                 isBGMPlaying = true
                 isBGMAudioTakeoverActive = true
                 LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
+                recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=true")
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.play()
                 bgmFallbackPlayer.volume = 0
@@ -991,6 +995,7 @@ final class SwitcherViewModel: ObservableObject {
             isBGMPlaying = true
             isBGMAudioTakeoverActive = true
             LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
+            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=true")
             let targetVolume = effectiveBGMOutputVolume()
 
             if let player = try? AVAudioPlayer(contentsOf: item.url) {
@@ -1046,6 +1051,8 @@ final class SwitcherViewModel: ObservableObject {
     func handleBroadcastToggle() {
         if !isBroadcasting, externalScreenProvider() == nil {
             broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
+            LiveSwitcherTelemetry.projectionFailClosed()
+            recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
             return
         }
 
@@ -1055,6 +1062,8 @@ final class SwitcherViewModel: ObservableObject {
         } else {
             hideOutputWindow()
         }
+        LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
+        recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=\(isBroadcasting)")
     }
 
     func showOutputWindow() {
@@ -1086,6 +1095,25 @@ final class SwitcherViewModel: ObservableObject {
         isBroadcasting = false
         outputWindowController?.hide()
         broadcastSafetyNotice = "副屏已断开，投射已停止"
+        LiveSwitcherTelemetry.projectionFailClosed()
+        recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
+    }
+
+    func recordSupportEvent(
+        kind: LiveSupportEventKind,
+        detail: String,
+        timestamp: Date = Date()
+    ) {
+        supportEvents.append(
+            LiveSupportEvent(
+                timestamp: timestamp,
+                kind: kind,
+                detail: detail
+            )
+        )
+        if supportEvents.count > supportEventLimit {
+            supportEvents.removeFirst(supportEvents.count - supportEventLimit)
+        }
     }
 
     // MARK: - System Volume Observer

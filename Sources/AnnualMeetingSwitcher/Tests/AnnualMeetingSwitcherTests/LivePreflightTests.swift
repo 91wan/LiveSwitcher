@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.2.7",
+            appVersion: "0.2.8",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -302,7 +302,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.8"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
@@ -324,7 +324,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.7",
+            appVersion: "0.2.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -332,7 +332,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.8"))
         XCTAssertTrue(report.contains("Runtime: macOS Test, arm64-test"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Programs: 1"))
@@ -354,7 +354,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.7",
+            appVersion: "0.2.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -379,11 +379,117 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.liveDiagnosticsReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.8"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
         XCTAssertTrue(report.contains("Active overlays: 1"))
         XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
+    }
+
+    func testSupportReportContainsDiagnosticsPreflightEventsAndPrivacyNotice() {
+        var preflight = readySnapshot()
+        preflight.hasExternalDisplay = false
+        preflight.isBroadcasting = false
+        preflight.isPanicMode = true
+        preflight.currentProgramTitle = "Customer Dinner Video.mov"
+
+        let checks = LivePreflightCheck.build(from: preflight)
+        let diagnostics = LiveDiagnosticsSnapshot(
+            appVersion: "0.2.8",
+            operatingSystem: "macOS Test",
+            architecture: "arm64-test",
+            preflight: preflight
+        )
+        let generatedAt = Date(timeIntervalSince1970: 1_790_000_000)
+        let event = LiveSupportEvent(
+            timestamp: generatedAt,
+            kind: .preflightAction,
+            detail: "manualReview file:///Users/" + "liuchangxi/Secret/Customer Dinner Video.mov"
+        )
+
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnostics,
+            checks: checks,
+            events: [event],
+            generatedAt: generatedAt
+        )
+
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.8"))
+        XCTAssertTrue(report.contains("Generated: 2026-09-21T14:13:20Z"))
+        XCTAssertTrue(report.contains("[Diagnostics]"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.8"))
+        XCTAssertTrue(report.contains("[Preflight Report]"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.8"))
+        XCTAssertTrue(report.contains("[Recent Events]"))
+        XCTAssertTrue(report.contains("preflight.action"))
+        XCTAssertTrue(report.contains("[Privacy Notice]"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+        XCTAssertFalse(report.localizedStandardContains("file://"))
+        XCTAssertFalse(report.localizedStandardContains("Customer Dinner Video.mov"))
+        XCTAssertFalse(report.localizedStandardContains("liuchangxi"))
+    }
+
+    func testSupportEventTimelineCapsAtEightyEntriesAndDropsOldest() {
+        let viewModel = makeViewModel()
+        let start = Date(timeIntervalSince1970: 1_790_000_000)
+
+        for index in 0..<85 {
+            viewModel.recordSupportEvent(
+                kind: .preflightAction,
+                detail: "event \(index)",
+                timestamp: start.addingTimeInterval(TimeInterval(index))
+            )
+        }
+
+        XCTAssertEqual(viewModel.supportEvents.count, 80)
+        XCTAssertEqual(viewModel.supportEvents.first?.detail, "event 5")
+        XCTAssertEqual(viewModel.supportEvents.last?.detail, "event 84")
+    }
+
+    func testHighSignalActionsAppendSanitizedSupportEvents() {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+
+        viewModel.toggleSpeakerMode()
+        viewModel.togglePanicMode()
+        viewModel.toggleBGM(BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/missing.mp3")))
+        viewModel.performLivePreflightAction(.manualReview)
+        viewModel.handleExternalDisplayLost()
+
+        let kinds = viewModel.supportEvents.map(\.kind)
+        XCTAssertTrue(kinds.contains(.speakerModeChanged))
+        XCTAssertTrue(kinds.contains(.panicModeChanged))
+        XCTAssertTrue(kinds.contains(.bgmTakeoverChanged))
+        XCTAssertTrue(kinds.contains(.preflightAction))
+        XCTAssertTrue(kinds.contains(.projectionFailClosed))
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("/tmp/missing.mp3") })
+    }
+
+    func testViewModelSupportReportReflectsCurrentStateWithoutMutatingPlayback() {
+        let viewModel = makeViewModel()
+        viewModel.externalScreenProvider = { nil }
+        viewModel.isPanicMode = true
+        viewModel.isSpeakerMode = true
+        viewModel.startTicker(text: "Customer ticker text")
+        let beforeSnapshot = viewModel.livePreflightSnapshot
+        let beforeProgramCount = viewModel.programItems.count
+        let beforeBGMCount = viewModel.bgmItems.count
+        let beforeWallpaperCount = viewModel.backgroundWallpapers.count
+
+        let report = viewModel.liveSupportReportText(
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
+        )
+
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.8"))
+        XCTAssertTrue(report.contains("Overall: FAIL"))
+        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("Speaker mode: on"))
+        XCTAssertTrue(report.contains("Active overlays: 1"))
+        XCTAssertFalse(report.localizedStandardContains("Customer ticker text"))
+        XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
+        XCTAssertEqual(viewModel.programItems.count, beforeProgramCount)
+        XCTAssertEqual(viewModel.bgmItems.count, beforeBGMCount)
+        XCTAssertEqual(viewModel.backgroundWallpapers.count, beforeWallpaperCount)
     }
 }
