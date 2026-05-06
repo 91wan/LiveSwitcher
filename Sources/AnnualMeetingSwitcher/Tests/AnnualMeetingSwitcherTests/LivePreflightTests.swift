@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -234,7 +234,12 @@ final class LivePreflightTests: XCTestCase {
         viewModel.startTicker(text: "Welcome")
         viewModel.showLowerThird(name: "Host", title: "Opening")
 
-        let checks = LivePreflightCheck.build(from: viewModel.livePreflightSnapshot)
+        let snapshot = viewModel.livePreflightSnapshot
+        XCTAssertEqual(snapshot.activeOverlayCount, 3)
+        XCTAssertEqual(snapshot.activeOverlayKinds, [.countdown, .ticker, .lowerThird])
+        XCTAssertEqual(snapshot.countdownRemainingSeconds, 30)
+
+        let checks = LivePreflightCheck.build(from: snapshot)
         let overlays = check("overlays.active", in: checks)
 
         XCTAssertEqual(overlays.group, .overlays)
@@ -242,6 +247,10 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(overlays.actionKind, .clearOverlays)
         XCTAssertEqual(overlays.actionLabel, "Clear overlays")
         XCTAssertTrue(overlays.message.localizedStandardContains("3 overlays active"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("countdown"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("ticker"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("lower third"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("30s remaining"))
 
         let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
         XCTAssertTrue(attentionChecks.contains(overlays))
@@ -252,6 +261,30 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertFalse(viewModel.isLowerThirdVisible)
         XCTAssertEqual(viewModel.lowerThirdName, "")
         XCTAssertEqual(viewModel.lowerThirdTitle, "")
+    }
+
+    func testOverlayReportsDoNotLeakOverlayContent() {
+        let viewModel = makeViewModel()
+        viewModel.startCountdown(seconds: 45, title: "Private Show Title")
+        viewModel.startTicker(text: "Customer ticker text")
+        viewModel.showLowerThird(name: "Private Host", title: "Private Company")
+
+        let preflightReport = viewModel.livePreflightReportText()
+        let diagnosticsReport = viewModel.liveDiagnosticsReportText()
+        let supportReport = viewModel.liveSupportReportText(
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
+        )
+
+        for report in [preflightReport, diagnosticsReport, supportReport] {
+            XCTAssertTrue(report.localizedStandardContains("countdown"))
+            XCTAssertTrue(report.localizedStandardContains("ticker"))
+            XCTAssertTrue(report.localizedStandardContains("lower third"))
+            XCTAssertTrue(report.localizedStandardContains("45s remaining"))
+            XCTAssertFalse(report.localizedStandardContains("Private Show Title"))
+            XCTAssertFalse(report.localizedStandardContains("Customer ticker text"))
+            XCTAssertFalse(report.localizedStandardContains("Private Host"))
+            XCTAssertFalse(report.localizedStandardContains("Private Company"))
+        }
     }
 
     func testAutoNextWarningRecommendsPreviewReview() {
@@ -302,7 +335,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.4"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
@@ -324,7 +357,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -332,7 +365,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.4"))
         XCTAssertTrue(report.contains("Runtime: macOS Test, arm64-test"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Programs: 1"))
@@ -354,7 +387,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -379,7 +412,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.liveDiagnosticsReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.4"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
@@ -396,7 +429,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -415,12 +448,12 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.4"))
         XCTAssertTrue(report.contains("Generated: 2026-09-21T14:13:20Z"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.4"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.4"))
         XCTAssertTrue(report.contains("[Recent Events]"))
         XCTAssertTrue(report.contains("preflight.action"))
         XCTAssertTrue(report.contains("[Privacy Notice]"))
@@ -434,7 +467,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -453,7 +486,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.4"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
         XCTAssertTrue(report.contains("[Recent Events]"))
@@ -469,7 +502,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.3",
+            appVersion: "0.3.4",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -488,7 +521,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.4"))
         XCTAssertTrue(report.contains("bgm.takeover.changed"))
         XCTAssertTrue(report.contains("[filename redacted]"))
         XCTAssertFalse(report.localizedStandardContains("Opening.mov"))
@@ -548,7 +581,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.3"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.4"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))

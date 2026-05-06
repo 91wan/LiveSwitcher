@@ -19,17 +19,34 @@ extension SwitcherViewModel {
         // 停止已有 Timer
         countdownTimer?.invalidate()
 
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] t in
-            guard let self else { t.invalidate(); return }
+        let timer = Timer(timeInterval: 1.0, repeats: true) { [weak self] t in
             Task { @MainActor in
-                if self.countdownSeconds > 0 {
-                    self.countdownSeconds -= 1
-                } else {
-                    self.stopCountdown()
+                guard let self else {
+                    t.invalidate()
+                    return
                 }
+                self.countdownTick()
             }
         }
-        RunLoop.main.add(countdownTimer!, forMode: .common)
+        countdownTimer = timer
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    /// Advances countdown by one second. Kept as a named path so expiry behavior stays testable.
+    func countdownTick() {
+        guard isCountdownActive else {
+            countdownTimer?.invalidate()
+            countdownTimer = nil
+            countdownSeconds = 0
+            return
+        }
+
+        guard countdownSeconds > 1 else {
+            stopCountdown()
+            return
+        }
+
+        countdownSeconds -= 1
     }
 
     /// 停止倒计时

@@ -75,6 +75,23 @@ enum LivePreflightActionKind: String, Equatable {
     }
 }
 
+enum LiveOverlayKind: String, Equatable, CaseIterable {
+    case countdown
+    case ticker
+    case lowerThird
+
+    var displayTitle: String {
+        switch self {
+        case .countdown:
+            return "countdown"
+        case .ticker:
+            return "ticker"
+        case .lowerThird:
+            return "lower third"
+        }
+    }
+}
+
 struct LivePreflightSnapshot: Equatable {
     var appVersion: String
     var hasExternalDisplay: Bool
@@ -90,6 +107,8 @@ struct LivePreflightSnapshot: Equatable {
     var isPanicMode: Bool
     var isPageInterceptEnabled: Bool
     var activeOverlayCount: Int
+    var activeOverlayKinds: [LiveOverlayKind] = []
+    var countdownRemainingSeconds: Int? = nil
     var wallpaperCount: Int
     var autoPlayNextVideoOnEnd: Bool
     var effectiveMediaVolume: Float
@@ -360,12 +379,13 @@ struct LivePreflightCheck: Identifiable, Equatable {
 
     private static func overlayCheck(_ snapshot: LivePreflightSnapshot) -> LivePreflightCheck {
         if snapshot.activeOverlayCount > 0 {
+            let overlaySummary = overlaySummary(snapshot)
             return LivePreflightCheck(
                 id: "overlays.active",
                 group: .overlays,
                 status: .warn,
                 title: "Active Overlays",
-                message: "\(snapshot.activeOverlayCount) overlays active. Clear overlays if the stage should start clean.",
+                message: "\(snapshot.activeOverlayCount) overlays active: \(overlaySummary). Clear overlays if the stage should start clean.",
                 actionLabel: "Clear overlays",
                 actionKind: .clearOverlays
             )
@@ -418,6 +438,17 @@ struct LivePreflightCheck: Identifiable, Equatable {
 
     private static func formatPercent(_ volume: Float) -> String {
         "\(Int((max(0, min(volume, 1)) * 100).rounded()))%"
+    }
+
+    static func overlaySummary(_ snapshot: LivePreflightSnapshot) -> String {
+        let kinds = snapshot.activeOverlayKinds.map(\.displayTitle)
+        let kindText = kinds.isEmpty ? "unknown overlay" : kinds.joined(separator: ", ")
+        guard let remaining = snapshot.countdownRemainingSeconds,
+              snapshot.activeOverlayKinds.contains(.countdown)
+        else {
+            return kindText
+        }
+        return "\(kindText), \(remaining)s remaining"
     }
 
     static func safeReportText(_ text: String) -> String {
@@ -481,6 +512,7 @@ enum LivePreflightReport {
             "Overall: \(summary.status.rawValue) - \(summary.title) (\(summary.passCount) pass, \(summary.warnCount) warn, \(summary.failCount) fail)",
             "External display: \(snapshot.hasExternalDisplay ? "detected" : "not detected")",
             "Projection: \(snapshot.isBroadcasting ? "on" : "off")",
+            "Active overlays: \(overlayRuntimeSummary(snapshot))",
             "Effective volumes: media \(formatPercent(snapshot.effectiveMediaVolume)), BGM \(formatPercent(snapshot.effectiveBGMVolume))",
             ""
         ]
@@ -501,5 +533,10 @@ enum LivePreflightReport {
 
     private static func formatPercent(_ volume: Float) -> String {
         "\(Int((max(0, min(volume, 1)) * 100).rounded()))%"
+    }
+
+    private static func overlayRuntimeSummary(_ snapshot: LivePreflightSnapshot) -> String {
+        guard snapshot.activeOverlayCount > 0 else { return "none" }
+        return "\(snapshot.activeOverlayCount) (\(LivePreflightCheck.overlaySummary(snapshot)))"
     }
 }

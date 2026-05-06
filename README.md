@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.3.zip
+LiveSwitcher-macOS-v0.3.4.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,13 +55,13 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.3
+## What's New in v0.3.4
 
-- Safety Cockpit recent events now use collision-safe row identity, even when multiple same-kind support events happen in the same second.
-- Recent event display remains capped to the latest 12 rows and keeps the existing sanitized text-only behavior.
-- This patch does not change playback, projection, audio routing, overlays, playlists, BGM library, or wallpaper library behavior.
+- Overlay preflight now reports which sanitized overlay types are active: countdown, ticker, and lower third.
+- Countdown state is easier to verify: countdown expiry uses a testable tick path and common run-loop timer scheduling.
+- Diagnostics and Support Report include overlay type/remaining-time detail without exposing overlay text or customer content.
 
-See [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md) for the event-stability check.
+See [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md) for the overlay reliability check.
 
 ## Live Preflight
 
@@ -75,6 +75,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
+- [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
 - [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
 - [`docs/qa/release-hygiene-v0.3.3.md`](docs/qa/release-hygiene-v0.3.3.md)
 - [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
