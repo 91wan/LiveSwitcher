@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.2.5",
+            appVersion: "0.2.6",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -302,7 +302,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.5"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.6"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
