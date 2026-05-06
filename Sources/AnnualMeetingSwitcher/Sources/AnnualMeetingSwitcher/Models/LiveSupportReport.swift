@@ -87,10 +87,17 @@ enum LiveSupportReport {
 
 enum LiveSupportRedactor {
     static func safeText(_ text: String) -> String {
+        text
+            .components(separatedBy: .newlines)
+            .map(safeLine)
+            .joined(separator: "\n")
+    }
+
+    private static func safeLine(_ text: String) -> String {
         if containsSensitiveLocator(text) {
             return "[sensitive detail redacted]"
         }
-        return text
+        return redactFilenameTokens(in: text)
     }
 
     private static func containsSensitiveLocator(_ text: String) -> Bool {
@@ -102,5 +109,17 @@ enum LiveSupportRedactor {
             || lowered.contains("/tmp/")
             || lowered.contains("ditu" + "liveswitcher")
             || lowered.contains("com." + "didu")
+    }
+
+    private static func redactFilenameTokens(in text: String) -> String {
+        let pattern = #"(?i)\b[^\s/\\:]+?\.(mov|mp4|m4v|mp3|m4a|wav|aac|flac|key|ppt|pptx)\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return text }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        return regex.stringByReplacingMatches(
+            in: text,
+            options: [],
+            range: range,
+            withTemplate: "[filename redacted]"
+        )
     }
 }
