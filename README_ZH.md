@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.8.zip
+LiveSwitcher-macOS-v0.2.9.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,13 +55,13 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.2.8 更新
+## v0.2.9 更新
 
-- 支持报告：`? -> Preflight` 新增 `Copy Support` 和 `Save Support...`，方便把现场问题脱敏交给开发者。
-- 纯文本导出：报告合并运行诊断、完整现场检查和最近的脱敏现场控制事件。
-- 隐私优先：支持报告不包含截图、系统日志、本机路径、原始媒体文件名、file URL、客户内容、叠层文字或媒体标题。
+- 支持报告脱敏增强：单条敏感事件不会再把整份报告变成一个占位符。
+- 文件名保护：媒体和演示文件名即使没有本机路径，也会从支持报告中移除。
+- 纯文本交接方式不变：运行诊断、完整现场检查和最近的脱敏现场控制事件仍集中在一个 `.txt` 报告中。
 
-操作流程见 [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)。
+加固检查见 [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)。
 
 ## 现场检查
 
@@ -69,12 +69,13 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 开演前优先查看 `Needs attention`。它只显示失败和警告项；如需完整审计，可切到 `All checks`。`Copy Report` 始终复制完整报告，不受当前过滤视图影响。
 
-提交 bug 或现场复盘时使用 `Copy Support` 或 `Save Support...`。支持报告是纯文本并已脱敏：包含运行诊断、完整现场检查和最近事件类型，但不包含本机路径、原始媒体文件名、file URL、截图、系统日志、叠层文字或客户内容。
+提交 bug 或现场复盘时使用 `Copy Support` 或 `Save Support...`。支持报告是纯文本并已脱敏：包含运行诊断、完整现场检查和最近事件类型，但不包含本机路径、原始媒体文件名、file URL、截图、系统日志、叠层文字或客户内容。v0.2.9 加固后，单条敏感细节不会抹掉整份报告。
 
 相关文档：
 
+- [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)
+- [`docs/qa/release-hygiene-v0.2.9.md`](docs/qa/release-hygiene-v0.2.9.md)
 - [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)
-- [`docs/qa/release-hygiene-v0.2.8.md`](docs/qa/release-hygiene-v0.2.8.md)
 - [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)
 - [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)
 - [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)

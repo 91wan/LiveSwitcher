@@ -337,7 +337,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.8 | support report · sanitized text")
+            Text("Version 0.2.9 | support report · hardened redaction")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
