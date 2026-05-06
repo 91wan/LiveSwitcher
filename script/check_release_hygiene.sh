@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-CURRENT_VERSION="0.3.1"
+CURRENT_VERSION="0.3.2"
 CURRENT_TAG="v$CURRENT_VERSION"
-PREVIOUS_VERSION="0.3.0"
+PREVIOUS_VERSION="0.3.1"
 PREVIOUS_TAG="v$PREVIOUS_VERSION"
 
 fail() {
@@ -24,7 +24,7 @@ require_file docs/assets/readme/preview-switch.png
 require_file docs/assets/readme/audio-mixer.png
 require_file docs/assets/readme/overlays.png
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
-require_file "docs/qa/live-safety-cockpit-v$CURRENT_VERSION.md"
+require_file "docs/qa/live-action-guidance-v$CURRENT_VERSION.md"
 
 search_pattern() {
   local pattern="$1"

@@ -40,6 +40,12 @@ enum LivePreflightStatus: String {
     }
 }
 
+enum LivePreflightActionPresentationRole: Equatable {
+    case safeOneClick
+    case navigation
+    case operatorGuidance
+}
+
 enum LivePreflightActionKind: String, Equatable {
     case clearOverlays
     case turnOffPanic
@@ -49,13 +55,23 @@ enum LivePreflightActionKind: String, Equatable {
     case needsHardware
     case manualReview
 
-    var isEnabledInPreflightUI: Bool {
+    var presentationRole: LivePreflightActionPresentationRole {
         switch self {
+        case .clearOverlays, .turnOffPanic:
+            return .safeOneClick
+        case .openPreview, .openAudioMixer, .openOverlays:
+            return .navigation
         case .needsHardware, .manualReview:
-            return false
-        case .clearOverlays, .turnOffPanic, .openPreview, .openAudioMixer, .openOverlays:
-            return true
+            return .operatorGuidance
         }
+    }
+
+    var shouldRenderAsButton: Bool {
+        presentationRole != .operatorGuidance
+    }
+
+    var isEnabledInPreflightUI: Bool {
+        shouldRenderAsButton
     }
 }
 
