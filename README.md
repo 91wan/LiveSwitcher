@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.2.zip
+LiveSwitcher-macOS-v0.3.3.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,14 +55,13 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.2
+## What's New in v0.3.3
 
-- Preflight and Safety Cockpit now separate three action types: safe one-click fixes, page navigation, and operator guidance.
-- Hardware-required and manual-review rows now render as non-clickable guidance badges instead of disabled buttons.
-- `Clear overlays` and `Turn off panic` remain the only one-click actions that directly mutate show state.
-- Navigation actions still open the matching main-console page without changing playback, projection, audio routing, overlays, playlists, BGM library, or wallpaper library.
+- Safety Cockpit recent events now use collision-safe row identity, even when multiple same-kind support events happen in the same second.
+- Recent event display remains capped to the latest 12 rows and keeps the existing sanitized text-only behavior.
+- This patch does not change playback, projection, audio routing, overlays, playlists, BGM library, or wallpaper library behavior.
 
-See [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md) for the operator workflow.
+See [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md) for the event-stability check.
 
 ## Live Preflight
 
@@ -76,6 +75,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
+- [`docs/qa/release-hygiene-v0.3.3.md`](docs/qa/release-hygiene-v0.3.3.md)
 - [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
 - [`docs/qa/release-hygiene-v0.3.2.md`](docs/qa/release-hygiene-v0.3.2.md)
 - [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)
