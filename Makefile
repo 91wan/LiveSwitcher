@@ -4,7 +4,7 @@ APP_NAME      := LiveSwitcher.app
 INSTALL_SRC   := $(HOME)/Downloads/$(APP_NAME)
 INSTALL_DST   := /Applications/$(APP_NAME)
 
-.PHONY: all build run install test clean version
+.PHONY: all build run install test hygiene clean version
 
 all: build
 
@@ -26,8 +26,11 @@ install: build
 test:
 	@swift test
 
+hygiene:
+	@./script/check_release_hygiene.sh
+
 clean:
 	@rm -rf .build $(PKG_PATH)/.build dist
 
 version:
-	@grep -m1 "Version:" README.md | sed 's/.*`\\([^`]*\\)`.*/\\1/'
+	@grep -m1 -E -o 'LiveSwitcher-macOS-v[0-9][0-9.]*[.]zip' README.md | sed 's/LiveSwitcher-macOS-v//; s/[.]zip//'

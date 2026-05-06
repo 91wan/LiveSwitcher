@@ -18,5 +18,14 @@ jobs:
       - name: Show Swift Version
         run: swift --version
 
-      - name: Run Smoke Tests
+      - name: Build
+        run: swift build
+
+      - name: Test
         run: swift test
+
+      - name: Diff Check
+        run: git diff --check
+
+      - name: Release Hygiene
+        run: ./script/check_release_hygiene.sh

@@ -153,48 +153,6 @@ struct MainToolbar: View {
             : Color(red: 0.18, green: 0.42, blue: 0.88)
     }
 
-    // MARK: - V25: 翻页拦截开关
-
-    private var pageInterceptToggle: some View {
-        Button(action: {
-            viewModel.isPageInterceptEnabled.toggle()
-        }) {
-            HStack(spacing: 8) {
-                Image(systemName: viewModel.isPageInterceptEnabled
-                      ? "hand.raised.fill"
-                      : "hand.raised.slash")
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundColor(.white)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.isPageInterceptEnabled ? "PPT模式: 开" : "PPT模式: 关")
-                        .font(.system(size: 15, weight: .bold))
-                    Text(viewModel.isPageInterceptEnabled ? "翻页笔已接管 · 点击关闭" : "点击开启翻页笔接管")
-                        .font(.system(size: 11))
-                        .opacity(0.85)
-                }
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .fixedSize(horizontal: true, vertical: false)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(viewModel.isPageInterceptEnabled
-                          ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                          : Color(red: 0.18, green: 0.42, blue: 0.88))
-            )
-            .shadow(color: viewModel.isPageInterceptEnabled
-                    ? Color.green.opacity(0.4)
-                    : Color.blue.opacity(0.3),
-                    radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(viewModel.isPageInterceptEnabled
-              ? "翻页笔拦截已开启：PageUp/Down/左右箭头 将被拦截并转发给后台 WPS（点击关闭）"
-              : "翻页笔拦截已关闭：点击开启，接管翻页键并定向发送给 WPS")
-    }
-
     // MARK: - ❓ 使用说明按钮
 
     private var helpButton: some View {
@@ -215,50 +173,6 @@ struct MainToolbar: View {
         .buttonStyle(.plain)
         .focusable(false)
         .help("使用说明")
-    }
-
-    // MARK: - Tier1: 老板键按钮
-
-    private var panicButton: some View {
-        Button(action: {
-            withAnimation(.easeInOut(duration: 0.25)) {
-                viewModel.togglePanicMode()
-            }
-        }) {
-            HStack(spacing: 8) {
-                Image(systemName: viewModel.isPanicMode
-                      ? "eye.slash.fill"
-                      : "bolt.fill")
-                    .font(.system(size: 18, weight: .black))
-                    .foregroundColor(.white)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(viewModel.isPanicMode ? "🚨 老板键: 开" : "🚨 老板键")
-                        .font(.system(size: 15, weight: .bold))
-                    Text(viewModel.isPanicMode ? "副屏已切黑静音 · 点击恢复" : "一键切黑副屏并静音")
-                        .font(.system(size: 11))
-                        .opacity(0.85)
-                }
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .fixedSize(horizontal: true, vertical: false)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(viewModel.isPanicMode
-                          ? Color(red: 0.05, green: 0.65, blue: 0.35)
-                          : Color(red: 0.18, green: 0.42, blue: 0.88))
-            )
-            .shadow(color: viewModel.isPanicMode
-                    ? Color.green.opacity(0.4)
-                    : Color.blue.opacity(0.3),
-                    radius: 6, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(viewModel.isPanicMode
-              ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
-              : "老板键（紧急）：一键切黑副屏并静音所有音频")
     }
 
     private func compactToolbarButton(
@@ -289,38 +203,6 @@ struct MainToolbar: View {
                     .fill(fill)
             )
             .shadow(color: fill.opacity(0.28), radius: 5, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-    }
-
-    private func embeddedActionButton(
-        title: String,
-        systemName: String,
-        tint: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: systemName)
-                    .font(.system(size: 13, weight: .bold))
-                Text(title)
-                    .font(.system(size: 13, weight: .bold))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(
-                RoundedRectangle(cornerRadius: 13, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [tint, tint.opacity(0.82)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            )
-            .shadow(color: tint.opacity(0.24), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
         .focusable(false)
@@ -453,7 +335,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.5 | preflight focus · operator attention")
+            Text("Version 0.2.6 | release hygiene · CI gates")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
