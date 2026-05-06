@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.2.6",
+            appVersion: "0.2.7",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -302,7 +302,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.6"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.7"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
@@ -310,5 +310,80 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertFalse(report.localizedStandardContains("/Users/" + "liuchangxi"))
         XCTAssertFalse(report.localizedStandardContains("Ditu" + "LiveSwitcher"))
         XCTAssertFalse(report.localizedStandardContains("com." + "didu"))
+    }
+
+    func testDiagnosticsReportContainsRuntimeSummaryAndAllPreflightStatuses() {
+        var preflight = readySnapshot()
+        preflight.hasExternalDisplay = false
+        preflight.isBroadcasting = false
+        preflight.isSpeakerMode = true
+        preflight.isPanicMode = true
+        preflight.isBGMAudioTakeoverActive = true
+        preflight.activeOverlayCount = 2
+        preflight.autoPlayNextVideoOnEnd = true
+
+        let checks = LivePreflightCheck.build(from: preflight)
+        let diagnostics = LiveDiagnosticsSnapshot(
+            appVersion: "0.2.7",
+            operatingSystem: "macOS Test",
+            architecture: "arm64-test",
+            preflight: preflight
+        )
+
+        let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
+
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.7"))
+        XCTAssertTrue(report.contains("Runtime: macOS Test, arm64-test"))
+        XCTAssertTrue(report.contains("Overall: FAIL"))
+        XCTAssertTrue(report.contains("Programs: 1"))
+        XCTAssertTrue(report.contains("BGM tracks: 1"))
+        XCTAssertTrue(report.contains("Wallpapers: 1"))
+        XCTAssertTrue(report.contains("Active overlays: 2"))
+        XCTAssertTrue(report.contains("Speaker mode: on"))
+        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("BGM takeover: active"))
+        XCTAssertTrue(report.contains("Auto-next video: on"))
+        XCTAssertTrue(report.contains("- FAIL External Display"))
+        XCTAssertTrue(report.contains("- FAIL Panic Blackout"))
+    }
+
+    func testDiagnosticsReportRedactsRawPathsAndMediaNames() {
+        var preflight = readySnapshot()
+        preflight.currentProgramTitle = "/Users/" + "liuchangxi/Secret/Customer Dinner Video.mov"
+        preflight.currentProgramSource = "Media"
+
+        let checks = LivePreflightCheck.build(from: preflight)
+        let diagnostics = LiveDiagnosticsSnapshot(
+            appVersion: "0.2.7",
+            operatingSystem: "macOS Test",
+            architecture: "arm64-test",
+            preflight: preflight
+        )
+
+        let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
+
+        XCTAssertTrue(report.contains("Current program: selected"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+        XCTAssertFalse(report.localizedStandardContains("file://"))
+        XCTAssertFalse(report.localizedStandardContains("Customer Dinner Video.mov"))
+        XCTAssertFalse(report.localizedStandardContains("liuchangxi"))
+    }
+
+    func testViewModelDiagnosticsReportReflectsCurrentStateWithoutMutatingPlayback() {
+        let viewModel = makeViewModel()
+        viewModel.externalScreenProvider = { nil }
+        viewModel.isPanicMode = true
+        viewModel.isSpeakerMode = true
+        viewModel.startTicker(text: "Welcome")
+        let beforeSnapshot = viewModel.livePreflightSnapshot
+
+        let report = viewModel.liveDiagnosticsReportText()
+
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.7"))
+        XCTAssertTrue(report.contains("Overall: FAIL"))
+        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("Speaker mode: on"))
+        XCTAssertTrue(report.contains("Active overlays: 1"))
+        XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
     }
 }

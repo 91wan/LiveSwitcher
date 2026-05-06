@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - 主工具栏
 
@@ -261,6 +262,7 @@ struct HelpView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     @State private var selectedPanel: HelpPanel = .help
     @State private var copiedReport = false
+    @State private var diagnosticsMessage: String?
     @State private var preflightListMode: PreflightListMode = .needsAttention
     @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
@@ -335,7 +337,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.6 | release hygiene · CI gates")
+            Text("Version 0.2.7 | diagnostics · sanitized reports")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -359,12 +361,30 @@ struct HelpView: View {
 
                 Spacer()
 
-                Button(action: copyPreflightReport) {
-                    Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 12, weight: .bold))
+                VStack(alignment: .trailing, spacing: 7) {
+                    Button(action: copyPreflightReport) {
+                        Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 12, weight: .bold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+
+                    HStack(spacing: 7) {
+                        Button(action: copyDiagnosticsReport) {
+                            Label("Copy Diagnostics", systemImage: "stethoscope")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        Button(action: saveDiagnosticsReport) {
+                            Label("Save...", systemImage: "square.and.arrow.down")
+                                .font(.system(size: 11, weight: .bold))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
             }
 
             PreflightSummaryCard(summary: viewModel.livePreflightSummary)
@@ -391,6 +411,16 @@ struct HelpView: View {
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+
+            if let diagnosticsMessage {
+                Text(diagnosticsMessage)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.blue)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.blue.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
             if checks.isEmpty {
@@ -448,6 +478,41 @@ struct HelpView: View {
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_400_000_000)
             copiedReport = false
+        }
+    }
+
+    private func copyDiagnosticsReport() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(viewModel.liveDiagnosticsReportText(), forType: .string)
+        LiveSwitcherTelemetry.diagnosticsCopied(summaryStatus: viewModel.livePreflightSummary.status)
+        showDiagnosticsMessage("Diagnostics copied")
+    }
+
+    private func saveDiagnosticsReport() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = "LiveSwitcher-Diagnostics-v\(AppConfiguration.appVersion).txt"
+        panel.title = "Save Diagnostics"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try viewModel.liveDiagnosticsReportText().write(to: url, atomically: true, encoding: .utf8)
+            LiveSwitcherTelemetry.diagnosticsSaved(summaryStatus: viewModel.livePreflightSummary.status)
+            showDiagnosticsMessage("Diagnostics saved")
+        } catch {
+            showDiagnosticsMessage("Diagnostics save failed")
+        }
+    }
+
+    private func showDiagnosticsMessage(_ message: String) {
+        diagnosticsMessage = message
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            if diagnosticsMessage == message {
+                diagnosticsMessage = nil
+            }
         }
     }
 }

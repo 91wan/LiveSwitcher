@@ -931,6 +931,7 @@ final class SwitcherViewModel: ObservableObject {
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = false
                 isBGMAudioTakeoverActive = false
+                LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
                 fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
                 bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
@@ -957,6 +958,7 @@ final class SwitcherViewModel: ObservableObject {
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = true
                 isBGMAudioTakeoverActive = true
+                LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.play()
                 bgmFallbackPlayer.volume = 0
@@ -988,6 +990,7 @@ final class SwitcherViewModel: ObservableObject {
             currentBGMItem = item
             isBGMPlaying = true
             isBGMAudioTakeoverActive = true
+            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
             let targetVolume = effectiveBGMOutputVolume()
 
             if let player = try? AVAudioPlayer(contentsOf: item.url) {

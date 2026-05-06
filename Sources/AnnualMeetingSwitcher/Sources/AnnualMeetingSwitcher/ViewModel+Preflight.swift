@@ -49,19 +49,37 @@ extension SwitcherViewModel {
         )
     }
 
+    var liveDiagnosticsSnapshot: LiveDiagnosticsSnapshot {
+        LiveDiagnosticsSnapshot.make(preflight: livePreflightSnapshot)
+    }
+
+    func liveDiagnosticsReportText() -> String {
+        let snapshot = liveDiagnosticsSnapshot
+        return LiveDiagnosticsReport.makePlainText(
+            snapshot: snapshot,
+            checks: LivePreflightCheck.build(from: snapshot.preflight)
+        )
+    }
+
     @discardableResult
     func performLivePreflightAction(_ action: LivePreflightActionKind) -> Bool {
+        let didMutate: Bool
         switch action {
         case .clearOverlays:
             clearAllOverlays()
-            return true
+            didMutate = true
         case .turnOffPanic:
-            guard isPanicMode else { return false }
-            togglePanicMode()
-            return true
+            if isPanicMode {
+                togglePanicMode()
+                didMutate = true
+            } else {
+                didMutate = false
+            }
         case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
-            return false
+            didMutate = false
         }
+        LiveSwitcherTelemetry.preflightAction(action, didMutateState: didMutate)
+        return didMutate
     }
 }
 

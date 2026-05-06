@@ -29,6 +29,7 @@ extension SwitcherViewModel {
     /// 切换主讲人模式：开启时将 BGM 压低至 7%，关闭时恢复到用户设定音量
     func toggleSpeakerMode() {
         isSpeakerMode.toggle()
+        LiveSwitcherTelemetry.speakerModeChanged(isOn: isSpeakerMode)
         applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
     }
 
@@ -74,6 +75,7 @@ extension SwitcherViewModel {
         if bgmPlayMode == .sequential && index == items.count - 1 {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return

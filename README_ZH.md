@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.6.zip
+LiveSwitcher-macOS-v0.2.7.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,14 +55,13 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.2.6 更新
+## v0.2.7 更新
 
-- 发布卫生：仓库新增本地发布检查脚本，覆盖隐私、版本漂移、README 链接和公开素材检查。
-- CI 加固：GitHub Smoke Tests 现在会执行 build、test、whitespace diff check 和 release hygiene 检查。
-- 文档卫生：公开 README 拆分为英文页和中文页，避免单页混排影响公开阅读。
-- 代码清理：移除未使用的工具栏辅助代码，不改变可见按钮、快捷键或行为。
+- 诊断报告：`? -> Preflight` 新增 `Copy Diagnostics` 和 `Save...`，方便把现场问题脱敏交给开发者。
+- 隐私优先：诊断报告包含版本、运行环境、现场检查状态和数量统计，但不输出原始媒体路径或文件名。
+- 调试遥测：关键现场控制和诊断导出动作会写入简洁 unified log，不包含敏感内容。
 
-发布检查清单见 [`docs/qa/release-hygiene-v0.2.6.md`](docs/qa/release-hygiene-v0.2.6.md)。
+操作流程见 [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)。
 
 ## 现场检查
 
@@ -70,8 +69,12 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 开演前优先查看 `Needs attention`。它只显示失败和警告项；如需完整审计，可切到 `All checks`。`Copy Report` 始终复制完整报告，不受当前过滤视图影响。
 
+提交 bug 或现场复盘时使用 `Copy Diagnostics` 或 `Save...`。诊断报告是纯文本并已脱敏：包含运行状态、App 版本、现场检查状态和数量统计，但不包含本机文件路径、原始媒体文件名或客户内容。
+
 相关文档：
 
+- [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)
+- [`docs/qa/release-hygiene-v0.2.6.md`](docs/qa/release-hygiene-v0.2.6.md)
 - [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)
 - [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)
 - [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md)

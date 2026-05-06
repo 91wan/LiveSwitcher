@@ -14,6 +14,7 @@ extension SwitcherViewModel {
         } else {
             activatePanic()
         }
+        LiveSwitcherTelemetry.panicModeChanged(isOn: isPanicMode)
     }
 
     // MARK: - Private
