@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SafetyCockpitView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(\.openWindow) private var openWindow
     @State private var supportMessage: String?
     @State private var actionMessage: String?
 
@@ -231,7 +232,12 @@ struct SafetyCockpitView: View {
             if viewModel.performLivePreflightAction(action) {
                 showActionMessage("Panic turned off")
             }
-        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
+        case .openPreview, .openAudioMixer, .openOverlays:
+            guard let destination = action.mainConsoleDestination else { return }
+            viewModel.selectedMainTab = destination
+            openWindow(id: "main-console")
+            showActionMessage(navigationMessage(for: destination))
+        case .needsHardware, .manualReview:
             break
         }
     }
@@ -276,6 +282,17 @@ struct SafetyCockpitView: View {
             if actionMessage == message {
                 actionMessage = nil
             }
+        }
+    }
+
+    private func navigationMessage(for destination: MainConsoleTab) -> String {
+        switch destination {
+        case .preview:
+            return "Opened Preview / Switch"
+        case .audioMixer:
+            return "Opened Audio Mixer"
+        case .overlays:
+            return "Opened Overlays / Captions"
         }
     }
 
@@ -345,7 +362,7 @@ private struct SafetyCheckRow: View {
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
-                    .disabled(!actionKind.isEnabledInPreflightUI || !isSafeMutatingAction(actionKind))
+                    .disabled(!actionKind.isEnabledInPreflightUI)
                     .help(help(for: actionKind))
                     .padding(.top, 2)
                 }
@@ -383,10 +400,6 @@ private struct SafetyCheckRow: View {
         }
     }
 
-    private func isSafeMutatingAction(_ action: LivePreflightActionKind) -> Bool {
-        action == .clearOverlays || action == .turnOffPanic
-    }
-
     private func help(for action: LivePreflightActionKind) -> String {
         switch action {
         case .clearOverlays:
@@ -394,7 +407,7 @@ private struct SafetyCheckRow: View {
         case .turnOffPanic:
             return "Turn off active panic blackout."
         case .openPreview, .openAudioMixer, .openOverlays:
-            return "Navigation is available in the main console."
+            return "Open the matching page in the main console. This does not mutate show state."
         case .needsHardware:
             return "Requires external display hardware. This action is not automatic."
         case .manualReview:

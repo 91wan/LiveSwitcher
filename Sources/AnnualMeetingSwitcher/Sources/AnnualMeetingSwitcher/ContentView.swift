@@ -6,7 +6,6 @@ import UniformTypeIdentifiers
 struct ContentView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @FocusState private var isFocused: Bool
-    @State private var selectedTab: Int = 0
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,7 +27,7 @@ struct ContentView: View {
                         .layoutPriority(3)
 
                     LiveControlColumn {
-                        selectedTab = 1
+                        viewModel.selectedMainTab = .audioMixer
                     }
                     .frame(width: StudioTheme.directorRailWidth)
                     .layoutPriority(1)
@@ -37,22 +36,22 @@ struct ContentView: View {
                 .padding(.horizontal, 10)
                 .padding(.top, 4)
                 .padding(.bottom, 0)
-                .opacity(selectedTab == 0 ? 1 : 0)
-                .allowsHitTesting(selectedTab == 0)
+                .opacity(viewModel.selectedMainTab == .preview ? 1 : 0)
+                .allowsHitTesting(viewModel.selectedMainTab == .preview)
 
                 // 音频混音页面（限宽居中，绝不撑爆窗口）
                 AudioMixerView()
                     .frame(maxWidth: 800, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .opacity(selectedTab == 1 ? 1 : 0)
-                    .allowsHitTesting(selectedTab == 1)
+                    .opacity(viewModel.selectedMainTab == .audioMixer ? 1 : 0)
+                    .allowsHitTesting(viewModel.selectedMainTab == .audioMixer)
 
                 // 叠层 / 字幕页面（限宽居中，绝不撑爆窗口）
                 SettingsView()
                     .frame(maxWidth: 800, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .opacity(selectedTab == 2 ? 1 : 0)
-                    .allowsHitTesting(selectedTab == 2)
+                    .opacity(viewModel.selectedMainTab == .overlays ? 1 : 0)
+                    .allowsHitTesting(viewModel.selectedMainTab == .overlays)
             }
 
             // ─── 底部状态栏 ───
@@ -76,9 +75,9 @@ struct ContentView: View {
             Spacer(minLength: 16)
             MainToolbar(
                 embedded: true,
-                onOpenPreview: { selectedTab = 0 },
-                onOpenAudioMixer: { selectedTab = 1 },
-                onOpenOverlays: { selectedTab = 2 }
+                onOpenPreview: { viewModel.selectedMainTab = .preview },
+                onOpenAudioMixer: { viewModel.selectedMainTab = .audioMixer },
+                onOpenOverlays: { viewModel.selectedMainTab = .overlays }
             )
                 .layoutPriority(2)
         }
@@ -92,9 +91,9 @@ struct ContentView: View {
 
     private var navigationTabCluster: some View {
         HStack(spacing: 6) {
-            navigationTab(title: "预览 / 切换", systemName: "play.square.stack.fill", tag: 0)
-            navigationTab(title: "音频混音", systemName: "slider.horizontal.3", tag: 1)
-            navigationTab(title: "叠层 / 字幕", systemName: "rectangle.3.group.bubble.left.fill", tag: 2)
+            navigationTab(title: "预览 / 切换", systemName: "play.square.stack.fill", tag: .preview)
+            navigationTab(title: "音频混音", systemName: "slider.horizontal.3", tag: .audioMixer)
+            navigationTab(title: "叠层 / 字幕", systemName: "rectangle.3.group.bubble.left.fill", tag: .overlays)
         }
         .padding(5)
         .background(
@@ -108,10 +107,10 @@ struct ContentView: View {
         .shadow(color: Color.black.opacity(0.07), radius: 16, x: 0, y: 8)
     }
 
-    private func navigationTab(title: String, systemName: String, tag: Int) -> some View {
+    private func navigationTab(title: String, systemName: String, tag: MainConsoleTab) -> some View {
         Button {
             withAnimation(.easeInOut(duration: 0.16)) {
-                selectedTab = tag
+                viewModel.selectedMainTab = tag
             }
         } label: {
             HStack(spacing: 7) {
@@ -120,12 +119,12 @@ struct ContentView: View {
                 Text(title)
                     .font(.system(size: 15, weight: .semibold))
             }
-            .foregroundStyle(selectedTab == tag ? .white : .primary)
+            .foregroundStyle(viewModel.selectedMainTab == tag ? .white : .primary)
             .padding(.horizontal, 18)
             .padding(.vertical, 11)
             .background(
                 Group {
-                    if selectedTab == tag {
+                    if viewModel.selectedMainTab == tag {
                         Capsule(style: .continuous)
                             .fill(StudioTheme.accentGradient)
                     } else {
@@ -134,7 +133,7 @@ struct ContentView: View {
                     }
                 }
             )
-            .shadow(color: selectedTab == tag ? StudioTheme.accent.opacity(0.28) : .clear, radius: 10, x: 0, y: 6)
+            .shadow(color: viewModel.selectedMainTab == tag ? StudioTheme.accent.opacity(0.28) : .clear, radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
         .focusable(false)

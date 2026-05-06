@@ -8,7 +8,7 @@ struct LiveSwitcherApp: App {
     @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
-        WindowGroup {
+        Window("LiveSwitcher", id: "main-console") {
             ContentView()
                 .environmentObject(viewModel)
                 .frame(minWidth: AppConfiguration.minWindowWidth,
