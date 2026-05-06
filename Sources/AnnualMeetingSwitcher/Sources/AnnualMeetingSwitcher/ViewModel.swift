@@ -52,6 +52,10 @@ struct BGMItem: Identifiable, Equatable {
 @MainActor
 final class SwitcherViewModel: ObservableObject {
 
+    // MARK: - 主窗口导航
+
+    @Published var selectedMainTab: MainConsoleTab = .preview
+
     // MARK: - 节目状态
 
     @Published var currentProgramItem: ProgramItem? {
