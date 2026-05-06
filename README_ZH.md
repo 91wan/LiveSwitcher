@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.1.zip
+LiveSwitcher-macOS-v0.3.2.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,14 +55,14 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.1 更新
+## v0.3.2 更新
 
-- 现场安全台里的引导按钮现在可以打开主控制台对应页面：`Open preview`、`Open audio mixer`、`Open overlays`。
-- 导航动作不会修改现场状态：只切换页面，不改变播放、投射、音频路由、叠层、节目列表、BGM 音乐库或壁纸库。
-- 主控制台页签选择现在与安全台共享，现场引导按钮不再显示成无法操作的死按钮。
-- v0.3.0 的现场安全台仍是核心开演检查视图，保留失败/警告优先和脱敏支持报告导出。
+- 现场检查和现场安全台现在明确区分三类操作：安全一键修复、页面导航、现场人员指引。
+- 需要硬件和需要人工复核的行现在显示为不可点击的指引徽标，不再像失效按钮。
+- `Clear overlays` 和 `Turn off panic` 仍然是唯一会直接修改现场状态的一键动作。
+- 导航动作仍只打开对应主控制台页面，不改变播放、投射、音频路由、叠层、节目列表、BGM 音乐库或壁纸库。
 
-操作流程见 [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)。
+操作流程见 [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)。
 
 ## 现场检查
 
@@ -76,6 +76,8 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 相关文档：
 
+- [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
+- [`docs/qa/release-hygiene-v0.3.2.md`](docs/qa/release-hygiene-v0.3.2.md)
 - [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)
 - [`docs/qa/release-hygiene-v0.3.1.md`](docs/qa/release-hygiene-v0.3.1.md)
 - [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)

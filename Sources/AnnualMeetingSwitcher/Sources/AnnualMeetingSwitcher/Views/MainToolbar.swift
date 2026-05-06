@@ -345,7 +345,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.3.1 | live safety cockpit")
+            Text("Version 0.3.2 | action guidance")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -702,14 +702,18 @@ private struct PreflightRowView: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let actionLabel = check.actionLabel, let actionKind = check.actionKind {
-                    Button(actionLabel) {
-                        onAction(actionKind)
+                    if actionKind.shouldRenderAsButton {
+                        Button(actionLabel) {
+                            onAction(actionKind)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .help(preflightActionHelp(for: actionKind))
+                        .padding(.top, 3)
+                    } else {
+                        guidanceBadge(actionLabel, actionKind)
+                            .padding(.top, 3)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(!actionKind.isEnabledInPreflightUI)
-                    .help(preflightActionHelp(for: actionKind))
-                    .padding(.top, 3)
                 }
             }
 
@@ -745,6 +749,27 @@ private struct PreflightRowView: View {
             return "exclamationmark.triangle.fill"
         case .fail:
             return "xmark.octagon.fill"
+        }
+    }
+
+    private func guidanceBadge(_ label: String, _ action: LivePreflightActionKind) -> some View {
+        Label(label, systemImage: guidanceIcon(for: action))
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(Color.secondary.opacity(0.10), in: Capsule())
+            .help(preflightActionHelp(for: action))
+    }
+
+    private func guidanceIcon(for action: LivePreflightActionKind) -> String {
+        switch action {
+        case .needsHardware:
+            return "display.2"
+        case .manualReview:
+            return "person.crop.circle.badge.questionmark"
+        case .clearOverlays, .turnOffPanic, .openPreview, .openAudioMixer, .openOverlays:
+            return "info.circle"
         }
     }
 

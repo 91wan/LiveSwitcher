@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.1.zip
+LiveSwitcher-macOS-v0.3.2.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,14 +55,14 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.1
+## What's New in v0.3.2
 
-- Safety Cockpit guidance buttons now open the matching main-console page: `Open preview`, `Open audio mixer`, and `Open overlays`.
-- Navigation actions are non-mutating: they switch tabs only and do not change playback, projection, audio routing, overlays, playlists, BGM library, or wallpaper library.
-- The main console tab selection is now shared with the cockpit, so operator guidance no longer appears as disabled dead buttons.
-- The v0.3.0 Live Safety Cockpit remains the core readiness view with prioritized fail/warn rows and sanitized support export.
+- Preflight and Safety Cockpit now separate three action types: safe one-click fixes, page navigation, and operator guidance.
+- Hardware-required and manual-review rows now render as non-clickable guidance badges instead of disabled buttons.
+- `Clear overlays` and `Turn off panic` remain the only one-click actions that directly mutate show state.
+- Navigation actions still open the matching main-console page without changing playback, projection, audio routing, overlays, playlists, BGM library, or wallpaper library.
 
-See [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md) for the operator workflow.
+See [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md) for the operator workflow.
 
 ## Live Preflight
 
@@ -76,6 +76,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
+- [`docs/qa/release-hygiene-v0.3.2.md`](docs/qa/release-hygiene-v0.3.2.md)
 - [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)
 - [`docs/qa/release-hygiene-v0.3.1.md`](docs/qa/release-hygiene-v0.3.1.md)
 - [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)

@@ -357,14 +357,18 @@ private struct SafetyCheckRow: View {
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let actionLabel = check.actionLabel, let actionKind = check.actionKind {
-                    Button(actionLabel) {
-                        onAction(actionKind)
+                    if actionKind.shouldRenderAsButton {
+                        Button(actionLabel) {
+                            onAction(actionKind)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                        .help(help(for: actionKind))
+                        .padding(.top, 2)
+                    } else {
+                        guidanceBadge(actionLabel, actionKind)
+                            .padding(.top, 2)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(!actionKind.isEnabledInPreflightUI)
-                    .help(help(for: actionKind))
-                    .padding(.top, 2)
                 }
             }
 
@@ -397,6 +401,27 @@ private struct SafetyCheckRow: View {
             return "exclamationmark.triangle.fill"
         case .fail:
             return "xmark.octagon.fill"
+        }
+    }
+
+    private func guidanceBadge(_ label: String, _ action: LivePreflightActionKind) -> some View {
+        Label(label, systemImage: guidanceIcon(for: action))
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 5)
+            .background(Color.secondary.opacity(0.10), in: Capsule())
+            .help(help(for: action))
+    }
+
+    private func guidanceIcon(for action: LivePreflightActionKind) -> String {
+        switch action {
+        case .needsHardware:
+            return "display.2"
+        case .manualReview:
+            return "person.crop.circle.badge.questionmark"
+        case .clearOverlays, .turnOffPanic, .openPreview, .openAudioMixer, .openOverlays:
+            return "info.circle"
         }
     }
 
