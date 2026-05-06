@@ -15,6 +15,7 @@ extension SwitcherViewModel {
             activatePanic()
         }
         LiveSwitcherTelemetry.panicModeChanged(isOn: isPanicMode)
+        recordSupportEvent(kind: .panicModeChanged, detail: "isOn=\(isPanicMode)")
     }
 
     // MARK: - Private

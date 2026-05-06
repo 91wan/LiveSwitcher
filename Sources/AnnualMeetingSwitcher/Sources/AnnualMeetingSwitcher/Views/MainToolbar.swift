@@ -262,7 +262,7 @@ struct HelpView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     @State private var selectedPanel: HelpPanel = .help
     @State private var copiedReport = false
-    @State private var diagnosticsMessage: String?
+    @State private var supportMessage: String?
     @State private var preflightListMode: PreflightListMode = .needsAttention
     @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
@@ -337,7 +337,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.7 | diagnostics · sanitized reports")
+            Text("Version 0.2.8 | support report · sanitized text")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -370,15 +370,15 @@ struct HelpView: View {
                     .controlSize(.small)
 
                     HStack(spacing: 7) {
-                        Button(action: copyDiagnosticsReport) {
-                            Label("Copy Diagnostics", systemImage: "stethoscope")
+                        Button(action: copySupportReport) {
+                            Label("Copy Support", systemImage: "stethoscope")
                                 .font(.system(size: 11, weight: .bold))
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
-                        Button(action: saveDiagnosticsReport) {
-                            Label("Save...", systemImage: "square.and.arrow.down")
+                        Button(action: saveSupportReport) {
+                            Label("Save Support...", systemImage: "square.and.arrow.down")
                                 .font(.system(size: 11, weight: .bold))
                         }
                         .buttonStyle(.bordered)
@@ -413,8 +413,8 @@ struct HelpView: View {
                     .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
 
-            if let diagnosticsMessage {
-                Text(diagnosticsMessage)
+            if let supportMessage {
+                Text(supportMessage)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(.blue)
                     .padding(.horizontal, 10)
@@ -481,37 +481,45 @@ struct HelpView: View {
         }
     }
 
-    private func copyDiagnosticsReport() {
+    private func copySupportReport() {
         NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(viewModel.liveDiagnosticsReportText(), forType: .string)
-        LiveSwitcherTelemetry.diagnosticsCopied(summaryStatus: viewModel.livePreflightSummary.status)
-        showDiagnosticsMessage("Diagnostics copied")
+        NSPasteboard.general.setString(viewModel.liveSupportReportText(), forType: .string)
+        LiveSwitcherTelemetry.supportReportCopied(summaryStatus: viewModel.livePreflightSummary.status)
+        viewModel.recordSupportEvent(
+            kind: .supportReportCopied,
+            detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
+        )
+        showSupportMessage("Support report copied")
     }
 
-    private func saveDiagnosticsReport() {
+    private func saveSupportReport() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
-        panel.nameFieldStringValue = "LiveSwitcher-Diagnostics-v\(AppConfiguration.appVersion).txt"
-        panel.title = "Save Diagnostics"
+        panel.nameFieldStringValue = "LiveSwitcher-Support-v\(AppConfiguration.appVersion).txt"
+        panel.title = "Save Support Report"
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
         do {
-            try viewModel.liveDiagnosticsReportText().write(to: url, atomically: true, encoding: .utf8)
-            LiveSwitcherTelemetry.diagnosticsSaved(summaryStatus: viewModel.livePreflightSummary.status)
-            showDiagnosticsMessage("Diagnostics saved")
+            try viewModel.liveSupportReportText().write(to: url, atomically: true, encoding: .utf8)
+            LiveSwitcherTelemetry.supportReportSaved(summaryStatus: viewModel.livePreflightSummary.status)
+            viewModel.recordSupportEvent(
+                kind: .supportReportSaved,
+                detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
+            )
+            showSupportMessage("Support report saved")
         } catch {
-            showDiagnosticsMessage("Diagnostics save failed")
+            showSupportMessage("Support report save failed")
         }
     }
 
-    private func showDiagnosticsMessage(_ message: String) {
-        diagnosticsMessage = message
+    private func showSupportMessage(_ message: String) {
+        supportMessage = message
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_600_000_000)
-            if diagnosticsMessage == message {
-                diagnosticsMessage = nil
+            if supportMessage == message {
+                supportMessage = nil
             }
         }
     }

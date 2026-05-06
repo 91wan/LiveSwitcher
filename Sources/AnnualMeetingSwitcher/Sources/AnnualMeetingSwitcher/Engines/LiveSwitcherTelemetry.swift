@@ -25,6 +25,14 @@ enum LiveSwitcherTelemetry {
         diagnosticsLogger.info("Diagnostics saved; status=\(summaryStatus.rawValue, privacy: .public)")
     }
 
+    static func supportReportCopied(summaryStatus: LivePreflightStatus) {
+        diagnosticsLogger.info("Support report copied; status=\(summaryStatus.rawValue, privacy: .public)")
+    }
+
+    static func supportReportSaved(summaryStatus: LivePreflightStatus) {
+        diagnosticsLogger.info("Support report saved; status=\(summaryStatus.rawValue, privacy: .public)")
+    }
+
     static func preflightAction(_ action: LivePreflightActionKind, didMutateState: Bool) {
         diagnosticsLogger.info("Preflight action=\(action.rawValue, privacy: .public), mutated=\(didMutateState, privacy: .public)")
     }
