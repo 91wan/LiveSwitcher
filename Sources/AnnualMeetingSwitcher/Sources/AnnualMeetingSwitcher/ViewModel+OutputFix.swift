@@ -11,8 +11,10 @@ extension SwitcherViewModel {
             } else {
                 hideOutputWindow()
             }
+            LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
         } else {
             broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
+            LiveSwitcherTelemetry.projectionFailClosed()
             // 没有接副屏（只有主屏），弹出防呆警告！
             let alert = NSAlert()
             alert.messageText = "未检测到外接屏幕"

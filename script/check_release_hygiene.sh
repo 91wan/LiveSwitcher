@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-CURRENT_VERSION="0.2.6"
+CURRENT_VERSION="0.2.7"
 CURRENT_TAG="v$CURRENT_VERSION"
 
 fail() {
@@ -22,6 +22,7 @@ require_file docs/assets/readme/preview-switch.png
 require_file docs/assets/readme/audio-mixer.png
 require_file docs/assets/readme/overlays.png
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
+require_file "docs/qa/live-diagnostics-v$CURRENT_VERSION.md"
 
 search_pattern() {
   local pattern="$1"
@@ -59,8 +60,8 @@ search_pattern "$private_pattern" . \
 search_pattern "$local_path_pattern" . \
   && fail "local/private path found"
 
-search_pattern '0\.2\.5|v0\.2\.5|LiveSwitcher-macOS-v0\.2\.5' \
-  Sources script .github \
+search_pattern '0\.2\.6|v0\.2\.6|LiveSwitcher-macOS-v0\.2\.6' \
+  Sources script/build_and_run.sh Sources/AnnualMeetingSwitcher/build_v33.sh .github \
   && fail "stale active version reference found"
 
 search_pattern "static let appVersion = \"$CURRENT_VERSION\"" Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/AppConfiguration.swift >/dev/null \
