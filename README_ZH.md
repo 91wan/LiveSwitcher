@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.3.zip
+LiveSwitcher-macOS-v0.3.4.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,13 +55,13 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.3 更新
+## v0.3.4 更新
 
-- 现场安全台最近事件现在使用防碰撞行标识，即使同一秒内出现多个同类型支持事件也不会产生重复 SwiftUI row ID。
-- 最近事件仍只显示最新 12 条，并保持既有的纯文本脱敏行为。
-- 本补丁不改变播放、投射、音频路由、叠层、节目列表、BGM 音乐库或壁纸库行为。
+- 现场检查现在会显示当前上屏的脱敏叠层类型：倒计时、游动字幕、人名条。
+- 倒计时状态更容易验证：倒计时结束走可测试的 tick 路径，并使用 common run-loop 定时器调度。
+- 诊断报告和支持报告会包含叠层类型 / 剩余时间，但不会暴露叠层文字或客户内容。
 
-事件稳定性检查见 [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)。
+叠层可靠性检查见 [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)。
 
 ## 现场检查
 
@@ -75,6 +75,8 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 相关文档：
 
+- [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
+- [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
 - [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
 - [`docs/qa/release-hygiene-v0.3.3.md`](docs/qa/release-hygiene-v0.3.3.md)
 - [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)

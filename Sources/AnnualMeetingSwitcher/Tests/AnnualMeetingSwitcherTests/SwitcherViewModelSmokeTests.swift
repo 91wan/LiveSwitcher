@@ -157,6 +157,34 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.countdownSeconds, 0)
     }
 
+    func testCountdownTickAutoStopsAtZero() {
+        let viewModel = makeViewModel()
+
+        viewModel.startCountdown(seconds: 2, title: "开场倒计时")
+
+        viewModel.countdownTick()
+        XCTAssertTrue(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 1)
+
+        viewModel.countdownTick()
+        XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownSeconds, 0)
+    }
+
+    func testRestartingCountdownReplacesRemainingSeconds() {
+        let viewModel = makeViewModel()
+
+        viewModel.startCountdown(seconds: 30, title: "First")
+        viewModel.countdownTick()
+        XCTAssertEqual(viewModel.countdownSeconds, 29)
+
+        viewModel.startCountdown(seconds: 5, title: "Second")
+
+        XCTAssertTrue(viewModel.isCountdownActive)
+        XCTAssertEqual(viewModel.countdownTitle, "Second")
+        XCTAssertEqual(viewModel.countdownSeconds, 5)
+    }
+
     func testOverlayStartMethodsRejectUnsafeInput() {
         let viewModel = makeViewModel()
 

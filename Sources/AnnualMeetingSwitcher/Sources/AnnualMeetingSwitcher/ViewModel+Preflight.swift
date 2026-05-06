@@ -10,6 +10,11 @@ extension SwitcherViewModel {
             isTickerActive,
             isLowerThirdVisible
         ].filter { $0 }.count
+        let overlayKinds: [LiveOverlayKind] = [
+            isCountdownActive ? .countdown : nil,
+            isTickerActive ? .ticker : nil,
+            isLowerThirdVisible ? .lowerThird : nil
+        ].compactMap { $0 }
 
         return LivePreflightSnapshot(
             appVersion: AppConfiguration.appVersion,
@@ -26,6 +31,8 @@ extension SwitcherViewModel {
             isPanicMode: isPanicMode,
             isPageInterceptEnabled: isPageInterceptEnabled,
             activeOverlayCount: overlayCount,
+            activeOverlayKinds: overlayKinds,
+            countdownRemainingSeconds: isCountdownActive ? countdownSeconds : nil,
             wallpaperCount: backgroundWallpapers.count,
             autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd,
             effectiveMediaVolume: effectiveMediaOutputVolume(),

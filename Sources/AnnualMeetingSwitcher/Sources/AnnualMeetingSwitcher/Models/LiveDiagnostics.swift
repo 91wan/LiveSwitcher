@@ -47,7 +47,7 @@ enum LiveDiagnosticsReport {
             "Programs: \(preflight.programItemCount)",
             "BGM tracks: \(preflight.bgmItemCount)",
             "Wallpapers: \(preflight.wallpaperCount)",
-            "Active overlays: \(preflight.activeOverlayCount)",
+            "Active overlays: \(overlayRuntimeSummary(preflight))",
             "Speaker mode: \(preflight.isSpeakerMode ? "on" : "off")",
             "Panic blackout: \(preflight.isPanicMode ? "on" : "off")",
             "PPT mode: \(preflight.isPageInterceptEnabled ? "on" : "off")",
@@ -79,5 +79,10 @@ enum LiveDiagnosticsReport {
 
     private static func formatPercent(_ volume: Float) -> String {
         "\(Int((max(0, min(volume, 1)) * 100).rounded()))%"
+    }
+
+    private static func overlayRuntimeSummary(_ snapshot: LivePreflightSnapshot) -> String {
+        guard snapshot.activeOverlayCount > 0 else { return "none" }
+        return "\(snapshot.activeOverlayCount) (\(LivePreflightCheck.overlaySummary(snapshot)))"
     }
 }
