@@ -5,6 +5,7 @@ import SwiftUI
 
 struct LiveSwitcherApp: App {
     @StateObject private var viewModel = Self.makeViewModel()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         WindowGroup {
@@ -15,6 +16,13 @@ struct LiveSwitcherApp: App {
         }
         .commands {
             CommandMenu("现场控制") {
+                Button("打开现场安全台") {
+                    openWindow(id: "safety-cockpit")
+                }
+                .keyboardShortcut("0", modifiers: [.command, .option])
+
+                Divider()
+
                 Button(viewModel.isSpeakerMode ? "关闭主讲人模式" : "开启主讲人模式") {
                     viewModel.toggleSpeakerMode()
                 }
@@ -31,6 +39,13 @@ struct LiveSwitcherApp: App {
                 .keyboardShortcut("p", modifiers: [.command, .option])
             }
         }
+        .windowResizability(.contentMinSize)
+
+        Window("Live Safety Cockpit", id: "safety-cockpit") {
+            SafetyCockpitView()
+                .environmentObject(viewModel)
+        }
+        .defaultSize(width: 880, height: 720)
         .windowResizability(.contentMinSize)
     }
 
