@@ -47,11 +47,16 @@ enum LiveSafetyCockpit {
             )
         }
 
+        let recentSupportEvents = Array(events.suffix(12))
+        let firstRecentSequence = events.count - recentSupportEvents.count
+
         return LiveSafetyCockpitState(
             summary: LivePreflightSummary.make(from: checks),
             priorityChecks: priorityChecks,
             sections: sections,
-            recentEvents: events.suffix(12).map(eventRow),
+            recentEvents: recentSupportEvents.enumerated().map { offset, event in
+                eventRow(event, sequence: firstRecentSequence + offset)
+            },
             safeActionCount: checks.filter { check in
                 check.actionKind == .clearOverlays || check.actionKind == .turnOffPanic
             }.count
@@ -73,9 +78,9 @@ enum LiveSafetyCockpit {
         checks.firstIndex(where: { $0.id == check.id }) ?? Int.max
     }
 
-    private static func eventRow(_ event: LiveSupportEvent) -> LiveSafetyCockpitEventRow {
+    private static func eventRow(_ event: LiveSupportEvent, sequence: Int) -> LiveSafetyCockpitEventRow {
         LiveSafetyCockpitEventRow(
-            id: "\(isoString(event.timestamp))-\(event.kind.rawValue)",
+            id: "\(isoString(event.timestamp))-\(event.kind.rawValue)-\(sequence)",
             timestamp: isoString(event.timestamp),
             kind: event.kind.rawValue,
             detail: LiveSupportRedactor.safeText(event.detail)
