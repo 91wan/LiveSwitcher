@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -302,7 +302,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
@@ -324,7 +324,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -332,7 +332,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.0"))
         XCTAssertTrue(report.contains("Runtime: macOS Test, arm64-test"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Programs: 1"))
@@ -354,7 +354,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -379,7 +379,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.liveDiagnosticsReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
@@ -396,7 +396,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -415,12 +415,12 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.0"))
         XCTAssertTrue(report.contains("Generated: 2026-09-21T14:13:20Z"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.0"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.0"))
         XCTAssertTrue(report.contains("[Recent Events]"))
         XCTAssertTrue(report.contains("preflight.action"))
         XCTAssertTrue(report.contains("[Privacy Notice]"))
@@ -434,7 +434,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -453,7 +453,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.0"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
         XCTAssertTrue(report.contains("[Recent Events]"))
@@ -469,7 +469,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.2.9",
+            appVersion: "0.3.0",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -488,7 +488,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.0"))
         XCTAssertTrue(report.contains("bgm.takeover.changed"))
         XCTAssertTrue(report.contains("[filename redacted]"))
         XCTAssertFalse(report.localizedStandardContains("Opening.mov"))
@@ -548,7 +548,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.2.9"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
@@ -558,5 +558,90 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.count, beforeProgramCount)
         XCTAssertEqual(viewModel.bgmItems.count, beforeBGMCount)
         XCTAssertEqual(viewModel.backgroundWallpapers.count, beforeWallpaperCount)
+    }
+
+    func testSafetyCockpitOrdersFailWarnPassChecksForOperatorAttention() {
+        var snapshot = readySnapshot()
+        snapshot.hasExternalDisplay = false
+        snapshot.isBroadcasting = false
+        snapshot.autoPlayNextVideoOnEnd = true
+        let checks = LivePreflightCheck.build(from: snapshot)
+
+        let cockpit = LiveSafetyCockpit.make(
+            snapshot: snapshot,
+            checks: checks,
+            events: []
+        )
+
+        XCTAssertEqual(cockpit.summary.status, .fail)
+        XCTAssertEqual(cockpit.priorityChecks.first?.status, .fail)
+        XCTAssertEqual(cockpit.priorityChecks.first?.id, "display.external")
+        XCTAssertTrue(cockpit.priorityChecks.dropFirst().contains { $0.status == .warn })
+        XCTAssertLessThan(
+            cockpit.priorityChecks.firstIndex { $0.status == .warn } ?? Int.max,
+            cockpit.priorityChecks.firstIndex { $0.status == .pass } ?? Int.max
+        )
+    }
+
+    func testSafetyCockpitNoExternalDisplayCreatesNotReadyDisplayCard() {
+        var snapshot = readySnapshot()
+        snapshot.hasExternalDisplay = false
+        snapshot.isBroadcasting = false
+        let checks = LivePreflightCheck.build(from: snapshot)
+
+        let cockpit = LiveSafetyCockpit.make(
+            snapshot: snapshot,
+            checks: checks,
+            events: []
+        )
+        let displaySection = cockpit.sections.first { $0.group == .display }
+
+        XCTAssertEqual(cockpit.summary.title, "Not ready")
+        XCTAssertNotNil(displaySection)
+        XCTAssertTrue(displaySection?.checks.contains { check in
+            check.id == "display.external" &&
+                check.status == .fail &&
+                check.actionKind == .needsHardware
+        } ?? false)
+    }
+
+    func testSafetyCockpitPanicAndOverlaysExposeOnlySafeMutatingActions() {
+        var snapshot = readySnapshot()
+        snapshot.isPanicMode = true
+        snapshot.activeOverlayCount = 2
+        let checks = LivePreflightCheck.build(from: snapshot)
+
+        let cockpit = LiveSafetyCockpit.make(
+            snapshot: snapshot,
+            checks: checks,
+            events: []
+        )
+
+        XCTAssertTrue(cockpit.priorityChecks.contains { $0.id == "controls.panic" && $0.actionKind == .turnOffPanic })
+        XCTAssertTrue(cockpit.priorityChecks.contains { $0.id == "overlays.active" && $0.actionKind == .clearOverlays })
+        XCTAssertFalse(cockpit.priorityChecks.contains { $0.actionKind == .needsHardware && ($0.actionKind?.isEnabledInPreflightUI ?? false) })
+        XCTAssertTrue(cockpit.safeActionCount >= 2)
+    }
+
+    func testSafetyCockpitSanitizesRecentEventRows() {
+        let snapshot = readySnapshot()
+        let checks = LivePreflightCheck.build(from: snapshot)
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1_790_000_000),
+            kind: .projectionFailClosed,
+            detail: "lost file:///Users/" + "liuchangxi/Show/Opening.mov"
+        )
+
+        let cockpit = LiveSafetyCockpit.make(
+            snapshot: snapshot,
+            checks: checks,
+            events: [event]
+        )
+
+        XCTAssertEqual(cockpit.recentEvents.count, 1)
+        XCTAssertEqual(cockpit.recentEvents[0].kind, "projection.fail.closed")
+        XCTAssertEqual(cockpit.recentEvents[0].detail, "[sensitive detail redacted]")
+        XCTAssertFalse(cockpit.recentEvents[0].detail.localizedStandardContains("/Users/"))
+        XCTAssertFalse(cockpit.recentEvents[0].detail.localizedStandardContains("Opening.mov"))
     }
 }

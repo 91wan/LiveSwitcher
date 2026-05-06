@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.2.9.zip
+LiveSwitcher-macOS-v0.3.0.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,13 +55,14 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.2.9
+## What's New in v0.3.0
 
-- Hardened support-report redaction: sensitive event details no longer collapse the whole report into a single placeholder.
-- Filename protection: media and presentation filename tokens are removed even when they appear without local paths.
-- Text-only support handoff remains unchanged: runtime diagnostics, full preflight, and recent sanitized live-control events stay in one `.txt` report.
+- New **Live Safety Cockpit** window for show-start readiness checks.
+- Fail and warning rows are promoted first so the operator sees blocking issues without scrolling a long checklist.
+- Safe actions remain bounded: only `Clear overlays` and `Turn off panic` mutate state; hardware/manual rows stay disabled.
+- Support handoff stays text-only and sanitized, with recent event rows visible in the cockpit.
 
-See [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md) for the hardening checks.
+See [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md) for the operator workflow.
 
 ## Live Preflight
 
@@ -69,10 +70,14 @@ Open the `?` button, switch from `Help` to `Preflight`, and review the live stat
 
 Use `Needs attention` before a show. It filters the live checklist to only failed and warning rows, while `All checks` remains available for a full audit. `Copy Report` always copies the complete report, not the filtered view.
 
-Use `Copy Support` or `Save Support...` when reporting a bug. Support reports are text-only and sanitized: they include runtime diagnostics, full preflight, and recent event kinds, but not local file paths, raw media filenames, file URLs, screenshots, system logs, overlay text, or customer content. v0.2.9 hardens this redaction so one sensitive detail does not erase the rest of the report.
+For a larger operator view, click `Open Cockpit` or use the macOS `现场控制 -> 打开现场安全台` command. The Safety Cockpit keeps the main console unchanged while showing readiness, top risks, safe actions, sanitized recent events, and support export controls in a separate window.
+
+Use `Copy Support` or `Save Support...` when reporting a bug. Support reports are text-only and sanitized: they include runtime diagnostics, full preflight, and recent event kinds, but not local file paths, raw media filenames, file URLs, screenshots, system logs, overlay text, or customer content.
 
 Related guides:
 
+- [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)
+- [`docs/qa/release-hygiene-v0.3.0.md`](docs/qa/release-hygiene-v0.3.0.md)
 - [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)
 - [`docs/qa/release-hygiene-v0.2.9.md`](docs/qa/release-hygiene-v0.2.9.md)
 - [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)

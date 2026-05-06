@@ -6,6 +6,7 @@ import UniformTypeIdentifiers
 
 struct MainToolbar: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(\.openWindow) private var openWindow
     @State private var showHelp = false
     var embedded: Bool = false
     var onOpenPreview: () -> Void = {}
@@ -32,7 +33,13 @@ struct MainToolbar: View {
             }
         }
         .popover(isPresented: $showHelp, arrowEdge: .bottom) {
-            HelpView(onPreflightAction: handlePreflightAction)
+            HelpView(
+                onPreflightAction: handlePreflightAction,
+                onOpenSafetyCockpit: {
+                    openWindow(id: "safety-cockpit")
+                    showHelp = false
+                }
+            )
         }
     }
 
@@ -266,6 +273,7 @@ struct HelpView: View {
     @State private var preflightListMode: PreflightListMode = .needsAttention
     @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
+    var onOpenSafetyCockpit: () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -337,7 +345,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.2.9 | support report · hardened redaction")
+            Text("Version 0.3.0 | live safety cockpit")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -362,11 +370,18 @@ struct HelpView: View {
                 Spacer()
 
                 VStack(alignment: .trailing, spacing: 7) {
+                    Button(action: onOpenSafetyCockpit) {
+                        Label("Open Cockpit", systemImage: "gauge.with.dots.needle.bottom.100percent")
+                            .font(.system(size: 12, weight: .bold))
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+
                     Button(action: copyPreflightReport) {
                         Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
                             .font(.system(size: 12, weight: .bold))
                     }
-                    .buttonStyle(.borderedProminent)
+                    .buttonStyle(.bordered)
                     .controlSize(.small)
 
                     HStack(spacing: 7) {

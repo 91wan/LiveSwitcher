@@ -1,0 +1,404 @@
+import AppKit
+import SwiftUI
+
+struct SafetyCockpitView: View {
+    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @State private var supportMessage: String?
+    @State private var actionMessage: String?
+
+    private var cockpit: LiveSafetyCockpitState {
+        LiveSafetyCockpit.make(
+            snapshot: viewModel.livePreflightSnapshot,
+            checks: viewModel.livePreflightChecks,
+            events: viewModel.supportEvents
+        )
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                header
+                urgentSection
+                sectionGrid
+                eventsSection
+            }
+            .padding(24)
+        }
+        .background(StudioTheme.canvasGradient)
+        .frame(minWidth: 760, minHeight: 620)
+    }
+
+    private var header: some View {
+        HStack(alignment: .center, spacing: 18) {
+            Image(systemName: headerIcon)
+                .font(.system(size: 34, weight: .black))
+                .foregroundStyle(headerColor)
+                .frame(width: 48, height: 48)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("Live Safety Cockpit / 现场安全台")
+                    .font(.system(size: 24, weight: .black))
+                Text(cockpit.summary.message)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .trailing, spacing: 8) {
+                HStack(spacing: 7) {
+                    countPill("PASS", cockpit.summary.passCount, .green)
+                    countPill("WARN", cockpit.summary.warnCount, .orange)
+                    countPill("FAIL", cockpit.summary.failCount, .red)
+                }
+
+                HStack(spacing: 8) {
+                    Button("Copy Support") {
+                        copySupportReport()
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("Save Support...") {
+                        saveSupportReport()
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .controlSize(.small)
+            }
+        }
+        .padding(18)
+        .background(headerColor.opacity(0.09), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(headerColor.opacity(0.24), lineWidth: 1)
+        )
+        .overlay(alignment: .bottomLeading) {
+            if let actionMessage {
+                messageBanner(actionMessage, color: .green)
+                    .offset(y: 42)
+            } else if let supportMessage {
+                messageBanner(supportMessage, color: .blue)
+                    .offset(y: 42)
+            }
+        }
+        .padding(.bottom, (actionMessage == nil && supportMessage == nil) ? 0 : 34)
+    }
+
+    private var urgentSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Needs Attention First")
+                    .font(.system(size: 16, weight: .black))
+                Spacer()
+                Text("\(cockpit.priorityChecks.filter { $0.status != .pass }.count) rows")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
+            let attention = cockpit.priorityChecks.filter { $0.status != .pass }
+            if attention.isEmpty {
+                readyCard
+            } else {
+                VStack(spacing: 9) {
+                    ForEach(attention.prefix(6)) { check in
+                        SafetyCheckRow(check: check, onAction: performAction)
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .studioCard(cornerRadius: 20)
+    }
+
+    private var readyCard: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "checkmark.seal.fill")
+                .foregroundStyle(.green)
+                .font(.system(size: 18, weight: .black))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("No blocking rows")
+                    .font(.system(size: 14, weight: .bold))
+                Text("All current runtime checks are passing.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(12)
+        .background(Color.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var sectionGrid: some View {
+        LazyVGrid(columns: [GridItem(.adaptive(minimum: 300), spacing: 14)], spacing: 14) {
+            ForEach(cockpit.sections) { section in
+                SafetySectionCard(section: section, onAction: performAction)
+            }
+        }
+    }
+
+    private var eventsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Recent Sanitized Events")
+                    .font(.system(size: 16, weight: .black))
+                Spacer()
+                Text("\(cockpit.recentEvents.count) shown")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .foregroundStyle(.secondary)
+            }
+
+            if cockpit.recentEvents.isEmpty {
+                Text("No recent support events recorded.")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            } else {
+                VStack(spacing: 7) {
+                    ForEach(cockpit.recentEvents) { event in
+                        HStack(alignment: .top, spacing: 9) {
+                            Text(event.timestamp)
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .frame(width: 150, alignment: .leading)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(event.kind)
+                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                Text(event.detail)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(9)
+                        .background(Color.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    }
+                }
+            }
+        }
+        .padding(16)
+        .studioCard(cornerRadius: 20)
+    }
+
+    private var headerColor: Color {
+        switch cockpit.summary.status {
+        case .pass:
+            return .green
+        case .warn:
+            return .orange
+        case .fail:
+            return .red
+        }
+    }
+
+    private var headerIcon: String {
+        switch cockpit.summary.status {
+        case .pass:
+            return "checkmark.seal.fill"
+        case .warn:
+            return "exclamationmark.triangle.fill"
+        case .fail:
+            return "xmark.octagon.fill"
+        }
+    }
+
+    private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
+        Text("\(label) \(count)")
+            .font(.system(size: 10, weight: .black, design: .rounded))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.11), in: Capsule())
+    }
+
+    private func messageBanner(_ message: String, color: Color) -> some View {
+        Text(message)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 11)
+            .padding(.vertical, 8)
+            .background(color.opacity(0.10), in: Capsule())
+    }
+
+    private func performAction(_ action: LivePreflightActionKind) {
+        switch action {
+        case .clearOverlays:
+            if viewModel.performLivePreflightAction(action) {
+                showActionMessage("Overlays cleared")
+            }
+        case .turnOffPanic:
+            if viewModel.performLivePreflightAction(action) {
+                showActionMessage("Panic turned off")
+            }
+        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
+            break
+        }
+    }
+
+    private func copySupportReport() {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(viewModel.liveSupportReportText(), forType: .string)
+        LiveSwitcherTelemetry.supportReportCopied(summaryStatus: viewModel.livePreflightSummary.status)
+        viewModel.recordSupportEvent(
+            kind: .supportReportCopied,
+            detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
+        )
+        showSupportMessage("Support report copied")
+    }
+
+    private func saveSupportReport() {
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.plainText]
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = "LiveSwitcher-Support-v\(AppConfiguration.appVersion).txt"
+        panel.title = "Save Support Report"
+
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+
+        do {
+            try viewModel.liveSupportReportText().write(to: url, atomically: true, encoding: .utf8)
+            LiveSwitcherTelemetry.supportReportSaved(summaryStatus: viewModel.livePreflightSummary.status)
+            viewModel.recordSupportEvent(
+                kind: .supportReportSaved,
+                detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
+            )
+            showSupportMessage("Support report saved")
+        } catch {
+            showSupportMessage("Support report save failed")
+        }
+    }
+
+    private func showActionMessage(_ message: String) {
+        actionMessage = message
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            if actionMessage == message {
+                actionMessage = nil
+            }
+        }
+    }
+
+    private func showSupportMessage(_ message: String) {
+        supportMessage = message
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_600_000_000)
+            if supportMessage == message {
+                supportMessage = nil
+            }
+        }
+    }
+}
+
+private struct SafetySectionCard: View {
+    let section: LiveSafetyCockpitSection
+    let onAction: (LivePreflightActionKind) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(section.title)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(.secondary)
+
+            VStack(spacing: 8) {
+                ForEach(section.checks) { check in
+                    SafetyCheckRow(check: check, onAction: onAction)
+                }
+            }
+        }
+        .padding(14)
+        .studioCard(cornerRadius: 18)
+    }
+}
+
+private struct SafetyCheckRow: View {
+    let check: LivePreflightCheck
+    let onAction: (LivePreflightActionKind) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: iconName)
+                .font(.system(size: 14, weight: .black))
+                .foregroundStyle(statusColor)
+                .frame(width: 18, height: 18)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 7) {
+                    Text(check.title)
+                        .font(.system(size: 13, weight: .bold))
+                    Text(check.status.displayTitle)
+                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .foregroundStyle(statusColor)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(statusColor.opacity(0.12), in: Capsule())
+                }
+
+                Text(check.message)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let actionLabel = check.actionLabel, let actionKind = check.actionKind {
+                    Button(actionLabel) {
+                        onAction(actionKind)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(!actionKind.isEnabledInPreflightUI || !isSafeMutatingAction(actionKind))
+                    .help(help(for: actionKind))
+                    .padding(.top, 2)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(statusColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(statusColor.opacity(0.18), lineWidth: 1)
+        )
+    }
+
+    private var statusColor: Color {
+        switch check.status {
+        case .pass:
+            return .green
+        case .warn:
+            return .orange
+        case .fail:
+            return .red
+        }
+    }
+
+    private var iconName: String {
+        switch check.status {
+        case .pass:
+            return "checkmark.circle.fill"
+        case .warn:
+            return "exclamationmark.triangle.fill"
+        case .fail:
+            return "xmark.octagon.fill"
+        }
+    }
+
+    private func isSafeMutatingAction(_ action: LivePreflightActionKind) -> Bool {
+        action == .clearOverlays || action == .turnOffPanic
+    }
+
+    private func help(for action: LivePreflightActionKind) -> String {
+        switch action {
+        case .clearOverlays:
+            return "Clear countdown, ticker, and lower-third overlays."
+        case .turnOffPanic:
+            return "Turn off active panic blackout."
+        case .openPreview, .openAudioMixer, .openOverlays:
+            return "Navigation is available in the main console."
+        case .needsHardware:
+            return "Requires external display hardware. This action is not automatic."
+        case .manualReview:
+            return "Manual operator review only. This action does not change app state."
+        }
+    }
+}

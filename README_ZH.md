@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.2.9.zip
+LiveSwitcher-macOS-v0.3.0.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,13 +55,14 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.2.9 更新
+## v0.3.0 更新
 
-- 支持报告脱敏增强：单条敏感事件不会再把整份报告变成一个占位符。
-- 文件名保护：媒体和演示文件名即使没有本机路径，也会从支持报告中移除。
-- 纯文本交接方式不变：运行诊断、完整现场检查和最近的脱敏现场控制事件仍集中在一个 `.txt` 报告中。
+- 新增 **Live Safety Cockpit / 现场安全台** 独立窗口，用于开演前快速确认运行状态。
+- 失败和警告项会优先显示，现场人员不需要在完整长列表里找风险。
+- 安全动作仍然受限：只有 `Clear overlays` 和 `Turn off panic` 会直接修改状态；硬件和人工检查项保持禁用。
+- 支持报告仍是纯文本、已脱敏，并在安全台中显示最近的脱敏事件。
 
-加固检查见 [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)。
+操作流程见 [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)。
 
 ## 现场检查
 
@@ -69,10 +70,14 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 开演前优先查看 `Needs attention`。它只显示失败和警告项；如需完整审计，可切到 `All checks`。`Copy Report` 始终复制完整报告，不受当前过滤视图影响。
 
-提交 bug 或现场复盘时使用 `Copy Support` 或 `Save Support...`。支持报告是纯文本并已脱敏：包含运行诊断、完整现场检查和最近事件类型，但不包含本机路径、原始媒体文件名、file URL、截图、系统日志、叠层文字或客户内容。v0.2.9 加固后，单条敏感细节不会抹掉整份报告。
+需要更大的现场视图时，点击 `Open Cockpit`，或使用 macOS 菜单 `现场控制 -> 打开现场安全台`。安全台不会改变主控制台结构，只在独立窗口中展示准备状态、最高风险、安全动作、最近脱敏事件和支持报告导出。
+
+提交 bug 或现场复盘时使用 `Copy Support` 或 `Save Support...`。支持报告是纯文本并已脱敏：包含运行诊断、完整现场检查和最近事件类型，但不包含本机路径、原始媒体文件名、file URL、截图、系统日志、叠层文字或客户内容。
 
 相关文档：
 
+- [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)
+- [`docs/qa/release-hygiene-v0.3.0.md`](docs/qa/release-hygiene-v0.3.0.md)
 - [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)
 - [`docs/qa/release-hygiene-v0.2.9.md`](docs/qa/release-hygiene-v0.2.9.md)
 - [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)
