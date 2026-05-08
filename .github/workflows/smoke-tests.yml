@@ -18,6 +18,9 @@ jobs:
       - name: Show Swift Version
         run: swift --version
 
+      - name: Workspace Guard
+        run: ./script/check_workspace_guard.sh --dev
+
       - name: Build
         run: swift build
 
@@ -26,6 +29,9 @@ jobs:
 
       - name: Diff Check
         run: git diff --check
+
+      - name: Workspace Guard Tests
+        run: ./script/test_workspace_guard.sh
 
       - name: Release Hygiene
         run: ./script/check_release_hygiene.sh

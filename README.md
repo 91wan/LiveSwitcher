@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.4.zip
+LiveSwitcher-macOS-v0.3.5.zip
 ```
 
 Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
@@ -55,13 +55,15 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.4
+## What's New in v0.3.5
 
-- Overlay preflight now reports which sanitized overlay types are active: countdown, ticker, and lower third.
-- Countdown state is easier to verify: countdown expiry uses a testable tick path and common run-loop timer scheduling.
-- Diagnostics and Support Report include overlay type/remaining-time detail without exposing overlay text or customer content.
+- Maintainer release flow now has a workspace guard before build, test, and release packaging.
+- Dirty worktrees fail fast when tracked files are deleted, files are modified, or untracked files are present.
+- Release mode verifies `main` is aligned with `origin/main` before tagging, preventing releases from damaged local snapshots.
 
-See [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md) for the overlay reliability check.
+See [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md) for the workspace guard contract.
+
+中文维护说明：`v0.3.5` 的重点不是新增现场功能，而是防止在脏工作区、残缺快照或本地 `main` 未同步时继续打包发布。
 
 ## Live Preflight
 
@@ -75,6 +77,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
+- [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
 - [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
 - [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
 - [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
@@ -121,11 +125,15 @@ Daily shortcuts:
 make build
 make run
 make test
+make guard-dev
+make release-check
 bash Sources/AnnualMeetingSwitcher/build_v33.sh
 ./script/check_release_hygiene.sh
 ```
 
 `./script/build_and_run.sh --verify` builds `dist/LiveSwitcher.app`, launches it, and verifies that the app process remains running.
+
+`make guard-dev` fails on any dirty workspace before local validation. `make release-check` is the pre-tag maintainer gate and requires `main` to match `origin/main`.
 
 ## UI Verification
 

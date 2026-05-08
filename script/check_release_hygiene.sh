@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-CURRENT_VERSION="0.3.4"
+CURRENT_VERSION="0.3.5"
 CURRENT_TAG="v$CURRENT_VERSION"
-PREVIOUS_VERSION="0.3.3"
+PREVIOUS_VERSION="0.3.4"
 PREVIOUS_TAG="v$PREVIOUS_VERSION"
 
 fail() {
@@ -23,8 +23,10 @@ require_file README_ZH.md
 require_file docs/assets/readme/preview-switch.png
 require_file docs/assets/readme/audio-mixer.png
 require_file docs/assets/readme/overlays.png
+require_file script/check_workspace_guard.sh
+require_file script/test_workspace_guard.sh
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
-require_file "docs/qa/live-overlay-reliability-v$CURRENT_VERSION.md"
+require_file "docs/qa/workspace-guard-v$CURRENT_VERSION.md"
 
 search_pattern() {
   local pattern="$1"
@@ -72,6 +74,9 @@ search_pattern "static let appVersion = \"$CURRENT_VERSION\"" Sources/AnnualMeet
 
 search_pattern "LiveSwitcher-macOS-$CURRENT_TAG.zip" README.md README_ZH.md >/dev/null \
   || fail "README release asset does not point at $CURRENT_TAG"
+
+search_pattern "workspace-guard-v$CURRENT_VERSION" README.md README_ZH.md >/dev/null \
+  || fail "README workspace guard docs do not point at $CURRENT_TAG"
 
 search_pattern '\[中文\]\(README_ZH\.md\)' README.md >/dev/null \
   || fail "README.md does not link to README_ZH.md"
