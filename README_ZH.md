@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.4.zip
+LiveSwitcher-macOS-v0.3.5.zip
 ```
 
 注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
@@ -55,13 +55,15 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.4 更新
+## v0.3.5 更新
 
-- 现场检查现在会显示当前上屏的脱敏叠层类型：倒计时、游动字幕、人名条。
-- 倒计时状态更容易验证：倒计时结束走可测试的 tick 路径，并使用 common run-loop 定时器调度。
-- 诊断报告和支持报告会包含叠层类型 / 剩余时间，但不会暴露叠层文字或客户内容。
+- 维护发布流程新增 workspace guard，构建、测试、发布打包前先检查工作区。
+- 如果存在 tracked 文件删除、文件修改或未跟踪文件，guard 会直接失败并给出错误。
+- 发布模式会确认当前在 `main`，且 `main` 与 `origin/main` 完全一致，避免基于残缺本地快照发布。
 
-叠层可靠性检查见 [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)。
+工作区保护说明见 [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)。
+
+English maintainer note: `v0.3.5` is a release-safety patch, not a new live-console feature.
 
 ## 现场检查
 
@@ -75,6 +77,8 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 
 相关文档：
 
+- [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
+- [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
 - [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
 - [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
 - [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
@@ -121,11 +125,15 @@ swift test
 make build
 make run
 make test
+make guard-dev
+make release-check
 bash Sources/AnnualMeetingSwitcher/build_v33.sh
 ./script/check_release_hygiene.sh
 ```
 
 `./script/build_and_run.sh --verify` 会构建 `dist/LiveSwitcher.app`，启动应用，并确认应用进程能够持续运行。
+
+`make guard-dev` 会在本地验证前拦截脏工作区。`make release-check` 是打 tag 前的维护者门禁，要求 `main` 与 `origin/main` 完全一致。
 
 ## UI 验证
 

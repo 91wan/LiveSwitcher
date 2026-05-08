@@ -4,7 +4,7 @@ APP_NAME      := LiveSwitcher.app
 INSTALL_SRC   := $(HOME)/Downloads/$(APP_NAME)
 INSTALL_DST   := /Applications/$(APP_NAME)
 
-.PHONY: all build run install test hygiene clean version
+.PHONY: all build run install test guard-dev guard-release hygiene release-check clean version
 
 all: build
 
@@ -26,8 +26,17 @@ install: build
 test:
 	@swift test
 
+guard-dev:
+	@./script/check_workspace_guard.sh --dev
+
+guard-release:
+	@./script/check_workspace_guard.sh --release
+
 hygiene:
 	@./script/check_release_hygiene.sh
+
+release-check: guard-release hygiene test
+	@./script/test_workspace_guard.sh
 
 clean:
 	@rm -rf .build $(PKG_PATH)/.build dist
