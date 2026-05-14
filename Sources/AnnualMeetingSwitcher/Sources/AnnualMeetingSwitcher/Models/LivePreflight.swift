@@ -298,7 +298,7 @@ struct LivePreflightCheck: Identifiable, Equatable {
     }
 
     private static func volumeCheck(_ snapshot: LivePreflightSnapshot) -> LivePreflightCheck {
-        LivePreflightCheck(
+        return LivePreflightCheck(
             id: "audio.volumes",
             group: .audio,
             status: .pass,
@@ -364,7 +364,7 @@ struct LivePreflightCheck: Identifiable, Equatable {
     }
 
     private static func autoNextCheck(_ snapshot: LivePreflightSnapshot) -> LivePreflightCheck {
-        LivePreflightCheck(
+        return LivePreflightCheck(
             id: "playback.auto-next",
             group: .playback,
             status: snapshot.autoPlayNextVideoOnEnd ? .warn : .pass,
@@ -423,14 +423,36 @@ struct LivePreflightCheck: Identifiable, Equatable {
     }
 
     private static func pptCheck(_ snapshot: LivePreflightSnapshot) -> LivePreflightCheck {
-        LivePreflightCheck(
+        let source = snapshot.currentProgramSource
+        let pageableSources: Set<String> = ["HTML", "Keynote", "PPTX", "Active Keynote Deck"]
+        let deckSources: Set<String> = ["Keynote", "PPTX", "Active Keynote Deck"]
+        let isPageableSource = source.map { pageableSources.contains($0) } ?? false
+        let isDeckSource = source.map { deckSources.contains($0) } ?? false
+
+        let status: LivePreflightStatus
+        let message: String
+        if snapshot.isPageInterceptEnabled {
+            if isPageableSource {
+                status = .pass
+                message = "PPT mode is on for a page-controlled source. Page-clicker keys are intercepted for presentation control."
+            } else {
+                status = .warn
+                message = "PPT mode is on, but the current program is not a page-controlled source. Disable it unless page-clicker takeover is needed."
+            }
+        } else if isDeckSource {
+            status = .warn
+            message = "A presentation source is loaded while PPT mode is off. Verify whether page-clicker takeover is needed before going live."
+        } else {
+            status = .pass
+            message = "PPT mode is off. Enable it only when page-clicker takeover is needed."
+        }
+
+        return LivePreflightCheck(
             id: "controls.ppt",
             group: .controls,
-            status: .pass,
+            status: status,
             title: "PPT Mode",
-            message: snapshot.isPageInterceptEnabled
-                ? "PPT mode is on. Page-clicker keys are intercepted for presentation control."
-                : "PPT mode is off. Enable it only when page-clicker takeover is needed.",
+            message: message,
             actionLabel: "Manual review",
             actionKind: .manualReview
         )

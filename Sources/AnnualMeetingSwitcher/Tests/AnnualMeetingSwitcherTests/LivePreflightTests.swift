@@ -21,7 +21,7 @@ final class LivePreflightTests: XCTestCase {
 
     private func readySnapshot() -> LivePreflightSnapshot {
         LivePreflightSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             hasExternalDisplay: true,
             isBroadcasting: true,
             broadcastSafetyNotice: nil,
@@ -308,13 +308,51 @@ final class LivePreflightTests: XCTestCase {
         let ppt = check("controls.ppt", in: checks)
 
         XCTAssertEqual(ppt.group, .controls)
-        XCTAssertEqual(ppt.status, .pass)
+        XCTAssertEqual(ppt.status, .warn)
         XCTAssertEqual(ppt.actionKind, .manualReview)
         XCTAssertEqual(ppt.actionLabel, "Manual review")
 
         let beforeSnapshot = viewModel.livePreflightSnapshot
         XCTAssertFalse(viewModel.performLivePreflightAction(.manualReview))
         XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
+    }
+
+    func testPPTModeWarnsWhenEnabledWithoutPageableProgram() {
+        var snapshot = readySnapshot()
+        snapshot.currentProgramSource = "Media"
+        snapshot.isPageInterceptEnabled = true
+
+        let ppt = check("controls.ppt", in: LivePreflightCheck.build(from: snapshot))
+
+        XCTAssertEqual(ppt.status, .warn)
+        XCTAssertEqual(ppt.actionKind, .manualReview)
+        XCTAssertTrue(ppt.message.localizedStandardContains("not a page-controlled source"))
+    }
+
+    func testPPTModePassesWhenEnabledForPageableProgram() {
+        for source in ["HTML", "Keynote", "PPTX", "Active Keynote Deck"] {
+            var snapshot = readySnapshot()
+            snapshot.currentProgramSource = source
+            snapshot.isPageInterceptEnabled = true
+
+            let ppt = check("controls.ppt", in: LivePreflightCheck.build(from: snapshot))
+
+            XCTAssertEqual(ppt.status, .pass, source)
+        }
+    }
+
+    func testPPTModeWarnsWhenDeckProgramNeedsPageControlButModeIsOff() {
+        for source in ["Keynote", "PPTX", "Active Keynote Deck"] {
+            var snapshot = readySnapshot()
+            snapshot.currentProgramSource = source
+            snapshot.isPageInterceptEnabled = false
+
+            let ppt = check("controls.ppt", in: LivePreflightCheck.build(from: snapshot))
+
+            XCTAssertEqual(ppt.status, .warn, source)
+            XCTAssertEqual(ppt.actionKind, .manualReview)
+            XCTAssertTrue(ppt.message.localizedStandardContains("presentation source is loaded"))
+        }
     }
 
     func testNavigationActionsDoNotMutateViewModelState() {
@@ -335,7 +373,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.8"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: Needs hardware"))
@@ -357,7 +395,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -365,7 +403,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = LiveDiagnosticsReport.makePlainText(snapshot: diagnostics, checks: checks)
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.8"))
         XCTAssertTrue(report.contains("Runtime: macOS Test, arm64-test"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Programs: 1"))
@@ -387,7 +425,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -412,7 +450,7 @@ final class LivePreflightTests: XCTestCase {
 
         let report = viewModel.liveDiagnosticsReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.8"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
@@ -429,7 +467,7 @@ final class LivePreflightTests: XCTestCase {
 
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -448,12 +486,12 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.8"))
         XCTAssertTrue(report.contains("Generated: 2026-09-21T14:13:20Z"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.3.8"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.3.8"))
         XCTAssertTrue(report.contains("[Recent Events]"))
         XCTAssertTrue(report.contains("preflight.action"))
         XCTAssertTrue(report.contains("[Privacy Notice]"))
@@ -467,7 +505,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -486,7 +524,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.8"))
         XCTAssertTrue(report.contains("[Diagnostics]"))
         XCTAssertTrue(report.contains("[Preflight Report]"))
         XCTAssertTrue(report.contains("[Recent Events]"))
@@ -502,7 +540,7 @@ final class LivePreflightTests: XCTestCase {
         let preflight = readySnapshot()
         let checks = LivePreflightCheck.build(from: preflight)
         let diagnostics = LiveDiagnosticsSnapshot(
-            appVersion: "0.3.7",
+            appVersion: "0.3.8",
             operatingSystem: "macOS Test",
             architecture: "arm64-test",
             preflight: preflight
@@ -521,7 +559,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: generatedAt
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.8"))
         XCTAssertTrue(report.contains("bgm.takeover.changed"))
         XCTAssertTrue(report.contains("[filename redacted]"))
         XCTAssertFalse(report.localizedStandardContains("Opening.mov"))
@@ -581,7 +619,7 @@ final class LivePreflightTests: XCTestCase {
             generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.7"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.3.8"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Panic blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
