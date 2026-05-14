@@ -2,7 +2,7 @@ import AppKit
 
 extension SwitcherViewModel {
     func handleSafeBroadcastToggle() {
-        if externalScreenProvider() != nil {
+        if projectionService.hasExternalDisplay {
             // 接了副屏，正常推流
             broadcastSafetyNotice = nil
             isBroadcasting.toggle()

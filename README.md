@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.8.zip
+LiveSwitcher-macOS-v0.4.0.zip
 ```
 
 Important: the public build is source-available, ad-hoc signed, and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally. A notarized build will require Apple Developer ID signing credentials and notarytool secrets.
@@ -55,16 +55,16 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.8
+## What's New in v0.4.0
 
-- PPT Mode preflight is now source-aware: it passes for page-controlled sources and warns when enabled for non-pageable media.
-- Presentation sources now warn if PPT Mode is off and page-clicker takeover may be needed.
-- Preflight navigation actions are recorded in the sanitized support event timeline, even when they only switch tabs.
-- Panic audio remains reported as `0%` in Preflight and Support Report.
+- Audio routing now has a dedicated pure engine for master/media/BGM/speaker/panic/takeover decisions.
+- Projection safety now has a service boundary for external-display detection and fail-closed output targeting.
+- Program queue persistence and auto-next-video selection are isolated in a queue store.
+- Presentation automation scripts are centralized, keeping Keynote/WPS AppleScript path handling in one place.
 
-See [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md) for the v0.3.8 preflight strictness notes.
+See [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md) for the v0.4.0 core state split notes.
 
-中文维护说明：`v0.3.8` 的重点不是新增现场功能，而是让 PPT 模式和预检动作记录更严格、更可复盘。
+中文维护说明：`v0.4.0` 的重点不是新增现场功能，而是先把高事故风险状态从 ViewModel 中拆出可测试边界。
 
 ## Live Preflight
 
@@ -78,6 +78,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/workspace-guard-v0.4.0.md`](docs/qa/workspace-guard-v0.4.0.md)
+- [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md)
 - [`docs/qa/workspace-guard-v0.3.8.md`](docs/qa/workspace-guard-v0.3.8.md)
 - [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)
 - [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
