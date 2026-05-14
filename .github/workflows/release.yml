@@ -52,7 +52,7 @@ jobs:
             exit 1
           fi
           codesign --verify --deep --strict "$APP_BUNDLE"
-          zip -r "$ZIP_NAME" "$APP_BUNDLE"
+          (cd dist && zip -r "../$ZIP_NAME" LiveSwitcher.app)
           ls -lh "$ZIP_NAME"
 
       - name: Create GitHub Release
