@@ -1,7 +1,7 @@
 PKG_PATH      := Sources/AnnualMeetingSwitcher
 BUILD_SCRIPT  := $(PKG_PATH)/build_v33.sh
 APP_NAME      := LiveSwitcher.app
-INSTALL_SRC   := $(HOME)/Downloads/$(APP_NAME)
+INSTALL_SRC   := dist/$(APP_NAME)
 INSTALL_DST   := /Applications/$(APP_NAME)
 
 .PHONY: all build run install test guard-dev guard-release hygiene release-check clean version

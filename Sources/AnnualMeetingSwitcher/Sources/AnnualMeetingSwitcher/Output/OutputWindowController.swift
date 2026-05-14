@@ -400,10 +400,13 @@ struct OutputWebView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
+        #if DEBUG
         config.preferences.setValue(true, forKey: "developerExtrasEnabled")
+        #endif
         // 注：WKProcessPool 在 macOS 12+ 已废弃且无效，进程隔离由系统管理
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.autoresizingMask = [.width, .height]
+        webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
         HTMLWebViewBridge.shared.webView = webView   // 注册到 bridge，供翻页拦截器注入 JS
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
@@ -425,9 +428,19 @@ struct OutputWebView: NSViewRepresentable {
         HTMLWebViewBridge.shared.webView = nil   // 清空 bridge
     }
 
-    class Coordinator {
+    class Coordinator: NSObject {
         // 强引用持有，防止 ARC 在 SwiftUI diff 过程中提前释放
         var webView: WKWebView?
+    }
+}
+
+extension OutputWebView.Coordinator: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
+        guard let url = navigationAction.request.url else { return .cancel }
+        if url.isFileURL || url.scheme == "about" {
+            return .allow
+        }
+        return .cancel
     }
 }
 

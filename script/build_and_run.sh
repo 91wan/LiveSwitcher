@@ -7,7 +7,7 @@ APP_BINARY_NAME="LiveSwitcher"
 APP_DISPLAY_NAME="LiveSwitcher"
 BUNDLE_ID="com.91wan.liveswitcher"
 MIN_SYSTEM_VERSION="14.0"
-MARKETING_VERSION="0.3.5"
+MARKETING_VERSION="$(tr -d '[:space:]' < "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/VERSION")"
 BUILD_VERSION="1"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -90,9 +90,9 @@ PLIST
 
   if command -v codesign >/dev/null 2>&1; then
     if [[ -f "$ENTITLEMENTS_FILE" ]]; then
-      codesign --force --deep --sign - --entitlements "$ENTITLEMENTS_FILE" "$APP_BUNDLE"
+      codesign --force --deep --options runtime --sign - --entitlements "$ENTITLEMENTS_FILE" "$APP_BUNDLE"
     else
-      codesign --force --deep --sign - "$APP_BUNDLE"
+      codesign --force --deep --options runtime --sign - "$APP_BUNDLE"
     fi
   fi
 }

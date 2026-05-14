@@ -9,7 +9,7 @@ on:
 jobs:
   swiftpm-smoke-tests:
     name: SwiftPM Smoke Tests
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout

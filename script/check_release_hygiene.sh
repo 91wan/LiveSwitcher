@@ -4,11 +4,6 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
-CURRENT_VERSION="0.3.5"
-CURRENT_TAG="v$CURRENT_VERSION"
-PREVIOUS_VERSION="0.3.4"
-PREVIOUS_TAG="v$PREVIOUS_VERSION"
-
 fail() {
   echo "release hygiene failed: $*" >&2
   exit 1
@@ -17,6 +12,13 @@ fail() {
 require_file() {
   [[ -f "$1" ]] || fail "missing required file: $1"
 }
+
+require_file VERSION
+
+CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
+CURRENT_TAG="v$CURRENT_VERSION"
+PREVIOUS_VERSION="0.3.5"
+PREVIOUS_TAG="v$PREVIOUS_VERSION"
 
 require_file README.md
 require_file README_ZH.md
@@ -72,6 +74,9 @@ search_pattern "${previous_version_pattern}|${PREVIOUS_TAG}|LiveSwitcher-macOS-$
 search_pattern "static let appVersion = \"$CURRENT_VERSION\"" Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/AppConfiguration.swift >/dev/null \
   || fail "AppConfiguration version is not $CURRENT_VERSION"
 
+grep -qx "$CURRENT_VERSION" VERSION \
+  || fail "VERSION file is not $CURRENT_VERSION"
+
 search_pattern "LiveSwitcher-macOS-$CURRENT_TAG.zip" README.md README_ZH.md >/dev/null \
   || fail "README release asset does not point at $CURRENT_TAG"
 
@@ -89,5 +94,15 @@ search_pattern 'not notarized|No License|no open-source license' README.md >/dev
 
 search_pattern '未经过 Apple notarization|无许可证|未提供开源许可证' README_ZH.md >/dev/null \
   || fail "README_ZH.md missing notarization or license notice"
+
+grep -Fq 'origin/main' .github/workflows/release.yml \
+  || fail "release workflow does not verify tag commit against origin/main"
+grep -Fq 'github.ref_name' .github/workflows/release.yml \
+  || fail "release workflow does not verify the tag version"
+grep -Fq 'VERSION' .github/workflows/release.yml \
+  || fail "release workflow does not read VERSION"
+
+search_pattern '#if DEBUG' Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift >/dev/null \
+  || fail "WKWebView developer extras are not debug-gated"
 
 echo "release hygiene passed for $CURRENT_TAG"

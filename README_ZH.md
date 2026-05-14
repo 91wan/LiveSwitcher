@@ -40,10 +40,10 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.5.zip
+LiveSwitcher-macOS-v0.3.6.zip
 ```
 
-注意：当前公开构建使用 ad-hoc 签名，**未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。
+注意：当前公开构建是 source-available、ad-hoc 签名，且 **未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。后续 notarized 版本需要 Apple Developer ID 证书和 notarytool 凭据。
 
 ## 权限
 
@@ -55,15 +55,17 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.5 更新
+## v0.3.6 更新
 
-- 维护发布流程新增 workspace guard，构建、测试、发布打包前先检查工作区。
-- 如果存在 tracked 文件删除、文件修改或未跟踪文件，guard 会直接失败并给出错误。
-- 发布模式会确认当前在 `main`，且 `main` 与 `origin/main` 完全一致，避免基于残缺本地快照发布。
+- GitHub Release workflow 会拒绝不指向 `origin/main` 的 tag。
+- 当前版本由根目录 `VERSION` 文件统一校验。
+- 发布包统一从 `dist/LiveSwitcher.app` 生成。
+- ad-hoc 包已启用 hardened runtime 签名参数，为后续 Developer ID notarization 做准备。
+- 生产环境 HTML 输出关闭 WebKit developer extras，并阻止远程顶层导航。
 
-工作区保护说明见 [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)。
+工作区保护说明见 [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)。
 
-English maintainer note: `v0.3.5` is a release-safety patch, not a new live-console feature.
+English maintainer note: `v0.3.6` is a release-trust patch, not a new live-console feature.
 
 ## 现场检查
 
@@ -77,6 +79,8 @@ English maintainer note: `v0.3.5` is a release-safety patch, not a new live-cons
 
 相关文档：
 
+- [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
+- [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
 - [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
 - [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
 - [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
@@ -181,4 +185,4 @@ docs/assets/ui-matrix/2026-05-04-v021/
 
 ## 无许可证
 
-本仓库未提供开源许可证。代码虽然公开可见，但在未来添加许可证之前，仓库所有者保留全部权利。
+本仓库未提供开源许可证。代码以 source-available 方式公开，便于审查和本地构建；除非未来添加许可证，否则仓库所有者保留全部权利。

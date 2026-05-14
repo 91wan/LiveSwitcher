@@ -11,15 +11,29 @@ permissions:
 jobs:
   release:
     name: Build macOS App Release
-    runs-on: macos-latest
+    runs-on: macos-14
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Read Version
         id: version
-        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="$(tr -d '[:space:]' < VERSION)"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$VERSION" != "$TAG_VERSION" ]; then
+            echo "error: VERSION ($VERSION) does not match tag ($TAG_VERSION)" >&2
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Tag Points At Origin Main
+        run: |
+          git fetch --quiet origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 
       - name: Workspace Guard
         run: ./script/check_workspace_guard.sh --dev
@@ -27,53 +41,15 @@ jobs:
       - name: Release Hygiene
         run: ./script/check_release_hygiene.sh
 
-      - name: Build Release Binary
-        run: swift build -c release
-
       - name: Package App Bundle
         run: |
-          BINARY="$(swift build -c release --show-bin-path)/LiveSwitcher"
-          APP_BUNDLE="LiveSwitcher.app"
+          bash Sources/AnnualMeetingSwitcher/build_v33.sh
+          APP_BUNDLE="dist/LiveSwitcher.app"
           ZIP_NAME="LiveSwitcher-macOS-${{ github.ref_name }}.zip"
 
-          if [ ! -x "$BINARY" ]; then
-            echo "error: built binary not found at $BINARY" >&2
+          if [ ! -x "$APP_BUNDLE/Contents/MacOS/LiveSwitcher" ]; then
+            echo "error: packaged app not found at $APP_BUNDLE" >&2
             exit 1
-          fi
-
-          mkdir -p "$APP_BUNDLE/Contents/MacOS"
-          mkdir -p "$APP_BUNDLE/Contents/Resources"
-          cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/LiveSwitcher"
-
-          if [ -f Sources/AnnualMeetingSwitcher/AppIcon.icns ]; then
-            cp Sources/AnnualMeetingSwitcher/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
-          fi
-
-          cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0"><dict>
-            <key>CFBundleDisplayName</key><string>LiveSwitcher</string>
-            <key>CFBundleExecutable</key><string>LiveSwitcher</string>
-            <key>CFBundleIconFile</key><string>AppIcon</string>
-            <key>CFBundleIdentifier</key><string>com.91wan.liveswitcher</string>
-            <key>CFBundleName</key><string>LiveSwitcher</string>
-            <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleShortVersionString</key><string>${{ steps.version.outputs.VERSION }}</string>
-            <key>CFBundleVersion</key><string>1</string>
-            <key>LSMinimumSystemVersion</key><string>14.0</string>
-            <key>NSAppleEventsUsageDescription</key><string>Allow AppleScript control for presentation playback.</string>
-            <key>NSAppleScriptEnabled</key><true/>
-            <key>NSHighResolutionCapable</key><true/>
-            <key>NSMicrophoneUsageDescription</key><string>Allow microphone access for audio monitoring.</string>
-            <key>NSPrincipalClass</key><string>NSApplication</string>
-          </dict></plist>
-          PLIST
-
-          if [ -f Sources/AnnualMeetingSwitcher/LiveSwitcher.entitlements ]; then
-            codesign --force --deep --sign - --entitlements Sources/AnnualMeetingSwitcher/LiveSwitcher.entitlements "$APP_BUNDLE"
-          else
-            codesign --force --deep --sign - "$APP_BUNDLE"
           fi
           codesign --verify --deep --strict "$APP_BUNDLE"
           zip -r "$ZIP_NAME" "$APP_BUNDLE"
