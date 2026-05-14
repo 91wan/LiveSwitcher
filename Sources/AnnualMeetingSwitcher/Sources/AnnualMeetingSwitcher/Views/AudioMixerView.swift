@@ -7,14 +7,16 @@ struct AudioMixerView: View {
         ScrollView {
             VStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("音频混音")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.primary)
-                    Text("在这里统一管理 BGM 列表、三路音量、音频策略和淡入淡出时长。")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
+                    Text("Audio Mixer / 音频混音")
+                        .font(StudioTheme.titleLarge())
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("管理 BGM 曲库、推子值、实际输出和音频策略。Speaker / Panic / BGM takeover 的影响会反映在 effective output。")
+                        .font(StudioTheme.body())
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+
+                audioSummaryRow
 
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 20) {
@@ -38,6 +40,27 @@ struct AudioMixerView: View {
             .padding(.vertical, 24)
         }
         .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    private var audioSummaryRow: some View {
+        HStack(spacing: 12) {
+            MetricRow(title: "Master", value: "\(Int(viewModel.masterVolume * 100))%", subtitle: "User fader", kind: .idle)
+            Divider().frame(height: 34)
+            MetricRow(title: "Media effective", value: "\(Int(viewModel.effectiveMediaOutputVolume() * 100))%", subtitle: viewModel.isPanicMode ? "Panic muted" : "After routing", kind: viewModel.effectiveMediaOutputVolume() == 0 ? .muted : .ready)
+            Divider().frame(height: 34)
+            MetricRow(title: "BGM effective", value: "\(Int(viewModel.effectiveBGMOutputVolume() * 100))%", subtitle: viewModel.isBGMAudioTakeoverActive ? "Takeover active" : "After routing", kind: viewModel.effectiveBGMOutputVolume() == 0 ? .muted : .ready)
+            Divider().frame(height: 34)
+            StatusBadge(viewModel.isSpeakerMode ? "Speaker ON" : "Speaker OFF", kind: viewModel.isSpeakerMode ? .warn : .idle)
+            StatusBadge(viewModel.isBGMAudioTakeoverActive ? "BGM Takeover" : "No Takeover", kind: viewModel.isBGMAudioTakeoverActive ? .warn : .idle)
+        }
+        .padding(14)
+        .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Audio summary. Master \(Int(viewModel.masterVolume * 100)) percent. Media effective \(Int(viewModel.effectiveMediaOutputVolume() * 100)) percent. BGM effective \(Int(viewModel.effectiveBGMOutputVolume() * 100)) percent.")
     }
 
     private var transitionCard: some View {

@@ -16,10 +16,7 @@ struct LeftPanel: View {
             // ── 拖拽放入大框 ──
             dropZone
 
-            // ── 已添加信号源列表（如果有）──
-            if !viewModel.programItems.isEmpty {
-                sourceList
-            }
+            sourceList
 
             // ── Bug5修复：HTML播放中显示"结束展示"按钮 ──
             if viewModel.currentHTMLURL != nil {
@@ -32,12 +29,12 @@ struct LeftPanel: View {
                         Text("结束 HTML 展示 · 回到壁纸")
                             .font(.system(size: 13, weight: .semibold))
                     }
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(red: 0.85, green: 0.2, blue: 0.2))
+                            .fill(StudioTheme.actionDanger)
                     )
                 }
                 .buttonStyle(.plain)
@@ -91,25 +88,17 @@ struct LeftPanel: View {
                 Text("播放队列")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(viewModel.programItems.count) 个节目")
                     .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer()
-            Text("\(viewModel.programItems.count)")
-                .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundColor(.blue)
-                .padding(.horizontal, 9)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(Color.blue.opacity(0.1))
-                )
+            CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
             Button(action: { viewModel.scanAndAddKeynoteWindows() }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -126,40 +115,50 @@ struct LeftPanel: View {
     private var dropZone: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("导入素材")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
-                    .foregroundColor(.secondary)
+                Text("ADD SOURCE")
+                    .font(StudioTheme.statusLabel())
+                    .foregroundStyle(StudioTheme.textSecondary)
                 Spacer()
-                Text("VIDEO / PPT / HTML")
+                Text("VIDEO / AUDIO / PPTX / HTML")
                     .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundColor(.secondary.opacity(0.8))
+                    .foregroundStyle(StudioTheme.textTertiary)
             }
             HStack(spacing: 8) {
-                Button("选择视频") {
+                Button {
                     openFilePicker(types: [.movie, .audio])
+                } label: {
+                    Label("选择视频", systemImage: "film.fill")
                 }
-                .buttonStyle(ImportActionCardStyle(color: .blue, systemName: "film.fill"))
+                .buttonStyle(SecondaryImportButtonStyle())
 
-                Button("选择 PPTX") {
+                Button {
                     openPPTXPicker()
+                } label: {
+                    Label("选择 PPTX", systemImage: "doc.richtext.fill")
                 }
-                .buttonStyle(ImportActionCardStyle(color: .orange, systemName: "doc.richtext.fill"))
+                .buttonStyle(SecondaryImportButtonStyle(role: .warn))
             }
 
-            Button("选择 HTML（大屏展示）") {
+            Button {
                 openHTMLPicker()
+            } label: {
+                Label("选择 HTML（大屏展示）", systemImage: "globe.asia.australia.fill")
             }
-            .buttonStyle(ImportWideButtonStyle(color: .green, systemName: "globe.asia.australia.fill"))
+            .buttonStyle(SecondaryImportButtonStyle())
             .frame(maxWidth: .infinity)
+
+            Text("可拖入本地媒体、PPTX 或 HTML 文件；不支持的文件会被忽略。")
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textTertiary)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white.opacity(0.72))
+                .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(Color.white.opacity(0.84), lineWidth: 1)
+                .stroke(isDraggingOver ? StudioTheme.borderActive : StudioTheme.borderSubtle, lineWidth: 1)
         )
         .onDrop(of: [.fileURL], isTargeted: $isDraggingOver) { providers in
             handleDrop(providers: providers)
@@ -171,7 +170,18 @@ struct LeftPanel: View {
     private var sourceList: some View {
         let currentIndex = viewModel.programItems.firstIndex { $0.id == viewModel.currentProgramItem?.id }
 
-        return List {
+        guard !viewModel.programItems.isEmpty else {
+            return AnyView(
+                EmptyStateView(
+                    title: "No sources queued",
+                    message: "Add or drag in video, audio, PPTX, Keynote, or HTML sources before switching.",
+                    systemImage: "rectangle.stack.badge.plus"
+                )
+                .frame(maxHeight: 190)
+            )
+        }
+
+        return AnyView(List {
             ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
                 HStack(spacing: 6) {
                     // Issue #10: 显式排序手柄图标
@@ -216,7 +226,7 @@ struct LeftPanel: View {
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
                 .stroke(Color.white.opacity(0.84), lineWidth: 1)
-        )
+        ))
     }
 
     private func queueRole(for index: Int, currentIndex: Int?) -> QueueRole {
@@ -235,81 +245,67 @@ struct LeftPanel: View {
     // MARK: - 输出屏幕模块（Issue #10: 超大胶囊按钮）
 
     private var outputScreenModule: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let hasExternalDisplay = SecondScreenSelector.pickExternal() != nil
+        let canStartProjection = hasExternalDisplay || viewModel.isBroadcasting
+
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("输出屏幕")
                         .font(.system(size: 12, weight: .black, design: .rounded))
                         .foregroundColor(.secondary)
                     HStack(spacing: 6) {
-                        Image(systemName: SecondScreenSelector.pickExternal() != nil ? "display.2" : "display")
+                        Image(systemName: hasExternalDisplay ? "display.2" : "display")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.secondary)
-                        Text(SecondScreenSelector.pickExternal() != nil ? "外接屏幕" : "未接副屏")
+                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(hasExternalDisplay ? "外接屏幕" : "未接副屏")
                             .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundStyle(StudioTheme.textPrimary)
                     }
                 }
                 Spacer()
-                Text(viewModel.isBroadcasting ? "ON AIR" : "待机")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundColor(viewModel.isBroadcasting ? .white : .blue)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(viewModel.isBroadcasting ? Color.red : Color.blue.opacity(0.12))
-                    )
+                StatusBadge(
+                    viewModel.isBroadcasting ? "ON AIR" : (hasExternalDisplay ? "STANDBY" : "WARN"),
+                    kind: viewModel.isBroadcasting ? .live : (hasExternalDisplay ? .idle : .warn)
+                )
             }
 
             Button(action: { viewModel.handleSafeBroadcastToggle() }) {
                 HStack(spacing: 10) {
                     Image(systemName: viewModel.isBroadcasting ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
                         .font(.system(size: 17, weight: .black))
-                        .foregroundColor(.white)
+                        .foregroundStyle(.white)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.isBroadcasting ? "投射：开" : "投射：关")
+                        Text(projectionButtonTitle(hasExternalDisplay: hasExternalDisplay))
                             .font(.system(size: 16, weight: .bold))
-                        Text(viewModel.isBroadcasting ? "副屏输出中 · 点击停止" : "点击推流至副屏")
+                        Text(projectionButtonSubtitle(hasExternalDisplay: hasExternalDisplay))
                             .font(.system(size: 12, weight: .medium))
                             .opacity(0.85)
                     }
                     Spacer()
                 }
-                .foregroundColor(.white)
+                .foregroundStyle(.white)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .fill(viewModel.isBroadcasting
-                              ? Color(red: 0.05, green: 0.65, blue: 0.35)  // 开启：深绿
-                              : Color(red: 0.18, green: 0.42, blue: 0.88)) // 关闭：蓝色
+                              ? StudioTheme.statusLive
+                              : (hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted))
                 )
-                .shadow(color: viewModel.isBroadcasting
-                        ? Color.green.opacity(0.4)
-                        : Color.blue.opacity(0.3),
-                        radius: 6, x: 0, y: 3)
             }
             .buttonStyle(.plain)
             .focusable(false)
+            .disabled(!canStartProjection)
+            .help(hasExternalDisplay ? "Start or stop external display projection" : "Connect an external display before starting projection")
+            .accessibilityLabel(projectionButtonTitle(hasExternalDisplay: hasExternalDisplay))
+            .accessibilityHint(projectionButtonSubtitle(hasExternalDisplay: hasExternalDisplay))
 
             if let notice = viewModel.broadcastSafetyNotice {
-                HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.system(size: 11, weight: .bold))
-                    Text(notice)
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
-                        .lineLimit(2)
-                }
-                .foregroundStyle(Color.orange)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .fill(Color.orange.opacity(0.10))
-                )
+                InlineWarningBanner(title: "Projection warning", message: notice, kind: .warn)
+            } else if !hasExternalDisplay {
+                InlineWarningBanner(title: "External Display Required", message: "Connect a secondary display before going on air.", kind: .warn)
             }
         }
         .padding(14)
@@ -317,6 +313,16 @@ struct LeftPanel: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(Color(NSColor.controlBackgroundColor))
         )
+    }
+
+    private func projectionButtonTitle(hasExternalDisplay: Bool) -> String {
+        if viewModel.isBroadcasting { return "Stop Projection" }
+        return hasExternalDisplay ? "Start Projection" : "External Display Required"
+    }
+
+    private func projectionButtonSubtitle(hasExternalDisplay: Bool) -> String {
+        if viewModel.isBroadcasting { return "ON AIR · click to stop output" }
+        return hasExternalDisplay ? "Push to external display" : "No external display detected"
     }
 
     // MARK: - 文件选择
@@ -554,6 +560,38 @@ struct ImportActionCardStyle: ButtonStyle {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(color.opacity(configuration.isPressed ? 0.8 : 1))
         )
+    }
+}
+
+struct SecondaryImportButtonStyle: ButtonStyle {
+    var role: StudioTheme.StatusKind = .idle
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .bold))
+            .lineLimit(1)
+            .foregroundStyle(tint)
+            .frame(maxWidth: .infinity)
+            .frame(height: StudioTheme.controlHeightM)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .fill(tint.opacity(configuration.isPressed ? 0.16 : 0.09))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(tint.opacity(0.18), lineWidth: 1)
+            )
+    }
+
+    private var tint: Color {
+        switch role {
+        case .warn:
+            return StudioTheme.statusWarn
+        case .fail, .live:
+            return StudioTheme.statusFail
+        default:
+            return StudioTheme.actionPrimary
+        }
     }
 }
 

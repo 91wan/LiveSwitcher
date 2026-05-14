@@ -8,6 +8,7 @@ struct MainToolbar: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @Environment(\.openWindow) private var openWindow
     @State private var showHelp = false
+    @State private var showPreflight = false
     var embedded: Bool = false
     var onOpenPreview: () -> Void = {}
     var onOpenAudioMixer: () -> Void = {}
@@ -34,10 +35,23 @@ struct MainToolbar: View {
         }
         .popover(isPresented: $showHelp, arrowEdge: .bottom) {
             HelpView(
+                initialPanel: .help,
+                showsPanelPicker: false,
                 onPreflightAction: handlePreflightAction,
                 onOpenSafetyCockpit: {
                     openWindow(id: "safety-cockpit")
                     showHelp = false
+                }
+            )
+        }
+        .popover(isPresented: $showPreflight, arrowEdge: .bottom) {
+            HelpView(
+                initialPanel: .preflight,
+                showsPanelPicker: false,
+                onPreflightAction: handlePreflightAction,
+                onOpenSafetyCockpit: {
+                    openWindow(id: "safety-cockpit")
+                    showPreflight = false
                 }
             )
         }
@@ -51,12 +65,15 @@ struct MainToolbar: View {
         case .openPreview:
             onOpenPreview()
             showHelp = false
+            showPreflight = false
         case .openAudioMixer:
             onOpenAudioMixer()
             showHelp = false
+            showPreflight = false
         case .openOverlays:
             onOpenOverlays()
             showHelp = false
+            showPreflight = false
         case .needsHardware, .manualReview:
             break
         }
@@ -106,6 +123,7 @@ struct MainToolbar: View {
                     viewModel.isPageInterceptEnabled.toggle()
                 }
 
+                preflightButton
                 helpButton
             }
 
@@ -139,6 +157,7 @@ struct MainToolbar: View {
                     viewModel.isPageInterceptEnabled.toggle()
                 }
 
+                compactPreflightButton
                 helpButton
             }
         }
@@ -146,42 +165,88 @@ struct MainToolbar: View {
 
     private var speakerTint: Color {
         viewModel.isSpeakerMode
-            ? Color(red: 0.05, green: 0.65, blue: 0.35)
-            : Color(red: 0.18, green: 0.42, blue: 0.88)
+            ? StudioTheme.statusWarn
+            : StudioTheme.actionPrimary
     }
 
     private var panicTint: Color {
         viewModel.isPanicMode
-            ? Color(red: 0.88, green: 0.16, blue: 0.12)
-            : Color(red: 0.18, green: 0.42, blue: 0.88)
+            ? StudioTheme.actionDanger
+            : StudioTheme.actionPrimary
     }
 
     private var pptTint: Color {
         viewModel.isPageInterceptEnabled
-            ? Color(red: 0.05, green: 0.65, blue: 0.35)
-            : Color(red: 0.18, green: 0.42, blue: 0.88)
+            ? StudioTheme.statusWarn
+            : StudioTheme.actionPrimary
     }
 
-    // MARK: - ❓ 使用说明按钮
+    private var preflightModel: PreflightButtonModel {
+        PreflightButtonModel.make(summary: viewModel.livePreflightSummary)
+    }
+
+    private var preflightButton: some View {
+        Button(action: { showPreflight.toggle() }) {
+            HStack(spacing: 8) {
+                Image(systemName: preflightModel.status == .fail ? "xmark.octagon.fill" : "checklist.checked")
+                    .font(.system(size: 15, weight: .black))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(preflightModel.title)
+                        .font(.system(size: 13, weight: .black))
+                    Text(preflightModel.value)
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                }
+            }
+            .foregroundStyle(StudioTheme.statusColor(preflightModel.status))
+            .frame(width: 112, height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(StudioTheme.statusColor(preflightModel.status).opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(StudioTheme.statusColor(preflightModel.status).opacity(0.24), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help("现场检查：查看 fail/warn 项和安全操作")
+        .accessibilityLabel("Preflight")
+        .accessibilityValue(preflightModel.value)
+        .accessibilityHint("Open live preflight checks")
+    }
+
+    private var compactPreflightButton: some View {
+        compactToolbarButton(
+            title: "Preflight",
+            subtitle: preflightModel.value,
+            systemName: preflightModel.status == .fail ? "xmark.octagon.fill" : "checklist.checked",
+            fill: StudioTheme.statusColor(preflightModel.status)
+        ) {
+            showPreflight.toggle()
+        }
+    }
+
+    // MARK: - 使用说明按钮
 
     private var helpButton: some View {
         Button(action: { showHelp.toggle() }) {
-            Image(systemName: "questionmark")
-                .font(.system(size: 16, weight: .black))
-                .foregroundStyle(.red)
-                .frame(width: 38, height: 38)
-                .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.white.opacity(0.78))
-                )
+            Label("Help", systemImage: "questionmark.circle")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .frame(height: 38)
+                .padding(.horizontal, 12)
+                .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.88), lineWidth: 1)
+                        .stroke(StudioTheme.borderSubtle, lineWidth: 1)
                 )
         }
         .buttonStyle(.plain)
         .focusable(false)
         .help("使用说明")
+        .accessibilityLabel("Help")
+        .accessibilityHint("Open usage help")
     }
 
     private func compactToolbarButton(
@@ -195,7 +260,7 @@ struct MainToolbar: View {
             HStack(spacing: 8) {
                 Image(systemName: systemName)
                     .font(.system(size: 16, weight: .black))
-                    .foregroundColor(.white)
+                    .foregroundStyle(.white)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
                         .font(.system(size: 14, weight: .bold))
@@ -204,7 +269,7 @@ struct MainToolbar: View {
                         .opacity(0.85)
                 }
             }
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(
@@ -243,13 +308,7 @@ struct MainToolbar: View {
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(
-                        LinearGradient(
-                            colors: isCritical
-                                ? [tint, Color(red: 0.98, green: 0.36, blue: 0.2)]
-                                : [tint, tint.opacity(0.82)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+                        isCritical ? StudioTheme.actionDanger : tint
                     )
             )
             .overlay(
@@ -261,6 +320,8 @@ struct MainToolbar: View {
         .buttonStyle(.plain)
         .focusable(false)
         .help(help)
+        .accessibilityLabel(title)
+        .accessibilityHint(help)
     }
 }
 
@@ -268,13 +329,26 @@ struct MainToolbar: View {
 
 struct HelpView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
-    @State private var selectedPanel: HelpPanel = .help
+    let showsPanelPicker: Bool
+    @State private var selectedPanel: HelpPanel
     @State private var copiedReport = false
     @State private var supportMessage: String?
     @State private var preflightListMode: PreflightListMode = .needsAttention
     @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
     var onOpenSafetyCockpit: () -> Void = {}
+
+    fileprivate init(
+        initialPanel: HelpPanel = .help,
+        showsPanelPicker: Bool = true,
+        onPreflightAction: @escaping (LivePreflightActionKind) -> Void = { _ in },
+        onOpenSafetyCockpit: @escaping () -> Void = {}
+    ) {
+        self.showsPanelPicker = showsPanelPicker
+        self._selectedPanel = State(initialValue: initialPanel)
+        self.onPreflightAction = onPreflightAction
+        self.onOpenSafetyCockpit = onOpenSafetyCockpit
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -284,12 +358,16 @@ struct HelpView: View {
 
                 Spacer()
 
-                Picker("", selection: $selectedPanel) {
-                    Text("Help").tag(HelpPanel.help)
-                    Text("Preflight").tag(HelpPanel.preflight)
+                if showsPanelPicker {
+                    Picker("", selection: $selectedPanel) {
+                        Text("Help").tag(HelpPanel.help)
+                        Text("Preflight").tag(HelpPanel.preflight)
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 210)
+                } else {
+                    StatusBadge(selectedPanel == .preflight ? "Preflight" : "Help", kind: selectedPanel == .preflight ? PreflightButtonModel.make(summary: viewModel.livePreflightSummary).status : .idle)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 210)
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 16)
@@ -541,12 +619,12 @@ struct HelpView: View {
     }
 }
 
-private enum HelpPanel {
+fileprivate enum HelpPanel {
     case help
     case preflight
 }
 
-private enum PreflightListMode: Hashable {
+fileprivate enum PreflightListMode: Hashable {
     case needsAttention
     case allChecks
 }
