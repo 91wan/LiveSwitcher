@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.7.zip
+LiveSwitcher-macOS-v0.3.8.zip
 ```
 
 注意：当前公开构建是 source-available、ad-hoc 签名，且 **未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。后续 notarized 版本需要 Apple Developer ID 证书和 notarytool 凭据。
@@ -55,16 +55,16 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.7 更新
+## v0.3.8 更新
 
-- 老板键 Panic 已纳入统一音频路由，和主讲人模式、BGM 接管、音频策略使用同一套计算。
-- Panic 开启时，Preflight 和 Support Report 中的媒体/BGM 实际音量会显示为 `0%`。
-- 关闭 Panic 后按当前 master/media/BGM/主讲人/策略恢复，不再恢复进入 Panic 前的旧音量快照。
-- AVPlayer 观察者清理改为显式 `shutdown()`，降低窗口或 ViewModel 释放时的生命周期风险。
+- PPT Mode 预检现在会识别当前节目类型：翻页类节目通过，非翻页媒体开启 PPT Mode 会给出警告。
+- 当前节目是演示文件但 PPT Mode 关闭时，预检会提示是否需要翻页笔接管。
+- 预检中的导航动作也会进入脱敏支持事件时间线，即使它只是切换到现有页面。
+- Panic 音频在 Preflight 和 Support Report 中仍会明确显示为 `0%`。
 
-v0.3.7 信任与音频路由验证说明见 [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md)。
+v0.3.8 预检严格化说明见 [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)。
 
-English maintainer note: `v0.3.7` keeps Panic blackout, preflight reporting, and real audio output consistent.
+English maintainer note: `v0.3.8` makes PPT mode checks and preflight navigation events stricter and easier to audit.
 
 ## 现场检查
 
@@ -78,8 +78,8 @@ English maintainer note: `v0.3.7` keeps Panic blackout, preflight reporting, and
 
 相关文档：
 
-- [`docs/qa/workspace-guard-v0.3.7.md`](docs/qa/workspace-guard-v0.3.7.md)
-- [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md)
+- [`docs/qa/workspace-guard-v0.3.8.md`](docs/qa/workspace-guard-v0.3.8.md)
+- [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)
 - [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
 - [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
 - [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)

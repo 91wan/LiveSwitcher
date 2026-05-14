@@ -44,9 +44,10 @@ struct MainToolbar: View {
     }
 
     private func handlePreflightAction(_ action: LivePreflightActionKind) {
+        viewModel.performLivePreflightAction(action)
         switch action {
         case .clearOverlays, .turnOffPanic:
-            viewModel.performLivePreflightAction(action)
+            break
         case .openPreview:
             onOpenPreview()
             showHelp = false
@@ -345,7 +346,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.3.7 | panic routing")
+            Text("Version 0.3.8 | preflight strictness")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
