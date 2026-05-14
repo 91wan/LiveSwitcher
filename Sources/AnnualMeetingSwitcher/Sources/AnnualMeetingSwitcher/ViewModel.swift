@@ -252,6 +252,10 @@ final class SwitcherViewModel: ObservableObject {
         mediaVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
         systemVolumeObserver?.stop()
+        let avCoordinator = avCoordinator
+        Task { @MainActor in
+            avCoordinator.shutdown()
+        }
     }
 
     // MARK: - 音量实际应用（Fix Issue #7/#8）
@@ -265,12 +269,14 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func effectiveMediaOutputVolume() -> Float {
+        guard !isPanicMode else { return 0 }
         guard !isBGMAudioTakeoverActive else { return 0 }
         guard shouldOutputMediaAudio else { return 0 }
         return duckedVolumeIfNeeded(Float(masterVolume * mediaVolume))
     }
 
     func effectiveBGMOutputVolume() -> Float {
+        guard !isPanicMode else { return 0 }
         guard isBGMAudioTakeoverActive || shouldOutputBGM else { return 0 }
         return duckedVolumeIfNeeded(Float(masterVolume * bgmVolume))
     }
@@ -1280,9 +1286,6 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - Tier1: Panic State（老板键状态变量）
     @Published var isPanicMode: Bool       = false
-    var prePanicMediaVolume: Float         = 0.8
-    var prePanicBGMVolume: Float           = 0.25
-    var prePanicBGMFallback: Float         = 0.25
 
     // MARK: - Tier1: Overlay State（叠层状态变量）
     @Published var isCountdownActive: Bool = false

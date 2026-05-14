@@ -40,7 +40,7 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.6.zip
+LiveSwitcher-macOS-v0.3.7.zip
 ```
 
 Important: the public build is source-available, ad-hoc signed, and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally. A notarized build will require Apple Developer ID signing credentials and notarytool secrets.
@@ -55,17 +55,16 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.6
+## What's New in v0.3.7
 
-- Public release workflows now reject tags that do not point at `origin/main`.
-- The current app version is checked against the root `VERSION` file.
-- Release packaging uses `dist/LiveSwitcher.app` as the single app bundle source.
-- Hardened runtime signing options are enabled for ad-hoc builds, preparing the path for future Developer ID notarization.
-- Production HTML output disables WebKit developer extras and blocks remote top-level navigation.
+- Panic blackout now participates in the same audio-routing model as speaker mode, BGM takeover, and strategy selection.
+- Preflight and support reports show effective media/BGM volume as `0%` while Panic is active.
+- Turning Panic off restores the current master/media/BGM/speaker strategy, not a stale volume snapshot from before Panic started.
+- AVPlayer observer cleanup is explicit through `shutdown()`, reducing lifecycle risk during teardown.
 
-See [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md) for the workspace guard contract.
+See [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md) for the v0.3.7 trust and routing validation notes.
 
-中文维护说明：`v0.3.6` 的重点不是新增现场功能，而是防止旧 tag、side branch 或版本漂移生成公开发布包。
+中文维护说明：`v0.3.7` 的重点不是新增现场功能，而是让老板键静音、预检报告和真实音频输出保持一致。
 
 ## Live Preflight
 
@@ -79,6 +78,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/workspace-guard-v0.3.7.md`](docs/qa/workspace-guard-v0.3.7.md)
+- [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md)
 - [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
 - [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
 - [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
