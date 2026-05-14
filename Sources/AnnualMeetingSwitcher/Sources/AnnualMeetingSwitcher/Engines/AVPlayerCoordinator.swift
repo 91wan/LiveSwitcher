@@ -55,8 +55,16 @@ final class AVPlayerCoordinator: ObservableObject {
     init() {}
 
     deinit {
-        Task { @MainActor [weak self] in
-            self?.cleanupObservers()
+        let player = player
+        let timeObserverToken = timeObserverToken
+        let endObserver = endObserver
+        Task { @MainActor in
+            if let timeObserverToken {
+                player.removeTimeObserver(timeObserverToken)
+            }
+            if let endObserver {
+                NotificationCenter.default.removeObserver(endObserver)
+            }
         }
     }
 
@@ -98,6 +106,14 @@ final class AVPlayerCoordinator: ObservableObject {
         currentTime = 0.0
         duration = nil
         didPlayToEnd = false
+    }
+
+    /// Explicit lifecycle cleanup for owners that outlive SwiftUI view churn.
+    /// This keeps observer removal deterministic instead of relying on async deinit work.
+    func shutdown() {
+        stop()
+        cleanupObservers()
+        onPlaybackEnded = nil
     }
 
     /// 跳到开头

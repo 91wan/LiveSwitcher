@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.6.zip
+LiveSwitcher-macOS-v0.3.7.zip
 ```
 
 注意：当前公开构建是 source-available、ad-hoc 签名，且 **未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。后续 notarized 版本需要 Apple Developer ID 证书和 notarytool 凭据。
@@ -55,17 +55,16 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.6 更新
+## v0.3.7 更新
 
-- GitHub Release workflow 会拒绝不指向 `origin/main` 的 tag。
-- 当前版本由根目录 `VERSION` 文件统一校验。
-- 发布包统一从 `dist/LiveSwitcher.app` 生成。
-- ad-hoc 包已启用 hardened runtime 签名参数，为后续 Developer ID notarization 做准备。
-- 生产环境 HTML 输出关闭 WebKit developer extras，并阻止远程顶层导航。
+- 老板键 Panic 已纳入统一音频路由，和主讲人模式、BGM 接管、音频策略使用同一套计算。
+- Panic 开启时，Preflight 和 Support Report 中的媒体/BGM 实际音量会显示为 `0%`。
+- 关闭 Panic 后按当前 master/media/BGM/主讲人/策略恢复，不再恢复进入 Panic 前的旧音量快照。
+- AVPlayer 观察者清理改为显式 `shutdown()`，降低窗口或 ViewModel 释放时的生命周期风险。
 
-工作区保护说明见 [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)。
+v0.3.7 信任与音频路由验证说明见 [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md)。
 
-English maintainer note: `v0.3.6` is a release-trust patch, not a new live-console feature.
+English maintainer note: `v0.3.7` keeps Panic blackout, preflight reporting, and real audio output consistent.
 
 ## 现场检查
 
@@ -79,6 +78,8 @@ English maintainer note: `v0.3.6` is a release-trust patch, not a new live-conso
 
 相关文档：
 
+- [`docs/qa/workspace-guard-v0.3.7.md`](docs/qa/workspace-guard-v0.3.7.md)
+- [`docs/qa/release-hygiene-v0.3.7.md`](docs/qa/release-hygiene-v0.3.7.md)
 - [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
 - [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
 - [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
