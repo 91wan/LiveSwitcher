@@ -7,10 +7,11 @@ cd "$REPO_ROOT"
 
 APP_NAME="LiveSwitcher"
 APP_BUNDLE_NAME="$APP_NAME.app"
-OUT_DIR="$HOME/Downloads"
+OUT_DIR="$REPO_ROOT/dist"
 APP_BUNDLE="$OUT_DIR/$APP_BUNDLE_NAME"
 ICON_SRC="$SCRIPT_DIR/AppIcon.icns"
 ENTITLEMENTS_FILE="$SCRIPT_DIR/LiveSwitcher.entitlements"
+MARKETING_VERSION="$(tr -d '[:space:]' < "$REPO_ROOT/VERSION")"
 
 echo "Building $APP_NAME release app..."
 swift build -c release
@@ -49,7 +50,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.3.5</string>
+  <string>$MARKETING_VERSION</string>
   <key>CFBundleVersion</key>
   <string>1</string>
   <key>LSMinimumSystemVersion</key>
@@ -69,9 +70,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
 PLIST
 
 if [[ -f "$ENTITLEMENTS_FILE" ]]; then
-  codesign --force --deep --sign - --entitlements "$ENTITLEMENTS_FILE" "$APP_BUNDLE"
+  codesign --force --deep --options runtime --sign - --entitlements "$ENTITLEMENTS_FILE" "$APP_BUNDLE"
 else
-  codesign --force --deep --sign - "$APP_BUNDLE"
+  codesign --force --deep --options runtime --sign - "$APP_BUNDLE"
 fi
 
 codesign --verify --deep --strict "$APP_BUNDLE"

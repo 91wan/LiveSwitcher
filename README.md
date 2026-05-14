@@ -40,10 +40,10 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.3.5.zip
+LiveSwitcher-macOS-v0.3.6.zip
 ```
 
-Important: the public build is ad-hoc signed and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally.
+Important: the public build is source-available, ad-hoc signed, and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally. A notarized build will require Apple Developer ID signing credentials and notarytool secrets.
 
 ## Permissions
 
@@ -55,15 +55,17 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.3.5
+## What's New in v0.3.6
 
-- Maintainer release flow now has a workspace guard before build, test, and release packaging.
-- Dirty worktrees fail fast when tracked files are deleted, files are modified, or untracked files are present.
-- Release mode verifies `main` is aligned with `origin/main` before tagging, preventing releases from damaged local snapshots.
+- Public release workflows now reject tags that do not point at `origin/main`.
+- The current app version is checked against the root `VERSION` file.
+- Release packaging uses `dist/LiveSwitcher.app` as the single app bundle source.
+- Hardened runtime signing options are enabled for ad-hoc builds, preparing the path for future Developer ID notarization.
+- Production HTML output disables WebKit developer extras and blocks remote top-level navigation.
 
-See [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md) for the workspace guard contract.
+See [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md) for the workspace guard contract.
 
-中文维护说明：`v0.3.5` 的重点不是新增现场功能，而是防止在脏工作区、残缺快照或本地 `main` 未同步时继续打包发布。
+中文维护说明：`v0.3.6` 的重点不是新增现场功能，而是防止旧 tag、side branch 或版本漂移生成公开发布包。
 
 ## Live Preflight
 
@@ -77,6 +79,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
+- [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
+- [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
 - [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
 - [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
 - [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
@@ -181,4 +185,4 @@ Presentation control relies on macOS automation and accessibility APIs. macOS re
 
 ## No License
 
-No open-source license is provided. The code is publicly visible, but all rights are reserved by the repository owner unless a license is added later.
+No open-source license is provided. This repository is source-available for review and local building, but all rights are reserved by the repository owner unless a license is added later.

@@ -345,7 +345,7 @@ struct HelpView: View {
                 "← → 方向键：Keynote 上一页 / 下一页（PPT模式关闭时有效）"
             ])
 
-            Text("Version 0.3.5 | workspace guard")
+            Text("Version 0.3.6 | release trust")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
