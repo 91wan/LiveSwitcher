@@ -40,7 +40,7 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.3.8.zip
+LiveSwitcher-macOS-v0.4.0.zip
 ```
 
 注意：当前公开构建是 source-available、ad-hoc 签名，且 **未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。后续 notarized 版本需要 Apple Developer ID 证书和 notarytool 凭据。
@@ -55,16 +55,16 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.3.8 更新
+## v0.4.0 更新
 
-- PPT Mode 预检现在会识别当前节目类型：翻页类节目通过，非翻页媒体开启 PPT Mode 会给出警告。
-- 当前节目是演示文件但 PPT Mode 关闭时，预检会提示是否需要翻页笔接管。
-- 预检中的导航动作也会进入脱敏支持事件时间线，即使它只是切换到现有页面。
-- Panic 音频在 Preflight 和 Support Report 中仍会明确显示为 `0%`。
+- 音频路由现在由独立纯函数引擎计算，覆盖主音量、媒体、BGM、主讲人、Panic 和 BGM 接管。
+- 投射安全新增 service 边界，集中处理外接屏检测和 fail-closed 输出目标。
+- 节目队列持久化和“播毕自动下一条视频”选择逻辑被收口到队列 store。
+- 演示自动化脚本集中管理，Keynote/WPS AppleScript 路径处理不再散落在 ViewModel 中。
 
-v0.3.8 预检严格化说明见 [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)。
+v0.4.0 核心状态拆分说明见 [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md)。
 
-English maintainer note: `v0.3.8` makes PPT mode checks and preflight navigation events stricter and easier to audit.
+English maintainer note: `v0.4.0` extracts high-risk live-state logic from the ViewModel into testable service boundaries.
 
 ## 现场检查
 
@@ -78,6 +78,8 @@ English maintainer note: `v0.3.8` makes PPT mode checks and preflight navigation
 
 相关文档：
 
+- [`docs/qa/workspace-guard-v0.4.0.md`](docs/qa/workspace-guard-v0.4.0.md)
+- [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md)
 - [`docs/qa/workspace-guard-v0.3.8.md`](docs/qa/workspace-guard-v0.3.8.md)
 - [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)
 - [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)

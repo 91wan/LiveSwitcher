@@ -269,21 +269,28 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func effectiveMediaOutputVolume() -> Float {
-        guard !isPanicMode else { return 0 }
-        guard !isBGMAudioTakeoverActive else { return 0 }
-        guard shouldOutputMediaAudio else { return 0 }
-        return duckedVolumeIfNeeded(Float(masterVolume * mediaVolume))
+        audioRoutingOutput.media
     }
 
     func effectiveBGMOutputVolume() -> Float {
-        guard !isPanicMode else { return 0 }
-        guard isBGMAudioTakeoverActive || shouldOutputBGM else { return 0 }
-        return duckedVolumeIfNeeded(Float(masterVolume * bgmVolume))
+        audioRoutingOutput.bgm
     }
 
-    private func duckedVolumeIfNeeded(_ volume: Float) -> Float {
-        guard isSpeakerMode else { return volume }
-        return min(volume, Float(masterVolume) * speakerModeDuckedRatio)
+    private var audioRoutingOutput: AudioRoutingOutput {
+        AudioRoutingEngine.output(
+            for: AudioRoutingInput(
+                masterVolume: masterVolume,
+                mediaVolume: mediaVolume,
+                bgmVolume: bgmVolume,
+                audioStrategy: audioStrategy,
+                isCurrentProgramMediaSource: currentProgramIsMediaSource,
+                isMediaPlaying: avCoordinator.isPlaying,
+                isBGMAudioTakeoverActive: isBGMAudioTakeoverActive,
+                isSpeakerMode: isSpeakerMode,
+                isPanicMode: isPanicMode,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
+        )
     }
 
     func applyAudioRouting(mediaFadeDuration: Double? = nil, bgmFadeDuration: Double? = nil) {
@@ -379,32 +386,14 @@ final class SwitcherViewModel: ObservableObject {
         item.sourceKind.supportsSeeking
     }
 
-    private var shouldOutputMediaAudio: Bool {
-        switch audioStrategy {
-        case .bgmOnly:
-            return false
-        case .followProgram:
-            return currentProgramIsMediaSource && avCoordinator.isPlaying
-        case .followSource, .mixed:
-            return currentProgramIsMediaSource
-        }
-    }
-
-    private var shouldOutputBGM: Bool {
-        switch audioStrategy {
-        case .bgmOnly, .mixed:
-            return true
-        case .followSource:
-            return false
-        case .followProgram:
-            return !(currentProgramIsMediaSource && avCoordinator.isPlaying)
-        }
+    var projectionService: ProjectionService {
+        ProjectionService(externalScreenProvider: externalScreenProvider)
     }
 
     // MARK: - 持久化
 
     func saveData() {
-        let persistentProgramItems = programItems.filter { $0.sourceURL != nil }
+        let persistentProgramItems = ProgramQueueStore.persistentProgramItems(from: programItems)
         let pushPaths = persistentProgramItems.compactMap { $0.sourceURL?.path }
         let pushSubtitles = persistentProgramItems.map { $0.subtitle }
         let pushTitles = persistentProgramItems.map { $0.title }
@@ -433,14 +422,13 @@ final class SwitcherViewModel: ObservableObject {
         if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
             let titles = userDefaults.stringArray(forKey: "pushList_titles") ?? []
             let subtitles = userDefaults.stringArray(forKey: "pushList_subtitles") ?? []
-            for (i, path) in paths.enumerated() {
-                let url = URL(fileURLWithPath: path)
-                guard FileManager.default.fileExists(atPath: path) else { continue }
-                let title = i < titles.count ? titles[i] : url.deletingPathExtension().lastPathComponent
-                let subtitle = i < subtitles.count ? subtitles[i] : url.pathExtension.uppercased()
-                let item = ProgramItem(title: title, subtitle: subtitle, sourceURL: url)
-                programItems.append(item)
-            }
+            programItems.append(
+                contentsOf: ProgramQueueStore.restoredProgramItems(
+                    paths: paths,
+                    titles: titles,
+                    subtitles: subtitles
+                )
+            )
         }
 
         if let paths = userDefaults.stringArray(forKey: UDKeys.bgmList) {
@@ -595,38 +583,17 @@ final class SwitcherViewModel: ObservableObject {
 
     private func autoPlayNextVideoIfPossible() -> Bool {
         guard autoPlayNextVideoOnEnd,
-              let currentProgramItem,
-              let currentIndex = programItems.firstIndex(where: { $0.id == currentProgramItem.id }) else {
-            return false
-        }
-
-        let nextIndex = currentIndex + 1
-        guard programItems.indices.contains(nextIndex) else { return false }
-
-        let nextItem = programItems[nextIndex]
-        guard isVideoProgramItem(nextItem) else { return false }
-
+              let nextItem = ProgramQueueStore.nextVideoAfterCurrent(
+                current: currentProgramItem,
+                in: programItems
+              ) else { return false }
         switchToProgram(nextItem)
         return true
     }
 
-    private func isVideoProgramItem(_ item: ProgramItem) -> Bool {
-        guard item.sourceKind == .media,
-              let ext = item.sourceURL?.pathExtension.lowercased() else { return false }
-        return ["mp4", "mov", "m4v", "avi"].contains(ext)
-    }
-
     /// Fix Issue #3: 打开并立即放映 Keynote 文件
     func openAndPresentKeynote(url: URL) {
-        let posixFile = AppleScriptSupport.posixFileExpression(url: url)
-        let script = """
-        tell application "Keynote"
-            activate
-            open \(posixFile)
-            delay 1.0
-            start (front document) from (slide 1 of front document)
-        end tell
-        """
+        let script = PresentationAutomationService.keynoteStartScript(url: url)
         DispatchQueue.global(qos: .userInitiated).async {
             var errorDict: NSDictionary?
             guard let appleScript = NSAppleScript(source: script) else { return }
@@ -637,15 +604,9 @@ final class SwitcherViewModel: ObservableObject {
     /// V24 Fix #3: PPTX → 默认调取 WPS Office 执行播放（彻底替换 Keynote 调用逻辑）
     func openPPTXWithKeynote(url: URL) {
         let posixPath = url.path
-        let posixFile = AppleScriptSupport.posixFileExpression(path: posixPath)
         DispatchQueue.global(qos: .userInitiated).async {
             // 优先尝试 WPS Office
-            let wpsScript = """
-            tell application "WPS Office"
-                activate
-                open \(posixFile)
-            end tell
-            """
+            let wpsScript = PresentationAutomationService.wpsOpenScript(url: url)
             var errorDict: NSDictionary?
             if let appleScript = NSAppleScript(source: wpsScript) {
                 appleScript.executeAndReturnError(&errorDict)
@@ -1059,7 +1020,7 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 推流控制
 
     func handleBroadcastToggle() {
-        if !isBroadcasting, externalScreenProvider() == nil {
+        if !isBroadcasting, !projectionService.hasExternalDisplay {
             broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
             LiveSwitcherTelemetry.projectionFailClosed()
             recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
@@ -1077,7 +1038,7 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func showOutputWindow() {
-        guard let targetScreen = externalScreenProvider() else {
+        guard let targetScreen = projectionService.targetScreen() else {
             handleExternalDisplayLost()
             return
         }
