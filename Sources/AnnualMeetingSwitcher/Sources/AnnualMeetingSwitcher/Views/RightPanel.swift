@@ -396,6 +396,8 @@ struct LargeChannelFaderRow: View {
             Slider(value: $value, in: 0...1)
                 .tint(color)
                 .frame(height: 22)
+                .accessibilityLabel("\(label) channel volume")
+                .accessibilityValue("\(Int(value * 100)) percent")
 
             Text("\(Int(value * 100))")
                 .font(.system(size: 14, weight: .medium, design: .monospaced))
@@ -454,6 +456,7 @@ struct BGMItemRow: View {
                 }
                 .buttonStyle(.plain)
                 .help(isPlaying ? "暂停" : "播放")
+                .accessibilityLabel(isPlaying ? "Pause \(bgm.title)" : "Play \(bgm.title)")
 
                 Button(action: { viewModel.removeBGMItem(bgm) }) {
                     Image(systemName: "trash")
@@ -462,6 +465,7 @@ struct BGMItemRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("删除")
+                .accessibilityLabel("Delete \(bgm.title)")
             }
         }
         .padding(.horizontal, 8)

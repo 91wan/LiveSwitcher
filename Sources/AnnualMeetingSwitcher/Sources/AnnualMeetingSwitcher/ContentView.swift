@@ -85,7 +85,7 @@ struct ContentView: View {
         .padding(.top, 16)
         .padding(.bottom, 12)
         .frame(minHeight: 76)
-        .background(Color.white.opacity(0.55))
+        .background(StudioTheme.surfacePrimary.opacity(0.55))
         .overlay(Divider(), alignment: .bottom)
     }
 

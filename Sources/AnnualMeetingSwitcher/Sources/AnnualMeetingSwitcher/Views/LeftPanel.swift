@@ -499,6 +499,7 @@ struct ShortcutKeyHandler: View {
                     viewModel.switchToProgram(at: index - 1)
                 }
                 .keyboardShortcut(KeyEquivalent(Character("\(index)")), modifiers: [])
+                .accessibilityHidden(true)
                 .opacity(0)
                 .frame(width: 0, height: 0)
             }
@@ -641,6 +642,7 @@ struct SignalSourceRow: View {
             HStack(spacing: 7) {
                 controlButton(
                     systemName: isPlaying ? "pause.fill" : "play.fill",
+                    accessibilityLabel: isPlaying ? "Pause current program" : "Play current program",
                     tint: .white,
                     fill: currentRowControlTint,
                     action: onTogglePause
@@ -649,6 +651,7 @@ struct SignalSourceRow: View {
 
                 controlButton(
                     systemName: "backward.end.fill",
+                    accessibilityLabel: "Jump current program to beginning",
                     tint: currentRowControlTint,
                     fill: currentRowControlTint.opacity(0.12),
                     action: onJumpToBeginning
@@ -658,6 +661,7 @@ struct SignalSourceRow: View {
                 if let onSkipToEnd {
                     controlButton(
                         systemName: "forward.end.fill",
+                        accessibilityLabel: "Skip current program to end",
                         tint: currentRowControlTint,
                         fill: currentRowControlTint.opacity(0.12),
                         action: onSkipToEnd
@@ -670,6 +674,7 @@ struct SignalSourceRow: View {
 
             controlButton(
                 systemName: "trash",
+                accessibilityLabel: "Delete \(item.title)",
                 tint: StudioTheme.actionDanger,
                 fill: StudioTheme.actionDanger.opacity(isHovered ? 0.12 : 0.04),
                 action: onDelete
@@ -683,6 +688,7 @@ struct SignalSourceRow: View {
 
     private func controlButton(
         systemName: String,
+        accessibilityLabel: String,
         tint: Color,
         fill: Color,
         action: @escaping () -> Void
@@ -698,6 +704,7 @@ struct SignalSourceRow: View {
                 )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     @ViewBuilder
@@ -949,6 +956,8 @@ struct ProgressSliderRow: View {
                 }
             }
             .tint(StudioTheme.actionPrimary)
+            .accessibilityLabel("Current program progress")
+            .accessibilityValue("\(formatTime(avCoordinator.currentTime)) of \(avCoordinator.duration.map { formatTime($0) } ?? "unknown duration")")
 
             // 总时长
             Text(avCoordinator.duration.map { formatTime($0) } ?? "--:--")

@@ -200,11 +200,11 @@ struct MainToolbar: View {
             .foregroundStyle(StudioTheme.statusColor(preflightModel.status))
             .frame(width: 112, height: 46)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(StudioTheme.statusColor(preflightModel.status).opacity(0.10))
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .stroke(StudioTheme.statusColor(preflightModel.status).opacity(0.24), lineWidth: 1)
             )
         }
@@ -236,9 +236,9 @@ struct MainToolbar: View {
                 .foregroundStyle(StudioTheme.textPrimary)
                 .frame(height: 38)
                 .padding(.horizontal, 12)
-                .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                         .stroke(StudioTheme.borderSubtle, lineWidth: 1)
                 )
         }
@@ -273,13 +273,17 @@ struct MainToolbar: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                     .fill(fill)
             )
             .shadow(color: fill.opacity(0.28), radius: 5, x: 0, y: 3)
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .help("\(title): \(subtitle)")
+        .accessibilityLabel(title)
+        .accessibilityValue(subtitle)
+        .accessibilityHint("Toggle \(title)")
     }
 
     private func liveControlButton(
@@ -306,14 +310,14 @@ struct MainToolbar: View {
             .foregroundStyle(.white)
             .frame(width: 112, height: 46)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(
                         isCritical ? StudioTheme.actionDanger : tint
                     )
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(Color.white.opacity(isCritical ? 0.46 : 0.18), lineWidth: 1)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(StudioTheme.surfaceElevated.opacity(isCritical ? 0.46 : 0.18), lineWidth: 1)
             )
             .shadow(color: tint.opacity(isCritical ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
         }
@@ -500,21 +504,23 @@ struct HelpView: View {
             if let preflightActionMessage {
                 Text(preflightActionMessage)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(StudioTheme.statusReady)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.green.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(StudioTheme.statusReady.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                    .accessibilityLabel("Preflight action result: \(preflightActionMessage)")
             }
 
             if let supportMessage {
                 Text(supportMessage)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(StudioTheme.actionPrimary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.blue.opacity(0.09), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(StudioTheme.actionPrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                    .accessibilityLabel("Support report result: \(supportMessage)")
             }
 
             if checks.isEmpty {
@@ -634,22 +640,24 @@ private struct PreflightEmptyAttentionView: View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 17, weight: .black))
-                .foregroundStyle(.green)
+                .foregroundStyle(StudioTheme.statusReady)
             VStack(alignment: .leading, spacing: 3) {
                 Text("No rows need attention")
                     .font(.system(size: 13, weight: .bold))
                 Text("Switch to All checks if you want to audit every passing row.")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer(minLength: 0)
         }
         .padding(12)
-        .background(Color.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(StudioTheme.statusReady.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.green.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.statusReady.opacity(0.18), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("No preflight rows need attention")
     }
 }
 
@@ -684,20 +692,22 @@ private struct PreflightSummaryCard: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 6) {
-                countPill("P", summary.passCount, .green)
-                countPill("W", summary.warnCount, .orange)
-                countPill("F", summary.failCount, .red)
+                countPill("P", summary.passCount, StudioTheme.statusReady)
+                countPill("W", summary.warnCount, StudioTheme.statusWarn)
+                countPill("F", summary.failCount, StudioTheme.statusFail)
             }
         }
         .padding(13)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .fill(statusColor.opacity(0.08))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(statusColor.opacity(0.22), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Preflight summary: \(summary.status.displayTitle). \(summary.message). \(summary.passCount) pass, \(summary.warnCount) warn, \(summary.failCount) fail.")
     }
 
     private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
@@ -712,11 +722,11 @@ private struct PreflightSummaryCard: View {
     private var statusColor: Color {
         switch summary.status {
         case .pass:
-            return .green
+            return StudioTheme.statusReady
         case .warn:
-            return .orange
+            return StudioTheme.statusWarn
         case .fail:
-            return .red
+            return StudioTheme.statusFail
         }
     }
 
@@ -788,6 +798,8 @@ private struct PreflightRowView: View {
                         .buttonStyle(.bordered)
                         .controlSize(.small)
                         .help(preflightActionHelp(for: actionKind))
+                        .accessibilityLabel(actionLabel)
+                        .accessibilityHint(preflightActionHelp(for: actionKind))
                         .padding(.top, 3)
                     } else {
                         guidanceBadge(actionLabel, actionKind)
@@ -800,11 +812,11 @@ private struct PreflightRowView: View {
         }
         .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .fill(Color(NSColor.controlBackgroundColor).opacity(0.84))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(statusColor.opacity(0.18), lineWidth: 1)
         )
     }
@@ -812,11 +824,11 @@ private struct PreflightRowView: View {
     private var statusColor: Color {
         switch check.status {
         case .pass:
-            return .green
+            return StudioTheme.statusReady
         case .warn:
-            return .orange
+            return StudioTheme.statusWarn
         case .fail:
-            return .red
+            return StudioTheme.statusFail
         }
     }
 
@@ -837,8 +849,10 @@ private struct PreflightRowView: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(Color.secondary.opacity(0.10), in: Capsule())
+            .background(StudioTheme.surfaceSecondary, in: Capsule())
             .help(preflightActionHelp(for: action))
+            .accessibilityLabel(label)
+            .accessibilityHint(preflightActionHelp(for: action))
     }
 
     private func guidanceIcon(for action: LivePreflightActionKind) -> String {
@@ -885,10 +899,10 @@ struct HelpSectionView: View {
                 HStack(alignment: .top) {
                     Text("•")
                         .font(.system(size: 14))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                     Text(item)
                         .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
