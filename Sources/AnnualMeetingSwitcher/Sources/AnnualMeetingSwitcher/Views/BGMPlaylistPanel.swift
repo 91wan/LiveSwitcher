@@ -33,13 +33,13 @@ struct BGMPlaylistPanel: View {
             idealWidth: mode == .liveDock ? StudioTheme.directorRailWidth : 272,
             maxWidth: mode == .liveDock ? .infinity : 292
         )
-        .background(mode == .liveDock ? Color.white.opacity(0.72) : Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: mode == .liveDock ? 22 : 12, style: .continuous))
+        .background(mode == .liveDock ? StudioTheme.surfacePrimary.opacity(0.78) : StudioTheme.surfacePrimary)
+        .clipShape(.rect(cornerRadius: mode == .liveDock ? StudioTheme.radiusXL : StudioTheme.radiusM, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: mode == .liveDock ? 22 : 12, style: .continuous)
-                .stroke(mode == .liveDock ? Color.white.opacity(0.84) : Color.clear, lineWidth: 1)
+            RoundedRectangle(cornerRadius: mode == .liveDock ? StudioTheme.radiusXL : StudioTheme.radiusM, style: .continuous)
+                .stroke(mode == .liveDock ? StudioTheme.borderSubtle : .clear, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(mode == .liveDock ? 0.05 : 0.07), radius: mode == .liveDock ? 6 : 8, x: 0, y: 2)
+        .shadow(color: StudioTheme.shadowSoft, radius: mode == .liveDock ? 6 : 8, x: 0, y: 2)
     }
 
     @ViewBuilder
@@ -126,26 +126,17 @@ struct BGMPlaylistPanel: View {
         ZStack {
             VStack(spacing: 2) {
                 Text(mode == .liveDock ? "现场 BGM" : "音乐播放机")
-                    .font(mode == .liveDock ? .system(size: 18, weight: .bold) : .title2)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
+                    .font(mode == .liveDock ? StudioTheme.sectionTitle() : StudioTheme.title())
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(viewModel.bgmItems.count) 首已入库")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
-                    .foregroundColor(.secondary)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
             .frame(maxWidth: .infinity)
 
             HStack {
                 Spacer()
-                Text(viewModel.isBGMPlaying ? "PLAY" : "READY")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundColor(viewModel.isBGMPlaying ? .white : .indigo)
-                    .padding(.horizontal, 9)
-                    .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(viewModel.isBGMPlaying ? Color.indigo : Color.indigo.opacity(0.12))
-                    )
+                StatusBadge(viewModel.isBGMPlaying ? "Playing" : "Ready", kind: viewModel.isBGMPlaying ? .live : .ready)
             }
         }
     }
@@ -164,25 +155,27 @@ struct BGMPlaylistPanel: View {
             Button(action: { viewModel.seekBGMToBeginning() }) {
                 Image(systemName: "backward.end.alt.fill")
                     .font(.system(size: iconSize))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .help("跳回开头")
+            .accessibilityLabel("BGM seek to beginning")
 
             // 上一首
             Button(action: { viewModel.playPreviousBGM() }) {
                 Image(systemName: "backward.end.fill")
                     .font(.system(size: iconSize))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .help("上一首")
+            .accessibilityLabel("Previous BGM track")
 
             // 播放 / 暂停
             Button(action: {
@@ -194,41 +187,45 @@ struct BGMPlaylistPanel: View {
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: playSize))
-                    .foregroundColor(.blue)
+                    .foregroundStyle(viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary)
             }
             .buttonStyle(.plain)
             .help(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
+            .accessibilityLabel(viewModel.isBGMPlaying ? "Pause BGM" : "Play BGM")
 
             // 下一首
             Button(action: { viewModel.playNextBGM() }) {
                 Image(systemName: "forward.end.fill")
                     .font(.system(size: iconSize))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .help("下一首")
+            .accessibilityLabel("Next BGM track")
 
             // 循环模式
             Button(action: { viewModel.toggleLoopMode() }) {
                 Image(systemName: viewModel.bgmPlayMode == .loopOne ? "repeat.1" : "repeat")
                     .font(.system(size: iconSize))
-                    .foregroundColor(viewModel.bgmPlayMode == .sequential ? .secondary : .blue)
+                    .foregroundStyle(viewModel.bgmPlayMode == .sequential ? StudioTheme.textSecondary : StudioTheme.actionPrimary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
             .help(viewModel.bgmPlayMode.rawValue)
+            .accessibilityLabel("BGM loop mode")
+            .accessibilityValue(viewModel.bgmPlayMode.rawValue)
 
             Spacer()
         }
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill(StudioTheme.surfaceSecondary)
         )
     }
 
@@ -250,31 +247,32 @@ struct BGMPlaylistPanel: View {
                 ),
                 in: 0...1
             )
-            .tint(.blue)
+            .tint(StudioTheme.actionPrimary)
             .frame(height: 20)
             .disabled(viewModel.currentBGMItem == nil)
+            .accessibilityLabel("BGM progress")
 
             // 时间标签行
             HStack {
                 Text(formatTime(viewModel.bgmCurrentTime))
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                 Spacer()
                 if let dur = viewModel.bgmDuration {
                     Text(formatTime(dur))
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                 } else {
                     Text("--:--")
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
             }
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
-        .background(Color(NSColor.controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .background(StudioTheme.surfaceSecondary)
+        .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
     }
 
     private func formatTime(_ seconds: Double) -> String {
@@ -291,7 +289,7 @@ struct BGMPlaylistPanel: View {
         HStack {
             Text(mode == .liveDock ? "分类" : "当前分类")
                 .font(.system(size: 12, weight: .black, design: .rounded))
-                .foregroundColor(.secondary)
+                .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
             Picker("", selection: $bgmCategory) {
                 ForEach(BGMCategory.allCases, id: \.self) { cat in
@@ -305,8 +303,8 @@ struct BGMPlaylistPanel: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+            RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                .fill(StudioTheme.surfaceSecondary)
         )
     }
 
@@ -317,25 +315,22 @@ struct BGMPlaylistPanel: View {
 
         return Group {
             if filteredBGM.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "music.note.list")
-                        .font(.system(size: mode == .liveDock ? 26 : 32, weight: .thin))
-                        .foregroundColor(Color.secondary.opacity(0.5))
-                    Text("暂无曲目")
-                        .font(mode == .liveDock ? .system(size: 15, weight: .semibold) : .title3)
-                        .foregroundColor(Color.secondary)
-                }
+                EmptyStateView(
+                    title: "暂无曲目",
+                    message: "添加音乐后，现场 BGM 列表会显示在这里。",
+                    systemImage: "music.note.list"
+                )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, mode == .liveDock ? 14 : 20)
-                .background(Color(NSColor.controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(StudioTheme.surfaceSecondary)
+                .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             } else {
                 List {
                     ForEach(filteredBGM) { bgm in
                         HStack(spacing: 6) {
                             Image(systemName: "line.3.horizontal")
                                 .font(.system(size: 16))
-                                .foregroundColor(Color.secondary.opacity(0.6))
+                                .foregroundStyle(StudioTheme.textTertiary)
                                 .frame(width: 20)
                                 .help("拖动此图标可排序")
                             BGMItemRow(bgm: bgm, viewModel: viewModel, compact: mode == .liveDock)
@@ -350,8 +345,8 @@ struct BGMPlaylistPanel: View {
                 }
                 .listStyle(.plain)
                 .frame(height: min(CGFloat(filteredBGM.count) * 52, mode == .liveDock ? 156 : 280))
-                .background(Color(NSColor.controlBackgroundColor))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(StudioTheme.surfaceSecondary)
+                .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             }
         }
     }
@@ -371,22 +366,17 @@ struct BGMPlaylistPanel: View {
                 Image(systemName: "arrow.up.doc.fill")
                     .font(.system(size: 14, weight: .semibold))
             }
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 14)
             .padding(.vertical, mode == .liveDock ? 11 : 13)
         }
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.blue, Color.indigo],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill(StudioTheme.actionPrimary)
         )
         .buttonStyle(.plain)
+        .accessibilityLabel("Add music files")
     }
 
     // MARK: - 状态指示行
@@ -394,18 +384,18 @@ struct BGMPlaylistPanel: View {
     private var statusRow: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(viewModel.bgmItems.isEmpty ? Color.secondary.opacity(0.4) : Color.green)
+                .fill(viewModel.bgmItems.isEmpty ? StudioTheme.statusIdle.opacity(0.4) : StudioTheme.statusReady)
                 .frame(width: 8, height: 8)
             Text(viewModel.bgmItems.isEmpty ? "引擎已停止" : "BGM 已就绪")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(.secondary)
+                .foregroundStyle(StudioTheme.textSecondary)
         }
     }
 
     private var controlDiskFill: some View {
         Circle()
-            .fill(Color.white)
-            .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
+            .fill(StudioTheme.surfacePrimary)
+            .shadow(color: StudioTheme.shadowSoft, radius: 3, x: 0, y: 1)
     }
 
     // MARK: - 文件选择

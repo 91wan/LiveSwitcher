@@ -336,16 +336,16 @@ struct StatusBar: View {
     var body: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(viewModel.programItems.isEmpty ? Color.gray : Color.green)
+                .fill(viewModel.programItems.isEmpty ? StudioTheme.statusIdle : StudioTheme.statusReady)
                 .frame(width: 7, height: 7)
             Text(viewModel.programItems.isEmpty ? "就绪 - 请添加信号源" : "就绪 - \(viewModel.programItems.count) 个待播放项目")
-                .font(.system(size: 11))
-                .foregroundColor(.secondary)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
         }
         .padding(.horizontal, 14)
         .frame(height: 24)
-        .background(Color.white.opacity(0.6))
+        .background(StudioTheme.surfacePrimary.opacity(0.68))
         .overlay(Divider(), alignment: .top)
     }
 }
@@ -385,30 +385,21 @@ struct ProgramMonitorView: View {
 
     private var previewDeck: some View {
         ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color(red: 0.08, green: 0.09, blue: 0.13),
-                            Color(red: 0.03, green: 0.03, blue: 0.05)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
+            RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
+                .fill(StudioTheme.monitorGradient)
 
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
+                .stroke(StudioTheme.monitorBorder, lineWidth: 1)
 
             mediaLayer
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
                 .animation(.easeInOut(duration: viewModel.crossfadeDuration),
                            value: viewModel.currentProgramItem)
 
             if viewModel.isBroadcasting {
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(Color.red.opacity(0.95), lineWidth: 3)
+                RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
+                    .stroke(StudioTheme.borderCritical.opacity(0.95), lineWidth: 3)
                     .padding(1)
             }
 
@@ -418,7 +409,7 @@ struct ProgramMonitorView: View {
                     .frame(width: 8, height: 8)
                 Text(viewModel.isBroadcasting ? "ON AIR" : "STANDBY")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.92))
+                    .foregroundStyle(StudioTheme.monitorText)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
@@ -426,17 +417,17 @@ struct ProgramMonitorView: View {
 
             Text(monitorDisplayMode)
                 .font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(.white.opacity(0.82))
+                .foregroundStyle(StudioTheme.monitorText.opacity(0.82))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.white.opacity(0.08), in: Capsule())
+                .background(StudioTheme.monitorOverlayFill, in: Capsule())
                 .padding(.top, 14)
                 .padding(.trailing, 14)
         }
         .frame(maxWidth: .infinity)
         .frame(maxHeight: 360)
         .aspectRatio(16.0 / 9.0, contentMode: .fit)
-        .shadow(color: Color.black.opacity(0.18), radius: 12, x: 0, y: 8)
+        .shadow(color: StudioTheme.shadowStrong, radius: 12, x: 0, y: 8)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(viewModel.isBroadcasting ? "Program monitor on air" : "Program monitor standby")
     }
@@ -527,11 +518,11 @@ struct ProgramMonitorView: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
     }
@@ -556,11 +547,11 @@ struct ProgramMonitorView: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
     }
@@ -576,11 +567,11 @@ struct ProgramMonitorView: View {
             VStack(spacing: 8) {
                 Text(item.title)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                .foregroundStyle(StudioTheme.monitorText)
                 if !item.subtitle.isEmpty {
                     Text(item.subtitle)
                         .font(.system(size: 16, weight: .regular))
-                        .foregroundColor(Color(white: 0.6))
+                        .foregroundStyle(StudioTheme.monitorText.opacity(0.6))
                 }
             }
             .transition(.opacity)
@@ -588,10 +579,10 @@ struct ProgramMonitorView: View {
             VStack(spacing: 8) {
                 Text("待机中")
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundStyle(StudioTheme.monitorText)
                 Text("NO SIGNAL LOADED")
                     .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundColor(Color.white.opacity(0.7))
+                    .foregroundStyle(StudioTheme.monitorText.opacity(0.7))
             }
             .transition(.opacity)
         }
@@ -637,28 +628,28 @@ struct ProgramMonitorView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("\(index + 1)")
                     .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundColor(isActive ? .white : .primary)
+                    .foregroundStyle(isActive ? StudioTheme.monitorText : StudioTheme.textPrimary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 5)
                     .background(
                         Capsule()
-                            .fill(isActive ? Color.accentColor : Color(NSColor.controlBackgroundColor))
+                            .fill(isActive ? StudioTheme.actionPrimary : StudioTheme.surfaceSecondary)
                     )
 
                 Text(item.title)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
             }
             .frame(width: 112, alignment: .leading)
             .padding(10)
             .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(isActive ? Color.accentColor.opacity(0.10) : Color(NSColor.controlBackgroundColor))
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .fill(isActive ? StudioTheme.actionPrimary.opacity(0.10) : StudioTheme.surfaceSecondary)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isActive ? Color.accentColor.opacity(0.35) : Color.black.opacity(0.05), lineWidth: 1)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(isActive ? StudioTheme.actionPrimary.opacity(0.35) : StudioTheme.borderSubtle, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -702,17 +693,17 @@ struct WallpaperGalleryRow: View {
             HStack(spacing: 8) {
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: 14))
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                 Text("待机图库")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 Button("导入...") {
                     openWallpaperPicker()
                 }
                 .font(.system(size: 13))
                 .buttonStyle(.plain)
-                .foregroundColor(.blue)
+                .foregroundStyle(StudioTheme.actionPrimary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -731,21 +722,21 @@ struct WallpaperGalleryRow: View {
 
                     // 拖拽放入占位
                     ZStack {
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS)
                             .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-                            .foregroundColor(isDroppingWallpaper ? Color.blue : Color(NSColor.separatorColor))
+                            .foregroundStyle(isDroppingWallpaper ? StudioTheme.actionPrimary : StudioTheme.borderSubtle)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(isDroppingWallpaper ? Color.blue.opacity(0.05) : Color(NSColor.controlBackgroundColor))
+                                RoundedRectangle(cornerRadius: StudioTheme.radiusS)
+                                    .fill(isDroppingWallpaper ? StudioTheme.actionPrimary.opacity(0.05) : StudioTheme.surfaceSecondary)
                             )
 
                         VStack(spacing: 4) {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .light))
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(StudioTheme.textSecondary)
                             Text("拖入图片")
                                 .font(.system(size: 10))
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(StudioTheme.textSecondary)
                         }
                     }
                     .frame(width: 80, height: 60)
@@ -850,18 +841,18 @@ struct WallpaperThumbView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 80, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusS))
             } else {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(NSColor.controlBackgroundColor))
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS)
+                    .fill(StudioTheme.surfaceSecondary)
                     .frame(width: 80, height: 60)
                 Image(systemName: "photo")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
 
             if isActive {
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.blue, lineWidth: 3)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS)
+                    .stroke(StudioTheme.actionPrimary, lineWidth: 3)
                     .frame(width: 80, height: 60)
 
                 VStack {
@@ -869,8 +860,8 @@ struct WallpaperThumbView: View {
                         Spacer()
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
-                            .foregroundColor(.blue)
-                            .background(Color.white.clipShape(Circle()))
+                            .foregroundStyle(StudioTheme.actionPrimary)
+                            .background(StudioTheme.surfacePrimary.clipShape(Circle()))
                             .padding(4)
                     }
                     Spacer()
