@@ -33,7 +33,7 @@ struct LeftPanel: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .background(
-                        RoundedRectangle(cornerRadius: 8)
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                             .fill(StudioTheme.actionDanger)
                     )
                 }
@@ -58,10 +58,10 @@ struct LeftPanel: View {
             HStack(spacing: 7) {
                 Image(systemName: "forward.end.fill")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(StudioTheme.actionPrimary)
                 Text("播毕自动下一条视频")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
             }
         }
@@ -70,12 +70,12 @@ struct LeftPanel: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.66))
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill(StudioTheme.surfaceSecondary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(Color.white.opacity(0.82), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .help("仅当前节目播毕且下一条也是视频时自动播放；不会自动打开 HTML、PPT 或 Keynote。")
     }
@@ -83,15 +83,18 @@ struct LeftPanel: View {
     // MARK: - 标题行
 
     private var headerRow: some View {
-        HStack {
+        HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("播放队列")
-                    .font(.title2)
-                    .fontWeight(.bold)
+                    .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(viewModel.programItems.count) 个节目")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
+                Text(queueHeaderSummary)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(2)
             }
             Spacer()
             CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
@@ -101,8 +104,8 @@ struct LeftPanel: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Color(NSColor.controlBackgroundColor))
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                            .fill(StudioTheme.surfaceSecondary)
                     )
             }
             .buttonStyle(.plain)
@@ -153,11 +156,11 @@ struct LeftPanel: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(isDraggingOver ? StudioTheme.borderActive : StudioTheme.borderSubtle, lineWidth: 1)
         )
         .onDrop(of: [.fileURL], isTargeted: $isDraggingOver) { providers in
@@ -187,7 +190,7 @@ struct LeftPanel: View {
                     // Issue #10: 显式排序手柄图标
                     Image(systemName: "line.3.horizontal")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color.secondary.opacity(0.6))
+                        .foregroundStyle(StudioTheme.textTertiary)
                         .frame(width: 20)
                         .help("拖动此图标可排序")
 
@@ -221,12 +224,30 @@ struct LeftPanel: View {
         .listStyle(.plain)
         .frame(maxHeight: 300)
         .scrollContentBackground(.hidden)
-        .background(Color.white.opacity(0.7))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(StudioTheme.surfacePrimary.opacity(0.7))
+        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color.white.opacity(0.84), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         ))
+    }
+
+    private var queueHeaderSummary: String {
+        let current = viewModel.currentProgramItem?.title ?? "No current"
+        let next = nextProgramItem?.title ?? "No next"
+        return "Current: \(current) · Next: \(next)"
+    }
+
+    private var nextProgramItem: ProgramItem? {
+        guard !viewModel.programItems.isEmpty else { return nil }
+        guard let currentID = viewModel.currentProgramItem?.id,
+              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
+        else {
+            return viewModel.programItems.first
+        }
+        let nextIndex = viewModel.programItems.index(after: currentIndex)
+        guard nextIndex < viewModel.programItems.endIndex else { return nil }
+        return viewModel.programItems[nextIndex]
     }
 
     private func queueRole(for index: Int, currentIndex: Int?) -> QueueRole {
@@ -253,7 +274,7 @@ struct LeftPanel: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("输出屏幕")
                         .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                     HStack(spacing: 6) {
                         Image(systemName: hasExternalDisplay ? "display.2" : "display")
                             .font(.system(size: 15, weight: .semibold))
@@ -289,7 +310,7 @@ struct LeftPanel: View {
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                         .fill(viewModel.isBroadcasting
                               ? StudioTheme.statusLive
                               : (hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted))
@@ -310,8 +331,8 @@ struct LeftPanel: View {
         }
         .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color(NSColor.controlBackgroundColor))
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill(StudioTheme.surfaceSecondary)
         )
     }
 
@@ -487,82 +508,6 @@ struct ShortcutKeyHandler: View {
     }
 }
 
-// MARK: - 大号胶囊按钮样式（Issue #4/10）
-
-struct LargePillButtonStyle: ButtonStyle {
-    let color: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 14, weight: .medium))
-            .foregroundColor(isChromatic ? .white : Color.primary)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 8)
-            .background(
-                Capsule()
-                    .fill(resolvedFillColor)
-            )
-            .opacity(configuration.isPressed ? 0.75 : 1.0)
-    }
-
-    /// 有彩色背景的按钮（用白色文字）
-    private var isChromatic: Bool {
-        color == .blue || color == .green || color == .red || color == .orange
-    }
-
-    /// 将 SwiftUI Color 映射为实际填充色，未匹配的退回系统控件色
-    private var resolvedFillColor: Color {
-        switch color {
-        case .blue:   return .blue
-        case .green:  return .green
-        case .red:    return .red
-        case .orange: return .orange
-        default:      return Color(NSColor.controlColor)
-        }
-    }
-}
-
-// MARK: - 轻质感椭圆按钮样式（保留兼容）
-
-struct LightPillButtonStyle: ButtonStyle {
-    let color: Color
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 11, weight: .medium))
-            .foregroundColor(color == .blue ? .white : Color.primary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 6)
-            .background(
-                Capsule()
-                    .fill(color == .blue ? Color.blue : Color(NSColor.controlColor))
-            )
-            .opacity(configuration.isPressed ? 0.75 : 1.0)
-    }
-}
-
-struct ImportActionCardStyle: ButtonStyle {
-    let color: Color
-    let systemName: String
-
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemName)
-                .font(.system(size: 13, weight: .bold))
-            configuration.label
-                .font(.system(size: 14, weight: .bold))
-                .lineLimit(1)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(color.opacity(configuration.isPressed ? 0.8 : 1))
-        )
-    }
-}
-
 struct SecondaryImportButtonStyle: ButtonStyle {
     var role: StudioTheme.StatusKind = .idle
 
@@ -592,28 +537,6 @@ struct SecondaryImportButtonStyle: ButtonStyle {
         default:
             return StudioTheme.actionPrimary
         }
-    }
-}
-
-struct ImportWideButtonStyle: ButtonStyle {
-    let color: Color
-    let systemName: String
-
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: systemName)
-                .font(.system(size: 14, weight: .bold))
-            configuration.label
-                .font(.system(size: 15, weight: .bold))
-                .lineLimit(1)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(color.opacity(configuration.isPressed ? 0.8 : 1))
-        )
     }
 }
 
@@ -648,22 +571,23 @@ struct SignalSourceRow: View {
 
                 Image(systemName: iconName(for: item))
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(sourceTint)
+                    .foregroundStyle(sourceTint)
                     .frame(width: 28, height: 28)
                     .background(
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                             .fill(sourceTint.opacity(queueRole == .current ? 0.18 : 0.11))
                     )
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)
                         .font(.system(size: 14, weight: queueRole == .current ? .bold : .semibold))
-                        .foregroundColor(.primary)
+                        .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
+                        .help(item.title)
 
                     Text(statusText)
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(statusTint)
+                        .foregroundStyle(statusTint)
                         .lineLimit(1)
                 }
                 .opacity(contentOpacity)
@@ -695,10 +619,10 @@ struct SignalSourceRow: View {
         .contentShape(Rectangle())
         .background(backgroundFill)
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(borderColor, lineWidth: queueRole == .current ? 1.4 : 0.9)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .onTapGesture(perform: onSelect)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.15)) {
@@ -746,10 +670,11 @@ struct SignalSourceRow: View {
 
             controlButton(
                 systemName: "trash",
-                tint: .red,
-                fill: Color.red.opacity(0.12),
+                tint: StudioTheme.actionDanger,
+                fill: StudioTheme.actionDanger.opacity(isHovered ? 0.12 : 0.04),
                 action: onDelete
             )
+            .opacity(isHovered ? 1 : 0.28)
             .help("删除")
         }
         .padding(.leading, 50)
@@ -765,10 +690,10 @@ struct SignalSourceRow: View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundColor(tint)
+                .foregroundStyle(tint)
                 .frame(width: 30, height: 30)
                 .background(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                         .fill(fill)
                 )
         }
@@ -782,13 +707,13 @@ struct SignalSourceRow: View {
             badge(
                 text: isBroadcasting ? "ON AIR" : "PREVIEW",
                 foreground: .white,
-                background: isBroadcasting ? .red : .orange
+                background: isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
             )
         case .next:
             badge(
                 text: "NEXT",
-                foreground: Color(red: 0.72, green: 0.43, blue: 0.02),
-                background: Color(red: 0.99, green: 0.94, blue: 0.78)
+                foreground: StudioTheme.statusWarn,
+                background: StudioTheme.statusWarn.opacity(0.14)
             )
         case .queued:
             EmptyView()
@@ -798,7 +723,7 @@ struct SignalSourceRow: View {
     private var sourceTypeChip: some View {
         Text(sourceLabel)
             .font(.system(size: 10, weight: .bold, design: .rounded))
-            .foregroundColor(sourceTint)
+            .foregroundStyle(sourceTint)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 7)
@@ -812,11 +737,11 @@ struct SignalSourceRow: View {
     private var queueBadge: some View {
         Text(queueBadgeText)
             .font(.system(size: queueRole == .current ? 11 : 10, weight: .black, design: .rounded))
-            .foregroundColor(queueBadgeForeground)
+            .foregroundStyle(queueBadgeForeground)
             .frame(minWidth: 28)
             .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                     .fill(queueBadgeBackground)
             )
     }
@@ -841,22 +766,22 @@ struct SignalSourceRow: View {
     private var backgroundFill: Color {
         switch queueRole {
         case .current:
-            return isBroadcasting ? Color.red.opacity(0.08) : Color.blue.opacity(0.08)
+            return (isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary).opacity(0.08)
         case .next:
-            return Color.orange.opacity(isHovered ? 0.11 : 0.07)
+            return StudioTheme.statusWarn.opacity(isHovered ? 0.11 : 0.07)
         case .queued:
-            return isHovered ? Color.gray.opacity(0.05) : Color.clear
+            return isHovered ? StudioTheme.surfaceSecondary.opacity(0.8) : Color.clear
         }
     }
 
     private var borderColor: Color {
         switch queueRole {
         case .current:
-            return isBroadcasting ? Color.red.opacity(0.35) : Color.blue.opacity(0.28)
+            return isBroadcasting ? StudioTheme.borderCritical : StudioTheme.borderActive
         case .next:
-            return Color.orange.opacity(0.22)
+            return StudioTheme.statusWarn.opacity(0.24)
         case .queued:
-            return isHovered ? Color.gray.opacity(0.14) : Color.clear
+            return isHovered ? StudioTheme.borderSubtle : Color.clear
         }
     }
 
@@ -882,7 +807,7 @@ struct SignalSourceRow: View {
     }
 
     private var currentRowControlTint: Color {
-        isBroadcasting ? .red : .blue
+        isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
     }
 
     private var contentOpacity: Double {
@@ -901,7 +826,7 @@ struct SignalSourceRow: View {
         case .current:
             return .secondary
         case .next:
-            return .orange
+            return StudioTheme.statusWarn
         case .queued:
             return .secondary
         }
@@ -923,46 +848,46 @@ struct SignalSourceRow: View {
         case .current:
             return .white
         case .next:
-            return Color(red: 0.72, green: 0.43, blue: 0.02)
+            return StudioTheme.statusWarn
         case .queued:
-            return .secondary
+            return StudioTheme.textSecondary
         }
     }
 
     private var queueBadgeBackground: Color {
         switch queueRole {
         case .current:
-            return isBroadcasting ? .red : .blue
+            return isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
         case .next:
-            return Color(red: 0.99, green: 0.94, blue: 0.78)
+            return StudioTheme.statusWarn.opacity(0.14)
         case .queued:
-            return Color.gray.opacity(0.1)
+            return StudioTheme.surfaceSecondary
         }
     }
 
     private var sourceTint: Color {
         switch item.subtitle.lowercased() {
         case "key", "keynote", "key (活动)":
-            return .purple
+            return StudioTheme.statusMuted
         case "pptx":
-            return .orange
+            return StudioTheme.statusWarn
         case "html", "htm":
-            return .green
+            return StudioTheme.statusReady
         case "mp4", "mov", "m4v", "avi":
-            return .blue
+            return StudioTheme.actionPrimary
         case "mp3", "aac", "wav", "m4a":
-            return .pink
+            return StudioTheme.pink
         case "jpg", "jpeg", "png", "gif":
-            return .teal
+            return StudioTheme.statusReady
         default:
-            return .secondary
+            return StudioTheme.textSecondary
         }
     }
 
     private func badge(text: String, foreground: Color, background: Color) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .black, design: .rounded))
-            .foregroundColor(foreground)
+            .foregroundStyle(foreground)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
             .padding(.horizontal, 7)
@@ -1002,7 +927,7 @@ struct ProgressSliderRow: View {
             // 当前时间
             Text(formatTime(avCoordinator.currentTime))
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundColor(.secondary)
+                .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 38, alignment: .leading)
 
             // 拖拽进度条
@@ -1023,12 +948,12 @@ struct ProgressSliderRow: View {
                     isDragging = false
                 }
             }
-            .tint(.blue)
+            .tint(StudioTheme.actionPrimary)
 
             // 总时长
             Text(avCoordinator.duration.map { formatTime($0) } ?? "--:--")
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundColor(.secondary)
+                .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 38, alignment: .trailing)
         }
     }
