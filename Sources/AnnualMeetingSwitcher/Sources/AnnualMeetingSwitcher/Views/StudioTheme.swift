@@ -52,6 +52,20 @@ enum StudioTheme {
     static let cardBorder = Color.white.opacity(0.82)
     static let hairline = Color.black.opacity(0.06)
     static let shadow = Color.black.opacity(0.10)
+    static let shadowSoft = Color.black.opacity(0.05)
+    static let shadowStrong = Color.black.opacity(0.18)
+
+    static let monitorSurfaceTop = Color(red: 0.08, green: 0.09, blue: 0.13)
+    static let monitorSurfaceBottom = Color(red: 0.03, green: 0.03, blue: 0.05)
+    static let monitorBorder = Color.white.opacity(0.08)
+    static let monitorText = Color.white
+    static let monitorOverlayFill = Color.white.opacity(0.08)
+    static let monitorRadius: CGFloat = 24
+    static let monitorGradient = LinearGradient(
+        colors: [monitorSurfaceTop, monitorSurfaceBottom],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
 
     static let accent = Color(red: 0.12, green: 0.49, blue: 0.96)
     static let accentSecondary = Color(red: 0.42, green: 0.35, blue: 0.95)

@@ -33,31 +33,31 @@ struct SafetyCockpitView: View {
         HStack(alignment: .center, spacing: 18) {
             Image(systemName: headerIcon)
                 .font(.system(size: 34, weight: .black))
-                .foregroundStyle(headerColor)
+                .foregroundStyle(StudioTheme.statusColor(headerKind))
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text("Live Safety Cockpit / 现场安全台")
-                    .font(.system(size: 24, weight: .black))
+                    .font(StudioTheme.titleLarge())
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Text(cockpit.summary.message)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(StudioTheme.body())
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
 
             Spacer(minLength: 0)
 
             VStack(alignment: .trailing, spacing: 8) {
                 HStack(spacing: 7) {
-                    countPill("PASS", cockpit.summary.passCount, .green)
-                    countPill("WARN", cockpit.summary.warnCount, .orange)
-                    countPill("FAIL", cockpit.summary.failCount, .red)
+                    CountPill("PASS \(cockpit.summary.passCount)", kind: .ready)
+                    CountPill("WARN \(cockpit.summary.warnCount)", kind: .warn)
+                    CountPill("FAIL \(cockpit.summary.failCount)", kind: .fail)
                 }
 
                 HStack(spacing: 8) {
-                    Button("Copy Support") {
+                    SecondaryActionButton("Copy Support", systemImage: "doc.on.doc") {
                         copySupportReport()
                     }
-                    .buttonStyle(.borderedProminent)
 
                     Button("Save Support...") {
                         saveSupportReport()
@@ -68,10 +68,10 @@ struct SafetyCockpitView: View {
             }
         }
         .padding(18)
-        .background(headerColor.opacity(0.09), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(StudioTheme.statusColor(headerKind).opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(headerColor.opacity(0.24), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.statusColor(headerKind).opacity(0.24), lineWidth: 1)
         )
         .overlay(alignment: .bottomLeading) {
             if let actionMessage {
@@ -89,11 +89,12 @@ struct SafetyCockpitView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Needs Attention First")
-                    .font(.system(size: 16, weight: .black))
+                    .font(StudioTheme.sectionTitle())
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 Text("\(cockpit.priorityChecks.filter { $0.status != .pass }.count) rows")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .font(StudioTheme.statusLabel())
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
 
             let attention = cockpit.priorityChecks.filter { $0.status != .pass }
@@ -114,19 +115,20 @@ struct SafetyCockpitView: View {
     private var readyCard: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
-                .foregroundStyle(.green)
+                .foregroundStyle(StudioTheme.statusReady)
                 .font(.system(size: 18, weight: .black))
             VStack(alignment: .leading, spacing: 3) {
                 Text("No blocking rows")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(StudioTheme.body())
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Text("All current runtime checks are passing.")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer()
         }
         .padding(12)
-        .background(Color.green.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(StudioTheme.statusReady.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
     }
 
     private var sectionGrid: some View {
@@ -141,39 +143,41 @@ struct SafetyCockpitView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Recent Sanitized Events")
-                    .font(.system(size: 16, weight: .black))
+                    .font(StudioTheme.sectionTitle())
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 Text("\(cockpit.recentEvents.count) shown")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundStyle(.secondary)
+                    .font(StudioTheme.statusLabel())
+                    .foregroundStyle(StudioTheme.textSecondary)
             }
 
             if cockpit.recentEvents.isEmpty {
                 Text("No recent support events recorded.")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
             } else {
                 VStack(spacing: 7) {
                     ForEach(cockpit.recentEvents) { event in
                         HStack(alignment: .top, spacing: 9) {
                             Text(event.timestamp)
                                 .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(StudioTheme.textSecondary)
                                 .frame(width: 150, alignment: .leading)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(event.kind)
                                     .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(StudioTheme.textPrimary)
                                 Text(event.detail)
                                     .font(.system(size: 11, weight: .medium))
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(StudioTheme.textSecondary)
                             }
                             Spacer(minLength: 0)
                         }
                         .padding(9)
-                        .background(Color.black.opacity(0.035), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                        .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
                     }
                 }
             }
@@ -182,14 +186,14 @@ struct SafetyCockpitView: View {
         .studioCard(cornerRadius: 20)
     }
 
-    private var headerColor: Color {
+    private var headerKind: StudioTheme.StatusKind {
         switch cockpit.summary.status {
         case .pass:
-            return .green
+            return .ready
         case .warn:
-            return .orange
+            return .warn
         case .fail:
-            return .red
+            return .fail
         }
     }
 
@@ -202,15 +206,6 @@ struct SafetyCockpitView: View {
         case .fail:
             return "xmark.octagon.fill"
         }
-    }
-
-    private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
-        Text("\(label) \(count)")
-            .font(.system(size: 10, weight: .black, design: .rounded))
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .background(color.opacity(0.11), in: Capsule())
     }
 
     private func messageBanner(_ message: String, color: Color) -> some View {
@@ -315,8 +310,8 @@ private struct SafetySectionCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(section.title)
-                .font(.system(size: 14, weight: .black))
-                .foregroundStyle(.secondary)
+                .font(StudioTheme.sectionTitle())
+                .foregroundStyle(StudioTheme.textSecondary)
 
             VStack(spacing: 8) {
                 ForEach(section.checks) { check in
@@ -337,24 +332,20 @@ private struct SafetyCheckRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: iconName)
                 .font(.system(size: 14, weight: .black))
-                .foregroundStyle(statusColor)
+                .foregroundStyle(StudioTheme.statusColor(statusKind))
                 .frame(width: 18, height: 18)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 7) {
                     Text(check.title)
                         .font(.system(size: 13, weight: .bold))
-                    Text(check.status.displayTitle)
-                        .font(.system(size: 9, weight: .black, design: .rounded))
-                        .foregroundStyle(statusColor)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(statusColor.opacity(0.12), in: Capsule())
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    StatusBadge(check.status.displayTitle, kind: statusKind)
                 }
 
                 Text(check.message)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let actionLabel = check.actionLabel, let actionKind = check.actionKind {
@@ -376,21 +367,23 @@ private struct SafetyCheckRow: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(statusColor.opacity(0.06), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(StudioTheme.statusColor(statusKind).opacity(0.06), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(statusColor.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.statusColor(statusKind).opacity(0.18), lineWidth: 1)
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(check.status.displayTitle): \(check.title). \(check.message)")
     }
 
-    private var statusColor: Color {
+    private var statusKind: StudioTheme.StatusKind {
         switch check.status {
         case .pass:
-            return .green
+            return .ready
         case .warn:
-            return .orange
+            return .warn
         case .fail:
-            return .red
+            return .fail
         }
     }
 
@@ -408,10 +401,10 @@ private struct SafetyCheckRow: View {
     private func guidanceBadge(_ label: String, _ action: LivePreflightActionKind) -> some View {
         Label(label, systemImage: guidanceIcon(for: action))
             .font(.system(size: 11, weight: .bold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(Color.secondary.opacity(0.10), in: Capsule())
+            .background(StudioTheme.surfaceSecondary, in: Capsule())
             .help(help(for: action))
     }
 
