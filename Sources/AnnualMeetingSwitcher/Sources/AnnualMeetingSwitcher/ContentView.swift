@@ -361,6 +361,9 @@ struct ProgramMonitorView: View {
                 Text("Program Monitor")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
+                Text("Current / Next are the operator focus")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
                 StatusBadge(viewModel.isBroadcasting ? "ON AIR" : "PREVIEW", kind: viewModel.isBroadcasting ? .live : .idle)
             }
@@ -484,13 +487,14 @@ struct ProgramMonitorView: View {
             HStack(spacing: 8) {
                 Text("节目总线")
                     .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(StudioTheme.textTertiary)
                 ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
                     monitorSourceButton(item: item, index: index)
                 }
             }
             .padding(.vertical, 2)
         }
+        .opacity(0.82)
     }
 
     private var transitionControlCard: some View {
@@ -499,6 +503,9 @@ struct ProgramMonitorView: View {
                 Text("转场控制")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
+                Text("Utility")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
             }
 
             Slider(
@@ -506,7 +513,7 @@ struct ProgramMonitorView: View {
                 in: 0.5...3.0,
                 step: 0.05
             )
-            .tint(.purple)
+            .tint(StudioTheme.statusWarn)
             .accessibilityLabel("Transition duration")
             .accessibilityValue(String(format: "%.1f seconds", viewModel.crossfadeDuration))
 

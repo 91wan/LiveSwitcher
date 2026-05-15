@@ -93,6 +93,10 @@ struct BGMPlaylistPanel: View {
                 .padding(.top, 12)
                 .padding(.bottom, 8)
 
+            currentTrackStrip
+                .padding(.horizontal, 14)
+                .padding(.bottom, 8)
+
             bgmControlButtons
                 .padding(.horizontal, 14)
                 .padding(.bottom, 8)
@@ -139,6 +143,46 @@ struct BGMPlaylistPanel: View {
                 StatusBadge(viewModel.isBGMPlaying ? "Playing" : "Ready", kind: viewModel.isBGMPlaying ? .live : .ready)
             }
         }
+    }
+
+    private var currentTrackStrip: some View {
+        HStack(spacing: 8) {
+            Image(systemName: viewModel.isBGMPlaying ? "waveform" : "music.note")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.textSecondary)
+                .frame(width: 24, height: 24)
+                .background(StudioTheme.surfacePrimary, in: Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(currentTrackTitle)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Text(viewModel.isBGMPlaying ? "Playing now" : "Ready for live playback")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill((viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary).opacity(0.07))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(viewModel.isBGMPlaying ? StudioTheme.statusLive.opacity(0.22) : StudioTheme.borderSubtle, lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Current BGM: \(currentTrackTitle)")
+    }
+
+    private var currentTrackTitle: String {
+        viewModel.currentBGMItem?.title ?? "No BGM selected"
     }
 
     // MARK: - BGM 五颗大媒体控制键（V20 新增"跳回开头"）
