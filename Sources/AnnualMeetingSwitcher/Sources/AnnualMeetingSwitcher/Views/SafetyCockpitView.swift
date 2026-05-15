@@ -75,10 +75,10 @@ struct SafetyCockpitView: View {
         )
         .overlay(alignment: .bottomLeading) {
             if let actionMessage {
-                messageBanner(actionMessage, color: .green)
+                messageBanner(actionMessage, color: StudioTheme.statusReady)
                     .offset(y: 42)
             } else if let supportMessage {
-                messageBanner(supportMessage, color: .blue)
+                messageBanner(supportMessage, color: StudioTheme.actionPrimary)
                     .offset(y: 42)
             }
         }
