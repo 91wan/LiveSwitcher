@@ -17,6 +17,7 @@ struct AudioMixerView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 audioSummaryRow
+                routingImpactBanner
 
                 ViewThatFits(in: .horizontal) {
                     HStack(alignment: .top, spacing: 20) {
@@ -64,54 +65,57 @@ struct AudioMixerView: View {
     }
 
     private var transitionCard: some View {
-        MixerCard(title: "BGM淡入淡出时长", icon: "wand.and.rays", iconColor: .indigo) {
+        StudioSectionCard(
+            title: "BGM fade utility",
+            subtitle: "现场音乐切换的辅助参数，不影响节目画面转场。",
+            status: (String(format: "%.1fs", viewModel.crossfadeDuration), .idle)
+        ) {
             VStack(spacing: 12) {
                 HStack {
                     Text("当前：\(String(format: "%.1f", viewModel.crossfadeDuration))s")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                     Spacer()
                     Text("0.5s")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                     Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
-                        .tint(.indigo)
+                        .tint(StudioTheme.statusWarn)
                         .frame(width: 220)
                     Text("3.0s")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
             }
         }
         .frame(maxWidth: 300, alignment: .leading)
     }
-}
 
-// MARK: - 混音面板卡片组件
+    private var routingImpactBanner: some View {
+        InlineWarningBanner(
+            title: "Actual output",
+            message: routingImpactText,
+            kind: routingImpactKind
+        )
+    }
 
-struct MixerCard<Content: View>: View {
-    let title: String
-    let icon: String
-    let iconColor: Color
-    @ViewBuilder let content: Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(iconColor)
-                Text(title)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.primary)
-            }
-            content
+    private var routingImpactText: String {
+        if viewModel.isPanicMode {
+            return "Panic is active: media and BGM effective outputs are muted."
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 2)
+        if viewModel.isSpeakerMode {
+            return "Speaker mode is active: media and BGM are ducked to the speaker-safe level."
+        }
+        if viewModel.isBGMAudioTakeoverActive {
+            return "BGM takeover is active: media is muted while BGM plays."
+        }
+        return "No emergency routing is active; effective output follows the selected strategy and faders."
+    }
+
+    private var routingImpactKind: StudioTheme.StatusKind {
+        if viewModel.isPanicMode { return .fail }
+        if viewModel.isSpeakerMode || viewModel.isBGMAudioTakeoverActive { return .warn }
+        return .ready
     }
 }
 

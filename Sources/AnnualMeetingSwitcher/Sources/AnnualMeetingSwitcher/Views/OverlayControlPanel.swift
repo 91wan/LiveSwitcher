@@ -59,14 +59,14 @@ struct OverlayControlPanel: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusXL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .stroke(Color.white.opacity(0.9), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusXL, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+        .shadow(color: StudioTheme.shadowSoft, radius: 18, x: 0, y: 10)
     }
 
     private var controlsColumn: some View {
@@ -81,7 +81,7 @@ struct OverlayControlPanel: View {
     private var panelHeader: some View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                     .fill(StudioTheme.accent.opacity(0.12))
                 Image(systemName: "rectangle.3.group.bubble.left.fill")
                     .font(.system(size: 22, weight: .bold))
@@ -115,7 +115,7 @@ struct OverlayControlPanel: View {
                         .padding(.vertical, 8)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(hasActiveOverlay ? StudioTheme.actionDanger : Color.black.opacity(0.06))
+                                .fill(hasActiveOverlay ? StudioTheme.actionDanger : StudioTheme.surfaceSecondary)
                         )
                 }
                 .buttonStyle(.plain)
@@ -143,7 +143,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "上屏",
                         systemImage: "arrow.up.to.line",
-                        fill: .red,
+                        fill: StudioTheme.statusLive,
                         isDisabled: viewModel.isLowerThirdVisible || trimmedLowerThirdName.isEmpty
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -154,7 +154,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "退场",
                         systemImage: "arrow.down.to.line",
-                        fill: .gray,
+                        fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isLowerThirdVisible
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -197,7 +197,7 @@ struct OverlayControlPanel: View {
                     if viewModel.isCountdownActive {
                         Text("剩余 \(formattedTime(viewModel.countdownSeconds))")
                             .font(.system(size: 13, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(StudioTheme.statusWarn)
                     }
                 }
 
@@ -205,7 +205,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "开始",
                         systemImage: "play.fill",
-                        fill: .orange,
+                        fill: StudioTheme.statusWarn,
                         isDisabled: viewModel.isCountdownActive || countdownTotalSeconds <= 0
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -216,7 +216,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "停止",
                         systemImage: "stop.fill",
-                        fill: .gray,
+                        fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isCountdownActive
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -245,11 +245,11 @@ struct OverlayControlPanel: View {
                     .font(.system(size: 13))
                     .frame(height: 76)
                     .padding(6)
-                    .background(Color.white.opacity(0.68))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(StudioTheme.surfaceSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .stroke(Color.black.opacity(0.08), lineWidth: 1)
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                            .stroke(StudioTheme.borderSubtle, lineWidth: 1)
                     )
 
                 HStack {
@@ -271,7 +271,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "开始",
                         systemImage: "play.fill",
-                        fill: .purple,
+                        fill: StudioTheme.pink,
                         isDisabled: viewModel.isTickerActive || trimmedTickerText.isEmpty
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -282,7 +282,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "停止",
                         systemImage: "stop.fill",
-                        fill: .gray,
+                        fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isTickerActive
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
@@ -308,8 +308,8 @@ struct OverlayControlPanel: View {
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 ZStack {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.black.opacity(0.86))
+                    RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                        .fill(StudioTheme.monitorSurfaceBottom.opacity(0.95))
                         .aspectRatio(16.0 / 9.0, contentMode: .fit)
 
                     VStack {
@@ -358,7 +358,7 @@ struct OverlayControlPanel: View {
         }
         .foregroundStyle(.white)
         .padding(10)
-        .background(StudioTheme.statusLive.opacity(viewModel.isLowerThirdVisible || !trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(StudioTheme.statusLive.opacity(viewModel.isLowerThirdVisible || !trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
     }
 
     private func activeOverlaySummaryRow(title: String, isLive: Bool) -> some View {
@@ -373,32 +373,32 @@ struct OverlayControlPanel: View {
 
     private var currentLowerThirdPreview: some View {
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(Color.red)
+            Capsule(style: .continuous)
+                .fill(StudioTheme.statusLive)
                 .frame(width: 4)
             VStack(alignment: .leading, spacing: 2) {
                 Text(viewModel.lowerThirdName)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1)
                 if !viewModel.lowerThirdTitle.isEmpty {
                     Text(viewModel.lowerThirdTitle)
                         .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
                 }
             }
             Spacer()
             Text("LIVE")
                 .font(.system(size: 10, weight: .black, design: .rounded))
-                .foregroundStyle(.green)
+                .foregroundStyle(StudioTheme.statusLive)
         }
         .padding(10)
-        .background(Color.red.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(StudioTheme.statusLive.opacity(0.06))
+        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.red.opacity(0.18), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.statusLive.opacity(0.18), lineWidth: 1)
         )
     }
 
@@ -412,7 +412,7 @@ struct OverlayControlPanel: View {
             HStack(spacing: 8) {
                 Label(title, systemImage: systemImage)
                     .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 statusBadge(title: isLive ? "LIVE" : "OFF", isLive: isLive)
             }
@@ -421,29 +421,29 @@ struct OverlayControlPanel: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color.white.opacity(0.72))
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .fill(StudioTheme.surfacePrimary.opacity(0.72))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(isLive ? Color.green.opacity(0.30) : Color.black.opacity(0.05), lineWidth: 1)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(isLive ? StudioTheme.borderCritical.opacity(0.50) : StudioTheme.borderSubtle, lineWidth: 1)
         )
     }
 
     private func statusBadge(title: String, isLive: Bool) -> some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(isLive ? Color.green : Color.gray.opacity(0.45))
+                .fill(isLive ? StudioTheme.statusLive : StudioTheme.statusIdle.opacity(0.45))
                 .frame(width: 7, height: 7)
             Text(title)
                 .font(.system(size: 11, weight: .black, design: .rounded))
         }
-        .foregroundStyle(isLive ? Color.green : Color.secondary)
+        .foregroundStyle(isLive ? StudioTheme.statusLive : StudioTheme.textSecondary)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
             Capsule(style: .continuous)
-                .fill(isLive ? Color.green.opacity(0.12) : Color.black.opacity(0.05))
+                .fill(isLive ? StudioTheme.statusLive.opacity(0.12) : StudioTheme.surfaceSecondary)
         )
     }
 
@@ -456,7 +456,7 @@ struct OverlayControlPanel: View {
                 .font(.system(size: 14, weight: .medium, design: .monospaced))
             Text(title)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(StudioTheme.textSecondary)
         }
     }
 
@@ -474,8 +474,8 @@ struct OverlayControlPanel: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .background(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(isDisabled ? Color.gray.opacity(0.45) : fill)
+                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                        .fill(isDisabled ? StudioTheme.statusMuted.opacity(0.45) : fill)
                 )
         }
         .buttonStyle(.plain)
