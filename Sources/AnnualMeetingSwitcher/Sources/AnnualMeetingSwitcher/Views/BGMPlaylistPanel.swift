@@ -295,6 +295,7 @@ struct BGMPlaylistPanel: View {
             .frame(height: 20)
             .disabled(viewModel.currentBGMItem == nil)
             .accessibilityLabel("BGM progress")
+            .accessibilityValue("\(formatTime(viewModel.bgmCurrentTime)) of \(viewModel.bgmDuration.map { formatTime($0) } ?? "unknown duration")")
 
             // 时间标签行
             HStack {
@@ -343,6 +344,8 @@ struct BGMPlaylistPanel: View {
             .pickerStyle(.menu)
             .labelsHidden()
             .font(.system(size: 15))
+            .accessibilityLabel("BGM category")
+            .accessibilityValue(bgmCategory.rawValue)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)

@@ -480,6 +480,8 @@ struct OverlayControlPanel: View {
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
+        .accessibilityLabel(title)
+        .accessibilityHint(isDisabled ? "This overlay action is currently unavailable." : "Run overlay action.")
     }
 
     private func formattedTime(_ seconds: Int) -> String {
