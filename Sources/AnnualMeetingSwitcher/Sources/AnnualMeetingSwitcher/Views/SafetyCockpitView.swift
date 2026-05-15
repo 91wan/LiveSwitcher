@@ -234,6 +234,7 @@ struct SafetyCockpitView: View {
             }
         case .openPreview, .openAudioMixer, .openOverlays:
             guard let destination = action.mainConsoleDestination else { return }
+            _ = viewModel.performLivePreflightAction(action)
             viewModel.selectedMainTab = destination
             openWindow(id: "main-console")
             showActionMessage(navigationMessage(for: destination))

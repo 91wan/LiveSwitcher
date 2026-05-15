@@ -44,22 +44,38 @@ struct OverlayControlPanel: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            panelHeader
-            lowerThirdSection
-            countdownSection
-            tickerSection
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 18) {
+                controlsColumn
+                    .frame(minWidth: 440, maxWidth: 560)
+                livePreviewColumn
+                    .frame(minWidth: 320, maxWidth: 420)
+            }
+
+            VStack(alignment: .leading, spacing: 18) {
+                controlsColumn
+                livePreviewColumn
+            }
         }
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color.white.opacity(0.78))
+                .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .stroke(Color.white.opacity(0.9), lineWidth: 1)
         )
         .shadow(color: Color.black.opacity(0.06), radius: 18, x: 0, y: 10)
+    }
+
+    private var controlsColumn: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            panelHeader
+            lowerThirdSection
+            countdownSection
+            tickerSection
+        }
     }
 
     private var panelHeader: some View {
@@ -85,10 +101,7 @@ struct OverlayControlPanel: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 8) {
-                statusBadge(
-                    title: activeOverlayCount == 0 ? "全部关闭" : "\(activeOverlayCount) 个上屏",
-                    isLive: hasActiveOverlay
-                )
+                StatusBadge(activeOverlayCount == 0 ? "OFF" : "\(activeOverlayCount) LIVE", kind: hasActiveOverlay ? .live : .idle)
 
                 Button {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -102,7 +115,7 @@ struct OverlayControlPanel: View {
                         .padding(.vertical, 8)
                         .background(
                             Capsule(style: .continuous)
-                                .fill(hasActiveOverlay ? Color.red : Color.black.opacity(0.06))
+                                .fill(hasActiveOverlay ? StudioTheme.actionDanger : Color.black.opacity(0.06))
                         )
                 }
                 .buttonStyle(.plain)
@@ -148,6 +161,12 @@ struct OverlayControlPanel: View {
                             viewModel.dismissLowerThird()
                         }
                     }
+                }
+
+                if let reason = OverlayUIState.lowerThirdDisabledReason(name: ltNameInput, isLive: viewModel.isLowerThirdVisible) {
+                    Text(reason)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
 
                 if viewModel.isLowerThirdVisible {
@@ -204,6 +223,12 @@ struct OverlayControlPanel: View {
                             viewModel.stopCountdown()
                         }
                     }
+                }
+
+                if let reason = OverlayUIState.countdownDisabledReason(totalSeconds: countdownTotalSeconds, isLive: viewModel.isCountdownActive) {
+                    Text(reason)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
         }
@@ -265,7 +290,84 @@ struct OverlayControlPanel: View {
                         }
                     }
                 }
+
+                if let reason = OverlayUIState.tickerDisabledReason(text: tickerInput, isLive: viewModel.isTickerActive) {
+                    Text(reason)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
             }
+        }
+    }
+
+    private var livePreviewColumn: some View {
+        StudioSectionCard(
+            title: "Live Overlay Preview",
+            subtitle: "上屏前确认位置和当前状态",
+            status: (hasActiveOverlay ? "\(activeOverlayCount) LIVE" : "OFF", hasActiveOverlay ? .live : .idle)
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(Color.black.opacity(0.86))
+                        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+
+                    VStack {
+                        tickerPreview
+                        Spacer()
+                        countdownPreview
+                        Spacer()
+                        lowerThirdPreview
+                    }
+                    .padding(18)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    activeOverlaySummaryRow(title: "Lower Third", isLive: viewModel.isLowerThirdVisible)
+                    activeOverlaySummaryRow(title: "Countdown", isLive: viewModel.isCountdownActive)
+                    activeOverlaySummaryRow(title: "Ticker", isLive: viewModel.isTickerActive)
+                }
+            }
+        }
+    }
+
+    private var tickerPreview: some View {
+        Text(trimmedTickerText.isEmpty ? "Ticker preview" : trimmedTickerText)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(viewModel.isTickerActive || !trimmedTickerText.isEmpty ? .white : .white.opacity(0.45))
+            .lineLimit(1)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var countdownPreview: some View {
+        Text(formattedTime(viewModel.isCountdownActive ? viewModel.countdownSeconds : countdownTotalSeconds))
+            .font(.system(size: 28, weight: .black, design: .rounded))
+            .foregroundStyle(countdownTotalSeconds > 0 || viewModel.isCountdownActive ? .white : .white.opacity(0.45))
+    }
+
+    private var lowerThirdPreview: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(trimmedLowerThirdName.isEmpty ? "Lower third name" : trimmedLowerThirdName)
+                    .font(.system(size: 13, weight: .black))
+                Text(ltTitleInput.isEmpty ? "Title / organization" : ltTitleInput)
+                    .font(.system(size: 10, weight: .medium))
+                    .opacity(0.78)
+            }
+            Spacer()
+        }
+        .foregroundStyle(.white)
+        .padding(10)
+        .background(StudioTheme.statusLive.opacity(viewModel.isLowerThirdVisible || !trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private func activeOverlaySummaryRow(title: String, isLive: Bool) -> some View {
+        HStack {
+            Text(title)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textSecondary)
+            Spacer()
+            StatusBadge(isLive ? "LIVE" : "OFF", kind: isLive ? .live : .idle)
         }
     }
 

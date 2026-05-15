@@ -9,17 +9,17 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("叠层 / 字幕")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundStyle(.primary)
-                    Text("集中管理人名条、倒计时和游动字幕，所有控件都直接作用于输出大屏。")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
+                    Text("Overlays / 叠层字幕")
+                        .font(StudioTheme.titleLarge())
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("左侧控制上屏，右侧预览位置和当前 live 状态。输入为空时会显示禁用原因，避免误上屏。")
+                        .font(StudioTheme.body())
+                        .foregroundStyle(StudioTheme.textSecondary)
                 }
 
                 OverlayControlPanel()
             }
-            .frame(maxWidth: 800, alignment: .leading)
+            .frame(maxWidth: 1120, alignment: .leading)
             .padding(.horizontal, 24)
             .padding(.vertical, 26)
             .frame(maxWidth: .infinity, alignment: .center)
