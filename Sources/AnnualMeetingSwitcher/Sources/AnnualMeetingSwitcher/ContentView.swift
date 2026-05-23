@@ -31,7 +31,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             retainedTab(.preview) {
-                previewConsole
+                runDesk
             }
 
             retainedTab(.audioMixer) {
@@ -57,7 +57,7 @@ struct ContentView: View {
             .zIndex(model.zIndex)
     }
 
-    private var previewConsole: some View {
+    private var runDesk: some View {
         HStack(alignment: .top, spacing: 12) {
             LeftPanel()
                 .frame(width: StudioTheme.directorRailWidth)
@@ -67,7 +67,7 @@ struct ContentView: View {
                 .frame(minWidth: 500, idealWidth: 720, maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(3)
 
-            LiveControlColumn {
+            LiveOpsPanel {
                 viewModel.selectedMainTab = .audioMixer
             }
             .frame(width: StudioTheme.directorRailWidth)
@@ -81,6 +81,16 @@ struct ContentView: View {
 
     private var primaryNavigationBar: some View {
         HStack(spacing: 16) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("LiveSwitcher")
+                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text("Run Desk")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            .frame(width: 132, alignment: .leading)
+
             Spacer(minLength: 0)
             navigationTabCluster
                 .layoutPriority(1)
@@ -103,9 +113,9 @@ struct ContentView: View {
 
     private var navigationTabCluster: some View {
         HStack(spacing: 6) {
-            navigationTab(title: "预览 / 切换", systemName: "play.square.stack.fill", tag: .preview)
-            navigationTab(title: "音频混音", systemName: "slider.horizontal.3", tag: .audioMixer)
-            navigationTab(title: "叠层 / 字幕", systemName: "rectangle.3.group.bubble.left.fill", tag: .overlays)
+            navigationTab(title: "导播台", systemName: "play.square.stack.fill", tag: .preview)
+            navigationTab(title: "音频", systemName: "slider.horizontal.3", tag: .audioMixer)
+            navigationTab(title: "叠层", systemName: "rectangle.3.group.bubble.left.fill", tag: .overlays)
         }
         .padding(5)
         .background(Capsule(style: .continuous).fill(StudioTheme.surfacePrimary))
@@ -145,14 +155,10 @@ private struct LiveStatusStrip: View {
 
     var body: some View {
         HStack(spacing: StudioTheme.spacingS) {
-            statusItem(model.projection, prominent: true)
-            statusItem(model.current)
-            statusItem(model.next)
-            statusItem(model.audio)
+            ForEach(Array(model.items.enumerated()), id: \.offset) { index, item in
+                statusItem(item, prominent: index == 0)
+            }
             Spacer(minLength: StudioTheme.spacingS)
-            StatusBadge(model.panic.value == "Active" ? "Panic Active" : "Panic Off", kind: model.panic.status)
-            StatusBadge("Speaker \(model.speaker.value)", kind: model.speaker.status)
-            StatusBadge("PPT \(model.ppt.value)", kind: model.ppt.status)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 8)
@@ -164,7 +170,7 @@ private struct LiveStatusStrip: View {
             alignment: .bottom
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Live status. \(model.projection.title) \(model.projection.value). \(model.current.title) \(model.current.value). \(model.next.title) \(model.next.value). \(model.audio.value). Panic \(model.panic.value). Speaker \(model.speaker.value). PPT \(model.ppt.value).")
+        .accessibilityLabel("Live status. \(model.projection.title) \(model.projection.accessibilityValue). \(model.current.title) \(model.current.accessibilityValue). \(model.next.title) \(model.next.accessibilityValue). \(model.audio.title) \(model.audio.accessibilityValue).")
     }
 
     private func statusItem(_ item: LiveStatusBarModel.Item, prominent: Bool = false) -> some View {
@@ -186,41 +192,7 @@ private struct LiveStatusStrip: View {
                 .stroke(StudioTheme.statusColor(item.status).opacity(prominent ? 0.26 : 0.14), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(item.title): \(item.value)")
-    }
-}
-
-// MARK: - 右侧：现场控制区
-
-struct LiveControlColumn: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
-    let onOpenMixer: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("现场控制区")
-                        .font(StudioTheme.title())
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("音量 / BGM / 主讲人")
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                Spacer()
-                StatusBadge(viewModel.isBroadcasting ? "ON AIR" : "READY", kind: viewModel.isBroadcasting ? .live : .ready)
-            }
-            .padding(.horizontal, 4)
-
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 12) {
-                    BGMPlaylistPanel(mode: .liveDock)
-                    RightPanel(mode: .liveQuick, onOpenMixer: onOpenMixer)
-                }
-                .padding(.bottom, 4)
-            }
-        }
-        .frame(maxHeight: .infinity)
+        .accessibilityLabel("\(item.title): \(item.accessibilityValue)")
     }
 }
 
@@ -366,36 +338,31 @@ struct StatusBar: View {
 
 struct ProgramMonitorView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
+    @State private var utilitiesExpanded = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Program Monitor")
+                Text("Program")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("Current / Next are the operator focus")
+                Text("Monitor")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                StatusBadge(viewModel.isBroadcasting ? "ON AIR" : "PREVIEW", kind: viewModel.isBroadcasting ? .live : .idle)
+                StatusBadge(monitorStateLabel, kind: monitorStateKind)
             }
 
             previewDeck
 
             currentNextInfoRow
 
-            if !viewModel.programItems.isEmpty {
-                programPresetRow
-            }
-
-            transitionControlCard
-
-            wallpaperTrayCard
+            utilitiesDisclosure
 
             Spacer(minLength: 0)
         }
-        .padding(20)
-        .studioCard(cornerRadius: 30)
+        .padding(18)
+        .studioCard(cornerRadius: 24)
     }
 
     private var previewDeck: some View {
@@ -422,7 +389,7 @@ struct ProgramMonitorView: View {
                 Circle()
                     .fill(viewModel.isBroadcasting ? StudioTheme.statusLive : StudioTheme.statusIdle)
                     .frame(width: 8, height: 8)
-                Text(viewModel.isBroadcasting ? "ON AIR" : "STANDBY")
+                Text(monitorStateLabel)
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(StudioTheme.monitorText)
             }
@@ -440,7 +407,7 @@ struct ProgramMonitorView: View {
                 .padding(.trailing, 14)
         }
         .frame(maxWidth: .infinity)
-        .frame(maxHeight: 360)
+        .frame(maxHeight: 342)
         .aspectRatio(16.0 / 9.0, contentMode: .fit)
         .shadow(color: StudioTheme.shadowStrong, radius: 12, x: 0, y: 8)
         .accessibilityElement(children: .combine)
@@ -471,7 +438,9 @@ struct ProgramMonitorView: View {
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                StatusBadge(status == .live ? "ON AIR" : (status == .ready ? "NEXT" : status.accessibilityName.uppercased()), kind: status)
+                Text(title == "Current" ? currentBlockStateText(status: status) : "NEXT")
+                    .font(.system(size: 10, weight: .black, design: .rounded))
+                    .foregroundStyle(StudioTheme.statusColor(status))
             }
             Text(value)
                 .font(.system(size: 15, weight: .black))
@@ -494,28 +463,44 @@ struct ProgramMonitorView: View {
         .accessibilityLabel("\(title): \(value), \(subtitle)")
     }
 
-    private var programPresetRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                Text("节目总线")
+    private var utilitiesDisclosure: some View {
+        DisclosureGroup(isExpanded: $utilitiesExpanded) {
+            VStack(spacing: 10) {
+                transitionControlCard
+                wallpaperTrayCard
+            }
+            .padding(.top, 8)
+        } label: {
+            HStack {
+                Text("Utilities")
+                    .font(StudioTheme.sectionTitle())
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Spacer()
+                Text(utilitiesSummary)
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
-                ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
-                    monitorSourceButton(item: item, index: index)
-                }
+                    .lineLimit(1)
             }
-            .padding(.vertical, 2)
         }
-        .opacity(0.82)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .fill(StudioTheme.surfacePrimary.opacity(0.76))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     private var transitionControlCard: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("转场控制")
+                Text("Transition")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("Utility")
+                Text("Program")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
             }
@@ -534,8 +519,8 @@ struct ProgramMonitorView: View {
                 .foregroundStyle(StudioTheme.statusWarn)
                 .frame(width: 56, alignment: .trailing)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
@@ -547,7 +532,7 @@ struct ProgramMonitorView: View {
     }
 
     private var wallpaperTrayCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Standby Wallpaper")
@@ -559,12 +544,13 @@ struct ProgramMonitorView: View {
             }
 
             if viewModel.backgroundWallpapers.isEmpty {
-                EmptyStateView(title: "No standby wallpaper", message: "Import a neutral image for safe fallback.", systemImage: "photo")
+                InlineWarningBanner(title: "No standby wallpaper", message: "Import a neutral image for fallback.", kind: .warn)
             } else {
                 WallpaperGalleryRow()
+                    .frame(maxHeight: 92)
             }
         }
-        .padding(14)
+        .padding(12)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
@@ -608,14 +594,21 @@ struct ProgramMonitorView: View {
     }
 
     private var monitorDisplayMode: String {
-        if viewModel.currentHTMLURL != nil {
-            return "HTML"
-        }
-        if viewModel.avCoordinator.isPlaying {
-            return "VIDEO"
-        }
-        if viewModel.currentProgramItem != nil {
-            return "READY"
+        if let item = viewModel.currentProgramItem {
+            switch item.sourceKind {
+            case .media:
+                return item.isVideoMedia ? "VIDEO" : "AUDIO"
+            case .html:
+                return "HTML"
+            case .pptx:
+                return "PPTX"
+            case .keynote:
+                return "KEYNOTE"
+            case .activeDeck:
+                return "ACTIVE DECK"
+            case .unsupported:
+                return "SOURCE"
+            }
         }
         return viewModel.backgroundImage != nil ? "WALLPAPER READY" : "IDLE"
     }
@@ -624,6 +617,33 @@ struct ProgramMonitorView: View {
         if viewModel.currentHTMLURL != nil { return "HTML is loaded" }
         if viewModel.avCoordinator.isPlaying { return "Media playing" }
         return viewModel.currentProgramItem?.subtitle.uppercased() ?? "Standby"
+    }
+
+    private var monitorStateLabel: String {
+        if viewModel.isBroadcasting { return "ON AIR" }
+        if viewModel.currentProgramItem != nil { return "PREVIEW" }
+        return "STANDBY"
+    }
+
+    private var monitorStateKind: StudioTheme.StatusKind {
+        if viewModel.isBroadcasting { return .live }
+        if viewModel.currentProgramItem != nil { return .idle }
+        return .warn
+    }
+
+    private var utilitiesSummary: String {
+        "Transition \(String(format: "%.1fs", viewModel.crossfadeDuration)) · \(viewModel.backgroundWallpapers.count) wallpaper"
+    }
+
+    private func currentBlockStateText(status: StudioTheme.StatusKind) -> String {
+        switch status {
+        case .live:
+            return "ON AIR"
+        case .warn:
+            return "EMPTY"
+        default:
+            return "CURRENT"
+        }
     }
 
     private var nextProgramItem: ProgramItem? {
@@ -636,42 +656,6 @@ struct ProgramMonitorView: View {
         let nextIndex = viewModel.programItems.index(after: currentIndex)
         guard nextIndex < viewModel.programItems.endIndex else { return nil }
         return viewModel.programItems[nextIndex]
-    }
-
-    private func monitorSourceButton(item: ProgramItem, index: Int) -> some View {
-        let isActive = viewModel.currentProgramItem?.id == item.id
-
-        return Button {
-            viewModel.switchToProgram(at: index)
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("\(index + 1)")
-                    .font(.system(size: 11, weight: .black, design: .rounded))
-                    .foregroundStyle(isActive ? StudioTheme.monitorText : StudioTheme.textPrimary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(isActive ? StudioTheme.actionPrimary : StudioTheme.surfaceSecondary)
-                    )
-
-                Text(item.title)
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-            }
-            .frame(width: 112, alignment: .leading)
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(isActive ? StudioTheme.actionPrimary.opacity(0.10) : StudioTheme.surfaceSecondary)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .stroke(isActive ? StudioTheme.actionPrimary.opacity(0.35) : StudioTheme.borderSubtle, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
 
 }

@@ -9,42 +9,14 @@ struct LeftPanel: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            // ── 标题行（Issue #3: 改叫"播放列表"）──
             headerRow
             autoPlayOptionRow
 
-            // ── 拖拽放入大框 ──
             dropZone
 
             sourceList
 
-            // ── Bug5修复：HTML播放中显示"结束展示"按钮 ──
-            if viewModel.currentHTMLURL != nil {
-                Button(action: {
-                    viewModel.endHTMLPresentation()
-                }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 16, weight: .bold))
-                        Text("结束 HTML 展示 · 回到壁纸")
-                            .font(.system(size: 13, weight: .semibold))
-                    }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                            .fill(StudioTheme.actionDanger)
-                    )
-                }
-                .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(scale: 0.97)))
-            }
-
             Spacer(minLength: 0)
-
-            // ── 输出屏幕模块（Issue #10: 超大胶囊框 .title2）──
-            outputScreenModule
         }
         .padding(16)
         .frame(width: StudioTheme.directorRailWidth)
@@ -56,27 +28,19 @@ struct LeftPanel: View {
     private var autoPlayOptionRow: some View {
         Toggle(isOn: $viewModel.autoPlayNextVideoOnEnd) {
             HStack(spacing: 7) {
-                Image(systemName: "forward.end.fill")
+                Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(StudioTheme.actionPrimary)
-                Text("播毕自动下一条视频")
+                    .foregroundStyle(StudioTheme.statusWarn)
+                Text("Auto-next video")
                     .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
             }
         }
         .toggleStyle(.switch)
         .controlSize(.small)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(StudioTheme.surfaceSecondary)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
-        )
+        .padding(.horizontal, 2)
+        .padding(.vertical, 2)
         .help("仅当前节目播毕且下一条也是视频时自动播放；不会自动打开 HTML、PPT 或 Keynote。")
     }
 
@@ -85,16 +49,12 @@ struct LeftPanel: View {
     private var headerRow: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("播放队列")
+                Text("Run Queue")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(viewModel.programItems.count) 个节目")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
-                Text(queueHeaderSummary)
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(2)
             }
             Spacer()
             CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
@@ -116,51 +76,52 @@ struct LeftPanel: View {
     // MARK: - 拖拽放入框
 
     private var dropZone: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("ADD SOURCE")
-                    .font(StudioTheme.statusLabel())
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer()
-                Text("VIDEO / AUDIO / PPTX / HTML")
-                    .font(.system(size: 10, weight: .bold, design: .rounded))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            HStack(spacing: 8) {
+        HStack(spacing: 10) {
+            Menu {
                 Button {
                     openFilePicker(types: [.movie, .audio])
                 } label: {
-                    Label("选择视频", systemImage: "film.fill")
+                    Label("Video / Audio", systemImage: "film.fill")
                 }
-                .buttonStyle(SecondaryImportButtonStyle())
+
+                Button {
+                    openHTMLPicker()
+                } label: {
+                    Label("HTML", systemImage: "globe.asia.australia.fill")
+                }
 
                 Button {
                     openPPTXPicker()
                 } label: {
-                    Label("选择 PPTX", systemImage: "doc.richtext.fill")
+                    Label("PPTX", systemImage: "doc.richtext.fill")
                 }
-                .buttonStyle(SecondaryImportButtonStyle(role: .warn))
-            }
 
-            Button {
-                openHTMLPicker()
+                Button {
+                    openKeynotePicker()
+                } label: {
+                    Label("Keynote", systemImage: "play.rectangle.fill")
+                }
             } label: {
-                Label("选择 HTML（大屏展示）", systemImage: "globe.asia.australia.fill")
+                Label("Add Source", systemImage: "plus")
+                    .font(.system(size: 13, weight: .bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: StudioTheme.controlHeightM)
             }
-            .buttonStyle(SecondaryImportButtonStyle())
-            .frame(maxWidth: .infinity)
+            .menuStyle(.button)
+            .buttonStyle(.borderedProminent)
 
-            Text("可拖入本地媒体、PPTX 或 HTML 文件；不支持的文件会被忽略。")
+            Text("Drag files here")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textTertiary)
+                .lineLimit(1)
         }
-        .padding(14)
+        .padding(10)
         .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .fill(StudioTheme.surfacePrimary)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(isDraggingOver ? StudioTheme.borderActive : StudioTheme.borderSubtle, lineWidth: 1)
         )
         .onDrop(of: [.fileURL], isTargeted: $isDraggingOver) { providers in
@@ -223,7 +184,7 @@ struct LeftPanel: View {
             }
         }
         .listStyle(.plain)
-        .frame(maxHeight: 300)
+        .frame(maxHeight: .infinity)
         .scrollContentBackground(.hidden)
         .background(StudioTheme.surfacePrimary.opacity(0.7))
         .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
@@ -231,12 +192,6 @@ struct LeftPanel: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         ))
-    }
-
-    private var queueHeaderSummary: String {
-        let current = viewModel.currentProgramItem?.title ?? "No current"
-        let next = nextProgramItem?.title ?? "No next"
-        return "Current: \(current) · Next: \(next)"
     }
 
     private var nextProgramItem: ProgramItem? {
@@ -260,85 +215,6 @@ struct LeftPanel: View {
         }
         return index == 0 ? .next : .queued
     }
-
-
-
-
-    // MARK: - 输出屏幕模块（Issue #10: 超大胶囊按钮）
-
-    private var outputScreenModule: some View {
-        let model = ProjectionButtonModel.make(
-            isBroadcasting: viewModel.isBroadcasting,
-            hasExternalDisplay: viewModel.hasExternalDisplay,
-            safetyNotice: viewModel.broadcastSafetyNotice
-        )
-
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("输出屏幕")
-                        .font(.system(size: 12, weight: .black, design: .rounded))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    HStack(spacing: 6) {
-                        Image(systemName: model.screenSystemImage)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                        Text(model.screenLabel)
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                    }
-                }
-                Spacer()
-                StatusBadge(
-                    model.statusText,
-                    kind: model.statusKind
-                )
-            }
-
-            Button(action: { viewModel.handleSafeBroadcastToggle() }) {
-                HStack(spacing: 10) {
-                    Image(systemName: viewModel.isBroadcasting ? "antenna.radiowaves.left.and.right" : "antenna.radiowaves.left.and.right.slash")
-                        .font(.system(size: 17, weight: .black))
-                        .foregroundStyle(.white)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(model.title)
-                            .font(.system(size: 16, weight: .bold))
-                        Text(model.subtitle)
-                            .font(.system(size: 12, weight: .medium))
-                            .opacity(0.85)
-                    }
-                    Spacer()
-                }
-                .foregroundStyle(.white)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity)
-                .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                        .fill(viewModel.isBroadcasting
-                              ? StudioTheme.statusLive
-                              : (model.hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted))
-                )
-            }
-            .buttonStyle(.plain)
-            .focusable(false)
-            .disabled(!model.isEnabled)
-            .help(model.helpText)
-            .accessibilityLabel(model.title)
-            .accessibilityHint(model.subtitle)
-
-            if let title = model.warningTitle,
-               let message = model.warningMessage {
-                InlineWarningBanner(title: title, message: message, kind: .warn)
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(StudioTheme.surfaceSecondary)
-        )
-    }
-
     // MARK: - 文件选择
 
     private func openFilePicker(types: [UTType]) {
@@ -398,6 +274,34 @@ struct LeftPanel: View {
                 let item = ProgramItem(
                     title: url.deletingPathExtension().lastPathComponent,
                     subtitle: "PPTX",
+                    sourceURL: url
+                )
+                viewModel.addProgramItem(item)
+            }
+        }
+    }
+
+    private func openKeynotePicker() {
+        DispatchQueue.main.async {
+            let panel = NSOpenPanel()
+            panel.title = "选择 Keynote 文件"
+            panel.allowsMultipleSelection = true
+            panel.canChooseDirectories = false
+            panel.allowedContentTypes = [
+                UTType("com.apple.iWork.Keynote.key"),
+                UTType("com.apple.keynote.key")
+            ].compactMap { $0 }
+            if panel.allowedContentTypes.isEmpty {
+                panel.allowedContentTypes = [.data]
+            }
+
+            guard panel.runModal() == .OK else { return }
+            for url in panel.urls {
+                let ext = url.pathExtension.lowercased()
+                guard ext == "key" || ext == "keynote" else { continue }
+                let item = ProgramItem(
+                    title: url.deletingPathExtension().lastPathComponent,
+                    subtitle: "KEY",
                     sourceURL: url
                 )
                 viewModel.addProgramItem(item)

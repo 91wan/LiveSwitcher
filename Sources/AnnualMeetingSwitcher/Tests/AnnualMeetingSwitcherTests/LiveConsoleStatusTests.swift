@@ -11,6 +11,7 @@ final class LiveConsoleStatusTests: XCTestCase {
         bgmVolume: Float = 0.4,
         panic: Bool = false,
         speaker: Bool = false,
+        bgmTakeover: Bool = false,
         ppt: Bool = false
     ) -> LivePreflightSnapshot {
         LivePreflightSnapshot(
@@ -23,7 +24,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             currentProgramSource: currentSource,
             bgmItemCount: 1,
             isBGMPlaying: false,
-            isBGMAudioTakeoverActive: false,
+            isBGMAudioTakeoverActive: bgmTakeover,
             isSpeakerMode: speaker,
             isPanicMode: panic,
             isPageInterceptEnabled: ppt,
@@ -47,7 +48,8 @@ final class LiveConsoleStatusTests: XCTestCase {
         XCTAssertEqual(model.current.status, .live)
         XCTAssertEqual(model.next.value, "Awards")
         XCTAssertEqual(model.next.status, .ready)
-        XCTAssertEqual(model.audio.value, "Media 50% / BGM 40%")
+        XCTAssertEqual(model.audio.value, "Normal")
+        XCTAssertEqual(model.items.map(\.title), ["Output", "Current", "Next", "Audio"])
         XCTAssertTrue(model.isCritical)
     }
 
@@ -57,7 +59,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.projection.value, "ON AIR / DISPLAY LOST")
+        XCTAssertEqual(model.projection.value, "Display Lost")
         XCTAssertEqual(model.projection.status, .fail)
         XCTAssertTrue(model.isCritical)
     }
@@ -68,7 +70,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.projection.value, "No External Display")
+        XCTAssertEqual(model.projection.value, "No Display")
         XCTAssertEqual(model.projection.status, .warn)
         XCTAssertEqual(model.current.value, "No Program")
         XCTAssertEqual(model.current.status, .warn)
@@ -81,10 +83,39 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.audio.status, .muted)
-        XCTAssertEqual(model.panic.value, "Active")
-        XCTAssertEqual(model.panic.status, .fail)
+        XCTAssertEqual(model.audio.value, "Muted by Panic")
+        XCTAssertEqual(model.audio.status, .fail)
         XCTAssertTrue(model.isCritical)
+    }
+
+    func testStatusBarSummarizesSpeakerAndBGMTakeoverInsideAudio() {
+        let speakerModel = LiveStatusBarModel.make(
+            snapshot: snapshot(speaker: true),
+            nextProgramTitle: nil
+        )
+        let takeoverModel = LiveStatusBarModel.make(
+            snapshot: snapshot(bgmTakeover: true),
+            nextProgramTitle: nil
+        )
+
+        XCTAssertEqual(speakerModel.audio.value, "Speaker")
+        XCTAssertEqual(speakerModel.audio.status, .warn)
+        XCTAssertEqual(takeoverModel.audio.value, "BGM Takeover")
+        XCTAssertEqual(takeoverModel.audio.status, .warn)
+    }
+
+    func testStatusBarTruncatesCurrentAndNextDisplayButKeepsFullAccessibilityValue() {
+        let longCurrent = "Opening Video With Very Long Client-Specific Title"
+        let longNext = "Awards Segment With Extra Long Sponsor Title"
+        let model = LiveStatusBarModel.make(
+            snapshot: snapshot(currentTitle: longCurrent),
+            nextProgramTitle: longNext
+        )
+
+        XCTAssertLessThanOrEqual(model.current.value.count, 24)
+        XCTAssertLessThanOrEqual(model.next.value.count, 24)
+        XCTAssertEqual(model.current.accessibilityValue, "\(longCurrent) · Media")
+        XCTAssertEqual(model.next.accessibilityValue, longNext)
     }
 
     func testPreflightButtonStatusMapping() {
