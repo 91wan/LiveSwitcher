@@ -74,7 +74,7 @@
 - [x] Replace Add Source menu with a 2x2 button grid.
 - [x] Neutralize Auto-next icon/color when off; make scan refresh non-focusable.
 - [x] Set `directorRailWidth` to 320 after verifying layout.
-- [ ] Run full local verification, open PR, wait for CI, merge on green.
+- [x] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR E: Make Overlay Preview WYSIWYG And Unify Overlay CTAs
 
@@ -83,11 +83,11 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OverlayControlPanel.swift`
 - Add/modify overlay tests.
 
-- [ ] Add model/source tests that all-off preview does not render active overlay text and active states render matching layers.
-- [ ] Create `OverlayLivePreviewCanvas` that uses real overlay state and draft overlays at reduced opacity.
-- [ ] Replace hand-written always-on preview functions in `OverlayControlPanel`.
-- [ ] Use `StudioTheme.Action.primary` for all Send Live buttons and neutral secondary styling for Stop.
-- [ ] Allow replacing live overlays via Send Live text/state without ViewModel changes.
+- [x] Add model/source tests that all-off preview does not render active overlay text and active states render matching layers.
+- [x] Create `OverlayLivePreviewCanvas` that uses real overlay state and draft overlays at reduced opacity.
+- [x] Replace hand-written always-on preview functions in `OverlayControlPanel`.
+- [x] Use `StudioTheme.Action.primary` for all Send Live buttons and neutral secondary styling for Stop.
+- [x] Allow replacing live overlays via Send Live text/state without ViewModel changes.
 - [ ] Run full local verification, open PR, wait for CI, merge on green.
 
 ## Final Sweep
