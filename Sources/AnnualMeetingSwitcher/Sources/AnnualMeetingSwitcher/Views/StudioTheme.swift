@@ -489,9 +489,24 @@ struct InlineWarningBanner: View {
         self.kind = kind
     }
 
+    var iconName: String {
+        switch kind {
+        case .fail:
+            return "xmark.octagon.fill"
+        case .warn:
+            return "exclamationmark.triangle.fill"
+        case .ready:
+            return "checkmark.seal.fill"
+        case .live:
+            return "dot.radiowaves.left.and.right"
+        case .idle, .muted:
+            return "info.circle.fill"
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: StudioTheme.spacingS) {
-            Image(systemName: kind == .fail ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
+            Image(systemName: iconName)
                 .foregroundStyle(StudioTheme.color(for: kind))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)

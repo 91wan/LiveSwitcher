@@ -20,6 +20,34 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         XCTAssertEqual(model.routingStatusKind, .warn)
     }
 
+    func testAudioRoutingStrategySummaryIsIdleWhenNoEmergencyRoutingIsActive() {
+        let model = AudioMixerPageModel(
+            masterVolume: 0.5,
+            mediaVolume: 0.7,
+            mediaEffectiveVolume: 0.35,
+            bgmVolume: 0.25,
+            bgmEffectiveVolume: 0.25,
+            strategy: .mixed,
+            isPanicMode: false,
+            isSpeakerMode: false,
+            isBGMAudioTakeoverActive: false
+        )
+
+        XCTAssertEqual(model.routingStatusText, AudioStrategy.mixed.displayTitle)
+        XCTAssertEqual(model.routingStatusKind, .idle)
+        XCTAssertEqual(model.channelLimitText, "No forced mute")
+        XCTAssertEqual(model.routingImpactText, "No emergency routing is active; effective output follows the selected strategy and faders.")
+    }
+
+    func testInlineWarningBannerIconMatchesStatusKind() {
+        XCTAssertEqual(InlineWarningBanner(title: "Ready", message: "", kind: .ready).iconName, "checkmark.seal.fill")
+        XCTAssertEqual(InlineWarningBanner(title: "Warn", message: "", kind: .warn).iconName, "exclamationmark.triangle.fill")
+        XCTAssertEqual(InlineWarningBanner(title: "Fail", message: "", kind: .fail).iconName, "xmark.octagon.fill")
+        XCTAssertEqual(InlineWarningBanner(title: "Live", message: "", kind: .live).iconName, "dot.radiowaves.left.and.right")
+        XCTAssertEqual(InlineWarningBanner(title: "Idle", message: "", kind: .idle).iconName, "info.circle.fill")
+        XCTAssertEqual(InlineWarningBanner(title: "Muted", message: "", kind: .muted).iconName, "info.circle.fill")
+    }
+
     func testAudioPageNoLongerReusesOldRightPanelMixerRail() throws {
         let content = try String(contentsOf: sourceURL("Views/AudioMixerView.swift"), encoding: .utf8)
 
