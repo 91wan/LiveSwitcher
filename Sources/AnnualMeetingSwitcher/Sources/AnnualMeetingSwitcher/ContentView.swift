@@ -8,8 +8,6 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             primaryNavigationBar
-            LiveStatusStrip(model: liveStatusModel)
-
             mainContent
         }
         .background(StudioTheme.canvasGradient)
@@ -77,15 +75,11 @@ struct ContentView: View {
 
     private var primaryNavigationBar: some View {
         HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("LiveSwitcher")
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text("Run Desk")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            .frame(width: 132, alignment: .leading)
+            Text(viewModel.selectedMainTab.chromeTitle)
+                .font(.system(size: 15, weight: .black, design: .rounded))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+                .frame(width: 190, alignment: .leading)
 
             Spacer(minLength: 0)
             navigationTabCluster
@@ -100,9 +94,9 @@ struct ContentView: View {
                 .layoutPriority(2)
         }
         .padding(.horizontal, 18)
-        .padding(.top, 16)
-        .padding(.bottom, 12)
-        .frame(minHeight: 76)
+        .padding(.top, 12)
+        .padding(.bottom, 10)
+        .frame(minHeight: 64)
         .background(StudioTheme.Surface.base.opacity(0.55))
         .overlay(Divider(), alignment: .bottom)
     }
@@ -124,72 +118,6 @@ struct ContentView: View {
                 viewModel.selectedMainTab = tag
             }
         }
-    }
-
-    private var liveStatusModel: LiveStatusBarModel {
-        LiveStatusBarModel.make(
-            snapshot: viewModel.livePreflightSnapshot,
-            nextProgramTitle: nextProgramTitle
-        )
-    }
-
-    private var nextProgramTitle: String? {
-        guard !viewModel.programItems.isEmpty else { return nil }
-        guard let currentID = viewModel.currentProgramItem?.id,
-              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
-        else {
-            return viewModel.programItems.first?.title
-        }
-        let nextIndex = viewModel.programItems.index(after: currentIndex)
-        guard nextIndex < viewModel.programItems.endIndex else { return nil }
-        return viewModel.programItems[nextIndex].title
-    }
-}
-
-private struct LiveStatusStrip: View {
-    let model: LiveStatusBarModel
-
-    var body: some View {
-        HStack(spacing: StudioTheme.spacingS) {
-            ForEach(Array(model.items.enumerated()), id: \.offset) { index, item in
-                statusItem(item, prominent: index == 0)
-            }
-            Spacer(minLength: StudioTheme.spacingS)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 8)
-        .background(model.isCritical ? StudioTheme.Tone.live.opacity(0.08) : StudioTheme.Surface.raised.opacity(StudioTheme.Surface.Opacity.strong))
-        .overlay(
-            Rectangle()
-                .fill(model.isCritical ? StudioTheme.borderCritical : StudioTheme.borderSubtle)
-                .frame(height: 1),
-            alignment: .bottom
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Live status. \(model.projection.title) \(model.projection.accessibilityValue). \(model.current.title) \(model.current.accessibilityValue). \(model.next.title) \(model.next.accessibilityValue). \(model.audio.title) \(model.audio.accessibilityValue).")
-    }
-
-    private func statusItem(_ item: LiveStatusBarModel.Item, prominent: Bool = false) -> some View {
-        HStack(spacing: 6) {
-            Text(item.title.uppercased())
-                .font(.system(size: 10, weight: .black, design: .rounded))
-                .foregroundStyle(StudioTheme.textTertiary)
-            Text(item.value)
-                .font(.system(size: prominent ? 12 : 11, weight: prominent ? .black : .bold))
-                .foregroundStyle(StudioTheme.color(for: item.status))
-                .lineLimit(1)
-                .truncationMode(.middle)
-        }
-        .padding(.horizontal, 9)
-        .frame(maxWidth: CGFloat(item.layoutRole.maxWidth))
-        .frame(height: 30)
-        .background(StudioTheme.color(for: item.status).opacity(0.08), in: Capsule(style: .continuous))
-        .overlay(
-            Capsule(style: .continuous)
-                .stroke(StudioTheme.color(for: item.status).opacity(prominent ? 0.26 : 0.14), lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(item.title): \(item.accessibilityValue)")
     }
 }
 

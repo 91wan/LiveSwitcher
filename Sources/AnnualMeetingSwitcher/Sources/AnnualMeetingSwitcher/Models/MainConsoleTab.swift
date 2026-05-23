@@ -4,6 +4,17 @@ enum MainConsoleTab: Int, CaseIterable, Equatable {
     case preview = 0
     case audioMixer = 1
     case overlays = 2
+
+    var chromeTitle: String {
+        switch self {
+        case .preview:
+            return "LiveSwitcher · Run"
+        case .audioMixer:
+            return "LiveSwitcher · Audio"
+        case .overlays:
+            return "LiveSwitcher · Overlays"
+        }
+    }
 }
 
 struct TabRetentionModel: Equatable {

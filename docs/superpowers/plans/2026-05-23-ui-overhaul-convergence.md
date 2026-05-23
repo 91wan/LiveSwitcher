@@ -39,7 +39,7 @@
 - [x] Replace old color/surface/spacing/radius/font references across app sources.
 - [x] Remove decorative `accent`, `accentSecondary`, `green`, `orange`, `pink`, `actionDanger`, and old surface constants from app view usage.
 - [x] Convert common magic opacity values to `StudioTheme.Surface.Opacity`.
-- [ ] Run full local verification, open PR, wait for CI, merge on green.
+- [x] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR C: Collapse Top Chrome And Add Preflight Counts
 
@@ -49,11 +49,11 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift`
 - Modify/add tests for top chrome, preflight badge, and monitor inline status.
 
-- [ ] Add tests that `ContentView` no longer owns `LiveStatusStrip`, the static `Run Desk` subtitle is removed, and `MainConsoleTab` supplies the dynamic title.
-- [ ] Add tests that Preflight badge text includes fail/warn counts.
-- [ ] Replace the two-line navigation title with one-line `LiveSwitcher · <current tab>`.
-- [ ] Remove `LiveStatusStrip` and move its accessibility summary into Program Monitor inline status.
-- [ ] Replace Current/Next cards with a compact monitor inline status row.
+- [x] Add tests that `ContentView` no longer owns `LiveStatusStrip`, the static `Run Desk` subtitle is removed, and `MainConsoleTab` supplies the dynamic title.
+- [x] Add tests that Preflight badge text includes fail/warn counts.
+- [x] Replace the two-line navigation title with one-line `LiveSwitcher · <current tab>`.
+- [x] Remove `LiveStatusStrip` and move its accessibility summary into Program Monitor inline status.
+- [x] Replace Current/Next cards with a compact monitor inline status row.
 - [ ] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR D: Simplify Run Desk IA Controls
