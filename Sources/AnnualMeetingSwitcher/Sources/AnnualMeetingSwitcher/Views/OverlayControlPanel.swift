@@ -4,28 +4,7 @@ import SwiftUI
 
 struct OverlayControlPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
-
-    @State private var countdownMinutes = 10
-    @State private var countdownSecs = 0
-    @State private var countdownTitleInput = "活动即将开始"
-
-    @State private var tickerInput = "Welcome · The program will begin shortly"
-    @State private var tickerSpeedIndex = 1
-
-    @State private var ltNameInput = ""
-    @State private var ltTitleInput = ""
-
-    private var trimmedLowerThirdName: String {
-        ltNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var trimmedTickerText: String {
-        tickerInput.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    private var countdownTotalSeconds: Int {
-        OverlayUIState.countdownTotalSeconds(minutes: countdownMinutes, seconds: countdownSecs) ?? 0
-    }
+    @State private var composerState = OverlayComposerState()
 
     private var activeOverlayCount: Int {
         [
@@ -42,14 +21,14 @@ struct OverlayControlPanel: View {
     var body: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .top, spacing: 18) {
-                controlsColumn
-                    .frame(minWidth: 440, maxWidth: 560)
+                composerColumn
+                    .frame(minWidth: 420, maxWidth: 560)
                 livePreviewColumn
-                    .frame(minWidth: 320, maxWidth: 420)
+                    .frame(minWidth: 360, maxWidth: 460)
             }
 
             VStack(alignment: .leading, spacing: 18) {
-                controlsColumn
+                composerColumn
                 livePreviewColumn
             }
         }
@@ -71,12 +50,11 @@ struct OverlayControlPanel: View {
         }
     }
 
-    private var controlsColumn: some View {
-        VStack(alignment: .leading, spacing: 18) {
+    private var composerColumn: some View {
+        VStack(alignment: .leading, spacing: 16) {
             panelHeader
-            lowerThirdSection
-            countdownSection
-            tickerSection
+            composerPicker
+            activeComposerCard
         }
     }
 
@@ -92,69 +70,80 @@ struct OverlayControlPanel: View {
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("叠层控制")
+                Text("Overlay Composer")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundStyle(.primary)
-                Text("人名条、倒计时和游动字幕会直接叠加到输出大屏。")
+                Text("一次准备一种叠层；Preview 和 Active Stack 会显示当前上屏状态。")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.secondary)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 8) {
-                StatusBadge(activeOverlayCount == 0 ? "OFF" : "\(activeOverlayCount) LIVE", kind: hasActiveOverlay ? .live : .idle)
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.clearAllOverlays()
-                    }
-                } label: {
-                    Text("全部下屏 / Clear all")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(hasActiveOverlay ? .white : .secondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(
-                            Capsule(style: .continuous)
-                                .fill(hasActiveOverlay ? StudioTheme.actionDanger : StudioTheme.surfaceSecondary)
-                        )
-                }
-                .buttonStyle(.plain)
-                .disabled(!hasActiveOverlay)
-            }
+            StatusBadge(activeOverlayCount == 0 ? "OFF" : "\(activeOverlayCount) LIVE", kind: hasActiveOverlay ? .live : .idle)
         }
     }
 
-    private var lowerThirdSection: some View {
+    private var composerPicker: some View {
+        Picker("Overlay composer", selection: $composerState.selectedKind) {
+            ForEach(OverlayComposerKind.allCases) { kind in
+                Label(kind.pickerTitle, systemImage: kind.systemImage).tag(kind)
+            }
+        }
+        .pickerStyle(.segmented)
+        .onChange(of: composerState.selectedKind) { _, newKind in
+            composerState.select(newKind)
+        }
+        .accessibilityLabel("Overlay composer")
+    }
+
+    @ViewBuilder
+    private var activeComposerCard: some View {
+        switch composerState.selectedKind {
+        case .lowerThird:
+            lowerThirdEditor
+        case .countdown:
+            countdownEditor
+        case .ticker:
+            tickerEditor
+        }
+    }
+
+    private var lowerThirdEditor: some View {
         overlaySection(
-            title: "人名条（Lower Third）",
-            systemImage: "person.text.rectangle",
-            isLive: viewModel.isLowerThirdVisible
+            kind: .lowerThird,
+            isLive: viewModel.isLowerThirdVisible,
+            disabledReason: OverlayUIState.lowerThirdDisabledReason(
+                name: composerState.lowerThirdNameDraft,
+                isLive: viewModel.isLowerThirdVisible
+            )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextField("嘉宾姓名", text: $ltNameInput)
+                TextField("嘉宾姓名", text: $composerState.lowerThirdNameDraft)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
-                TextField("职务 / 单位（可留空）", text: $ltTitleInput)
+                TextField("职务 / 单位（可留空）", text: $composerState.lowerThirdTitleDraft)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "上屏",
+                        title: "Send Live",
                         systemImage: "arrow.up.to.line",
                         fill: StudioTheme.statusLive,
-                        isDisabled: viewModel.isLowerThirdVisible || trimmedLowerThirdName.isEmpty
+                        isDisabled: viewModel.isLowerThirdVisible || composerState.trimmedLowerThirdName.isEmpty
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
-                            viewModel.showLowerThird(name: ltNameInput, title: ltTitleInput)
+                            viewModel.showLowerThird(
+                                name: composerState.lowerThirdNameDraft,
+                                title: composerState.lowerThirdTitleDraft
+                            )
                         }
                     }
 
                     overlayActionButton(
-                        title: "退场",
+                        title: "Stop",
                         systemImage: "arrow.down.to.line",
                         fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isLowerThirdVisible
@@ -165,36 +154,37 @@ struct OverlayControlPanel: View {
                     }
                 }
 
-                if let reason = OverlayUIState.lowerThirdDisabledReason(name: ltNameInput, isLive: viewModel.isLowerThirdVisible) {
-                    Text(reason)
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-
-                if viewModel.isLowerThirdVisible {
-                    currentLowerThirdPreview
-                }
+                disabledReasonText(
+                    OverlayUIState.lowerThirdDisabledReason(
+                        name: composerState.lowerThirdNameDraft,
+                        isLive: viewModel.isLowerThirdVisible
+                    )
+                )
             }
         }
     }
 
-    private var countdownSection: some View {
+    private var countdownEditor: some View {
         overlaySection(
-            title: "倒计时",
-            systemImage: "timer",
-            isLive: viewModel.isCountdownActive
+            kind: .countdown,
+            isLive: viewModel.isCountdownActive,
+            disabledReason: OverlayUIState.countdownDisabledReason(
+                minutes: composerState.countdownMinutesDraft,
+                seconds: composerState.countdownSecondsDraft,
+                isLive: viewModel.isCountdownActive
+            )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextField("标题（如：活动即将开始）", text: $countdownTitleInput)
+                TextField("标题（如：活动即将开始）", text: $composerState.countdownTitleDraft)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
                 HStack(spacing: 8) {
-                    numberInput(title: "分", value: $countdownMinutes)
+                    numberInput(title: "分", value: $composerState.countdownMinutesDraft)
                     Text(":")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.secondary)
-                    numberInput(title: "秒", value: $countdownSecs)
+                    numberInput(title: "秒", value: $composerState.countdownSecondsDraft)
                     Spacer()
                     if viewModel.isCountdownActive {
                         Text("剩余 \(formattedTime(viewModel.countdownSeconds))")
@@ -205,22 +195,26 @@ struct OverlayControlPanel: View {
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "开始",
+                        title: "Send Live",
                         systemImage: "play.fill",
                         fill: StudioTheme.statusWarn,
                         isDisabled: OverlayUIState.countdownDisabledReason(
-                            minutes: countdownMinutes,
-                            seconds: countdownSecs,
+                            minutes: composerState.countdownMinutesDraft,
+                            seconds: composerState.countdownSecondsDraft,
                             isLive: viewModel.isCountdownActive
                         ) != nil
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.startCountdown(minutes: countdownMinutes, seconds: countdownSecs, title: countdownTitleInput)
+                            viewModel.startCountdown(
+                                minutes: composerState.countdownMinutesDraft,
+                                seconds: composerState.countdownSecondsDraft,
+                                title: composerState.countdownTitleDraft
+                            )
                         }
                     }
 
                     overlayActionButton(
-                        title: "停止",
+                        title: "Stop",
                         systemImage: "stop.fill",
                         fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isCountdownActive
@@ -231,23 +225,28 @@ struct OverlayControlPanel: View {
                     }
                 }
 
-                if let reason = OverlayUIState.countdownDisabledReason(minutes: countdownMinutes, seconds: countdownSecs, isLive: viewModel.isCountdownActive) {
-                    Text(reason)
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
+                disabledReasonText(
+                    OverlayUIState.countdownDisabledReason(
+                        minutes: composerState.countdownMinutesDraft,
+                        seconds: composerState.countdownSecondsDraft,
+                        isLive: viewModel.isCountdownActive
+                    )
+                )
             }
         }
     }
 
-    private var tickerSection: some View {
+    private var tickerEditor: some View {
         overlaySection(
-            title: "游动字幕",
-            systemImage: "text.badge.star",
-            isLive: viewModel.isTickerActive
+            kind: .ticker,
+            isLive: viewModel.isTickerActive,
+            disabledReason: OverlayUIState.tickerDisabledReason(
+                text: composerState.tickerTextDraft,
+                isLive: viewModel.isTickerActive
+            )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextEditor(text: $tickerInput)
+                TextEditor(text: $composerState.tickerTextDraft)
                     .font(.system(size: 13))
                     .frame(height: 76)
                     .padding(6)
@@ -262,31 +261,31 @@ struct OverlayControlPanel: View {
                     Text("速度")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.secondary)
-                    Picker("", selection: $tickerSpeedIndex) {
+                    Picker("", selection: $composerState.tickerSpeedIndex) {
                         ForEach(OverlaySpeedSelection.options.indices, id: \.self) { index in
                             Text(OverlaySpeedSelection.label(at: index)).tag(index)
                         }
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: tickerSpeedIndex) { _, index in
+                    .onChange(of: composerState.tickerSpeedIndex) { _, index in
                         viewModel.tickerSpeed = OverlaySpeedSelection.speed(at: index)
                     }
                 }
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "开始",
+                        title: "Send Live",
                         systemImage: "play.fill",
                         fill: StudioTheme.pink,
-                        isDisabled: viewModel.isTickerActive || trimmedTickerText.isEmpty
+                        isDisabled: viewModel.isTickerActive || composerState.trimmedTickerText.isEmpty
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.startTicker(text: tickerInput)
+                            viewModel.startTicker(text: composerState.tickerTextDraft)
                         }
                     }
 
                     overlayActionButton(
-                        title: "停止",
+                        title: "Stop",
                         systemImage: "stop.fill",
                         fill: StudioTheme.actionSecondary,
                         isDisabled: !viewModel.isTickerActive
@@ -297,66 +296,94 @@ struct OverlayControlPanel: View {
                     }
                 }
 
-                if let reason = OverlayUIState.tickerDisabledReason(text: tickerInput, isLive: viewModel.isTickerActive) {
-                    Text(reason)
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
+                disabledReasonText(
+                    OverlayUIState.tickerDisabledReason(
+                        text: composerState.tickerTextDraft,
+                        isLive: viewModel.isTickerActive
+                    )
+                )
             }
         }
     }
 
     private var livePreviewColumn: some View {
         StudioSectionCard(
-            title: "Live Overlay Preview",
-            subtitle: "上屏前确认位置和当前状态",
+            title: "Live Preview",
+            subtitle: "16:9 preview and active overlay stack",
             status: (hasActiveOverlay ? "\(activeOverlayCount) LIVE" : "OFF", hasActiveOverlay ? .live : .idle)
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                        .fill(StudioTheme.monitorSurfaceBottom.opacity(0.95))
-                        .aspectRatio(16.0 / 9.0, contentMode: .fit)
-
-                    VStack {
-                        tickerPreview
-                        Spacer()
-                        countdownPreview
-                        Spacer()
-                        lowerThirdPreview
-                    }
-                    .padding(18)
-                }
-
-                VStack(alignment: .leading, spacing: 8) {
-                    activeOverlaySummaryRow(title: "Lower Third", isLive: viewModel.isLowerThirdVisible)
-                    activeOverlaySummaryRow(title: "Countdown", isLive: viewModel.isCountdownActive)
-                    activeOverlaySummaryRow(title: "Ticker", isLive: viewModel.isTickerActive)
-                }
+                livePreviewCanvas
+                activeStackCard
             }
         }
     }
 
+    private var livePreviewCanvas: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .fill(StudioTheme.monitorSurfaceBottom.opacity(0.95))
+                .aspectRatio(16.0 / 9.0, contentMode: .fit)
+
+            VStack {
+                tickerPreview
+                Spacer()
+                countdownPreview
+                Spacer()
+                lowerThirdPreview
+            }
+            .padding(18)
+        }
+    }
+
+    private var activeStackCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Active Stack")
+                    .font(StudioTheme.sectionTitle())
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Spacer()
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        viewModel.clearAllOverlays()
+                    }
+                } label: {
+                    Label("Clear All", systemImage: "xmark.circle.fill")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!hasActiveOverlay)
+            }
+
+            activeOverlaySummaryRow(title: "Lower Third", isLive: viewModel.isLowerThirdVisible)
+            activeOverlaySummaryRow(title: "Countdown", isLive: viewModel.isCountdownActive)
+            activeOverlaySummaryRow(title: "Ticker", isLive: viewModel.isTickerActive)
+        }
+        .padding(12)
+        .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+    }
+
     private var tickerPreview: some View {
-        Text(trimmedTickerText.isEmpty ? "Ticker preview" : trimmedTickerText)
+        Text(composerState.trimmedTickerText.isEmpty ? "Ticker preview" : composerState.trimmedTickerText)
             .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(viewModel.isTickerActive || !trimmedTickerText.isEmpty ? .white : .white.opacity(0.45))
+            .foregroundStyle(viewModel.isTickerActive || !composerState.trimmedTickerText.isEmpty ? .white : .white.opacity(0.45))
             .lineLimit(1)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var countdownPreview: some View {
-        Text(formattedTime(viewModel.isCountdownActive ? viewModel.countdownSeconds : countdownTotalSeconds))
+        Text(formattedTime(viewModel.isCountdownActive ? viewModel.countdownSeconds : composerState.countdownTotalSeconds))
             .font(.system(size: 28, weight: .black, design: .rounded))
-            .foregroundStyle(countdownTotalSeconds > 0 || viewModel.isCountdownActive ? .white : .white.opacity(0.45))
+            .foregroundStyle(composerState.countdownTotalSeconds > 0 || viewModel.isCountdownActive ? .white : .white.opacity(0.45))
     }
 
     private var lowerThirdPreview: some View {
         HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(trimmedLowerThirdName.isEmpty ? "Lower third name" : trimmedLowerThirdName)
+                Text(composerState.trimmedLowerThirdName.isEmpty ? "Lower third name" : composerState.trimmedLowerThirdName)
                     .font(.system(size: 13, weight: .black))
-                Text(ltTitleInput.isEmpty ? "Title / organization" : ltTitleInput)
+                Text(composerState.lowerThirdTitleDraft.isEmpty ? "Title / organization" : composerState.lowerThirdTitleDraft)
                     .font(.system(size: 10, weight: .medium))
                     .opacity(0.78)
             }
@@ -364,7 +391,7 @@ struct OverlayControlPanel: View {
         }
         .foregroundStyle(.white)
         .padding(10)
-        .background(StudioTheme.statusLive.opacity(viewModel.isLowerThirdVisible || !trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        .background(StudioTheme.statusLive.opacity(viewModel.isLowerThirdVisible || !composerState.trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
     }
 
     private func activeOverlaySummaryRow(title: String, isLive: Bool) -> some View {
@@ -377,50 +404,19 @@ struct OverlayControlPanel: View {
         }
     }
 
-    private var currentLowerThirdPreview: some View {
-        HStack(spacing: 8) {
-            Capsule(style: .continuous)
-                .fill(StudioTheme.statusLive)
-                .frame(width: 4)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(viewModel.lowerThirdName)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                if !viewModel.lowerThirdTitle.isEmpty {
-                    Text(viewModel.lowerThirdTitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
-                }
-            }
-            Spacer()
-            Text("LIVE")
-                .font(.system(size: 10, weight: .black, design: .rounded))
-                .foregroundStyle(StudioTheme.statusLive)
-        }
-        .padding(10)
-        .background(StudioTheme.statusLive.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.statusLive.opacity(0.18), lineWidth: 1)
-        )
-    }
-
     private func overlaySection<Content: View>(
-        title: String,
-        systemImage: String,
+        kind: OverlayComposerKind,
         isLive: Bool,
+        disabledReason: String?,
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
-                Label(title, systemImage: systemImage)
+                Label(kind.title, systemImage: kind.systemImage)
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                statusBadge(title: isLive ? "LIVE" : "OFF", isLive: isLive)
+                statusBadge(title: composerStatusText(isLive: isLive, disabledReason: disabledReason), isLive: isLive)
             }
 
             content()
@@ -434,6 +430,12 @@ struct OverlayControlPanel: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(isLive ? StudioTheme.borderCritical.opacity(0.50) : StudioTheme.borderSubtle, lineWidth: 1)
         )
+    }
+
+    private func composerStatusText(isLive: Bool, disabledReason: String?) -> String {
+        if isLive { return "LIVE" }
+        if disabledReason == nil { return "READY" }
+        return "DRAFT"
     }
 
     private func statusBadge(title: String, isLive: Bool) -> some View {
@@ -451,6 +453,15 @@ struct OverlayControlPanel: View {
             Capsule(style: .continuous)
                 .fill(isLive ? StudioTheme.statusLive.opacity(0.12) : StudioTheme.surfaceSecondary)
         )
+    }
+
+    @ViewBuilder
+    private func disabledReasonText(_ reason: String?) -> some View {
+        if let reason {
+            Text(reason)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textTertiary)
+        }
     }
 
     private func numberInput(title: String, value: Binding<Int>) -> some View {
@@ -498,7 +509,7 @@ struct OverlayControlPanel: View {
 
     private func syncTickerSpeedFromViewModel() {
         let index = OverlaySpeedSelection.nearestIndex(for: viewModel.tickerSpeed)
-        tickerSpeedIndex = index
+        composerState.tickerSpeedIndex = index
         let normalizedSpeed = OverlaySpeedSelection.speed(at: index)
         if viewModel.tickerSpeed != normalizedSpeed {
             viewModel.tickerSpeed = normalizedSpeed
