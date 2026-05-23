@@ -22,7 +22,6 @@ struct LiveOpsPanel: View {
             outputCard
             audioCard
             bgmMiniCard
-            modesCard
 
             Spacer(minLength: 0)
         }
@@ -104,6 +103,8 @@ struct LiveOpsPanel: View {
                 .controlSize(.small)
                 .accessibilityLabel("Open audio mixer page")
             }
+
+            audioModesRow
         }
     }
 
@@ -148,23 +149,21 @@ struct LiveOpsPanel: View {
         }
     }
 
-    private var modesCard: some View {
-        opsCard(title: "Modes", status: modesStatusText, kind: modesStatusKind) {
-            HStack(spacing: 6) {
-                modeToggleRow(
-                    title: "Speaker",
-                    systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
-                    isOn: viewModel.isSpeakerMode,
-                    action: { viewModel.toggleSpeakerMode() }
-                )
+    private var audioModesRow: some View {
+        HStack(spacing: 6) {
+            modeToggleRow(
+                title: "Speaker",
+                systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
+                isOn: viewModel.isSpeakerMode,
+                action: { viewModel.toggleSpeakerMode() }
+            )
 
-                modeToggleRow(
-                    title: "PPT",
-                    systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                    isOn: viewModel.isPageInterceptEnabled,
-                    action: { viewModel.isPageInterceptEnabled.toggle() }
-                )
-            }
+            modeToggleRow(
+                title: "PPT",
+                systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
+                isOn: viewModel.isPageInterceptEnabled,
+                action: { viewModel.isPageInterceptEnabled.toggle() }
+            )
         }
     }
 
@@ -287,22 +286,16 @@ struct LiveOpsPanel: View {
     private var audioStatusText: String {
         if viewModel.isPanicMode { return "MUTED" }
         if viewModel.isBGMAudioTakeoverActive { return "BGM TAKEOVER" }
+        if viewModel.isSpeakerMode && viewModel.isPageInterceptEnabled { return "MODES" }
         if viewModel.isSpeakerMode { return "SPEAKER" }
+        if viewModel.isPageInterceptEnabled { return "PPT" }
         return "NORMAL"
     }
 
     private var audioStatusKind: StudioTheme.StatusKind {
         if viewModel.isPanicMode { return .fail }
-        if viewModel.isBGMAudioTakeoverActive || viewModel.isSpeakerMode { return .warn }
+        if viewModel.isBGMAudioTakeoverActive || viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled { return .warn }
         return .ready
-    }
-
-    private var modesStatusText: String {
-        viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled ? "ACTIVE" : "OFF"
-    }
-
-    private var modesStatusKind: StudioTheme.StatusKind {
-        viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled ? .warn : .idle
     }
 
     private func formatTime(_ seconds: Double) -> String {

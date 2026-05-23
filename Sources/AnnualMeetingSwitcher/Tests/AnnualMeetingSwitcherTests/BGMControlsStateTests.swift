@@ -23,7 +23,7 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertFalse(state.canSkipPrevious)
         XCTAssertTrue(state.canPlay)
         XCTAssertFalse(state.canSkipNext)
-        XCTAssertEqual(state.displayStatusText, "SELECT")
+        XCTAssertEqual(state.displayStatusText, "IDLE")
         XCTAssertEqual(state.displayStatusKind, .idle)
     }
 

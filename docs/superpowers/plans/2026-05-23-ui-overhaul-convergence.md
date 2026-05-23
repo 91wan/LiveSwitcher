@@ -54,7 +54,7 @@
 - [x] Replace the two-line navigation title with one-line `LiveSwitcher · <current tab>`.
 - [x] Remove `LiveStatusStrip` and move its accessibility summary into Program Monitor inline status.
 - [x] Replace Current/Next cards with a compact monitor inline status row.
-- [ ] Run full local verification, open PR, wait for CI, merge on green.
+- [x] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR D: Simplify Run Desk IA Controls
 
@@ -66,14 +66,14 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StudioTheme.swift`
 - Modify/add Run Desk model/source tests.
 
-- [ ] Add tests for no `DisclosureGroup` in Program Monitor utilities and no standalone Modes card in Live Ops.
-- [ ] Add tests for four visible Add Source actions and neutral Auto-next idle styling.
-- [ ] Add tests that BGM idle status is `IDLE` or `OFF`, not `SELECT`.
-- [ ] Inline Transition and Wallpaper controls below the monitor instead of default-collapsed Utilities.
-- [ ] Merge Speaker/PPT toggles into LiveOps Audio card and keep Output/Audio/BGM as the only top cards.
-- [ ] Replace Add Source menu with a 2x2 button grid.
-- [ ] Neutralize Auto-next icon/color when off; make scan refresh non-focusable.
-- [ ] Set `directorRailWidth` to 320 after verifying layout.
+- [x] Add tests for no `DisclosureGroup` in Program Monitor utilities and no standalone Modes card in Live Ops.
+- [x] Add tests for four visible Add Source actions and neutral Auto-next idle styling.
+- [x] Add tests that BGM idle status is `IDLE` or `OFF`, not `SELECT`.
+- [x] Inline Transition and Wallpaper controls below the monitor instead of default-collapsed Utilities.
+- [x] Merge Speaker/PPT toggles into LiveOps Audio card and keep Output/Audio/BGM as the only top cards.
+- [x] Replace Add Source menu with a 2x2 button grid.
+- [x] Neutralize Auto-next icon/color when off; make scan refresh non-focusable.
+- [x] Set `directorRailWidth` to 320 after verifying layout.
 - [ ] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR E: Make Overlay Preview WYSIWYG And Unify Overlay CTAs

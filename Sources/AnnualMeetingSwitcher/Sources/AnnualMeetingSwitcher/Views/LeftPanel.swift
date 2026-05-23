@@ -26,11 +26,16 @@ struct LeftPanel: View {
     }
 
     private var autoPlayOptionRow: some View {
-        Toggle(isOn: $viewModel.autoPlayNextVideoOnEnd) {
+        let model = AutoNextVideoControlModel.make(
+            isEnabled: viewModel.autoPlayNextVideoOnEnd,
+            hasCurrentProgram: viewModel.currentProgramItem != nil
+        )
+
+        return Toggle(isOn: $viewModel.autoPlayNextVideoOnEnd) {
             HStack(spacing: 7) {
-                Image(systemName: "exclamationmark.triangle.fill")
+                Image(systemName: model.systemImage)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(StudioTheme.Tone.warn)
+                    .foregroundStyle(StudioTheme.color(for: model.statusKind))
                 Text("Auto-next video")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -69,6 +74,7 @@ struct LeftPanel: View {
                     )
             }
             .buttonStyle(.plain)
+            .focusable(false)
             .help("刷新 / 重新扫描 Keynote")
         }
     }
@@ -76,44 +82,30 @@ struct LeftPanel: View {
     // MARK: - 拖拽放入框
 
     private var dropZone: some View {
-        HStack(spacing: 10) {
-            Menu {
-                Button {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                addSourceButton(title: "Video / Audio", systemName: "film.fill") {
                     openFilePicker(types: [.movie, .audio])
-                } label: {
-                    Label("Video / Audio", systemImage: "film.fill")
                 }
-
-                Button {
+                addSourceButton(title: "HTML", systemName: "globe.asia.australia.fill") {
                     openHTMLPicker()
-                } label: {
-                    Label("HTML", systemImage: "globe.asia.australia.fill")
                 }
-
-                Button {
-                    openPPTXPicker()
-                } label: {
-                    Label("PPTX", systemImage: "doc.richtext.fill")
-                }
-
-                Button {
-                    openKeynotePicker()
-                } label: {
-                    Label("Keynote", systemImage: "play.rectangle.fill")
-                }
-            } label: {
-                Label("Add Source", systemImage: "plus")
-                    .font(.system(size: 13, weight: .bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: StudioTheme.controlHeightM)
             }
-            .menuStyle(.button)
-            .buttonStyle(.borderedProminent)
+
+            HStack(spacing: 8) {
+                addSourceButton(title: "PPTX", systemName: "doc.richtext.fill") {
+                    openPPTXPicker()
+                }
+                addSourceButton(title: "Keynote", systemName: "play.rectangle.fill") {
+                    openKeynotePicker()
+                }
+            }
 
             Text("Drag files here")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(10)
         .background(
@@ -127,6 +119,24 @@ struct LeftPanel: View {
         .onDrop(of: [.fileURL], isTargeted: $isDraggingOver) { providers in
             handleDrop(providers: providers)
         }
+    }
+
+    private func addSourceButton(
+        title: String,
+        systemName: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemName)
+                .font(.system(size: 11, weight: .bold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.82)
+                .frame(maxWidth: .infinity)
+                .frame(height: 34)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .focusable(false)
     }
 
     // MARK: - 已添加信号源列表（Issue #10: 显示拖拽排序手柄）

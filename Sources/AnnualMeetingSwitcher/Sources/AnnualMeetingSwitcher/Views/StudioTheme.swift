@@ -119,7 +119,7 @@ enum StudioTheme {
     static let controlHeightM: CGFloat = 38
     static let controlHeightL: CGFloat = 46
 
-    static let directorRailWidth: CGFloat = 348
+    static let directorRailWidth: CGFloat = 320
 
     static let canvasGradient = LinearGradient(
         colors: [canvasTop, canvasBottom],
