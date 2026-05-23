@@ -29,9 +29,9 @@ struct BGMPlaylistPanel: View {
             }
         }
         .frame(
-            minWidth: mode == .liveDock ? 0 : 260,
-            idealWidth: mode == .liveDock ? StudioTheme.directorRailWidth : 272,
-            maxWidth: mode == .liveDock ? .infinity : 292
+            minWidth: mode == .liveDock ? 0 : 320,
+            idealWidth: mode == .liveDock ? StudioTheme.directorRailWidth : 420,
+            maxWidth: .infinity
         )
         .background(mode == .liveDock ? StudioTheme.surfacePrimary.opacity(0.78) : StudioTheme.surfacePrimary)
         .clipShape(.rect(cornerRadius: mode == .liveDock ? StudioTheme.radiusXL : StudioTheme.radiusM, style: .continuous))
