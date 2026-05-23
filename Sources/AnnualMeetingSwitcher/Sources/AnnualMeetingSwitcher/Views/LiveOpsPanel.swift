@@ -79,16 +79,16 @@ struct LiveOpsPanel: View {
             HStack(spacing: 10) {
                 Image(systemName: "speaker.wave.2.fill")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(StudioTheme.actionPrimary)
+                    .foregroundStyle(StudioTheme.Action.primary)
                     .frame(width: 18)
                 Slider(value: $viewModel.masterVolume, in: 0...1)
-                    .tint(StudioTheme.actionPrimary)
+                    .tint(StudioTheme.Action.primary)
                     .controlSize(.small)
                     .accessibilityLabel("Master volume")
                     .accessibilityValue("\(Int(viewModel.masterVolume * 100)) percent")
                 Text("\(Int(viewModel.masterVolume * 100))%")
                     .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundStyle(StudioTheme.actionPrimary)
+                    .foregroundStyle(StudioTheme.Action.primary)
                     .frame(width: 38, alignment: .trailing)
             }
 
@@ -182,7 +182,7 @@ struct LiveOpsPanel: View {
             ),
             in: 0...1
         )
-        .tint(StudioTheme.actionPrimary)
+        .tint(StudioTheme.Action.primary)
         .controlSize(.small)
         .disabled(viewModel.currentBGMItem == nil)
         .accessibilityLabel("BGM progress")
@@ -208,11 +208,11 @@ struct LiveOpsPanel: View {
         .padding(LiveOpsLayoutMetrics.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.surfacePrimary.opacity(0.78))
+                .fill(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.overlay))
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(kind == .live || kind == .fail ? StudioTheme.statusColor(kind).opacity(0.28) : StudioTheme.borderSubtle, lineWidth: 1)
+                .stroke(kind == .live || kind == .fail ? StudioTheme.color(for: kind).opacity(0.28) : StudioTheme.borderSubtle, lineWidth: 1)
         )
     }
 
@@ -227,7 +227,7 @@ struct LiveOpsPanel: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
-        .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
     }
 
     private func iconButton(
@@ -241,7 +241,7 @@ struct LiveOpsPanel: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                 .frame(width: LiveOpsLayoutMetrics.bgmTransportButtonSize, height: LiveOpsLayoutMetrics.bgmTransportButtonSize)
-                .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -259,7 +259,7 @@ struct LiveOpsPanel: View {
             HStack(spacing: 7) {
                 Image(systemName: systemName)
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(isOn ? StudioTheme.statusWarn : StudioTheme.textSecondary)
+                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textSecondary)
                     .frame(width: 16)
                 Text(title)
                     .font(.system(size: 12, weight: .bold))
@@ -268,20 +268,20 @@ struct LiveOpsPanel: View {
                 Spacer()
                 Text(isOn ? "ON" : "OFF")
                     .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(isOn ? StudioTheme.statusWarn : StudioTheme.textTertiary)
+                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 6)
             .frame(height: LiveOpsLayoutMetrics.modeRowHeight)
-            .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+            .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func outputActionFill(_ model: ProjectionButtonModel) -> Color {
-        if model.statusKind == .fail { return StudioTheme.actionDanger }
-        if model.isBroadcasting { return StudioTheme.statusLive }
-        return model.hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted
+        if model.statusKind == .fail { return StudioTheme.Action.danger }
+        if model.isBroadcasting { return StudioTheme.Tone.live }
+        return model.hasExternalDisplay ? StudioTheme.Action.primary : StudioTheme.Tone.muted
     }
 
     private var audioStatusText: String {

@@ -30,7 +30,7 @@ struct LeftPanel: View {
             HStack(spacing: 7) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(StudioTheme.statusWarn)
+                    .foregroundStyle(StudioTheme.Tone.warn)
                 Text("Auto-next video")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -65,7 +65,7 @@ struct LeftPanel: View {
                     .frame(width: 32, height: 32)
                     .background(
                         RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                            .fill(StudioTheme.surfaceSecondary)
+                            .fill(StudioTheme.Surface.raised)
                     )
             }
             .buttonStyle(.plain)
@@ -118,7 +118,7 @@ struct LeftPanel: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(StudioTheme.surfacePrimary)
+                .fill(StudioTheme.Surface.base)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
@@ -184,7 +184,7 @@ struct LeftPanel: View {
             .listStyle(.plain)
             .frame(maxHeight: .infinity)
             .scrollContentBackground(.hidden)
-            .background(StudioTheme.surfacePrimary.opacity(0.7))
+            .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium))
             .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
@@ -361,11 +361,11 @@ struct SecondaryImportButtonStyle: ButtonStyle {
     private var tint: Color {
         switch role {
         case .warn:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .fail, .live:
-            return StudioTheme.statusFail
+            return StudioTheme.Tone.fail
         default:
-            return StudioTheme.actionPrimary
+            return StudioTheme.Action.primary
         }
     }
 }

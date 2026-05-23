@@ -33,7 +33,7 @@ struct SafetyCockpitView: View {
         HStack(alignment: .center, spacing: 18) {
             Image(systemName: headerIcon)
                 .font(.system(size: 34, weight: .black))
-                .foregroundStyle(StudioTheme.statusColor(headerKind))
+                .foregroundStyle(StudioTheme.color(for: headerKind))
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 5) {
@@ -68,17 +68,17 @@ struct SafetyCockpitView: View {
             }
         }
         .padding(18)
-        .background(StudioTheme.statusColor(headerKind).opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .background(StudioTheme.color(for: headerKind).opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(StudioTheme.statusColor(headerKind).opacity(0.24), lineWidth: 1)
+                .stroke(StudioTheme.color(for: headerKind).opacity(0.24), lineWidth: 1)
         )
         .overlay(alignment: .bottomLeading) {
             if let actionMessage {
-                messageBanner(actionMessage, color: StudioTheme.statusReady)
+                messageBanner(actionMessage, color: StudioTheme.Tone.ready)
                     .offset(y: 42)
             } else if let supportMessage {
-                messageBanner(supportMessage, color: StudioTheme.actionPrimary)
+                messageBanner(supportMessage, color: StudioTheme.Action.primary)
                     .offset(y: 42)
             }
         }
@@ -115,7 +115,7 @@ struct SafetyCockpitView: View {
     private var readyCard: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
-                .foregroundStyle(StudioTheme.statusReady)
+                .foregroundStyle(StudioTheme.Tone.ready)
                 .font(.system(size: 18, weight: .black))
             VStack(alignment: .leading, spacing: 3) {
                 Text("No blocking rows")
@@ -128,7 +128,7 @@ struct SafetyCockpitView: View {
             Spacer()
         }
         .padding(12)
-        .background(StudioTheme.statusReady.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(StudioTheme.Tone.ready.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
     }
 
     private var sectionGrid: some View {
@@ -157,7 +157,7 @@ struct SafetyCockpitView: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+                    .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
             } else {
                 VStack(spacing: 7) {
                     ForEach(cockpit.recentEvents) { event in
@@ -177,7 +177,7 @@ struct SafetyCockpitView: View {
                             Spacer(minLength: 0)
                         }
                         .padding(9)
-                        .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                        .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
                     }
                 }
             }
@@ -332,7 +332,7 @@ private struct SafetyCheckRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: iconName)
                 .font(.system(size: 14, weight: .black))
-                .foregroundStyle(StudioTheme.statusColor(statusKind))
+                .foregroundStyle(StudioTheme.color(for: statusKind))
                 .frame(width: 18, height: 18)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -367,10 +367,10 @@ private struct SafetyCheckRow: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(StudioTheme.statusColor(statusKind).opacity(0.06), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(StudioTheme.color(for: statusKind).opacity(0.06), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.statusColor(statusKind).opacity(0.18), lineWidth: 1)
+                .stroke(StudioTheme.color(for: statusKind).opacity(0.18), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(check.status.displayTitle): \(check.title). \(check.message)")
@@ -404,7 +404,7 @@ private struct SafetyCheckRow: View {
             .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(StudioTheme.surfaceSecondary, in: Capsule())
+            .background(StudioTheme.Surface.raised, in: Capsule())
             .help(help(for: action))
     }
 

@@ -74,7 +74,7 @@ struct AudioMixerView: View {
             MetricRow(title: "Routing", value: pageModel.routingStatusText, subtitle: pageModel.channelLimitText, kind: pageModel.routingStatusKind)
         }
         .padding(14)
-        .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
@@ -96,7 +96,7 @@ struct AudioMixerView: View {
                     value: $viewModel.masterVolume,
                     userValue: viewModel.masterVolume,
                     effectiveValue: viewModel.masterVolume,
-                    tint: StudioTheme.actionPrimary
+                    tint: StudioTheme.Action.primary
                 )
                 MixerFaderCard(
                     title: "Media",
@@ -104,7 +104,7 @@ struct AudioMixerView: View {
                     value: $viewModel.mediaVolume,
                     userValue: viewModel.mediaVolume,
                     effectiveValue: pageModel.mediaEffectiveVolume,
-                    tint: StudioTheme.actionPrimary
+                    tint: StudioTheme.Action.primary
                 )
                 MixerFaderCard(
                     title: "BGM",
@@ -112,7 +112,7 @@ struct AudioMixerView: View {
                     value: $viewModel.bgmVolume,
                     userValue: viewModel.bgmVolume,
                     effectiveValue: pageModel.bgmEffectiveVolume,
-                    tint: StudioTheme.pink
+                    tint: StudioTheme.Action.primary
                 )
             }
         }
@@ -142,7 +142,7 @@ struct AudioMixerView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
-                    .tint(StudioTheme.statusWarn)
+                    .tint(StudioTheme.Tone.warn)
                     .accessibilityLabel("Program transition duration")
                     .accessibilityValue(model.currentValueText)
                 Text("0.5s-3.0s")
@@ -213,7 +213,7 @@ private struct MixerFaderCard: View {
                 Spacer()
                 HStack(spacing: 10) {
                     valuePair(label: "User", value: userValue, tint: tint)
-                    valuePair(label: "Effective", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.statusMuted : tint)
+                    valuePair(label: "Effective", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.Tone.muted : tint)
                 }
             }
 

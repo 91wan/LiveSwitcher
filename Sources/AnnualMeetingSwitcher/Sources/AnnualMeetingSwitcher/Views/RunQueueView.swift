@@ -161,8 +161,8 @@ struct SignalSourceRow: View {
             controlButton(
                 systemName: "trash",
                 accessibilityLabel: "Delete \(item.title)",
-                tint: StudioTheme.actionDanger,
-                fill: StudioTheme.actionDanger.opacity(isHovered ? 0.12 : 0.04),
+                tint: StudioTheme.Action.danger,
+                fill: StudioTheme.Action.danger.opacity(isHovered ? 0.12 : 0.04),
                 action: onDelete
             )
             .opacity(isHovered ? 1 : 0.28)
@@ -200,13 +200,13 @@ struct SignalSourceRow: View {
             badge(
                 text: rowModel.stateBadgeText ?? "",
                 foreground: .white,
-                background: isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
+                background: isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Action.primary
             )
         case .next:
             badge(
                 text: rowModel.stateBadgeText ?? "NEXT",
-                foreground: StudioTheme.statusWarn,
-                background: StudioTheme.statusWarn.opacity(0.14)
+                foreground: StudioTheme.Tone.warn,
+                background: StudioTheme.Tone.warn.opacity(0.14)
             )
         case .queued:
             EmptyView()
@@ -259,11 +259,11 @@ struct SignalSourceRow: View {
     private var backgroundFill: Color {
         switch queueRole {
         case .current:
-            return (isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary).opacity(0.08)
+            return (isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Action.primary).opacity(0.08)
         case .next:
-            return StudioTheme.statusWarn.opacity(isHovered ? 0.11 : 0.07)
+            return StudioTheme.Tone.warn.opacity(isHovered ? 0.11 : 0.07)
         case .queued:
-            return isHovered ? StudioTheme.surfaceSecondary.opacity(0.8) : Color.clear
+            return isHovered ? StudioTheme.Surface.raised.opacity(0.8) : Color.clear
         }
     }
 
@@ -272,7 +272,7 @@ struct SignalSourceRow: View {
         case .current:
             return isBroadcasting ? StudioTheme.borderCritical : StudioTheme.borderActive
         case .next:
-            return StudioTheme.statusWarn.opacity(0.24)
+            return StudioTheme.Tone.warn.opacity(0.24)
         case .queued:
             return isHovered ? StudioTheme.borderSubtle : Color.clear
         }
@@ -283,7 +283,7 @@ struct SignalSourceRow: View {
     }
 
     private var currentRowControlTint: Color {
-        isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
+        isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Action.primary
     }
 
     private var contentOpacity: Double {
@@ -302,7 +302,7 @@ struct SignalSourceRow: View {
         case .current:
             return .secondary
         case .next:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .queued:
             return .secondary
         }
@@ -317,7 +317,7 @@ struct SignalSourceRow: View {
         case .current:
             return .white
         case .next:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .queued:
             return StudioTheme.textSecondary
         }
@@ -326,24 +326,24 @@ struct SignalSourceRow: View {
     private var queueBadgeBackground: Color {
         switch queueRole {
         case .current:
-            return isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
+            return isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Action.primary
         case .next:
-            return StudioTheme.statusWarn.opacity(0.14)
+            return StudioTheme.Tone.warn.opacity(0.14)
         case .queued:
-            return StudioTheme.surfaceSecondary
+            return StudioTheme.Surface.raised
         }
     }
 
     private var sourceTint: Color {
         switch item.sourceKind {
         case .keynote, .activeDeck:
-            return StudioTheme.statusMuted
+            return StudioTheme.Tone.muted
         case .pptx:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .html:
-            return StudioTheme.statusReady
+            return StudioTheme.Tone.ready
         case .media:
-            return item.isVideoMedia ? StudioTheme.actionPrimary : StudioTheme.pink
+            return item.isVideoMedia ? StudioTheme.Action.primary : StudioTheme.Action.primary
         case .unsupported:
             return StudioTheme.textSecondary
         }
@@ -412,7 +412,7 @@ struct ProgressSliderRow: View {
                     isDragging = false
                 }
             }
-            .tint(StudioTheme.actionPrimary)
+            .tint(StudioTheme.Action.primary)
             .accessibilityLabel("Current program progress")
             .accessibilityValue("\(formatTime(avCoordinator.currentTime)) of \(avCoordinator.duration.map { formatTime($0) } ?? "unknown duration")")
 

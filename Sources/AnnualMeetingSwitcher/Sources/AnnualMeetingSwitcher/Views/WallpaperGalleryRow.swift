@@ -26,7 +26,7 @@ struct WallpaperGalleryRow: View {
                 }
                 .font(.system(size: 13))
                 .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.actionPrimary)
+                .foregroundStyle(StudioTheme.Action.primary)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
@@ -46,10 +46,10 @@ struct WallpaperGalleryRow: View {
                     ZStack {
                         RoundedRectangle(cornerRadius: StudioTheme.radiusS)
                             .stroke(style: StrokeStyle(lineWidth: 1.5, dash: [5, 3]))
-                            .foregroundStyle(isDroppingWallpaper ? StudioTheme.actionPrimary : StudioTheme.borderSubtle)
+                            .foregroundStyle(isDroppingWallpaper ? StudioTheme.Action.primary : StudioTheme.borderSubtle)
                             .background(
                                 RoundedRectangle(cornerRadius: StudioTheme.radiusS)
-                                    .fill(isDroppingWallpaper ? StudioTheme.actionPrimary.opacity(0.05) : StudioTheme.surfaceSecondary)
+                                    .fill(isDroppingWallpaper ? StudioTheme.Action.primary.opacity(0.05) : StudioTheme.Surface.raised)
                             )
 
                         VStack(spacing: 4) {
@@ -164,7 +164,7 @@ struct WallpaperThumbView: View {
                     .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusS))
             } else {
                 RoundedRectangle(cornerRadius: StudioTheme.radiusS)
-                    .fill(StudioTheme.surfaceSecondary)
+                    .fill(StudioTheme.Surface.raised)
                     .frame(width: 80, height: 60)
                 Image(systemName: "photo")
                     .foregroundStyle(StudioTheme.textSecondary)
@@ -172,7 +172,7 @@ struct WallpaperThumbView: View {
 
             if isActive {
                 RoundedRectangle(cornerRadius: StudioTheme.radiusS)
-                    .stroke(StudioTheme.actionPrimary, lineWidth: 3)
+                    .stroke(StudioTheme.Action.primary, lineWidth: 3)
                     .frame(width: 80, height: 60)
 
                 VStack {
@@ -180,8 +180,8 @@ struct WallpaperThumbView: View {
                         Spacer()
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
-                            .foregroundStyle(StudioTheme.actionPrimary)
-                            .background(StudioTheme.surfacePrimary.clipShape(Circle()))
+                            .foregroundStyle(StudioTheme.Action.primary)
+                            .background(StudioTheme.Surface.base.clipShape(Circle()))
                             .padding(4)
                     }
                     Spacer()

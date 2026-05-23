@@ -21,34 +21,71 @@ enum StudioTheme {
         }
     }
 
+    enum Tone {
+        static let ready = Color(red: 0.10, green: 0.58, blue: 0.32)
+        static let live = Color(red: 0.82, green: 0.14, blue: 0.12)
+        static let warn = Color(red: 0.88, green: 0.45, blue: 0.08)
+        static let fail = live
+        static let muted = Color(red: 0.39, green: 0.42, blue: 0.48)
+        static let idle = Color(red: 0.45, green: 0.49, blue: 0.55)
+    }
+
+    enum Action {
+        static let primary = Color(red: 0.12, green: 0.49, blue: 0.96)
+        static let secondary = Color(red: 0.25, green: 0.28, blue: 0.34)
+        static var danger: Color { Tone.fail }
+    }
+
+    enum Surface {
+        enum Opacity {
+            static let subtle = 0.55
+            static let medium = 0.72
+            static let strong = 0.92
+            static let overlay = 0.78
+        }
+
+        static let base = Color.white.opacity(Opacity.strong)
+        static let raised = Color(red: 0.96, green: 0.97, blue: 0.99)
+        static let pressed = Color.white.opacity(0.98)
+    }
+
+    enum Spacing {
+        static let xxs: CGFloat = 4
+        static let xs: CGFloat = 8
+        static let s: CGFloat = 12
+        static let m: CGFloat = 16
+        static let l: CGFloat = 24
+        static let xl: CGFloat = 32
+    }
+
+    enum Radius {
+        static let s: CGFloat = 8
+        static let m: CGFloat = 12
+        static let l: CGFloat = 16
+        static let xl: CGFloat = 24
+    }
+
+    enum TypeScale {
+        static let display = Font.system(size: 28, weight: .bold)
+        static let title = Font.system(size: 20, weight: .bold)
+        static let heading = Font.system(size: 15, weight: .semibold)
+        static let body = Font.system(size: 13, weight: .regular)
+        static let caption = Font.system(size: 11, weight: .medium)
+        static let mono = Font.system(size: 13, weight: .medium, design: .monospaced)
+        static let label = Font.system(size: 10, weight: .heavy, design: .rounded)
+    }
+
     static let canvasTop = Color(red: 0.97, green: 0.98, blue: 1.00)
     static let canvasBottom = Color(red: 0.94, green: 0.96, blue: 0.99)
-
-    // Semantic status colors. Keep red reserved for danger/failure/live output.
-    static let statusReady = Color(red: 0.10, green: 0.58, blue: 0.32)
-    static let statusLive = Color(red: 0.82, green: 0.14, blue: 0.12)
-    static let statusWarn = Color(red: 0.88, green: 0.45, blue: 0.08)
-    static let statusFail = Color(red: 0.78, green: 0.10, blue: 0.10)
-    static let statusMuted = Color(red: 0.39, green: 0.42, blue: 0.48)
-    static let statusIdle = Color(red: 0.45, green: 0.49, blue: 0.55)
-
-    static let actionPrimary = Color(red: 0.12, green: 0.42, blue: 0.88)
-    static let actionSecondary = Color(red: 0.25, green: 0.28, blue: 0.34)
-    static let actionDanger = statusFail
-
-    static let surfacePrimary = Color.white.opacity(0.92)
-    static let surfaceSecondary = Color(red: 0.96, green: 0.97, blue: 0.99)
-    static let surfaceElevated = Color.white.opacity(0.98)
 
     static let textPrimary = Color(red: 0.12, green: 0.13, blue: 0.16)
     static let textSecondary = Color(red: 0.43, green: 0.45, blue: 0.50)
     static let textTertiary = Color(red: 0.58, green: 0.60, blue: 0.65)
 
     static let borderSubtle = Color.black.opacity(0.07)
-    static let borderActive = actionPrimary.opacity(0.38)
-    static let borderCritical = statusLive.opacity(0.72)
+    static let borderActive = Action.primary.opacity(0.38)
+    static let borderCritical = Tone.live.opacity(Surface.Opacity.medium)
 
-    static let cardFill = Color.white.opacity(0.88)
     static let cardBorder = Color.white.opacity(0.82)
     static let hairline = Color.black.opacity(0.06)
     static let shadow = Color.black.opacity(0.10)
@@ -67,22 +104,16 @@ enum StudioTheme {
         endPoint: .bottomTrailing
     )
 
-    static let accent = Color(red: 0.12, green: 0.49, blue: 0.96)
-    static let accentSecondary = Color(red: 0.42, green: 0.35, blue: 0.95)
-    static let green = Color(red: 0.12, green: 0.71, blue: 0.42)
-    static let orange = Color(red: 1.00, green: 0.57, blue: 0.15)
-    static let pink = Color(red: 0.84, green: 0.24, blue: 0.83)
+    static let spacingXS = Spacing.xxs
+    static let spacingS = Spacing.xs
+    static let spacingM = Spacing.s
+    static let spacingL = Spacing.l
+    static let spacingXL = Spacing.xl
 
-    static let spacingXS: CGFloat = 4
-    static let spacingS: CGFloat = 8
-    static let spacingM: CGFloat = 12
-    static let spacingL: CGFloat = 18
-    static let spacingXL: CGFloat = 26
-
-    static let radiusS: CGFloat = 8
-    static let radiusM: CGFloat = 12
-    static let radiusL: CGFloat = 18
-    static let radiusXL: CGFloat = 26
+    static let radiusS = Radius.s
+    static let radiusM = Radius.m
+    static let radiusL = Radius.l
+    static let radiusXL = Radius.xl
 
     static let controlHeightS: CGFloat = 30
     static let controlHeightM: CGFloat = 38
@@ -96,30 +127,30 @@ enum StudioTheme {
         endPoint: .bottom
     )
 
-    static let accentGradient = LinearGradient(
-        colors: [accent, accentSecondary],
+    static let actionGradient = LinearGradient(
+        colors: [Action.primary, Action.secondary],
         startPoint: .leading,
         endPoint: .trailing
     )
 
-    static func statusColor(_ kind: StatusKind) -> Color {
+    static func color(for kind: StatusKind) -> Color {
         switch kind {
-        case .ready: return statusReady
-        case .live: return statusLive
-        case .warn: return statusWarn
-        case .fail: return statusFail
-        case .muted: return statusMuted
-        case .idle: return statusIdle
+        case .ready: return Tone.ready
+        case .live: return Tone.live
+        case .warn: return Tone.warn
+        case .fail: return Tone.fail
+        case .muted: return Tone.muted
+        case .idle: return Tone.idle
         }
     }
 
-    static func titleLarge() -> Font { .system(size: 30, weight: .black) }
-    static func title() -> Font { .system(size: 22, weight: .black) }
-    static func sectionTitle() -> Font { .system(size: 15, weight: .black) }
-    static func body() -> Font { .system(size: 13, weight: .medium) }
-    static func caption() -> Font { .system(size: 11, weight: .semibold) }
+    static func titleLarge() -> Font { TypeScale.display }
+    static func title() -> Font { TypeScale.title }
+    static func sectionTitle() -> Font { TypeScale.heading }
+    static func body() -> Font { TypeScale.body }
+    static func caption() -> Font { TypeScale.caption }
     static func numeric() -> Font { .system(size: 18, weight: .black, design: .rounded) }
-    static func statusLabel() -> Font { .system(size: 10, weight: .black, design: .rounded) }
+    static func statusLabel() -> Font { TypeScale.label }
 }
 
 struct StudioCardModifier: ViewModifier {
@@ -129,7 +160,7 @@ struct StudioCardModifier: ViewModifier {
         content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(StudioTheme.cardFill)
+                    .fill(StudioTheme.Surface.base)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -191,7 +222,7 @@ struct StudioSectionCard<Content: View>: View {
         .padding(StudioTheme.spacingM)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.surfacePrimary)
+                .fill(StudioTheme.Surface.base)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
@@ -221,16 +252,16 @@ struct StatusBadge: View {
                 .font(StudioTheme.statusLabel())
                 .lineLimit(1)
         }
-        .foregroundStyle(StudioTheme.statusColor(kind))
+        .foregroundStyle(StudioTheme.color(for: kind))
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
         .background(
             Capsule(style: .continuous)
-                .fill(StudioTheme.statusColor(kind).opacity(0.12))
+                .fill(StudioTheme.color(for: kind).opacity(0.12))
         )
         .overlay(
             Capsule(style: .continuous)
-                .stroke(StudioTheme.statusColor(kind).opacity(0.22), lineWidth: 1)
+                .stroke(StudioTheme.color(for: kind).opacity(0.22), lineWidth: 1)
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(kind.accessibilityName): \(text)")
@@ -249,10 +280,10 @@ struct CountPill: View {
     var body: some View {
         Text(text)
             .font(StudioTheme.statusLabel())
-            .foregroundStyle(StudioTheme.statusColor(kind))
+            .foregroundStyle(StudioTheme.color(for: kind))
             .padding(.horizontal, 9)
             .frame(height: StudioTheme.controlHeightS)
-            .background(StudioTheme.statusColor(kind).opacity(0.11), in: Capsule(style: .continuous))
+            .background(StudioTheme.color(for: kind).opacity(0.11), in: Capsule(style: .continuous))
             .accessibilityLabel(text)
     }
 }
@@ -283,7 +314,7 @@ struct EmptyStateView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(StudioTheme.spacingL)
-        .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -329,7 +360,7 @@ struct CriticalActionButton: View {
             .padding(.horizontal, StudioTheme.spacingM)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(isActive ? StudioTheme.actionDanger : StudioTheme.actionPrimary)
+                    .fill(isActive ? StudioTheme.Action.danger : StudioTheme.Action.primary)
             )
         }
         .buttonStyle(.plain)
@@ -380,7 +411,7 @@ struct SecondaryActionButton: View {
     }
 
     private var tint: Color {
-        role.map(StudioTheme.statusColor) ?? StudioTheme.actionSecondary
+        role.map { StudioTheme.color(for: $0) } ?? StudioTheme.Action.secondary
     }
 }
 
@@ -403,7 +434,7 @@ struct NavigationTabButton: View {
             .frame(height: StudioTheme.controlHeightL)
             .background(
                 Capsule(style: .continuous)
-                    .fill(isSelected ? StudioTheme.actionPrimary : Color.clear)
+                    .fill(isSelected ? StudioTheme.Action.primary : Color.clear)
             )
         }
         .buttonStyle(.plain)
@@ -441,7 +472,7 @@ struct MetricRow: View {
             Spacer(minLength: 0)
             Text(value)
                 .font(StudioTheme.numeric())
-                .foregroundStyle(StudioTheme.statusColor(kind))
+                .foregroundStyle(StudioTheme.color(for: kind))
         }
         .accessibilityElement(children: .combine)
     }
@@ -461,7 +492,7 @@ struct InlineWarningBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: StudioTheme.spacingS) {
             Image(systemName: kind == .fail ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
-                .foregroundStyle(StudioTheme.statusColor(kind))
+                .foregroundStyle(StudioTheme.color(for: kind))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 12, weight: .black))
@@ -473,10 +504,10 @@ struct InlineWarningBanner: View {
             Spacer(minLength: 0)
         }
         .padding(StudioTheme.spacingM)
-        .background(StudioTheme.statusColor(kind).opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(StudioTheme.color(for: kind).opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.statusColor(kind).opacity(0.20), lineWidth: 1)
+                .stroke(StudioTheme.color(for: kind).opacity(0.20), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
     }
