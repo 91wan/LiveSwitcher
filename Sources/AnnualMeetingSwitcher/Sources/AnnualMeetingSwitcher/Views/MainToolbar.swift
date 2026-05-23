@@ -70,92 +70,9 @@ struct MainToolbar: View {
 
     private var embeddedToolbarActionCluster: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 10) {
-                liveControlButton(
-                    title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
-                    subtitle: viewModel.isSpeakerMode ? "声道 7%" : "压低声道",
-                    systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
-                    tint: speakerTint,
-                    isCritical: false,
-                    help: viewModel.isSpeakerMode
-                        ? "主讲人模式已开启：媒体声道和 BGM 已压低至 7%，再次点击恢复"
-                        : "主讲人模式：一键压低媒体声道和 BGM，突出现场人声"
-                ) {
-                    viewModel.toggleSpeakerMode()
-                }
-
-                liveControlButton(
-                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
-                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
-                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    tint: panicTint,
-                    isCritical: viewModel.isPanicMode,
-                    help: viewModel.isPanicMode
-                        ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
-                        : "老板键（紧急）：一键切黑副屏并静音所有音频"
-                ) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.togglePanicMode()
-                    }
-                }
-
-                liveControlButton(
-                    title: viewModel.isPageInterceptEnabled ? "PPT: 开" : "PPT: 关",
-                    subtitle: viewModel.isPageInterceptEnabled ? "翻页接管" : "点击开启",
-                    systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                    tint: pptTint,
-                    isCritical: false,
-                    help: viewModel.isPageInterceptEnabled
-                        ? "PPT 模式已开启：翻页笔按键将转发给演示软件"
-                        : "PPT 模式：开启翻页笔接管，可能需要辅助功能权限"
-                ) {
-                    viewModel.isPageInterceptEnabled.toggle()
-                }
-
-                preflightButton
-                helpButton
-            }
-
-            HStack(spacing: 8) {
-                compactToolbarButton(
-                    title: viewModel.isSpeakerMode ? "主讲中" : "主讲人",
-                    subtitle: viewModel.isSpeakerMode ? "声道 7%" : "压低声道",
-                    systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
-                    fill: speakerTint
-                ) {
-                    viewModel.toggleSpeakerMode()
-                }
-
-                compactToolbarButton(
-                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
-                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
-                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    fill: panicTint
-                ) {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        viewModel.togglePanicMode()
-                    }
-                }
-
-                compactToolbarButton(
-                    title: viewModel.isPageInterceptEnabled ? "PPT: 开" : "PPT: 关",
-                    subtitle: viewModel.isPageInterceptEnabled ? "翻页接管" : "点击开启",
-                    systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                    fill: pptTint
-                ) {
-                    viewModel.isPageInterceptEnabled.toggle()
-                }
-
-                compactPreflightButton
-                helpButton
-            }
+            toolbarActionRow(compact: false)
+            toolbarActionRow(compact: true)
         }
-    }
-
-    private var speakerTint: Color {
-        viewModel.isSpeakerMode
-            ? StudioTheme.statusWarn
-            : StudioTheme.actionPrimary
     }
 
     private var panicTint: Color {
@@ -164,14 +81,60 @@ struct MainToolbar: View {
             : StudioTheme.actionPrimary
     }
 
-    private var pptTint: Color {
-        viewModel.isPageInterceptEnabled
-            ? StudioTheme.statusWarn
-            : StudioTheme.actionPrimary
-    }
-
     private var preflightModel: PreflightButtonModel {
         PreflightButtonModel.make(summary: viewModel.livePreflightSummary)
+    }
+
+    private func toolbarActionRow(compact: Bool) -> some View {
+        HStack(spacing: compact ? 8 : 10) {
+            ForEach(ToolbarActionModel.topActions) { action in
+                toolbarActionButton(action.id, compact: compact)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func toolbarActionButton(_ action: ToolbarActionModel.ActionID, compact: Bool) -> some View {
+        switch action {
+        case .panic:
+            if compact {
+                compactToolbarButton(
+                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
+                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
+                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
+                    fill: panicTint,
+                    action: togglePanic
+                )
+            } else {
+                liveControlButton(
+                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
+                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
+                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
+                    tint: panicTint,
+                    isCritical: viewModel.isPanicMode,
+                    help: viewModel.isPanicMode
+                        ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
+                        : "老板键（紧急）：一键切黑副屏并静音所有音频",
+                    action: togglePanic
+                )
+            }
+        case .preflight:
+            if compact {
+                compactPreflightButton
+            } else {
+                preflightButton
+            }
+        case .help:
+            helpButton
+        case .speaker, .ppt:
+            EmptyView()
+        }
+    }
+
+    private func togglePanic() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            viewModel.togglePanicMode()
+        }
     }
 
     private var preflightButton: some View {

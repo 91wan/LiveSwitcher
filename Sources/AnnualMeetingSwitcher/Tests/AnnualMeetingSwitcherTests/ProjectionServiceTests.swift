@@ -64,7 +64,28 @@ final class ProjectionServiceTests: XCTestCase {
         )
 
         XCTAssertEqual(model.title, "Stop Projection")
-        XCTAssertEqual(model.statusText, "ON AIR")
+        XCTAssertEqual(model.statusText, "DISPLAY LOST")
+        XCTAssertEqual(model.statusKind, .fail)
+        XCTAssertEqual(model.screenLabel, "副屏已断开")
+        XCTAssertEqual(model.warningTitle, "Display Lost")
         XCTAssertTrue(model.isEnabled)
+    }
+
+    func testProjectionButtonModelStatesCoverDisplayAndBroadcastingMatrix() {
+        let displayLost = ProjectionButtonModel.make(isBroadcasting: true, hasExternalDisplay: false, safetyNotice: nil)
+        let onAir = ProjectionButtonModel.make(isBroadcasting: true, hasExternalDisplay: true, safetyNotice: nil)
+        let noDisplay = ProjectionButtonModel.make(isBroadcasting: false, hasExternalDisplay: false, safetyNotice: nil)
+        let standby = ProjectionButtonModel.make(isBroadcasting: false, hasExternalDisplay: true, safetyNotice: nil)
+
+        XCTAssertEqual(displayLost.statusText, "DISPLAY LOST")
+        XCTAssertEqual(displayLost.statusKind, .fail)
+        XCTAssertEqual(onAir.statusText, "ON AIR")
+        XCTAssertEqual(onAir.statusKind, .live)
+        XCTAssertEqual(noDisplay.statusText, "WARN")
+        XCTAssertEqual(noDisplay.statusKind, .warn)
+        XCTAssertFalse(noDisplay.isEnabled)
+        XCTAssertEqual(standby.statusText, "STANDBY")
+        XCTAssertEqual(standby.statusKind, .idle)
+        XCTAssertTrue(standby.isEnabled)
     }
 }

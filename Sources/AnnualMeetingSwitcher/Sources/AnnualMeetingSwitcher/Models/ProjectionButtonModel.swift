@@ -19,6 +19,23 @@ struct ProjectionButtonModel: Equatable {
         hasExternalDisplay: Bool,
         safetyNotice: String?
     ) -> ProjectionButtonModel {
+        if isBroadcasting && !hasExternalDisplay {
+            return ProjectionButtonModel(
+                hasExternalDisplay: false,
+                isBroadcasting: true,
+                title: "Stop Projection",
+                subtitle: "Display lost · click to stop output",
+                statusText: "DISPLAY LOST",
+                statusKind: .fail,
+                screenLabel: "副屏已断开",
+                screenSystemImage: "display.trianglebadge.exclamationmark",
+                isEnabled: true,
+                helpText: "Stop projection and reconnect the external display",
+                warningTitle: "Display Lost",
+                warningMessage: "Projection state is active but no external display is detected. Stop projection and reconnect hardware."
+            )
+        }
+
         if isBroadcasting {
             return ProjectionButtonModel(
                 hasExternalDisplay: hasExternalDisplay,
@@ -27,8 +44,8 @@ struct ProjectionButtonModel: Equatable {
                 subtitle: "ON AIR · click to stop output",
                 statusText: "ON AIR",
                 statusKind: .live,
-                screenLabel: hasExternalDisplay ? "外接屏幕" : "副屏状态待确认",
-                screenSystemImage: hasExternalDisplay ? "display.2" : "display.trianglebadge.exclamationmark",
+                screenLabel: "外接屏幕",
+                screenSystemImage: "display.2",
                 isEnabled: true,
                 helpText: "Stop external display projection",
                 warningTitle: safetyNotice == nil ? nil : "Projection warning",
