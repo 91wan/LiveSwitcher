@@ -4,7 +4,6 @@ import SwiftUI
 
 struct ProgramMonitorView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
-    @State private var utilitiesExpanded = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -23,7 +22,7 @@ struct ProgramMonitorView: View {
 
             monitorInlineStatusRow
 
-            utilitiesDisclosure
+            monitorUtilitiesStack
 
             Spacer(minLength: 0)
         }
@@ -136,24 +135,10 @@ struct ProgramMonitorView: View {
         return "Program status. Current \(current.accessibilityLabel). Next \(next.accessibilityLabel)."
     }
 
-    private var utilitiesDisclosure: some View {
-        DisclosureGroup(isExpanded: $utilitiesExpanded) {
-            VStack(spacing: 10) {
-                transitionControlCard
-                wallpaperTrayCard
-            }
-            .padding(.top, 8)
-        } label: {
-            HStack {
-                Text("Utilities")
-                    .font(StudioTheme.sectionTitle())
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Spacer()
-                Text(utilitiesSummary)
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1)
-            }
+    private var monitorUtilitiesStack: some View {
+        VStack(spacing: 10) {
+            transitionControlCard
+            wallpaperTrayCard
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -297,10 +282,6 @@ struct ProgramMonitorView: View {
 
     private var monitorStateKind: StudioTheme.StatusKind {
         monitorState.kind
-    }
-
-    private var utilitiesSummary: String {
-        "Transition \(String(format: "%.1fs", viewModel.crossfadeDuration)) · \(viewModel.backgroundWallpapers.count) wallpaper"
     }
 
     private var nextProgramItem: ProgramItem? {

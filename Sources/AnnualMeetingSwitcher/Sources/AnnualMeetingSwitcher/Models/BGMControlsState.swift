@@ -29,7 +29,7 @@ struct BGMControlsState: Equatable {
         } else if currentItem != nil {
             displayStatus = ("CUED", .idle)
         } else {
-            displayStatus = ("SELECT", .idle)
+            displayStatus = ("IDLE", .idle)
         }
 
         return BGMControlsState(
