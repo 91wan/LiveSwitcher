@@ -390,6 +390,10 @@ final class SwitcherViewModel: ObservableObject {
         ProjectionService(externalScreenProvider: externalScreenProvider)
     }
 
+    var hasExternalDisplay: Bool {
+        projectionService.hasExternalDisplay
+    }
+
     // MARK: - 持久化
 
     func saveData() {

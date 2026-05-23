@@ -65,14 +65,16 @@ struct AudioMixerView: View {
     }
 
     private var transitionCard: some View {
-        StudioSectionCard(
-            title: "BGM fade utility",
-            subtitle: "现场音乐切换的辅助参数，不影响节目画面转场。",
-            status: (String(format: "%.1fs", viewModel.crossfadeDuration), .idle)
+        let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
+
+        return StudioSectionCard(
+            title: model.title,
+            subtitle: model.subtitle,
+            status: (model.statusText, .idle)
         ) {
             VStack(spacing: 12) {
                 HStack {
-                    Text("当前：\(String(format: "%.1f", viewModel.crossfadeDuration))s")
+                    Text(model.currentValueText)
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(StudioTheme.textSecondary)
                     Spacer()

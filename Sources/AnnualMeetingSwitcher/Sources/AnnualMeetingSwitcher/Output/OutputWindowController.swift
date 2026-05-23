@@ -408,12 +408,14 @@ struct OutputWebView: NSViewRepresentable {
         webView.autoresizingMask = [.width, .height]
         webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
+        context.coordinator.configure(for: url)
         HTMLWebViewBridge.shared.webView = webView   // 注册到 bridge，供翻页拦截器注入 JS
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         return webView
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {
+        context.coordinator.configure(for: url)
         // 仅在 URL 真正变化时重载，防止 SwiftUI diff 触发无效重载
         guard nsView.url?.absoluteString != url.absoluteString else { return }
         nsView.stopLoading()
@@ -431,16 +433,20 @@ struct OutputWebView: NSViewRepresentable {
     class Coordinator: NSObject {
         // 强引用持有，防止 ARC 在 SwiftUI diff 过程中提前释放
         var webView: WKWebView?
+        private(set) var allowedRootDirectory: URL?
+
+        func configure(for url: URL) {
+            allowedRootDirectory = url.deletingLastPathComponent()
+        }
     }
 }
 
 extension OutputWebView.Coordinator: WKNavigationDelegate {
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction) async -> WKNavigationActionPolicy {
-        guard let url = navigationAction.request.url else { return .cancel }
-        if url.isFileURL || url.scheme == "about" {
-            return .allow
-        }
-        return .cancel
+        WebNavigationPolicy.shouldAllowNavigation(
+            url: navigationAction.request.url,
+            allowedRoot: allowedRootDirectory
+        ) ? .allow : .cancel
     }
 }
 

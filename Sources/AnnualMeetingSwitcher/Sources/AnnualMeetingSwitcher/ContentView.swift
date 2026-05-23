@@ -668,26 +668,7 @@ struct ProgramMonitorView: View {
 
 enum WallpaperDropSupport {
     static func decodeFileURL(from item: Any?) -> URL? {
-        if let url = item as? URL {
-            return url.isFileURL ? url : nil
-        }
-
-        if let data = item as? Data,
-           let url = URL(dataRepresentation: data, relativeTo: nil) {
-            return url.isFileURL ? url : nil
-        }
-
-        if let string = item as? String {
-            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let url = URL(string: trimmed), url.isFileURL {
-                return url
-            }
-            guard trimmed.hasPrefix("/") || trimmed.hasPrefix("~") else { return nil }
-            let expandedPath = NSString(string: trimmed).expandingTildeInPath
-            return URL(fileURLWithPath: expandedPath)
-        }
-
-        return nil
+        FileDropSupport.decodeFileURL(from: item)
     }
 }
 

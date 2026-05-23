@@ -719,6 +719,22 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.broadcastSafetyNotice, "未检测到外接屏幕，未开始投射")
     }
 
+    func testSafeBroadcastToggleCanStopProjectionAfterExternalDisplayLoss() {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        viewModel.outputWindowControllerFactory = { outputSpy }
+
+        viewModel.handleBroadcastToggle()
+        XCTAssertTrue(viewModel.isBroadcasting)
+
+        viewModel.externalScreenProvider = { nil }
+        viewModel.handleSafeBroadcastToggle()
+
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+        XCTAssertNil(viewModel.broadcastSafetyNotice)
+    }
+
     func testBroadcastToggleCycleDoesNotClearCurrentHTMLPresentationState() throws {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
