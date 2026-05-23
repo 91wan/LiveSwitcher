@@ -248,47 +248,24 @@ struct OutputView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
 
     var body: some View {
+        let displayState = OutputDisplayState.make(from: viewModel)
+
         ZStack {
             // 背景：黑底或壁纸
             backgroundLayer
 
             // 媒体内容层
-            mediaContentLayer
+            mediaContentLayer(displayState: displayState)
 
-            // MARK: - Tier1: 叠层渲染（倒计时 + 游动字幕）
-            if viewModel.isCountdownActive {
-                CountdownOverlay()
-                    .transition(.opacity)
-            }
-            if viewModel.isTickerActive {
-                TickerOverlay()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    .transition(.opacity)
-            }
-
-            // MARK: - V27: Lower Third 人名条（下三分之一条）
-            if viewModel.isLowerThirdVisible {
-                LowerThirdView(
-                    name: viewModel.lowerThirdName,
-                    title: viewModel.lowerThirdTitle,
-                    isVisible: viewModel.isLowerThirdVisible
-                )
-                .transition(.opacity)
-                .zIndex(5)
-            }
-
-            // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）
-            if viewModel.isPanicMode {
-                PanicLayer()
-                    .transition(.opacity)
-            }
+            OutputOverlayLayer(displayState: displayState)
+                .equatable()
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isPanicMode)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isCountdownActive)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isTickerActive)
-        .animation(.easeInOut(duration: 0.25), value: viewModel.isLowerThirdVisible)
+        .animation(.easeInOut(duration: 0.25), value: displayState.isPanicMode)
+        .animation(.easeInOut(duration: 0.25), value: displayState.isCountdownActive)
+        .animation(.easeInOut(duration: 0.25), value: displayState.isTickerActive)
+        .animation(.easeInOut(duration: 0.25), value: displayState.isLowerThirdVisible)
     }
 
     // MARK: Private Layers
@@ -310,19 +287,52 @@ struct OutputView: View {
     }
 
     @ViewBuilder
-    private var mediaContentLayer: some View {
+    private func mediaContentLayer(displayState: OutputDisplayState) -> some View {
         // AVPlayer 视频层：始终在视图树中
-        // SwiftUI body 响应 @Published isPlaying 变化，触发 updateNSView，
         // 在 AppKit 层通过 nsView.isHidden 控制 AVPlayerLayer 显隐，
         // 避免 Metal 合成层"穿透" opacity 显示最后一帧。
         OutputVideoPlayerView(coordinator: viewModel.avCoordinator)
-            .opacity(viewModel.avCoordinator.isPlaying ? 1 : 0)
-            .animation(.easeInOut(duration: 0.25), value: viewModel.avCoordinator.isPlaying)
 
         // HTML 大屏展示层（与视频层互斥）
-        if let htmlURL = viewModel.currentHTMLURL {
+        if let htmlURL = displayState.currentHTMLURL {
             OutputWebView(url: htmlURL)
                 .transition(.opacity)
+        }
+    }
+}
+
+private struct OutputOverlayLayer: View, Equatable {
+    let displayState: OutputDisplayState
+
+    var body: some View {
+        Group {
+            // MARK: - Tier1: 叠层渲染（倒计时 + 游动字幕）
+            if displayState.isCountdownActive {
+                CountdownOverlay()
+                    .transition(.opacity)
+            }
+            if displayState.isTickerActive {
+                TickerOverlay()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .transition(.opacity)
+            }
+
+            // MARK: - V27: Lower Third 人名条（下三分之一条）
+            if displayState.isLowerThirdVisible {
+                LowerThirdView(
+                    name: displayState.lowerThirdName,
+                    title: displayState.lowerThirdTitle,
+                    isVisible: displayState.isLowerThirdVisible
+                )
+                .transition(.opacity)
+                .zIndex(5)
+            }
+
+            // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）
+            if displayState.isPanicMode {
+                PanicLayer()
+                    .transition(.opacity)
+            }
         }
     }
 }
