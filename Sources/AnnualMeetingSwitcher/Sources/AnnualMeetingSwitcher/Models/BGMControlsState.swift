@@ -22,6 +22,7 @@ struct BGMControlsState: Equatable {
         let canSkip = currentItem != nil && categoryItems.count >= 2
         let displayStatus: (text: String, kind: StudioTheme.StatusKind)
         if isPlaying {
+            // BGM PLAYING is safe active audio, not ON AIR critical projection state.
             displayStatus = ("PLAYING", .ready)
         } else if !hasLibraryItems {
             displayStatus = ("EMPTY", .warn)
