@@ -11,6 +11,16 @@ final class FileDropSupportTests: XCTestCase {
         XCTAssertEqual(FileDropSupport.decodeFileURL(from: "/tmp/live-switcher/Opening Clip.mp4"), url)
     }
 
+    func testDecodeFileURLSupportsTildePathString() {
+        let decoded = FileDropSupport.decodeFileURL(from: "~/LiveSwitcherTest/Opening.mp4")
+
+        XCTAssertEqual(
+            decoded,
+            URL(fileURLWithPath: NSString(string: "~/LiveSwitcherTest/Opening.mp4").expandingTildeInPath)
+        )
+        XCTAssertTrue(decoded?.isFileURL == true)
+    }
+
     func testDecodeFileURLRejectsUnsupportedString() {
         XCTAssertNil(FileDropSupport.decodeFileURL(from: "not a file path"))
         XCTAssertNil(FileDropSupport.decodeFileURL(from: "https://example.com/show.html"))

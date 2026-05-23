@@ -6,6 +6,7 @@ final class WebNavigationPolicyTests: XCTestCase {
         let root = URL(fileURLWithPath: "/tmp/live-switcher/show", isDirectory: true)
 
         XCTAssertTrue(WebNavigationPolicy.shouldAllowNavigation(url: URL(string: "about:blank"), allowedRoot: root))
+        XCTAssertTrue(WebNavigationPolicy.shouldAllowNavigation(url: URL(string: "about:srcdoc"), allowedRoot: root))
         XCTAssertTrue(WebNavigationPolicy.shouldAllowNavigation(url: root.appendingPathComponent("index.html"), allowedRoot: root))
         XCTAssertTrue(WebNavigationPolicy.shouldAllowNavigation(url: root.appendingPathComponent("assets/style.css"), allowedRoot: root))
     }

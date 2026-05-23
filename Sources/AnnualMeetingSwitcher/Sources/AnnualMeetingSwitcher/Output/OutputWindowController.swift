@@ -45,6 +45,22 @@ enum SecondScreenSelector {
     }
 }
 
+final class NonActivatingOutputWindow: NSWindow {
+    override var canBecomeKey: Bool { false }
+    override var canBecomeMain: Bool { false }
+}
+
+enum OutputWindowPresentationPolicy {
+    static func configure(_ window: NSWindow) {
+        window.ignoresMouseEvents = true
+        window.acceptsMouseMovedEvents = false
+    }
+
+    static func orderFront(_ window: NSWindow) {
+        window.orderFrontRegardless()
+    }
+}
+
 // MARK: - 推流大屏窗口控制器
 // 副屏适配版（仅副屏适配相关改动，其余保持 V24 原始逻辑）：
 // - 使用 SecondScreenSelector.pickExternal() 智能识别 1080P 副屏
@@ -71,7 +87,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         let screenFrame = targetScreen.frame
 
         // NSWindow contentRect 参数接受全局坐标系（屏幕坐标系）
-        let window = NSWindow(
+        let window = NonActivatingOutputWindow(
             contentRect: screenFrame,
             styleMask: [.borderless, .fullSizeContentView],
             backing: .buffered,
@@ -87,9 +103,9 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         window.collectionBehavior = [.canJoinAllSpaces, .stationary]
         window.isMovableByWindowBackground = false
         window.isReleasedWhenClosed = false
-        window.acceptsMouseMovedEvents = false
         window.hasShadow = false
         window.isOpaque = true
+        OutputWindowPresentationPolicy.configure(window)
 
         self.init(window: window)
 
@@ -176,8 +192,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         w.setFrame(screenFrame, display: false)
 
         // ── 第二重：显示窗口后强制 contentView 使用局部坐标系 ──
-        w.makeKeyAndOrderFront(nil)
-        showWindow(self)
+        OutputWindowPresentationPolicy.orderFront(w)
 
         // contentView 的 frame 必须从 (0,0) 开始，大小等于屏幕尺寸
         w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
@@ -362,6 +377,12 @@ final class HTMLWebViewBridge {
 
     weak var webView: WKWebView?
 
+    func clearIfCurrent(_ candidate: WKWebView) {
+        if webView === candidate {
+            webView = nil
+        }
+    }
+
     /// 注入翻页事件（ArrowRight=下一页，ArrowLeft=上一页）
     func sendArrowKey(isNext: Bool) {
         guard let wv = webView else { return }
@@ -427,7 +448,7 @@ struct OutputWebView: NSViewRepresentable {
         nsView.stopLoading()
         nsView.loadHTMLString("", baseURL: nil)
         coordinator.webView = nil
-        HTMLWebViewBridge.shared.webView = nil   // 清空 bridge
+        HTMLWebViewBridge.shared.clearIfCurrent(nsView)
     }
 
     class Coordinator: NSObject {

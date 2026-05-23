@@ -30,19 +30,31 @@ struct ContentView: View {
             StudioTheme.canvasGradient
                 .ignoresSafeArea()
 
-            switch viewModel.selectedMainTab {
-            case .preview:
+            retainedTab(.preview) {
                 previewConsole
-            case .audioMixer:
+            }
+
+            retainedTab(.audioMixer) {
                 AudioMixerView()
                     .frame(maxWidth: 940, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .overlays:
+            }
+
+            retainedTab(.overlays) {
                 SettingsView()
                     .frame(maxWidth: 1100, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+
+    private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
+        let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
+        return content()
+            .opacity(model.opacity)
+            .allowsHitTesting(model.allowsHitTesting)
+            .accessibilityHidden(model.accessibilityHidden)
+            .zIndex(model.zIndex)
     }
 
     private var previewConsole: some View {

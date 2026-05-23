@@ -529,7 +529,7 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertTrue(report.contains("[Preflight Report]"))
         XCTAssertTrue(report.contains("[Recent Events]"))
         XCTAssertTrue(report.contains("projection.fail.closed"))
-        XCTAssertTrue(report.contains("[sensitive detail redacted]"))
+        XCTAssertTrue(report.contains("blocked [path redacted]"))
         XCTAssertFalse(report.localizedStandardContains("/Users/"))
         XCTAssertFalse(report.localizedStandardContains("file://"))
         XCTAssertFalse(report.localizedStandardContains("Opening.mov"))
@@ -711,7 +711,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(cockpit.recentEvents.count, 1)
         XCTAssertEqual(cockpit.recentEvents[0].kind, "projection.fail.closed")
-        XCTAssertEqual(cockpit.recentEvents[0].detail, "[sensitive detail redacted]")
+        XCTAssertEqual(cockpit.recentEvents[0].detail, "lost [path redacted]")
         XCTAssertFalse(cockpit.recentEvents[0].detail.localizedStandardContains("/Users/"))
         XCTAssertFalse(cockpit.recentEvents[0].detail.localizedStandardContains("Opening.mov"))
     }

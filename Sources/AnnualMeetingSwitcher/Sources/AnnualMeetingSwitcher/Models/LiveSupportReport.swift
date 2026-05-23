@@ -37,7 +37,7 @@ enum LiveSupportReport {
             architecture: snapshot.architecture,
             preflight: safePreflight
         )
-        let safeChecks = LivePreflightCheck.build(from: safePreflight)
+        let safeChecks = checks.map(supportSafeCheck)
         let diagnostics = LiveDiagnosticsReport.makePlainText(snapshot: safeDiagnostics, checks: safeChecks)
         let preflight = LivePreflightReport.makePlainText(snapshot: safePreflight, checks: safeChecks)
 
@@ -77,6 +77,18 @@ enum LiveSupportReport {
         return safeSnapshot
     }
 
+    private static func supportSafeCheck(_ check: LivePreflightCheck) -> LivePreflightCheck {
+        LivePreflightCheck(
+            id: LiveSupportRedactor.safeText(check.id),
+            group: check.group,
+            status: check.status,
+            title: LiveSupportRedactor.safeText(check.title),
+            message: LiveSupportRedactor.safeText(check.message),
+            actionLabel: check.actionLabel.map(LiveSupportRedactor.safeText),
+            actionKind: check.actionKind
+        )
+    }
+
     private static func isoString(_ date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime]
@@ -94,32 +106,66 @@ enum LiveSupportRedactor {
     }
 
     private static func safeLine(_ text: String) -> String {
-        if containsSensitiveLocator(text) {
-            return "[sensitive detail redacted]"
-        }
-        return redactFilenameTokens(in: text)
+        redactSensitiveMarkerTokens(in:
+            redactFilenameTokens(in:
+                redactPathTokens(in: text)
+            )
+        )
     }
 
-    private static func containsSensitiveLocator(_ text: String) -> Bool {
-        let lowered = text.lowercased()
-        return lowered.contains("file://")
-            || lowered.contains("/users/")
-            || lowered.contains("/volumes/")
-            || lowered.contains("/private/")
-            || lowered.contains("/tmp/")
-            || lowered.contains("ditu" + "liveswitcher")
-            || lowered.contains("com." + "didu")
+    private static func redactPathTokens(in text: String) -> String {
+        let extensionPattern = protectedExtensionPattern
+        let fileURLPattern = #"(?i)file://[^\s,;)\]}]+"#
+        let pathWithExtensionPattern = #"(?i)(?:/Users|/Volumes|/private|/tmp)/[^,\n;)\]}]*?\.(?:\#(extensionPattern))\b"#
+        let fallbackPathPattern = #"(?i)(?:/Users|/Volumes|/private|/tmp)/[^\s,;)\]}]+"#
+
+        return replaceMatches(
+            in: replaceMatches(
+                in: replaceMatches(in: text, pattern: fileURLPattern, with: "[path redacted]"),
+                pattern: pathWithExtensionPattern,
+                with: "[path redacted]"
+            ),
+            pattern: fallbackPathPattern,
+            with: "[path redacted]"
+        )
     }
 
     private static func redactFilenameTokens(in text: String) -> String {
-        let pattern = #"(?i)\b[^\s/\\:]+?\.(mov|mp4|m4v|mp3|m4a|wav|aac|flac|key|ppt|pptx)\b"#
+        let quotedPattern = #"(?i)["'\u{201C}\u{2018}][^"'\u{201D}\u{2019}\n/\\:]+?\.(?:\#(protectedExtensionPattern))["'\u{201D}\u{2019}]"#
+        let filenamePattern = #"(?i)(?<![A-Za-z0-9_/\\.-])[\p{L}\p{N}][\p{L}\p{N} _.-]{0,120}?\.(?:\#(protectedExtensionPattern))\b"#
+
+        return replaceMatches(
+            in: replaceMatches(in: text, pattern: quotedPattern, with: "[filename redacted]"),
+            pattern: filenamePattern,
+            with: "[filename redacted]"
+        )
+    }
+
+    private static func redactSensitiveMarkerTokens(in text: String) -> String {
+        text
+            .replacingOccurrences(of: "ditu" + "liveswitcher", with: "[identifier redacted]", options: .caseInsensitive)
+            .replacingOccurrences(of: "com." + "didu", with: "[identifier redacted]", options: .caseInsensitive)
+    }
+
+    private static var protectedExtensionPattern: String {
+        [
+            "mov", "mp4", "m4v", "avi",
+            "mp3", "m4a", "wav", "aac", "flac",
+            "key", "ppt", "pptx",
+            "html", "htm",
+            "png", "jpg", "jpeg", "gif", "heic", "webp", "tiff", "bmp",
+            "zip"
+        ].joined(separator: "|")
+    }
+
+    private static func replaceMatches(in text: String, pattern: String, with template: String) -> String {
         guard let regex = try? NSRegularExpression(pattern: pattern) else { return text }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         return regex.stringByReplacingMatches(
             in: text,
             options: [],
             range: range,
-            withTemplate: "[filename redacted]"
+            withTemplate: template
         )
     }
 }
