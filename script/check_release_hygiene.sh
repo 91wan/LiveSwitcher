@@ -13,12 +13,63 @@ require_file() {
   [[ -f "$1" ]] || fail "missing required file: $1"
 }
 
+require_literal_in_file() {
+  local file="$1"
+  local literal="$2"
+  local label="$3"
+
+  grep -Fq "$literal" "$file" \
+    || fail "$file missing $label"
+}
+
+derive_previous_version() {
+  local versions
+  local previous=""
+  local version
+
+  versions="$(
+    find docs/qa -maxdepth 1 -name 'release-hygiene-v*.md' -print \
+      | sed -n -E 's#.*release-hygiene-v([0-9]+)\.([0-9]+)\.([0-9]+)\.md$#\1 \2 \3#p' \
+      | awk '{ printf "%09d.%09d.%09d %d.%d.%d\n", $1, $2, $3, $1, $2, $3 }' \
+      | sort \
+      | awk '{ print $2 }'
+  )"
+
+  while IFS= read -r version; do
+    [[ -n "$version" ]] || continue
+    if [[ "$version" == "$CURRENT_VERSION" ]]; then
+      [[ -n "$previous" ]] || return 1
+      printf '%s\n' "$previous"
+      return 0
+    fi
+    previous="$version"
+  done <<<"$versions"
+
+  return 1
+}
+
+require_package_manifest_sync() {
+  require_file Package.swift
+  require_file Sources/AnnualMeetingSwitcher/Package.swift
+
+  require_literal_in_file Package.swift 'name: "LiveSwitcher"' "package name"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift 'name: "LiveSwitcher"' "package name"
+  require_literal_in_file Package.swift '.macOS("14.0")' "macOS 14 platform"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift '.macOS(.v14)' "macOS 14 platform"
+  require_literal_in_file Package.swift 'name: "LiveSwitcher",' "app target"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift 'name: "LiveSwitcher",' "app target"
+  require_literal_in_file Package.swift 'path: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher"' "root app target path"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift 'path: "Sources/AnnualMeetingSwitcher"' "nested app target path"
+  require_literal_in_file Package.swift 'name: "LiveSwitcherTests",' "test target"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift 'name: "LiveSwitcherTests",' "test target"
+  require_literal_in_file Package.swift 'dependencies: ["LiveSwitcher"]' "test dependency"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/Package.swift 'dependencies: ["LiveSwitcher"]' "test dependency"
+}
+
 require_file VERSION
 
 CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
 CURRENT_TAG="v$CURRENT_VERSION"
-PREVIOUS_VERSION="0.3.8"
-PREVIOUS_TAG="v$PREVIOUS_VERSION"
 
 require_file README.md
 require_file README_ZH.md
@@ -29,6 +80,11 @@ require_file script/check_workspace_guard.sh
 require_file script/test_workspace_guard.sh
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
 require_file "docs/qa/workspace-guard-v$CURRENT_VERSION.md"
+require_package_manifest_sync
+
+PREVIOUS_VERSION="$(derive_previous_version)" \
+  || fail "could not derive previous release version before $CURRENT_VERSION"
+PREVIOUS_TAG="v$PREVIOUS_VERSION"
 
 search_pattern() {
   local pattern="$1"
@@ -101,6 +157,16 @@ grep -Fq 'github.ref_name' .github/workflows/release.yml \
   || fail "release workflow does not verify the tag version"
 grep -Fq 'VERSION' .github/workflows/release.yml \
   || fail "release workflow does not read VERSION"
+
+for tcc_key in \
+  NSAccessibilityUsageDescription \
+  NSAppleEventsUsageDescription \
+  NSCameraUsageDescription \
+  NSMicrophoneUsageDescription
+do
+  require_literal_in_file script/build_and_run.sh "$tcc_key" "$tcc_key"
+  require_literal_in_file Sources/AnnualMeetingSwitcher/build_v33.sh "$tcc_key" "$tcc_key"
+done
 
 search_pattern '#if DEBUG' Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift >/dev/null \
   || fail "WKWebView developer extras are not debug-gated"

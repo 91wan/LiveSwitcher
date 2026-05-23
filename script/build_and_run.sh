@@ -76,6 +76,10 @@ build_bundle() {
   <string>$MIN_SYSTEM_VERSION</string>
   <key>NSAppleEventsUsageDescription</key>
   <string>Allow AppleScript control for presentation playback.</string>
+  <key>NSAppleScriptEnabled</key>
+  <true/>
+  <key>NSAccessibilityUsageDescription</key>
+  <string>Allow keyboard-event monitoring for PPT mode and presentation remote control.</string>
   <key>NSCameraUsageDescription</key>
   <string>Allow camera access for live input monitoring.</string>
   <key>NSHighResolutionCapable</key>
