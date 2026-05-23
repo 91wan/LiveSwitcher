@@ -54,7 +54,7 @@ struct LiveOpsPanel: View {
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 10)
-                .frame(height: 34)
+                .frame(height: LiveOpsLayoutMetrics.outputPrimaryButtonHeight)
                 .background(
                     RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                         .fill(outputActionFill(model))
@@ -67,6 +67,10 @@ struct LiveOpsPanel: View {
             .help(model.helpText)
             .accessibilityLabel(model.title)
             .accessibilityHint(model.subtitle)
+
+            if model.statusKind == .fail, let warningTitle = model.warningTitle, let warningMessage = model.warningMessage {
+                InlineWarningBanner(title: warningTitle, message: warningMessage, kind: .fail)
+            }
         }
     }
 
@@ -104,9 +108,13 @@ struct LiveOpsPanel: View {
     }
 
     private var bgmMiniCard: some View {
-        let controls = BGMControlsState.make(items: viewModel.bgmItems, currentItem: viewModel.currentBGMItem)
+        let controls = BGMControlsState.make(
+            items: viewModel.bgmItems,
+            currentItem: viewModel.currentBGMItem,
+            isPlaying: viewModel.isBGMPlaying
+        )
 
-        return opsCard(title: "BGM", status: viewModel.isBGMPlaying ? "PLAYING" : "READY", kind: viewModel.isBGMPlaying ? .ready : .idle) {
+        return opsCard(title: "BGM", status: controls.displayStatusText, kind: controls.displayStatusKind) {
             Text(viewModel.currentBGMItem?.title ?? "No BGM selected")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
@@ -197,7 +205,7 @@ struct LiveOpsPanel: View {
             }
             content()
         }
-        .padding(7)
+        .padding(LiveOpsLayoutMetrics.cardPadding)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.surfacePrimary.opacity(0.78))
@@ -232,7 +240,7 @@ struct LiveOpsPanel: View {
             Image(systemName: systemName)
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
-                .frame(width: 28, height: 24)
+                .frame(width: LiveOpsLayoutMetrics.bgmTransportButtonSize, height: LiveOpsLayoutMetrics.bgmTransportButtonSize)
                 .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -264,13 +272,14 @@ struct LiveOpsPanel: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 6)
-            .frame(height: 28)
+            .frame(height: LiveOpsLayoutMetrics.modeRowHeight)
             .background(StudioTheme.surfaceSecondary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func outputActionFill(_ model: ProjectionButtonModel) -> Color {
+        if model.statusKind == .fail { return StudioTheme.actionDanger }
         if model.isBroadcasting { return StudioTheme.statusLive }
         return model.hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted
     }

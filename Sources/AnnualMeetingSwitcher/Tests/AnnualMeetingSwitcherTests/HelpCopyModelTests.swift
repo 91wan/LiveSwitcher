@@ -16,4 +16,14 @@ final class HelpCopyModelTests: XCTestCase {
         XCTAssertTrue(text.contains("红色"))
         XCTAssertTrue(text.localizedCaseInsensitiveContains("Panic"))
     }
+
+    func testHelpCopyMatchesCurrentRunDeskInformationArchitecture() {
+        let text = HelpCopyModel.allText
+
+        XCTAssertFalse(text.contains("左侧底部"))
+        XCTAssertFalse(text.contains("投射：关/开"))
+        XCTAssertFalse(text.contains("查看列表"))
+        XCTAssertTrue(text.contains("Live Ops"))
+        XCTAssertTrue(text.contains("Audio 页面") || text.contains("音频页面"))
+    }
 }

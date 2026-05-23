@@ -83,38 +83,35 @@ struct ProgramMonitorView: View {
 
     private var currentNextInfoRow: some View {
         HStack(spacing: 10) {
-            monitorInfoBlock(
-                title: "Current",
-                value: viewModel.currentProgramItem?.title ?? "No Program",
-                subtitle: currentProgramSubtitle,
-                status: viewModel.isBroadcasting ? .live : (viewModel.currentProgramItem == nil ? .warn : .idle)
-            )
-            monitorInfoBlock(
-                title: "Next",
-                value: nextProgramItem?.title ?? "None",
-                subtitle: nextProgramItem?.subtitle.uppercased() ?? "Queue empty",
-                status: nextProgramItem == nil ? .idle : .ready
-            )
+            monitorInfoBlock(model: .current(
+                item: viewModel.currentProgramItem,
+                isBroadcasting: viewModel.isBroadcasting,
+                isPlaying: viewModel.avCoordinator.isPlaying,
+                isHTMLLoaded: viewModel.currentHTMLURL != nil
+            ))
+            monitorInfoBlock(model: .next(
+                item: nextProgramItem
+            ))
         }
     }
 
-    private func monitorInfoBlock(title: String, value: String, subtitle: String, status: StudioTheme.StatusKind) -> some View {
+    private func monitorInfoBlock(model: ProgramMonitorInfoBlockModel) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(title.uppercased())
+                Text(model.title.uppercased())
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                Text(title == "Current" ? currentBlockStateText(status: status) : "NEXT")
+                Text(model.badgeText)
                     .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(StudioTheme.statusColor(status))
+                    .foregroundStyle(StudioTheme.statusColor(model.status))
             }
-            Text(value)
+            Text(model.value)
                 .font(.system(size: 15, weight: .black))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-            Text(subtitle)
+            Text(model.subtitle)
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(1)
@@ -124,10 +121,10 @@ struct ProgramMonitorView: View {
         .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(status == .live ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
+                .stroke(model.status == .live ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(value), \(subtitle)")
+        .accessibilityLabel("\(model.title): \(model.value), \(model.subtitle)")
     }
 
     private var utilitiesDisclosure: some View {
@@ -278,37 +275,23 @@ struct ProgramMonitorView: View {
         return viewModel.backgroundImage != nil ? "WALLPAPER READY" : "IDLE"
     }
 
-    private var currentProgramSubtitle: String {
-        if viewModel.currentHTMLURL != nil { return "HTML is loaded" }
-        if viewModel.avCoordinator.isPlaying { return "Media playing" }
-        return viewModel.currentProgramItem?.subtitle.uppercased() ?? "Standby"
+    private var monitorState: ProgramMonitorStateModel {
+        ProgramMonitorStateModel.make(
+            isBroadcasting: viewModel.isBroadcasting,
+            currentItem: viewModel.currentProgramItem
+        )
     }
 
     private var monitorStateLabel: String {
-        if viewModel.isBroadcasting { return "ON AIR" }
-        if viewModel.currentProgramItem != nil { return "PREVIEW" }
-        return "STANDBY"
+        monitorState.label
     }
 
     private var monitorStateKind: StudioTheme.StatusKind {
-        if viewModel.isBroadcasting { return .live }
-        if viewModel.currentProgramItem != nil { return .idle }
-        return .warn
+        monitorState.kind
     }
 
     private var utilitiesSummary: String {
         "Transition \(String(format: "%.1fs", viewModel.crossfadeDuration)) · \(viewModel.backgroundWallpapers.count) wallpaper"
-    }
-
-    private func currentBlockStateText(status: StudioTheme.StatusKind) -> String {
-        switch status {
-        case .live:
-            return "ON AIR"
-        case .warn:
-            return "EMPTY"
-        default:
-            return "CURRENT"
-        }
     }
 
     private var nextProgramItem: ProgramItem? {
