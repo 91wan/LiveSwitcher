@@ -199,6 +199,7 @@ final class SwitcherViewModel: ObservableObject {
     private var pageInterceptRunLoopSource: CFRunLoopSource?
     private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
     nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
+    nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
@@ -643,6 +644,9 @@ final class SwitcherViewModel: ObservableObject {
 
     /// 当前节目播毕后的最小状态回退。
     func handlePlaybackEnded() {
+        LiveSwitcherTelemetry.playbackReachedEnd()
+        recordSupportEvent(kind: .playbackReachedEnd, detail: "state=ended")
+
         if autoPlayNextVideoIfPossible() {
             return
         }
@@ -1196,7 +1200,11 @@ final class SwitcherViewModel: ObservableObject {
             // 只在差值 > 1% 时更新，防止循环触发
             if abs(volume - self.masterVolume) > 0.01 {
                 self.masterVolume = volume
-                print("[V25] 同步音量: \(volume) （设备 \(deviceID)）")
+                LiveSwitcherTelemetry.systemVolumeSynced(volume: volume, deviceID: deviceID)
+                self.recordSupportEvent(
+                    kind: .systemVolumeSynced,
+                    detail: "deviceID=\(deviceID),volume=\(String(format: "%.3f", volume))"
+                )
             }
         }
         systemVolumeObserver = observer
@@ -1220,6 +1228,10 @@ final class SwitcherViewModel: ObservableObject {
         if !AXIsProcessTrustedWithOptions(axOptions) {
             Task { @MainActor [weak self] in
                 self?.isPageInterceptEnabled = false
+                self?.recordSupportEvent(
+                    kind: .pageInterceptDisabled,
+                    detail: "reason=accessibilityPermission"
+                )
                 let alert = NSAlert()
                 alert.messageText = "PPT模式需要辅助功能权限"
                 alert.informativeText = "翻页笔接管需要「辅助功能」权限才能工作。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 即可使用 PPT模式。"
@@ -1241,6 +1253,8 @@ final class SwitcherViewModel: ObservableObject {
             if let tap = pageInterceptEventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
                 pageInterceptRuntime.updateEventTap(tap)
+                LiveSwitcherTelemetry.pageInterceptEnabled()
+                recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled,existingTap=true")
             }
             return
         }
@@ -1256,9 +1270,13 @@ final class SwitcherViewModel: ObservableObject {
             userInfo: selfRefcon
         ) else {
             Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
-            print("[V25] ❌ 创建翻页拦截 EventTap 失败！请检查辅助功能权限。")
             Task { @MainActor [weak self] in
                 self?.isPageInterceptEnabled = false
+                LiveSwitcherTelemetry.pageInterceptDisabled(reason: "eventTapCreateFailed")
+                self?.recordSupportEvent(
+                    kind: .pageInterceptDisabled,
+                    detail: "reason=eventTapCreateFailed"
+                )
                 // 弹出权限引导 Alert
                 let alert = NSAlert()
                 alert.messageText = "PPT模式无法启动"
@@ -1284,7 +1302,8 @@ final class SwitcherViewModel: ObservableObject {
         pageInterceptRunLoopSource = src
         pageInterceptSelfRefcon = selfRefcon
         pageInterceptRuntime.updateEventTap(tap)
-        print("[V25] ✅ 翻页拦截器已启动")
+        LiveSwitcherTelemetry.pageInterceptEnabled()
+        recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled")
     }
 
     private func stopPageIntercept() {
@@ -1301,7 +1320,8 @@ final class SwitcherViewModel: ObservableObject {
         pageInterceptEventTap = nil
         pageInterceptRunLoopSource = nil
         pageInterceptRuntime.updateEventTap(nil)
-        print("[V25] ⏸ 翻页拦截器已停止")
+        LiveSwitcherTelemetry.pageInterceptDisabled(reason: "operator")
+        recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=operator")
     }
 
     nonisolated func reenablePageIntercept(reason: PageInterceptReenableReason) {
@@ -1340,13 +1360,17 @@ final class SwitcherViewModel: ObservableObject {
 
     /// 向后台 WPS 进程注入翻页按键（nonisolated，可在 C 回调中调用）
     nonisolated private func sendPageKeyToWPS(isPageDown: Bool) {
-        let wpsBundleID = "com.kingsoft.wpsoffice.mac"
-        let apps = NSRunningApplication.runningApplications(withBundleIdentifier: wpsBundleID)
-        guard let wpsApp = apps.first(where: { $0.activationPolicy == .regular }) ?? apps.first else {
-            print("[V25] ⚠️ WPS 未运行，跳过转发")
+        let direction = isPageDown ? "next" : "previous"
+        guard let targetPID = wpsApplicationMonitor.currentProcessIdentifier else {
+            LiveSwitcherTelemetry.pageInterceptWPSNotRunning(direction: direction)
+            Task { @MainActor [weak self] in
+                self?.recordSupportEvent(
+                    kind: .pageInterceptWPSNotRunning,
+                    detail: "direction=\(direction),state=notRunning"
+                )
+            }
             return
         }
-        let targetPID = wpsApp.processIdentifier
         let keyCode: CGKeyCode = isPageDown ? 121 : 116
 
         if let keyDown = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: true) {
@@ -1355,7 +1379,16 @@ final class SwitcherViewModel: ObservableObject {
         if let keyUp = CGEvent(keyboardEventSource: nil, virtualKey: keyCode, keyDown: false) {
             keyUp.postToPid(targetPID)
         }
-        print("[V25] → 转发 \(isPageDown ? "PageDown" : "PageUp") → WPS[PID:\(targetPID)]")
+        LiveSwitcherTelemetry.pageInterceptForwardedToWPS(
+            direction: direction,
+            processIdentifier: targetPID
+        )
+        Task { @MainActor [weak self] in
+            self?.recordSupportEvent(
+                kind: .pageInterceptForwardedToWPS,
+                detail: "direction=\(direction),target=wps"
+            )
+        }
     }
 
     // MARK: - Tier1: Panic State（老板键状态变量）
