@@ -38,7 +38,7 @@ struct AudioMixerPageModel: Equatable {
     var routingStatusKind: StudioTheme.StatusKind {
         if isPanicMode { return .fail }
         if isSpeakerMode || isBGMAudioTakeoverActive { return .warn }
-        return .ready
+        return .idle
     }
 
     var channelLimitText: String {
