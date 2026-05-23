@@ -61,6 +61,34 @@ enum LiveSwitcherTelemetry {
         controlsLogger.warning("Page intercept auto re-enabled; reason=\(reason.rawValue, privacy: .public), didReenable=\(didReenable, privacy: .public)")
     }
 
+    static func pageInterceptEnabled() {
+        controlsLogger.info("Page intercept enabled")
+    }
+
+    static func pageInterceptDisabled(reason: String) {
+        controlsLogger.info("Page intercept disabled; reason=\(reason, privacy: .public)")
+    }
+
+    static func pageInterceptForwardedToWPS(direction: String, processIdentifier: pid_t) {
+        controlsLogger.info(
+            "Page intercept forwarded to WPS; direction=\(direction, privacy: .public), pid=\(processIdentifier, privacy: .public)"
+        )
+    }
+
+    static func pageInterceptWPSNotRunning(direction: String) {
+        controlsLogger.warning("Page intercept WPS target missing; direction=\(direction, privacy: .public)")
+    }
+
+    static func systemVolumeSynced(volume: Double, deviceID: UInt32) {
+        controlsLogger.info(
+            "System volume synced; volume=\(volume, privacy: .public), deviceID=\(deviceID, privacy: .public)"
+        )
+    }
+
+    static func playbackReachedEnd() {
+        controlsLogger.info("Program playback reached end")
+    }
+
     static func appleScriptFailed(action: String, message: String) {
         controlsLogger.error(
             "AppleScript failed; action=\(action, privacy: .public), message=\(LiveSupportRedactor.safeText(message), privacy: .public)"

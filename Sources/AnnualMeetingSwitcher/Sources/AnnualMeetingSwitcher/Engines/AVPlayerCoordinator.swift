@@ -189,7 +189,7 @@ final class AVPlayerCoordinator: ObservableObject {
                 self.isPlaying = false
                 self.didPlayToEnd = true
                 self.progress = 1.0
-                print("[AVPlayerCoordinator] 播放到末尾")
+                LiveSwitcherTelemetry.playbackReachedEnd()
                 self.onPlaybackEnded?()
             }
         }

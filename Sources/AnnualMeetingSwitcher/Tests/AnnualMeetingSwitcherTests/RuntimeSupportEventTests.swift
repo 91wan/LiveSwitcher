@@ -111,6 +111,42 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertTrue(report.contains("reason=timeout"))
     }
 
+    func testPageInterceptAndPlaybackRuntimeEventsAppearInSupportReport() {
+        let events: [LiveSupportEvent] = [
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 0), kind: .pageInterceptEnabled, detail: "state=enabled"),
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 1), kind: .pageInterceptDisabled, detail: "state=disabled"),
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 2), kind: .pageInterceptForwardedToWPS, detail: "direction=next,pid=123"),
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 3), kind: .pageInterceptWPSNotRunning, detail: "state=notRunning"),
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 4), kind: .systemVolumeSynced, detail: "deviceID=42,volume=0.5"),
+            LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 5), kind: .playbackReachedEnd, detail: "state=ended")
+        ]
+
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnosticsSnapshot(),
+            checks: [],
+            events: events,
+            generatedAt: Date(timeIntervalSince1970: 6)
+        )
+
+        XCTAssertTrue(report.contains("page.intercept.enabled"))
+        XCTAssertTrue(report.contains("page.intercept.disabled"))
+        XCTAssertTrue(report.contains("page.intercept.forwarded-to-wps"))
+        XCTAssertTrue(report.contains("page.intercept.wps-not-running"))
+        XCTAssertTrue(report.contains("system.volume.synced"))
+        XCTAssertTrue(report.contains("playback.reached-end"))
+    }
+
+    func testRuntimeSourcesDoNotUseReleasePrintDiagnostics() throws {
+        let disallowedSources = [
+            try sourceText("ViewModel.swift"),
+            try sourceText("Engines/AVPlayerCoordinator.swift")
+        ]
+
+        for source in disallowedSources {
+            XCTAssertFalse(source.contains("print("))
+        }
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -153,5 +189,19 @@ final class RuntimeSupportEventTests: XCTestCase {
                 effectiveBGMVolume: 0.5
             )
         )
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return try String(contentsOf: candidate, encoding: .utf8)
+            }
+        }
+        throw XCTSkip("Could not locate \(relativePath) from test source path.")
     }
 }
