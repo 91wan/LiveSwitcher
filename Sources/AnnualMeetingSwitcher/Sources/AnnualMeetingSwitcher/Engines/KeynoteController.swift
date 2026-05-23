@@ -46,10 +46,9 @@ final class KeynoteController {
         end tell
         """
 
-        var errorDict: NSDictionary?
-        guard let appleScript = NSAppleScript(source: script) else { return [] }
-        let result = appleScript.executeAndReturnError(&errorDict)
-        guard errorDict == nil else { return [] }
+        guard let result = try? AppleScriptRunner.run(script, action: "keynote.scan.window-names") else {
+            return []
+        }
 
         var names: [String] = []
         if result.numberOfItems > 0 {
@@ -90,11 +89,9 @@ final class KeynoteController {
         end tell
         """
 
-        var errorDict: NSDictionary?
-        guard let appleScript = NSAppleScript(source: script) else { return [] }
-
-        let result = appleScript.executeAndReturnError(&errorDict)
-        guard errorDict == nil else { return [] }
+        guard let result = try? AppleScriptRunner.run(script, action: "keynote.scan.open-files") else {
+            return []
+        }
 
         var paths: [String] = []
         if result.numberOfItems > 0 {
@@ -130,7 +127,7 @@ final class KeynoteController {
         end tell
         """
 
-        try runAppleScript(script)
+        try AppleScriptRunner.run(script, action: "keynote.start.window")
     }
 
     /// 停止 Keynote 当前正在播放的幻灯片
@@ -142,27 +139,6 @@ final class KeynoteController {
             end if
         end tell
         """
-        try runAppleScript(script)
-    }
-
-    // MARK: - Private Helpers
-
-    private func runAppleScript(_ source: String) throws {
-        var errorDict: NSDictionary?
-        guard let script = NSAppleScript(source: source) else {
-            throw KeynoteError.scriptCompilationFailed("无法初始化 NSAppleScript 对象")
-        }
-
-        script.compileAndReturnError(&errorDict)
-        if let err = errorDict {
-            let msg = err[NSAppleScript.errorMessage] as? String ?? err.description
-            throw KeynoteError.scriptCompilationFailed(msg)
-        }
-
-        script.executeAndReturnError(&errorDict)
-        if let err = errorDict {
-            let msg = err[NSAppleScript.errorMessage] as? String ?? err.description
-            throw KeynoteError.scriptExecutionFailed(msg)
-        }
+        try AppleScriptRunner.run(script, action: "keynote.stop.presentation")
     }
 }
