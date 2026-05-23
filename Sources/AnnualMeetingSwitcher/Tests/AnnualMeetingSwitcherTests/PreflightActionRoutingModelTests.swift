@@ -9,9 +9,11 @@ final class PreflightActionRoutingModelTests: XCTestCase {
         XCTAssertFalse(clear.shouldDismissPopover)
         XCTAssertTrue(clear.shouldMutateState)
         XCTAssertNil(clear.destinationTab)
+        XCTAssertEqual(clear.successMessage, "Overlays cleared")
         XCTAssertFalse(panic.shouldDismissPopover)
         XCTAssertTrue(panic.shouldMutateState)
         XCTAssertNil(panic.destinationTab)
+        XCTAssertEqual(panic.successMessage, "Panic turned off")
     }
 
     func testNavigationActionsDismissAndRouteToTabs() {
@@ -22,6 +24,7 @@ final class PreflightActionRoutingModelTests: XCTestCase {
         XCTAssertTrue(preview.shouldDismissPopover)
         XCTAssertFalse(preview.shouldMutateState)
         XCTAssertEqual(preview.destinationTab, .preview)
+        XCTAssertNil(preview.successMessage)
         XCTAssertEqual(audio.destinationTab, .audioMixer)
         XCTAssertEqual(overlays.destinationTab, .overlays)
     }
@@ -33,8 +36,10 @@ final class PreflightActionRoutingModelTests: XCTestCase {
         XCTAssertFalse(hardware.shouldDismissPopover)
         XCTAssertFalse(hardware.shouldMutateState)
         XCTAssertNil(hardware.destinationTab)
+        XCTAssertNil(hardware.successMessage)
         XCTAssertFalse(manual.shouldDismissPopover)
         XCTAssertFalse(manual.shouldMutateState)
         XCTAssertNil(manual.destinationTab)
+        XCTAssertNil(manual.successMessage)
     }
 }

@@ -160,14 +160,10 @@ struct PreflightPopoverView: View {
     }
 
     private func handlePreflightRowAction(_ action: LivePreflightActionKind) {
+        let routing = PreflightActionRoutingModel.make(action: action)
         onPreflightAction(action)
-        switch action {
-        case .clearOverlays:
-            showPreflightActionMessage("Overlays cleared")
-        case .turnOffPanic:
-            showPreflightActionMessage("Panic turned off")
-        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
-            break
+        if let successMessage = routing.successMessage {
+            showPreflightActionMessage(successMessage)
         }
     }
 

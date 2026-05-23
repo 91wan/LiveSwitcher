@@ -36,6 +36,7 @@ struct PreflightActionRoutingModel: Equatable {
     let action: LivePreflightActionKind
     let shouldDismissPopover: Bool
     let destinationTab: MainConsoleTab?
+    let successMessage: String?
     let shouldMutateState: Bool
 
     static func make(action: LivePreflightActionKind) -> PreflightActionRoutingModel {
@@ -44,7 +45,21 @@ struct PreflightActionRoutingModel: Equatable {
             action: action,
             shouldDismissPopover: destination != nil,
             destinationTab: destination,
+            successMessage: action.successMessage,
             shouldMutateState: action.presentationRole == .safeOneClick
         )
+    }
+}
+
+private extension LivePreflightActionKind {
+    var successMessage: String? {
+        switch self {
+        case .clearOverlays:
+            return "Overlays cleared"
+        case .turnOffPanic:
+            return "Panic turned off"
+        case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
+            return nil
+        }
     }
 }

@@ -106,6 +106,7 @@ struct MainToolbar: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
+            .frame(minWidth: ToolbarLayoutMetrics.panicMinWidth)
             .frame(height: 46)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
@@ -142,6 +143,7 @@ struct MainToolbar: View {
             }
             .foregroundStyle(StudioTheme.statusColor(preflightModel.status))
             .padding(.horizontal, 12)
+            .frame(minWidth: ToolbarLayoutMetrics.preflightMinWidth)
             .frame(height: 46)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
@@ -167,6 +169,7 @@ struct MainToolbar: View {
             Label("Help", systemImage: "questionmark.circle")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
+                .frame(minWidth: ToolbarLayoutMetrics.helpMinWidth)
                 .frame(height: 38)
                 .padding(.horizontal, 12)
                 .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
