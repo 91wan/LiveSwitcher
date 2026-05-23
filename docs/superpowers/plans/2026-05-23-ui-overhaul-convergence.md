@@ -88,11 +88,24 @@
 - [x] Replace hand-written always-on preview functions in `OverlayControlPanel`.
 - [x] Use `StudioTheme.Action.primary` for all Send Live buttons and neutral secondary styling for Stop.
 - [x] Allow replacing live overlays via Send Live text/state without ViewModel changes.
-- [ ] Run full local verification, open PR, wait for CI, merge on green.
+- [x] Run full local verification, open PR, wait for CI, merge on green.
 
 ## Final Sweep
 
-- [ ] Re-read the local Claude UI-overhaul review brief and map each A-E requirement to merged commits.
-- [ ] Run the full required verification chain on latest `main`.
-- [ ] Confirm no open PRs and `main` CI is green.
-- [ ] Report merged PRs, verification evidence, and any deliberately deferred backlog items from the review document.
+- [x] Re-read the local Claude UI-overhaul review brief and map each A-E requirement to merged commits.
+- [x] Run the full required verification chain on latest `main`.
+- [x] Confirm no open A-E implementation PRs and `main` CI is green.
+- [x] Report merged PRs, verification evidence, and any deliberately deferred backlog items from the review document.
+
+## Completion Mapping
+
+- PR A: `#40` `refactor: remove unused live console panels`
+- PR B: `#41` `refactor: reset live console theme tokens`
+- PR C: `#42` `refactor: collapse live console top chrome`
+- PR D: `#43` `refactor: simplify run desk controls`
+- PR E: `#44` `fix: align overlay preview with live state`
+
+Deliberately deferred backlog from the review brief:
+- A real dark mode remains deferred; this pass only reset tokens so a later dark-mode pass has a cleaner foundation.
+- Safety Cockpit and Preflight are still separate surfaces; this pass did not merge their workflows.
+- README screenshot asset filenames remain legacy until the next screenshot refresh.
