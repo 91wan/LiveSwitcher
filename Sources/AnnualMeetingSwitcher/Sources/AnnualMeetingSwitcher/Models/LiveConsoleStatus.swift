@@ -4,73 +4,88 @@ struct LiveStatusBarModel: Equatable {
     struct Item: Equatable {
         let title: String
         let value: String
+        let accessibilityValue: String
         let status: StudioTheme.StatusKind
+
+        init(
+            title: String,
+            value: String,
+            status: StudioTheme.StatusKind,
+            accessibilityValue: String? = nil
+        ) {
+            self.title = title
+            self.value = value
+            self.accessibilityValue = accessibilityValue ?? value
+            self.status = status
+        }
     }
 
     let projection: Item
     let current: Item
     let next: Item
     let audio: Item
-    let panic: Item
-    let speaker: Item
-    let ppt: Item
     let isCritical: Bool
+
+    var items: [Item] {
+        [projection, current, next, audio]
+    }
 
     static func make(snapshot: LivePreflightSnapshot, nextProgramTitle: String?) -> LiveStatusBarModel {
         let projection: Item
         if snapshot.isBroadcasting && !snapshot.hasExternalDisplay {
-            projection = Item(title: "Projection", value: "ON AIR / DISPLAY LOST", status: .fail)
+            projection = Item(title: "Output", value: "Display Lost", status: .fail)
         } else if snapshot.isBroadcasting {
-            projection = Item(title: "Projection", value: "ON AIR", status: .live)
+            projection = Item(title: "Output", value: "ON AIR", status: .live)
         } else if snapshot.hasExternalDisplay {
-            projection = Item(title: "Projection", value: "Standby", status: .idle)
+            projection = Item(title: "Output", value: "Standby", status: .idle)
         } else {
-            projection = Item(title: "Projection", value: "No External Display", status: .warn)
+            projection = Item(title: "Output", value: "No Display", status: .warn)
         }
 
         let currentTitle = snapshot.currentProgramTitle?.isEmpty == false
             ? snapshot.currentProgramTitle!
             : "No Program"
         let currentValue = snapshot.currentProgramSource.map { "\(currentTitle) · \($0)" } ?? currentTitle
+        let nextValue = nextProgramTitle?.isEmpty == false ? nextProgramTitle! : "None"
+        let audio = audioItem(snapshot: snapshot)
 
         return LiveStatusBarModel(
             projection: projection,
             current: Item(
                 title: "Current",
-                value: currentValue,
-                status: snapshot.currentProgramTitle == nil ? .warn : (snapshot.isBroadcasting ? .live : .idle)
+                value: truncatedDisplay(currentValue),
+                status: snapshot.currentProgramTitle == nil ? .warn : (snapshot.isBroadcasting ? .live : .idle),
+                accessibilityValue: currentValue
             ),
             next: Item(
                 title: "Next",
-                value: nextProgramTitle?.isEmpty == false ? nextProgramTitle! : "None",
-                status: nextProgramTitle == nil ? .idle : .ready
+                value: truncatedDisplay(nextValue),
+                status: nextProgramTitle == nil ? .idle : .ready,
+                accessibilityValue: nextValue
             ),
-            audio: Item(
-                title: "Audio",
-                value: "Media \(formatPercent(snapshot.effectiveMediaVolume)) / BGM \(formatPercent(snapshot.effectiveBGMVolume))",
-                status: snapshot.isPanicMode ? .muted : .ready
-            ),
-            panic: Item(
-                title: "Panic",
-                value: snapshot.isPanicMode ? "Active" : "Off",
-                status: snapshot.isPanicMode ? .fail : .ready
-            ),
-            speaker: Item(
-                title: "Speaker",
-                value: snapshot.isSpeakerMode ? "On" : "Off",
-                status: snapshot.isSpeakerMode ? .warn : .idle
-            ),
-            ppt: Item(
-                title: "PPT",
-                value: snapshot.isPageInterceptEnabled ? "On" : "Off",
-                status: snapshot.isPageInterceptEnabled ? .warn : .idle
-            ),
+            audio: audio,
             isCritical: snapshot.isPanicMode || snapshot.isBroadcasting
         )
     }
 
-    private static func formatPercent(_ volume: Float) -> String {
-        "\(Int((max(0, min(volume, 1)) * 100).rounded()))%"
+    private static func audioItem(snapshot: LivePreflightSnapshot) -> Item {
+        if snapshot.isPanicMode {
+            return Item(title: "Audio", value: "Muted by Panic", status: .fail)
+        }
+        if snapshot.isBGMAudioTakeoverActive {
+            return Item(title: "Audio", value: "BGM Takeover", status: .warn)
+        }
+        if snapshot.isSpeakerMode {
+            return Item(title: "Audio", value: "Speaker", status: .warn)
+        }
+        return Item(title: "Audio", value: "Normal", status: .ready)
+    }
+
+    private static func truncatedDisplay(_ value: String, maxLength: Int = 24) -> String {
+        guard value.count > maxLength else { return value }
+        let prefixCount = max(1, (maxLength - 1) / 2)
+        let suffixCount = max(1, maxLength - prefixCount - 1)
+        return "\(value.prefix(prefixCount))…\(value.suffix(suffixCount))"
     }
 }
 
