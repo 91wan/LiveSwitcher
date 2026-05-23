@@ -190,6 +190,7 @@ final class SwitcherViewModel: ObservableObject {
     private var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?
     private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
+    nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
@@ -1159,6 +1160,7 @@ final class SwitcherViewModel: ObservableObject {
             // 已有 tap，直接 enable
             if let tap = pageInterceptEventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
+                pageInterceptRuntime.updateEventTap(tap)
             }
             return
         }
@@ -1201,6 +1203,7 @@ final class SwitcherViewModel: ObservableObject {
         pageInterceptEventTap = tap
         pageInterceptRunLoopSource = src
         pageInterceptSelfRefcon = selfRefcon
+        pageInterceptRuntime.updateEventTap(tap)
         print("[V25] ✅ 翻页拦截器已启动")
     }
 
@@ -1217,24 +1220,35 @@ final class SwitcherViewModel: ObservableObject {
         }
         pageInterceptEventTap = nil
         pageInterceptRunLoopSource = nil
+        pageInterceptRuntime.updateEventTap(nil)
         print("[V25] ⏸ 翻页拦截器已停止")
+    }
+
+    nonisolated func reenablePageIntercept(reason: PageInterceptReenableReason) {
+        let didReenable = pageInterceptRuntime.reenableEventTap()
+        LiveSwitcherTelemetry.pageInterceptAutoReenabled(reason: reason, didReenable: didReenable)
+        Task { @MainActor [weak self] in
+            self?.recordSupportEvent(
+                kind: .pageInterceptAutoReenabled,
+                detail: "reason=\(reason.rawValue),reenabled=\(didReenable)"
+            )
+        }
     }
 
     /// 处理拦截到的按键，返回 true 表示吞没（nonisolated 供 C 回调调用）
     nonisolated func handlePageInterceptKey(keyCode: CGKeyCode, flags: CGEventFlags = []) -> Bool {
-        // HTMLWebViewBridge.shared.webView != nil 说明当前在播 HTML（WKWebView 已挂载）
-        // 否则走 WPS 路径。nonisolated 安全，两者自动互斥
+        // HTML bridge only exposes a lock-protected active flag here; WKWebView stays on MainActor.
         switch keyCode {
         case 121, 124: // PageDown / RightArrow → 下一页
-            if HTMLWebViewBridge.shared.webView != nil {
-                HTMLWebViewBridge.shared.sendArrowKey(isNext: true)
+            if HTMLWebViewBridge.shared.hasActiveWebView {
+                HTMLWebViewBridge.shared.dispatchArrowKey(isNext: true)
             } else {
                 sendPageKeyToWPS(isPageDown: true)
             }
             return true
         case 116, 123: // PageUp / LeftArrow → 上一页
-            if HTMLWebViewBridge.shared.webView != nil {
-                HTMLWebViewBridge.shared.sendArrowKey(isNext: false)
+            if HTMLWebViewBridge.shared.hasActiveWebView {
+                HTMLWebViewBridge.shared.dispatchArrowKey(isNext: false)
             } else {
                 sendPageKeyToWPS(isPageDown: false)
             }
@@ -1295,7 +1309,15 @@ private func pageInterceptCallback(
     guard let refcon else { return Unmanaged.passUnretained(event) }
     let vm = Unmanaged<SwitcherViewModel>.fromOpaque(refcon).takeUnretainedValue()
 
-    guard type == .keyDown else { return Unmanaged.passUnretained(event) }
+    switch PageInterceptEventPolicy.action(for: type) {
+    case .passThrough:
+        return Unmanaged.passUnretained(event)
+    case .reenableTap(let reason):
+        vm.reenablePageIntercept(reason: reason)
+        return Unmanaged.passUnretained(event)
+    case .handleKeyDown:
+        break
+    }
 
     let keyCode = CGKeyCode(event.getIntegerValueField(.keyboardEventKeycode))
     let flags = event.flags
