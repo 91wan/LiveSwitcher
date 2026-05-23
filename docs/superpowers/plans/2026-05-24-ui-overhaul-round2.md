@@ -62,7 +62,7 @@
 - [x] Hide `bgmProgressRow` when `currentBGMItem == nil`.
 - [x] Replace output card disabled opacity with readable disabled button colors.
 - [x] Run targeted tests, then full local verification.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR I: Overlay Button Hierarchy and Type Scale
 
@@ -71,12 +71,12 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StudioTheme.swift`
 - Test: update `OverlayLivePreviewModelTests`, `OverlayUIStateTests`, or add source-level tests.
 
-- [ ] Add tests/source checks proving disabled Send Live keeps a dimmed primary tint, Stop keeps a dimmed secondary tint, empty preview uses compact sizing, and composer title uses `StudioTheme.TypeScale.title`.
-- [ ] Change `overlayActionButton` disabled fill to `fill.opacity(0.25)` and disabled text to `.white.opacity(0.55)`.
-- [ ] Make `livePreviewColumn` use compact width/height when `OverlayLivePreviewModel.layers.isEmpty`.
-- [ ] Replace hard-coded 24pt composer title with `StudioTheme.TypeScale.title`.
-- [ ] Move `StudioTheme.numeric()` into `StudioTheme.TypeScale.numeric` and replace call sites.
-- [ ] Run targeted tests, then full local verification.
+- [x] Add tests/source checks proving disabled Send Live keeps a dimmed primary tint, Stop keeps a dimmed secondary tint, empty preview uses compact sizing, and composer title uses `StudioTheme.TypeScale.title`.
+- [x] Change `overlayActionButton` disabled fill to `fill.opacity(0.25)` and disabled text to `.white.opacity(0.55)`.
+- [x] Make `livePreviewColumn` use compact width/height when `OverlayLivePreviewModel.layers.isEmpty`.
+- [x] Replace hard-coded 24pt composer title with `StudioTheme.TypeScale.title`.
+- [x] Move `StudioTheme.numeric()` into `StudioTheme.TypeScale.numeric` and replace call sites.
+- [x] Run targeted tests, then full local verification.
 - [ ] Open PR, wait for CI, squash merge on green.
 
 ## Verification For Every PR

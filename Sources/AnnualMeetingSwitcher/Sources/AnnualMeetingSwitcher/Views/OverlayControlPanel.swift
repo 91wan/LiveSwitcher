@@ -81,7 +81,7 @@ struct OverlayControlPanel: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Overlay Composer")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(.primary)
                 Text("一次准备一种叠层；Preview 和 Active Stack 会显示当前上屏状态。")
                     .font(.system(size: 13, weight: .medium))
@@ -323,13 +323,19 @@ struct OverlayControlPanel: View {
     }
 
     private var livePreviewColumn: some View {
-        StudioSectionCard(
+        let previewModel = livePreviewModel
+        let isEmptyPreview = previewModel.layers.isEmpty
+
+        return StudioSectionCard(
             title: "Live Preview",
             subtitle: "16:9 preview and active overlay stack",
             status: (hasActiveOverlay ? "\(activeOverlayCount) LIVE" : "OFF", hasActiveOverlay ? .live : .idle)
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                OverlayLivePreviewCanvas(model: livePreviewModel)
+                OverlayLivePreviewCanvas(model: previewModel)
+                    .frame(maxWidth: isEmptyPreview ? 320 : .infinity)
+                    .frame(height: isEmptyPreview ? 180 : nil)
+                    .frame(maxWidth: .infinity, alignment: .center)
                 activeStackCard
             }
         }
@@ -470,12 +476,12 @@ struct OverlayControlPanel: View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.white)
+                .foregroundStyle(isDisabled ? .white.opacity(0.55) : .white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
                 .background(
                     RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                        .fill(isDisabled ? StudioTheme.Tone.muted.opacity(0.45) : fill)
+                        .fill(isDisabled ? fill.opacity(0.25) : fill)
                 )
         }
         .buttonStyle(.plain)
