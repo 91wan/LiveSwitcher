@@ -405,61 +405,6 @@ struct LeftPanel: View {
         }
     }
 
-    // Issue #5: 精确扫描 Keynote 窗口（System Events AppleScript）
-    private func scanKeynoteWindows() {
-        viewModel.scanAndAddKeynoteWindows()
-
-        // 如果没扫描到，给提示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if viewModel.programItems.isEmpty {
-                let alert = NSAlert()
-                alert.messageText = "未发现 Keynote 文件"
-                alert.informativeText = "请先在 Keynote 中打开 .key 文件，再点击扫描。\n\n提示：Keynote 需要已打开文件并出现在前台。"
-                alert.alertStyle = .informational
-                alert.addButton(withTitle: "好的")
-                alert.runModal()
-            }
-        }
-    }
-
-    // Issue #5: 导入 Keynote 文件（支持 .key 和 .keynote 后缀）
-    private func importKeynotePicker() {
-        DispatchQueue.main.async {
-            let panel = NSOpenPanel()
-            panel.title = "选择 Keynote 文件"
-            panel.allowsMultipleSelection = true
-            panel.canChooseDirectories = false
-
-            // Issue #5: 支持 key 和 keynote 后缀
-            var allowedTypes: [UTType] = []
-            if let keynoteType = UTType("com.apple.iWork.Keynote.key") {
-                allowedTypes.append(keynoteType)
-            }
-            if let keynoteType2 = UTType("com.apple.keynote.key") {
-                allowedTypes.append(keynoteType2)
-            }
-            if allowedTypes.isEmpty {
-                allowedTypes = [.data]
-            }
-            panel.allowedContentTypes = allowedTypes
-
-            // 同时通过后缀放行
-            panel.allowedContentTypes = allowedTypes
-
-            guard panel.runModal() == .OK else { return }
-            for url in panel.urls {
-                let ext = url.pathExtension.lowercased()
-                guard ext == "key" || ext == "keynote" else { continue }
-                let item = ProgramItem(
-                    title: url.deletingPathExtension().lastPathComponent,
-                    subtitle: "KEY",
-                    sourceURL: url
-                )
-                viewModel.addProgramItem(item)
-            }
-        }
-    }
-
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
         var didRequestImport = false
 

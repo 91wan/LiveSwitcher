@@ -7,9 +7,13 @@ final class BGMPlayerDelegate: NSObject, AVAudioPlayerDelegate {
     weak var viewModel: SwitcherViewModel?
 
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        guard flag, let vm = viewModel else { return }
+        guard let vm = viewModel else { return }
         Task { @MainActor in
-            vm.bgmDidFinish()
+            if flag {
+                vm.bgmDidFinish()
+            } else {
+                vm.bgmDidFail()
+            }
         }
     }
 }
@@ -90,6 +94,24 @@ extension SwitcherViewModel {
         // 列表循环 / 顺序播放（非最后一首）：播放下一首
         let nextIndex = (index + 1) % items.count
         toggleBGM(items[nextIndex])
+    }
+
+    func bgmDidFail() {
+        stopBGMTimer()
+        bgmAudioPlayer?.delegate = nil
+        bgmAudioPlayer = nil
+        cancelBGMFallbackFade()
+        bgmFallbackPlayer.volume = 0
+        bgmFallbackPlayer.pause()
+        bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        isBGMPlaying = false
+        isBGMAudioTakeoverActive = false
+        bgmProgress = 0
+        bgmCurrentTime = 0
+        bgmDuration = nil
+        LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+        recordSupportEvent(kind: .bgmPlaybackFailed, detail: "state=stopped")
+        applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
     }
 
     func playNextBGM() {

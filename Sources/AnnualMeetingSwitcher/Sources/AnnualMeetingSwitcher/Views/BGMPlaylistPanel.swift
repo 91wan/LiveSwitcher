@@ -10,7 +10,7 @@ enum BGMPlaylistPanelMode {
 
 struct BGMPlaylistPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
-    @State private var bgmCategory: BGMCategory = .warmUp
+    @State private var categorySelection = BGMCategorySelectionState(selectedCategory: .warmUp)
 
     let mode: BGMPlaylistPanelMode
 
@@ -40,6 +40,12 @@ struct BGMPlaylistPanel: View {
                 .stroke(mode == .liveDock ? StudioTheme.borderSubtle : .clear, lineWidth: 1)
         )
         .shadow(color: StudioTheme.shadowSoft, radius: mode == .liveDock ? 6 : 8, x: 0, y: 2)
+        .onAppear {
+            syncLiveDockCategory()
+        }
+        .onChange(of: viewModel.currentBGMItem) { _, _ in
+            syncLiveDockCategory()
+        }
     }
 
     @ViewBuilder
@@ -191,6 +197,7 @@ struct BGMPlaylistPanel: View {
         let diskSize: CGFloat = mode == .liveDock ? 30 : 32
         let iconSize: CGFloat = mode == .liveDock ? 18 : 20
         let playSize: CGFloat = mode == .liveDock ? 32 : 34
+        let controls = BGMControlsState.make(items: viewModel.bgmItems, currentItem: viewModel.currentBGMItem)
 
         return HStack(spacing: 8) {
             Spacer()
@@ -199,27 +206,33 @@ struct BGMPlaylistPanel: View {
             Button(action: { viewModel.seekBGMToBeginning() }) {
                 Image(systemName: "backward.end.alt.fill")
                     .font(.system(size: iconSize))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(controls.canSeekToBeginning ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .disabled(!controls.canSeekToBeginning)
+            .opacity(controls.canSeekToBeginning ? 1 : 0.42)
             .help("跳回开头")
             .accessibilityLabel("BGM seek to beginning")
+            .accessibilityHint(controls.seekDisabledReason ?? "Seek current BGM track to the beginning.")
 
             // 上一首
             Button(action: { viewModel.playPreviousBGM() }) {
                 Image(systemName: "backward.end.fill")
                     .font(.system(size: iconSize))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(controls.canSkipPrevious ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .disabled(!controls.canSkipPrevious)
+            .opacity(controls.canSkipPrevious ? 1 : 0.42)
             .help("上一首")
             .accessibilityLabel("Previous BGM track")
+            .accessibilityHint(controls.skipDisabledReason ?? "Play the previous BGM track in the current category.")
 
             // 播放 / 暂停
             Button(action: {
@@ -231,24 +244,30 @@ struct BGMPlaylistPanel: View {
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: playSize))
-                    .foregroundStyle(viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary)
+                    .foregroundStyle(controls.canPlay ? (viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary) : StudioTheme.textTertiary)
             }
             .buttonStyle(.plain)
+            .disabled(!controls.canPlay)
+            .opacity(controls.canPlay ? 1 : 0.42)
             .help(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
             .accessibilityLabel(viewModel.isBGMPlaying ? "Pause BGM" : "Play BGM")
+            .accessibilityHint(controls.playDisabledReason ?? "Toggle BGM playback.")
 
             // 下一首
             Button(action: { viewModel.playNextBGM() }) {
                 Image(systemName: "forward.end.fill")
                     .font(.system(size: iconSize))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(controls.canSkipNext ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
             }
             .buttonStyle(.plain)
+            .disabled(!controls.canSkipNext)
+            .opacity(controls.canSkipNext ? 1 : 0.42)
             .help("下一首")
             .accessibilityLabel("Next BGM track")
+            .accessibilityHint(controls.skipDisabledReason ?? "Play the next BGM track in the current category.")
 
             // 循环模式
             Button(action: { viewModel.toggleLoopMode() }) {
@@ -336,7 +355,7 @@ struct BGMPlaylistPanel: View {
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
-            Picker("", selection: $bgmCategory) {
+            Picker("", selection: selectedCategoryBinding) {
                 ForEach(BGMCategory.allCases, id: \.self) { cat in
                     Text(cat.rawValue).tag(cat)
                 }
@@ -345,7 +364,7 @@ struct BGMPlaylistPanel: View {
             .labelsHidden()
             .font(.system(size: 15))
             .accessibilityLabel("BGM category")
-            .accessibilityValue(bgmCategory.rawValue)
+            .accessibilityValue(categorySelection.selectedCategory.rawValue)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
@@ -358,7 +377,7 @@ struct BGMPlaylistPanel: View {
     // MARK: - 曲目列表
 
     private var bgmList: some View {
-        let filteredBGM = viewModel.bgmItems.filter { $0.category == bgmCategory }
+        let filteredBGM = viewModel.bgmItems.filter { $0.category == categorySelection.selectedCategory }
 
         return Group {
             if filteredBGM.isEmpty {
@@ -387,7 +406,7 @@ struct BGMPlaylistPanel: View {
                         .listRowBackground(Color.clear)
                     }
                     .onMove { from, to in
-                        viewModel.moveBGMItems(in: bgmCategory, from: from, to: to)
+                        viewModel.moveBGMItems(in: categorySelection.selectedCategory, from: from, to: to)
                     }
                 }
                 .listStyle(.plain)
@@ -457,19 +476,32 @@ struct BGMPlaylistPanel: View {
             guard panel.runModal() == .OK else { return }
             for url in panel.urls {
                 let title = url.deletingPathExtension().lastPathComponent
-                // 同名去重：同分类下已有同名曲目则跳过
-                let isDuplicate = viewModel.bgmItems.contains {
-                    $0.category == self.bgmCategory && $0.title == title
+                guard BGMDuplicatePolicy.decision(for: url, existingItems: viewModel.bgmItems) != .duplicateURL else {
+                    viewModel.recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
+                    continue
                 }
-                guard !isDuplicate else { continue }
                 let bgm = BGMItem(
                     title: title,
                     url: url,
-                    category: self.bgmCategory
+                    category: categorySelection.selectedCategory
                 )
                 viewModel.addBGMItem(bgm)
             }
         }
+    }
+
+    private var selectedCategoryBinding: Binding<BGMCategory> {
+        Binding(
+            get: { categorySelection.selectedCategory },
+            set: { categorySelection.selectCategory($0) }
+        )
+    }
+
+    private func syncLiveDockCategory() {
+        categorySelection.syncWithCurrentItem(
+            viewModel.currentBGMItem,
+            allowsAutoSync: mode == .liveDock
+        )
     }
 }
 
