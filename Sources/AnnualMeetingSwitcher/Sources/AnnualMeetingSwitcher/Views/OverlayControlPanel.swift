@@ -15,7 +15,9 @@ struct OverlayControlPanel: View {
     @State private var ltNameInput = ""
     @State private var ltTitleInput = ""
 
-    private let tickerSpeeds = OverlaySpeedSelection.defaultOptions
+    private let tickerSpeeds: [(String, Double)] = [
+        ("慢", 55), ("中", 85), ("快", 130)
+    ]
 
     private var trimmedLowerThirdName: String {
         ltNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -26,19 +28,7 @@ struct OverlayControlPanel: View {
     }
 
     private var countdownTotalSeconds: Int {
-        countdownInput.totalSeconds ?? 0
-    }
-
-    private var countdownInput: OverlayCountdownInput {
-        OverlayCountdownInput(minutes: countdownMinutes, seconds: countdownSecs)
-    }
-
-    private var countdownStartDisabledReason: String? {
-        OverlayUIState.countdownDisabledReason(
-            minutes: countdownMinutes,
-            seconds: countdownSecs,
-            isLive: viewModel.isCountdownActive
-        )
+        countdownMinutes * 60 + countdownSecs
     }
 
     private var activeOverlayCount: Int {
@@ -77,12 +67,6 @@ struct OverlayControlPanel: View {
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .shadow(color: StudioTheme.shadowSoft, radius: 18, x: 0, y: 10)
-        .onAppear {
-            syncTickerSpeedIndexFromViewModel()
-        }
-        .onChange(of: viewModel.tickerSpeed) { _, _ in
-            syncTickerSpeedIndexFromViewModel()
-        }
     }
 
     private var controlsColumn: some View {
@@ -222,7 +206,7 @@ struct OverlayControlPanel: View {
                         title: "开始",
                         systemImage: "play.fill",
                         fill: StudioTheme.statusWarn,
-                        isDisabled: countdownStartDisabledReason != nil
+                        isDisabled: viewModel.isCountdownActive || countdownTotalSeconds <= 0
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
                             viewModel.startCountdown(seconds: countdownTotalSeconds, title: countdownTitleInput)
@@ -241,7 +225,7 @@ struct OverlayControlPanel: View {
                     }
                 }
 
-                if let reason = countdownStartDisabledReason {
+                if let reason = OverlayUIState.countdownDisabledReason(totalSeconds: countdownTotalSeconds, isLive: viewModel.isCountdownActive) {
                     Text(reason)
                         .font(StudioTheme.caption())
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -274,12 +258,12 @@ struct OverlayControlPanel: View {
                         .foregroundStyle(.secondary)
                     Picker("", selection: $tickerSpeedIndex) {
                         ForEach(0..<tickerSpeeds.count, id: \.self) { index in
-                            Text(tickerSpeeds[index].label).tag(index)
+                            Text(tickerSpeeds[index].0).tag(index)
                         }
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: tickerSpeedIndex) { _, index in
-                        viewModel.tickerSpeed = OverlaySpeedSelection.speed(at: index, options: tickerSpeeds)
+                        viewModel.tickerSpeed = tickerSpeeds[index].1
                     }
                 }
 
@@ -504,14 +488,5 @@ struct OverlayControlPanel: View {
         let minutes = max(seconds, 0) / 60
         let remainingSeconds = max(seconds, 0) % 60
         return String(format: "%02d:%02d", minutes, remainingSeconds)
-    }
-
-    private func syncTickerSpeedIndexFromViewModel() {
-        let index = OverlaySpeedSelection.nearestIndex(for: viewModel.tickerSpeed, options: tickerSpeeds)
-        tickerSpeedIndex = index
-        let normalizedSpeed = OverlaySpeedSelection.speed(at: index, options: tickerSpeeds)
-        if viewModel.tickerSpeed != normalizedSpeed {
-            viewModel.tickerSpeed = normalizedSpeed
-        }
     }
 }

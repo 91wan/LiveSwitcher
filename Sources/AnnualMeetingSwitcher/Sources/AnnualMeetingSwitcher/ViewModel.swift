@@ -1034,12 +1034,8 @@ final class SwitcherViewModel: ObservableObject {
         isBroadcasting.toggle()
         if isBroadcasting {
             showOutputWindow()
-            if isBroadcasting {
-                recordSupportEvent(kind: .projectionStarted, detail: "externalDisplay=true")
-            }
         } else {
             hideOutputWindow()
-            recordSupportEvent(kind: .projectionStopped, detail: "isBroadcasting=false")
         }
         LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
         recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=\(isBroadcasting)")
@@ -1063,7 +1059,7 @@ final class SwitcherViewModel: ObservableObject {
             outputWindowController?.mountAnyView(rootView: outputView)
         }
         broadcastSafetyNotice = nil
-        outputWindowController?.show(on: targetScreen)
+        outputWindowController?.show(on: targetScreen, fullScreen: true)
     }
 
     func hideOutputWindow() {
@@ -1075,7 +1071,6 @@ final class SwitcherViewModel: ObservableObject {
         outputWindowController?.hide()
         broadcastSafetyNotice = "副屏已断开，投射已停止"
         LiveSwitcherTelemetry.projectionFailClosed()
-        recordSupportEvent(kind: .projectionLost, detail: "externalDisplay=false")
         recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
     }
 

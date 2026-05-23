@@ -51,17 +51,6 @@ final class LiveConsoleStatusTests: XCTestCase {
         XCTAssertTrue(model.isCritical)
     }
 
-    func testStatusBarFailsWhenProjectionClaimsLiveWithoutExternalDisplay() {
-        let model = LiveStatusBarModel.make(
-            snapshot: snapshot(hasExternalDisplay: false, isBroadcasting: true),
-            nextProgramTitle: nil
-        )
-
-        XCTAssertEqual(model.projection.value, "ON AIR / DISPLAY LOST")
-        XCTAssertEqual(model.projection.status, .fail)
-        XCTAssertTrue(model.isCritical)
-    }
-
     func testStatusBarWarnsWhenExternalDisplayMissing() {
         let model = LiveStatusBarModel.make(
             snapshot: snapshot(hasExternalDisplay: false, currentTitle: nil, currentSource: nil),

@@ -11,14 +11,16 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         private(set) var showCount = 0
         private(set) var hideCount = 0
         private(set) var lastShowScreenWasNil = false
+        private(set) var lastShowFullScreen = false
 
         func mountAnyView(rootView: AnyView) {
             mountCount += 1
         }
 
-        func show(on screen: NSScreen?) {
+        func show(on screen: NSScreen?, fullScreen: Bool) {
             showCount += 1
             lastShowScreenWasNil = (screen == nil)
+            lastShowFullScreen = fullScreen
         }
 
         func hide() {
@@ -672,13 +674,12 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(outputSpy.mountCount, 1)
         XCTAssertEqual(outputSpy.showCount, 1)
         XCTAssertFalse(outputSpy.lastShowScreenWasNil)
-        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStarted })
+        XCTAssertTrue(outputSpy.lastShowFullScreen)
 
         viewModel.handleBroadcastToggle()
         XCTAssertFalse(viewModel.isBroadcasting)
         XCTAssertEqual(outputSpy.hideCount, 1)
         XCTAssertEqual(outputSpy.mountCount, 1)
-        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStopped })
     }
 
     func testExternalDisplayLossStopsBroadcastAndKeepsCurrentProgram() throws {

@@ -18,9 +18,7 @@ struct LiveStatusBarModel: Equatable {
 
     static func make(snapshot: LivePreflightSnapshot, nextProgramTitle: String?) -> LiveStatusBarModel {
         let projection: Item
-        if snapshot.isBroadcasting && !snapshot.hasExternalDisplay {
-            projection = Item(title: "Projection", value: "ON AIR / DISPLAY LOST", status: .fail)
-        } else if snapshot.isBroadcasting {
+        if snapshot.isBroadcasting {
             projection = Item(title: "Projection", value: "ON AIR", status: .live)
         } else if snapshot.hasExternalDisplay {
             projection = Item(title: "Projection", value: "Standby", status: .idle)
