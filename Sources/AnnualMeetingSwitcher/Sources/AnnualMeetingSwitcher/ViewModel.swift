@@ -2,7 +2,6 @@ import SwiftUI
 import Combine
 import AppKit
 import AVFoundation
-import UniformTypeIdentifiers
 import Carbon         // V25: 翻页拦截器 CGEventTap
 import ApplicationServices // V25: AXIsProcessTrusted
 
@@ -436,6 +435,10 @@ final class SwitcherViewModel: ObservableObject {
         if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
             let titles = userDefaults.stringArray(forKey: "pushList_titles") ?? []
             let subtitles = userDefaults.stringArray(forKey: "pushList_subtitles") ?? []
+            let missingCount = paths.filter { !FileManager.default.fileExists(atPath: $0) }.count
+            if missingCount > 0 {
+                recordSupportEvent(kind: .programItemFileMissing, detail: "count=\(missingCount)")
+            }
             programItems.append(
                 contentsOf: ProgramQueueStore.restoredProgramItems(
                     paths: paths,
@@ -448,18 +451,29 @@ final class SwitcherViewModel: ObservableObject {
         if let paths = userDefaults.stringArray(forKey: UDKeys.bgmList) {
             let categories = userDefaults.stringArray(forKey: UDKeys.bgmListCategories) ?? []
             let titles = userDefaults.stringArray(forKey: "bgmList_titles") ?? []
+            var missingCount = 0
             for (i, path) in paths.enumerated() {
                 let url = URL(fileURLWithPath: path)
-                guard FileManager.default.fileExists(atPath: path) else { continue }
+                guard FileManager.default.fileExists(atPath: path) else {
+                    missingCount += 1
+                    continue
+                }
                 let catRaw = i < categories.count ? categories[i] : BGMCategory.warmUp.rawValue
                 let cat = BGMCategory(rawValue: catRaw) ?? .warmUp
                 let title = i < titles.count ? titles[i] : url.deletingPathExtension().lastPathComponent
                 let item = BGMItem(title: title, url: url, category: cat)
                 bgmItems.append(item)
             }
+            if missingCount > 0 {
+                recordSupportEvent(kind: .bgmFileMissing, detail: "count=\(missingCount)")
+            }
         }
 
         if let paths = userDefaults.stringArray(forKey: UDKeys.wallpapers) {
+            let missingCount = paths.filter { !FileManager.default.fileExists(atPath: $0) }.count
+            if missingCount > 0 {
+                recordSupportEvent(kind: .wallpaperFileMissing, detail: "count=\(missingCount)")
+            }
             backgroundWallpapers = paths.compactMap { path -> URL? in
                 let url = URL(fileURLWithPath: path)
                 return FileManager.default.fileExists(atPath: path) ? url : nil
@@ -476,7 +490,7 @@ final class SwitcherViewModel: ObservableObject {
         }
 
         if let storedAudioStrategy = userDefaults.string(forKey: UDKeys.audioStrategy),
-           let audioStrategy = AudioStrategy(rawValue: storedAudioStrategy) {
+           let audioStrategy = AudioStrategy(persistedValue: storedAudioStrategy) {
             self.audioStrategy = audioStrategy
         }
 
@@ -926,10 +940,7 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     private func isSupportedWallpaperImage(_ url: URL) -> Bool {
-        guard url.isFileURL else { return false }
-        guard FileManager.default.fileExists(atPath: url.path) else { return false }
-        guard let type = UTType(filenameExtension: url.pathExtension.lowercased()) else { return false }
-        return type.conforms(to: .image)
+        WallpaperImagePolicy.isSupported(url: url)
     }
 
     // MARK: - BGM 操作

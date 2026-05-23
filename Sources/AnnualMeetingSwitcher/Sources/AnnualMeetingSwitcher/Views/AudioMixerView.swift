@@ -263,7 +263,7 @@ private struct RoutingStrategyCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 Picker("", selection: $strategy) {
                     ForEach(AudioStrategy.allCases, id: \.self) { strategy in
-                        Text(strategy.rawValue).tag(strategy)
+                        Text(strategy.displayTitle).tag(strategy)
                     }
                 }
                 .pickerStyle(.segmented)
