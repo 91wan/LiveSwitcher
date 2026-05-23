@@ -77,7 +77,7 @@
 - [x] Replace hard-coded 24pt composer title with `StudioTheme.TypeScale.title`.
 - [x] Move `StudioTheme.numeric()` into `StudioTheme.TypeScale.numeric` and replace call sites.
 - [x] Run targeted tests, then full local verification.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## Verification For Every PR
 
