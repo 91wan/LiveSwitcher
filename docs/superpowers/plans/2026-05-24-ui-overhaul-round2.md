@@ -40,14 +40,14 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift`
 - Test: update `RunDeskControlConvergenceTests`, `RunDeskInformationHierarchyTests`, or add source-hygiene tests.
 
-- [ ] Add tests/source checks proving Program Monitor no longer repeats `StatusBadge(monitorStateLabel...)`, no longer renders `monitorDisplayMode`, and keeps the current/next strip inside the monitor deck.
-- [ ] Move `monitorInlineStatusRow` into `previewDeck` using a top overlay with monitor-safe text colors.
-- [ ] Remove the card-header status badge and top-right display-mode pill.
-- [ ] Add a wallpaper import button in the empty wallpaper state, reusing the existing picker path.
-- [ ] Keep CountPill unit style Chinese for wallpaper count.
-- [ ] Remove the Run Queue empty-state card and keep one concise drop-zone instruction.
-- [ ] Add low-emphasis footers to LeftPanel and LiveOpsPanel to reduce large empty tails.
-- [ ] Run targeted tests, then full local verification.
+- [x] Add tests/source checks proving Program Monitor no longer repeats `StatusBadge(monitorStateLabel...)`, no longer renders `monitorDisplayMode`, and keeps the current/next strip inside the monitor deck.
+- [x] Move `monitorInlineStatusRow` into `previewDeck` using a top overlay with monitor-safe text colors.
+- [x] Remove the card-header status badge and top-right display-mode pill.
+- [x] Add a wallpaper import button in the empty wallpaper state, reusing the existing picker path.
+- [x] Keep CountPill unit style Chinese for wallpaper count.
+- [x] Remove the Run Queue empty-state card and keep one concise drop-zone instruction.
+- [x] Add low-emphasis footers to LeftPanel and LiveOpsPanel to reduce large empty tails.
+- [x] Run targeted tests, then full local verification.
 - [ ] Open PR, wait for CI, squash merge on green.
 
 ## PR H: Live Ops Control Affordance

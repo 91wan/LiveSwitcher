@@ -12,6 +12,25 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertTrue(source.contains("wallpaperTrayCard"))
     }
 
+    func testProgramMonitorChromeDoesNotRepeatStandbyStatus() throws {
+        let source = try sourceText("Views/ProgramMonitorView.swift")
+
+        XCTAssertFalse(source.contains("StatusBadge(monitorStateLabel"))
+        XCTAssertFalse(source.contains("monitorDisplayMode"))
+        XCTAssertFalse(source.contains("previewDeck\n\n            monitorInlineStatusRow"))
+        XCTAssertTrue(source.contains(".overlay(alignment: .top)"))
+        XCTAssertTrue(source.contains("StudioTheme.monitorText"))
+    }
+
+    func testWallpaperEmptyStateKeepsInlineImportAction() throws {
+        let source = try sourceText("Views/ProgramMonitorView.swift")
+
+        XCTAssertTrue(source.contains("No standby wallpaper"))
+        XCTAssertTrue(source.contains("Import wallpaper"))
+        XCTAssertTrue(source.contains("WallpaperImportService.presentPicker"))
+        XCTAssertTrue(source.contains(" 张"))
+    }
+
     func testLiveOpsMergesModesIntoAudioCard() throws {
         let source = try sourceText("Views/LiveOpsPanel.swift")
 
@@ -27,6 +46,18 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertFalse(source.contains("Menu {"))
         XCTAssertEqual(source.components(separatedBy: "addSourceButton(title:").count - 1, 4)
         XCTAssertTrue(source.contains(".focusable(false)"))
+        XCTAssertFalse(source.contains("EmptyStateView("))
+        XCTAssertTrue(source.contains("Or use one of the buttons above"))
+        XCTAssertTrue(source.contains("queueFooter"))
+    }
+
+    func testRunDeskRailsHaveLowEmphasisFooters() throws {
+        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let liveOps = try sourceText("Views/LiveOpsPanel.swift")
+
+        XCTAssertTrue(leftPanel.contains("queueFooter"))
+        XCTAssertTrue(liveOps.contains("runtimeFooter"))
+        XCTAssertTrue(liveOps.contains("ProcessInfo.processInfo.operatingSystemVersionString"))
     }
 
     func testAutoNextIdleStateIsNeutralAndActiveStateWarns() {

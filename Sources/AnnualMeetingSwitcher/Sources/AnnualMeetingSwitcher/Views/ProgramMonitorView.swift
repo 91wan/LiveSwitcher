@@ -15,12 +15,9 @@ struct ProgramMonitorView: View {
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                StatusBadge(monitorStateLabel, kind: monitorStateKind)
             }
 
             previewDeck
-
-            monitorInlineStatusRow
 
             monitorUtilitiesStack
 
@@ -49,27 +46,25 @@ struct ProgramMonitorView: View {
                     .stroke(StudioTheme.borderCritical.opacity(0.95), lineWidth: 3)
                     .padding(1)
             }
-
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
-                    .frame(width: 8, height: 8)
-                Text(monitorStateLabel)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(StudioTheme.monitorText)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-
-            Text(monitorDisplayMode)
-                .font(.system(size: 11, weight: .black, design: .rounded))
-                .foregroundStyle(StudioTheme.monitorText.opacity(0.82))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+        }
+        .overlay(alignment: .top) {
+            HStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
+                        .frame(width: 8, height: 8)
+                    Text(monitorStateLabel)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(StudioTheme.monitorText)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 8)
                 .background(StudioTheme.monitorOverlayFill, in: Capsule())
-                .padding(.top, 14)
-                .padding(.trailing, 14)
+
+                monitorInlineStatusRow
+            }
+            .padding(.top, 12)
+            .padding(.horizontal, 12)
         }
         .frame(maxWidth: .infinity)
         .frame(maxHeight: 342)
@@ -96,10 +91,10 @@ struct ProgramMonitorView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .background(StudioTheme.monitorOverlayFill, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(viewModel.isBroadcasting ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
+                .stroke(viewModel.isBroadcasting ? StudioTheme.borderCritical : StudioTheme.monitorBorder, lineWidth: 1)
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(monitorInlineAccessibilityLabel)
@@ -109,10 +104,10 @@ struct ProgramMonitorView: View {
         HStack(spacing: 8) {
             Text(model.title.uppercased())
                 .font(StudioTheme.statusLabel())
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(StudioTheme.monitorText.opacity(0.58))
             Text(model.value)
                 .font(.system(size: 13, weight: .black))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(StudioTheme.monitorText)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
@@ -203,6 +198,16 @@ struct ProgramMonitorView: View {
 
             if viewModel.backgroundWallpapers.isEmpty {
                 InlineWarningBanner(title: "No standby wallpaper", message: "Import a neutral image for fallback.", kind: .warn)
+                Button {
+                    WallpaperImportService.presentPicker(viewModel: viewModel)
+                } label: {
+                    Label("Import wallpaper...", systemImage: "photo.badge.plus")
+                        .font(.system(size: 12, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             } else {
                 WallpaperGalleryRow()
                     .frame(maxHeight: 92)
@@ -247,26 +252,6 @@ struct ProgramMonitorView: View {
             }
             .transition(.opacity)
         }
-    }
-
-    private var monitorDisplayMode: String {
-        if let item = viewModel.currentProgramItem {
-            switch item.sourceKind {
-            case .media:
-                return item.isVideoMedia ? "VIDEO" : "AUDIO"
-            case .html:
-                return "HTML"
-            case .pptx:
-                return "PPTX"
-            case .keynote:
-                return "KEYNOTE"
-            case .activeDeck:
-                return "ACTIVE DECK"
-            case .unsupported:
-                return "SOURCE"
-            }
-        }
-        return viewModel.backgroundImage != nil ? "WALLPAPER READY" : "IDLE"
     }
 
     private var monitorState: ProgramMonitorStateModel {

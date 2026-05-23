@@ -7,6 +7,27 @@ enum WallpaperDropSupport {
     }
 }
 
+enum WallpaperImportService {
+    @MainActor
+    static func presentPicker(viewModel: SwitcherViewModel) {
+        let panel = NSOpenPanel()
+        panel.title = "选择壁纸图片"
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.image, .png, .jpeg, .gif]
+        guard panel.runModal() == .OK else { return }
+        var firstAcceptedURL: URL?
+        for url in panel.urls {
+            if viewModel.addWallpaper(url: url), firstAcceptedURL == nil {
+                firstAcceptedURL = url
+            }
+        }
+        if let firstAcceptedURL {
+            viewModel.setActiveWallpaper(url: firstAcceptedURL)
+        }
+    }
+}
+
 struct WallpaperGalleryRow: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var isDroppingWallpaper = false
@@ -22,7 +43,7 @@ struct WallpaperGalleryRow: View {
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 Button("导入...") {
-                    openWallpaperPicker()
+                    WallpaperImportService.presentPicker(viewModel: viewModel)
                 }
                 .font(.system(size: 13))
                 .buttonStyle(.plain)
@@ -68,24 +89,6 @@ struct WallpaperGalleryRow: View {
                 }
                 .padding(.vertical, 2)
             }
-        }
-    }
-
-    private func openWallpaperPicker() {
-        let panel = NSOpenPanel()
-        panel.title = "选择壁纸图片"
-        panel.allowsMultipleSelection = true
-        panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.image, .png, .jpeg, .gif]
-        guard panel.runModal() == .OK else { return }
-        var firstAcceptedURL: URL?
-        for url in panel.urls {
-            if viewModel.addWallpaper(url: url), firstAcceptedURL == nil {
-                firstAcceptedURL = url
-            }
-        }
-        if let firstAcceptedURL {
-            viewModel.setActiveWallpaper(url: firstAcceptedURL)
         }
     }
 
