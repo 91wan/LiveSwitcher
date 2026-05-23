@@ -74,6 +74,27 @@ final class LiveSupportReportPrivacyTests: XCTestCase {
         XCTAssertFalse(redacted.localizedStandardContains("/tmp/"))
     }
 
+    func testAppleScriptFailureEventIsRetainedAndSanitized() {
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnosticsSnapshot(),
+            checks: [],
+            events: [
+                LiveSupportEvent(
+                    timestamp: Date(timeIntervalSince1970: 1_790_000_000),
+                    kind: .appleScriptFailed,
+                    detail: "action=wps.open,error=/Users/operator/Show/Agenda.html failed"
+                )
+            ],
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_001)
+        )
+
+        XCTAssertTrue(report.contains("applescript.failed"))
+        XCTAssertTrue(report.contains("action=wps.open"))
+        XCTAssertTrue(report.contains("[path redacted]"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+        XCTAssertFalse(report.localizedStandardContains("Agenda.html"))
+    }
+
     private func diagnosticsSnapshot(currentProgramTitle: String? = nil) -> LiveDiagnosticsSnapshot {
         LiveDiagnosticsSnapshot(
             appVersion: "0.4.0",

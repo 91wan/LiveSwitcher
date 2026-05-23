@@ -172,6 +172,14 @@ final class SwitcherViewModel: ObservableObject {
     var programSeekToEndHandler: () -> Void = {}
     var activeDeckPresentationHandler: () -> Void = {}
     var invalidDeckHandler: (URL) -> Void = { _ in }
+    var automationFailureAlertHandler: (String, String) -> Void = { title, message in
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "好的")
+        alert.runModal()
+    }
 
     // MARK: - Combine / Timers
 
@@ -562,6 +570,65 @@ final class SwitcherViewModel: ObservableObject {
         alert.runModal()
     }
 
+    private func runAutomationScript(
+        _ source: String,
+        action: String,
+        alertTitle: String? = nil,
+        alertMessage: String? = nil
+    ) {
+        Task.detached(priority: .userInitiated) { [weak self] in
+            do {
+                try AppleScriptRunner.run(source, action: action)
+            } catch {
+                await self?.handleAppleScriptFailure(
+                    error,
+                    action: action,
+                    alertTitle: alertTitle,
+                    alertMessage: alertMessage
+                )
+            }
+        }
+    }
+
+    func handleAppleScriptFailure(
+        _ error: Error,
+        action: String,
+        alertTitle: String? = nil,
+        alertMessage: String? = nil
+    ) {
+        let message = appleScriptFailureMessage(error)
+        recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
+
+        if let alertTitle {
+            automationFailureAlertHandler(alertTitle, alertMessage ?? message)
+        }
+    }
+
+    private func appleScriptFailureMessage(_ error: Error) -> String {
+        if let error = error as? AppleScriptError {
+            return error.message
+        }
+        if let description = (error as? LocalizedError)?.errorDescription, !description.isEmpty {
+            return description
+        }
+        return String(describing: error)
+    }
+
+    nonisolated private static func openWithWPSOffice(url: URL) throws {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+        task.arguments = ["-a", "WPS Office", url.path]
+        try task.run()
+        task.waitUntilExit()
+
+        guard task.terminationStatus == 0 else {
+            throw AppleScriptError.executionFailed(
+                action: "wps.open.command",
+                message: "open exited with status \(task.terminationStatus)"
+            )
+        }
+    }
+
     /// 将 HTML 文件推送到副屏 WKWebView
     func openHTMLInOutputWindow(url: URL) {
         currentHTMLURL = url
@@ -599,31 +666,37 @@ final class SwitcherViewModel: ObservableObject {
     /// Fix Issue #3: 打开并立即放映 Keynote 文件
     func openAndPresentKeynote(url: URL) {
         let script = PresentationAutomationService.keynoteStartScript(url: url)
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorDict: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else { return }
-            appleScript.executeAndReturnError(&errorDict)
-        }
+        runAutomationScript(
+            script,
+            action: "keynote.open.present",
+            alertTitle: "Keynote 自动化失败",
+            alertMessage: "Keynote 无法打开或放映当前文稿。请确认 Keynote 已安装，并允许 LiveSwitcher 控制 Keynote。"
+        )
     }
 
     /// V24 Fix #3: PPTX → 默认调取 WPS Office 执行播放（彻底替换 Keynote 调用逻辑）
     func openPPTXWithKeynote(url: URL) {
-        let posixPath = url.path
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task.detached(priority: .userInitiated) { [weak self] in
             // 优先尝试 WPS Office
             let wpsScript = PresentationAutomationService.wpsOpenScript(url: url)
-            var errorDict: NSDictionary?
-            if let appleScript = NSAppleScript(source: wpsScript) {
-                appleScript.executeAndReturnError(&errorDict)
-                if errorDict == nil {
-                    return
-                }
+            do {
+                try AppleScriptRunner.run(wpsScript, action: "wps.open.script")
+                return
+            } catch {
+                await self?.handleAppleScriptFailure(error, action: "wps.open.script")
             }
+
             // WPS AppleScript 不可用时，降级用 open -a 命令行方式打开 WPS
-            let task = Process()
-            task.launchPath = "/usr/bin/open"
-            task.arguments = ["-a", "WPS Office", posixPath]
-            try? task.run()
+            do {
+                try Self.openWithWPSOffice(url: url)
+            } catch {
+                await self?.handleAppleScriptFailure(
+                    error,
+                    action: "wps.open.command",
+                    alertTitle: "未检测到 WPS Office / Keynote",
+                    alertMessage: "LiveSwitcher 无法通过 WPS Office 打开当前 PPTX。请确认 WPS Office 已安装，或改用可直接放映的 Keynote 文件。"
+                )
+            }
         }
     }
 
@@ -636,11 +709,12 @@ final class SwitcherViewModel: ObservableObject {
             end if
         end tell
         """
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorDict: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else { return }
-            appleScript.executeAndReturnError(&errorDict)
-        }
+        runAutomationScript(
+            script,
+            action: "keynote.present.front",
+            alertTitle: "Keynote 自动化失败",
+            alertMessage: "LiveSwitcher 无法放映当前最前面的 Keynote 文稿。请确认 Keynote 已打开文稿并完成自动化授权。"
+        )
     }
 
     /// Fix Issue #4: Keynote 下一张（右箭头）
@@ -652,11 +726,12 @@ final class SwitcherViewModel: ObservableObject {
             end if
         end tell
         """
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorDict: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else { return }
-            appleScript.executeAndReturnError(&errorDict)
-        }
+        runAutomationScript(
+            script,
+            action: "keynote.next-slide",
+            alertTitle: "Keynote 翻页失败",
+            alertMessage: "LiveSwitcher 未能切到下一页。请确认 Keynote 正在放映，并允许 LiveSwitcher 控制 Keynote。"
+        )
     }
 
     /// Fix Issue #4: Keynote 上一张（左箭头）
@@ -668,11 +743,12 @@ final class SwitcherViewModel: ObservableObject {
             end if
         end tell
         """
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorDict: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else { return }
-            appleScript.executeAndReturnError(&errorDict)
-        }
+        runAutomationScript(
+            script,
+            action: "keynote.previous-slide",
+            alertTitle: "Keynote 翻页失败",
+            alertMessage: "LiveSwitcher 未能切到上一页。请确认 Keynote 正在放映，并允许 LiveSwitcher 控制 Keynote。"
+        )
     }
 
     func scanAndAddKeynoteWindows() {
@@ -685,10 +761,13 @@ final class SwitcherViewModel: ObservableObject {
             end try
         end tell
         """
-        var errorDict: NSDictionary?
-        guard let appleScript = NSAppleScript(source: script) else { return }
-        let result = appleScript.executeAndReturnError(&errorDict)
-        guard errorDict == nil else { return }
+        let result: NSAppleEventDescriptor
+        do {
+            result = try AppleScriptRunner.run(script, action: "keynote.scan.windows")
+        } catch {
+            handleAppleScriptFailure(error, action: "keynote.scan.windows")
+            return
+        }
 
         var windowNames: [String] = []
         if result.numberOfItems > 0 {
@@ -769,11 +848,12 @@ final class SwitcherViewModel: ObservableObject {
             end if
         end tell
         """
-        DispatchQueue.global(qos: .userInitiated).async {
-            var errorDict: NSDictionary?
-            guard let appleScript = NSAppleScript(source: script) else { return }
-            appleScript.executeAndReturnError(&errorDict)
-        }
+        runAutomationScript(
+            script,
+            action: "keynote.stop.presentation",
+            alertTitle: "Keynote 停止失败",
+            alertMessage: "LiveSwitcher 未能停止当前 Keynote 放映。请确认 Keynote 仍在运行并完成自动化授权。"
+        )
     }
 
     func togglePause(for item: ProgramItem) {

@@ -16,6 +16,7 @@ enum LiveSupportEventKind: String, Equatable {
     case projectionStartFailed = "projection.start.failed"
     case projectionLost = "projection.lost"
     case pageInterceptAutoReenabled = "page.intercept.auto-reenabled"
+    case appleScriptFailed = "applescript.failed"
     case countdownStarted = "overlay.countdown.started"
     case countdownStopped = "overlay.countdown.stopped"
     case tickerStarted = "overlay.ticker.started"

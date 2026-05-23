@@ -60,4 +60,10 @@ enum LiveSwitcherTelemetry {
     static func pageInterceptAutoReenabled(reason: PageInterceptReenableReason, didReenable: Bool) {
         controlsLogger.warning("Page intercept auto re-enabled; reason=\(reason.rawValue, privacy: .public), didReenable=\(didReenable, privacy: .public)")
     }
+
+    static func appleScriptFailed(action: String, message: String) {
+        controlsLogger.error(
+            "AppleScript failed; action=\(action, privacy: .public), message=\(LiveSupportRedactor.safeText(message), privacy: .public)"
+        )
+    }
 }
