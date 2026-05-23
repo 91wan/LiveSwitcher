@@ -47,12 +47,12 @@ Preflight 里只有可逆、低风险的安全修复允许直接修改 App 状�
 | Check condition | Action | Behavior |
 | --- | --- | --- |
 | No external display | `Needs hardware` | Disabled. No state mutation. |
-| Projection off or display warning | `Open preview` | Switches to Preview / Switching. |
+| Projection off or display warning | `Open preview` | Switches to Run Desk. |
 | No BGM tracks | `Open audio mixer` | Switches to Audio Mixer. |
 | BGM takeover active | `Open audio mixer` | Switches to Audio Mixer. |
-| No current program | `Open preview` | Switches to Preview / Switching. |
-| No wallpaper fallback | `Open preview` | Switches to Preview / Switching. |
-| Auto-next video enabled | `Open preview` | Switches to Preview / Switching for queue review. |
+| No current program | `Open preview` | Switches to Run Desk. |
+| No wallpaper fallback | `Open preview` | Switches to Run Desk. |
+| Auto-next video enabled | `Open preview` | Switches to Run Desk for queue review. |
 | Active overlays | `Clear overlays` | Clears countdown, ticker, and lower third. |
 | Panic blackout active | `Turn off panic` | Disables panic blackout. |
 | PPT mode | `Manual review` | Disabled. Operator confirms intended state manually. |
@@ -62,12 +62,12 @@ Preflight 里只有可逆、低风险的安全修复允许直接修改 App 状�
 | 检查状态 | 操作 | 行为 |
 | --- | --- | --- |
 | 未检测到外接屏 | `Needs hardware` | 禁用，不修改状态。 |
-| 投射关闭或显示告警 | `Open preview` | 跳转到预览 / 切换页。 |
+| 投射关闭或显示告警 | `Open preview` | 跳转到 Run Desk / 导播台。 |
 | 没有 BGM 曲目 | `Open audio mixer` | 跳转到音频混音页。 |
 | BGM 接管中 | `Open audio mixer` | 跳转到音频混音页。 |
-| 没有当前节目 | `Open preview` | 跳转到预览 / 切换页。 |
-| 没有壁纸回退 | `Open preview` | 跳转到预览 / 切换页。 |
-| 已开启视频自动下一条 | `Open preview` | 跳转到预览 / 切换页检查队列。 |
+| 没有当前节目 | `Open preview` | 跳转到 Run Desk / 导播台。 |
+| 没有壁纸回退 | `Open preview` | 跳转到 Run Desk / 导播台。 |
+| 已开启视频自动下一条 | `Open preview` | 跳转到 Run Desk / 导播台检查队列。 |
 | 有叠层正在上屏 | `Clear overlays` | 清空倒计时、游动字幕和人名条。 |
 | 老板键黑屏已激活 | `Turn off panic` | 关闭老板键黑屏。 |
 | PPT 模式 | `Manual review` | 禁用，由现场人员人工确认状态。 |

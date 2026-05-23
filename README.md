@@ -18,9 +18,9 @@ English | [中文](README_ZH.md) | [Install](#install) | [FAQ](#faq)
 
 ## Screenshots
 
-| Preview / Switching | Audio Mixer | Overlays / Subtitles |
+| Run Desk | Audio / BGM Library | Overlays / Overlay Composer |
 | --- | --- | --- |
-| ![Preview and switching](docs/assets/readme/preview-switch.png) | ![Audio mixer](docs/assets/readme/audio-mixer.png) | ![Overlays and subtitles](docs/assets/readme/overlays.png) |
+| ![Run Desk](docs/assets/readme/preview-switch.png) | ![Audio and BGM Library](docs/assets/readme/audio-mixer.png) | ![Overlays and Overlay Composer](docs/assets/readme/overlays.png) |
 
 ## What It Does
 
@@ -152,7 +152,7 @@ docs/assets/ui-matrix/2026-05-04/
 docs/assets/ui-matrix/2026-05-04-v021/
 ```
 
-The matrix covers three window sizes (`1360x760`, `1440x800`, maximized) across three tabs: preview/switching, audio mixer, and overlays/subtitles.
+The matrix covers three window sizes (`1360x760`, `1440x800`, maximized). Older screenshots are kept as regression artifacts; the current information architecture is Run Desk, Live Ops, Audio / BGM Library, and Overlays / Overlay Composer.
 
 ## Repository Shape
 
