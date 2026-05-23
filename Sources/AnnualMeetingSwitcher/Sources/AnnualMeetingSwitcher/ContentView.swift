@@ -30,19 +30,31 @@ struct ContentView: View {
             StudioTheme.canvasGradient
                 .ignoresSafeArea()
 
-            switch viewModel.selectedMainTab {
-            case .preview:
+            retainedTab(.preview) {
                 previewConsole
-            case .audioMixer:
+            }
+
+            retainedTab(.audioMixer) {
                 AudioMixerView()
                     .frame(maxWidth: 940, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .overlays:
+            }
+
+            retainedTab(.overlays) {
                 SettingsView()
                     .frame(maxWidth: 1100, maxHeight: .infinity)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
+    }
+
+    private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
+        let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
+        return content()
+            .opacity(model.opacity)
+            .allowsHitTesting(model.allowsHitTesting)
+            .accessibilityHidden(model.accessibilityHidden)
+            .zIndex(model.zIndex)
     }
 
     private var previewConsole: some View {
@@ -668,26 +680,7 @@ struct ProgramMonitorView: View {
 
 enum WallpaperDropSupport {
     static func decodeFileURL(from item: Any?) -> URL? {
-        if let url = item as? URL {
-            return url.isFileURL ? url : nil
-        }
-
-        if let data = item as? Data,
-           let url = URL(dataRepresentation: data, relativeTo: nil) {
-            return url.isFileURL ? url : nil
-        }
-
-        if let string = item as? String {
-            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let url = URL(string: trimmed), url.isFileURL {
-                return url
-            }
-            guard trimmed.hasPrefix("/") || trimmed.hasPrefix("~") else { return nil }
-            let expandedPath = NSString(string: trimmed).expandingTildeInPath
-            return URL(fileURLWithPath: expandedPath)
-        }
-
-        return nil
+        FileDropSupport.decodeFileURL(from: item)
     }
 }
 

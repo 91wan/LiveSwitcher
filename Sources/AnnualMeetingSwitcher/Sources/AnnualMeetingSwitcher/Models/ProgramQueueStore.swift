@@ -33,12 +33,6 @@ enum ProgramQueueStore {
         guard items.indices.contains(nextIndex) else { return nil }
 
         let nextItem = items[nextIndex]
-        return isVideoProgramItem(nextItem) ? nextItem : nil
-    }
-
-    private static func isVideoProgramItem(_ item: ProgramItem) -> Bool {
-        guard item.sourceKind == .media,
-              let ext = item.sourceURL?.pathExtension.lowercased() else { return false }
-        return ["mp4", "mov", "m4v", "avi"].contains(ext)
+        return nextItem.isVideoMedia ? nextItem : nil
     }
 }

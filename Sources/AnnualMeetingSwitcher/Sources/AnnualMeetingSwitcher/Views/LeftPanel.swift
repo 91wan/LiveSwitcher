@@ -204,8 +204,9 @@ struct LeftPanel: View {
                         avCoordinator: viewModel.avCoordinator,
                         onSelect: { viewModel.switchToProgram(item) },
                         onTogglePause: { viewModel.togglePause(for: item) },
+                        onEndHTML: { viewModel.endHTMLPresentation() },
                         onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
-                        onSkipToEnd: ["mp4","mov","m4v","avi"].contains(item.subtitle.lowercased()) ? { viewModel.seekProgramItemToEnd(item) } : nil,
+                        onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
                         onDelete: { viewModel.removeProgramItem(withID: item.id) }
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -266,8 +267,11 @@ struct LeftPanel: View {
     // MARK: - 输出屏幕模块（Issue #10: 超大胶囊按钮）
 
     private var outputScreenModule: some View {
-        let hasExternalDisplay = SecondScreenSelector.pickExternal() != nil
-        let canStartProjection = hasExternalDisplay || viewModel.isBroadcasting
+        let model = ProjectionButtonModel.make(
+            isBroadcasting: viewModel.isBroadcasting,
+            hasExternalDisplay: viewModel.hasExternalDisplay,
+            safetyNotice: viewModel.broadcastSafetyNotice
+        )
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -276,18 +280,18 @@ struct LeftPanel: View {
                         .font(.system(size: 12, weight: .black, design: .rounded))
                         .foregroundStyle(StudioTheme.textSecondary)
                     HStack(spacing: 6) {
-                        Image(systemName: hasExternalDisplay ? "display.2" : "display")
+                        Image(systemName: model.screenSystemImage)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(StudioTheme.textSecondary)
-                        Text(hasExternalDisplay ? "外接屏幕" : "未接副屏")
+                        Text(model.screenLabel)
                             .font(.system(size: 15, weight: .bold))
                             .foregroundStyle(StudioTheme.textPrimary)
                     }
                 }
                 Spacer()
                 StatusBadge(
-                    viewModel.isBroadcasting ? "ON AIR" : (hasExternalDisplay ? "STANDBY" : "WARN"),
-                    kind: viewModel.isBroadcasting ? .live : (hasExternalDisplay ? .idle : .warn)
+                    model.statusText,
+                    kind: model.statusKind
                 )
             }
 
@@ -297,9 +301,9 @@ struct LeftPanel: View {
                         .font(.system(size: 17, weight: .black))
                         .foregroundStyle(.white)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(projectionButtonTitle(hasExternalDisplay: hasExternalDisplay))
+                        Text(model.title)
                             .font(.system(size: 16, weight: .bold))
-                        Text(projectionButtonSubtitle(hasExternalDisplay: hasExternalDisplay))
+                        Text(model.subtitle)
                             .font(.system(size: 12, weight: .medium))
                             .opacity(0.85)
                     }
@@ -313,20 +317,19 @@ struct LeftPanel: View {
                     RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                         .fill(viewModel.isBroadcasting
                               ? StudioTheme.statusLive
-                              : (hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted))
+                              : (model.hasExternalDisplay ? StudioTheme.actionPrimary : StudioTheme.statusMuted))
                 )
             }
             .buttonStyle(.plain)
             .focusable(false)
-            .disabled(!canStartProjection)
-            .help(hasExternalDisplay ? "Start or stop external display projection" : "Connect an external display before starting projection")
-            .accessibilityLabel(projectionButtonTitle(hasExternalDisplay: hasExternalDisplay))
-            .accessibilityHint(projectionButtonSubtitle(hasExternalDisplay: hasExternalDisplay))
+            .disabled(!model.isEnabled)
+            .help(model.helpText)
+            .accessibilityLabel(model.title)
+            .accessibilityHint(model.subtitle)
 
-            if let notice = viewModel.broadcastSafetyNotice {
-                InlineWarningBanner(title: "Projection warning", message: notice, kind: .warn)
-            } else if !hasExternalDisplay {
-                InlineWarningBanner(title: "External Display Required", message: "Connect a secondary display before going on air.", kind: .warn)
+            if let title = model.warningTitle,
+               let message = model.warningMessage {
+                InlineWarningBanner(title: title, message: message, kind: .warn)
             }
         }
         .padding(14)
@@ -334,16 +337,6 @@ struct LeftPanel: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .fill(StudioTheme.surfaceSecondary)
         )
-    }
-
-    private func projectionButtonTitle(hasExternalDisplay: Bool) -> String {
-        if viewModel.isBroadcasting { return "Stop Projection" }
-        return hasExternalDisplay ? "Start Projection" : "External Display Required"
-    }
-
-    private func projectionButtonSubtitle(hasExternalDisplay: Bool) -> String {
-        if viewModel.isBroadcasting { return "ON AIR · click to stop output" }
-        return hasExternalDisplay ? "Push to external display" : "No external display detected"
     }
 
     // MARK: - 文件选择
@@ -468,22 +461,22 @@ struct LeftPanel: View {
     }
 
     private func handleDrop(providers: [NSItemProvider]) -> Bool {
+        var didRequestImport = false
+
         for provider in providers {
+            guard provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) else {
+                continue
+            }
+            didRequestImport = true
             provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
-                guard let data = item as? Data,
-                      let url = URL(dataRepresentation: data, relativeTo: nil) else { return }
+                guard let url = FileDropSupport.decodeFileURL(from: item),
+                      let programItem = FileDropSupport.importableProgramItem(from: url) else { return }
                 DispatchQueue.main.async {
-                    guard ProgramSourceKind(fileURL: url).isImportableFile else { return }
-                    let programItem = ProgramItem(
-                        title: url.deletingPathExtension().lastPathComponent,
-                        subtitle: url.pathExtension.uppercased(),
-                        sourceURL: url
-                    )
                     viewModel.addProgramItem(programItem)
                 }
             }
         }
-        return true
+        return didRequestImport
     }
 }
 
@@ -543,12 +536,6 @@ struct SecondaryImportButtonStyle: ButtonStyle {
 
 // MARK: - 单行信号源（Issue #4: 放大字体；Issue #5: 拖拽进度 Slider）
 
-enum QueueRole {
-    case current
-    case next
-    case queued
-}
-
 struct SignalSourceRow: View {
     let item: ProgramItem
     let queuePosition: Int
@@ -559,11 +546,22 @@ struct SignalSourceRow: View {
     let avCoordinator: AVPlayerCoordinator
     let onSelect: () -> Void
     let onTogglePause: () -> Void
+    let onEndHTML: () -> Void
     let onJumpToBeginning: () -> Void
     var onSkipToEnd: (() -> Void)? = nil
     let onDelete: () -> Void
 
     @State private var isHovered = false
+
+    private var rowModel: ProgramQueueRowModel {
+        ProgramQueueRowModel(
+            item: item,
+            queuePosition: queuePosition,
+            queueRole: queueRole,
+            isBroadcasting: isBroadcasting,
+            isPlaying: isPlaying
+        )
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -605,12 +603,12 @@ struct SignalSourceRow: View {
             .padding(.leading, 50)
             .fixedSize(horizontal: false, vertical: true)
 
-            if isSelected {
+            if isSelected && rowModel.controlStyle != .none && rowModel.controlStyle != .unsupported {
                 selectedControlRail
             }
 
-            // 进度 Slider（仅在选中时显示）
-            if isSelected {
+            // 进度 Slider（仅媒体源选中时显示）
+            if isSelected && rowModel.showsProgressSlider {
                 ProgressSliderRow(avCoordinator: avCoordinator)
                     .padding(.leading, 50)
             }
@@ -634,39 +632,62 @@ struct SignalSourceRow: View {
 
     private var selectedControlRail: some View {
         HStack(spacing: 10) {
-            Text(isBroadcasting ? "LIVE 主控" : "PREVIEW 主控")
+            Text(rowModel.controlRailLabel)
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .foregroundStyle(currentRowControlTint)
                 .lineLimit(1)
 
             HStack(spacing: 7) {
-                controlButton(
-                    systemName: isPlaying ? "pause.fill" : "play.fill",
-                    accessibilityLabel: isPlaying ? "Pause current program" : "Play current program",
-                    tint: .white,
-                    fill: currentRowControlTint,
-                    action: onTogglePause
-                )
-                .help("暂停 / 播放")
-
-                controlButton(
-                    systemName: "backward.end.fill",
-                    accessibilityLabel: "Jump current program to beginning",
-                    tint: currentRowControlTint,
-                    fill: currentRowControlTint.opacity(0.12),
-                    action: onJumpToBeginning
-                )
-                .help("跳回开头")
-
-                if let onSkipToEnd {
+                switch rowModel.controlStyle {
+                case .media:
                     controlButton(
-                        systemName: "forward.end.fill",
-                        accessibilityLabel: "Skip current program to end",
+                        systemName: rowModel.primarySystemName,
+                        accessibilityLabel: rowModel.primaryAccessibilityLabel,
+                        tint: .white,
+                        fill: currentRowControlTint,
+                        action: onTogglePause
+                    )
+                    .help(rowModel.primaryHelp)
+
+                    controlButton(
+                        systemName: "backward.end.fill",
+                        accessibilityLabel: "Jump current program to beginning",
                         tint: currentRowControlTint,
                         fill: currentRowControlTint.opacity(0.12),
-                        action: onSkipToEnd
+                        action: onJumpToBeginning
                     )
-                    .help("Skip to end（跳至结束）")
+                    .help("跳回开头")
+
+                    if let onSkipToEnd {
+                        controlButton(
+                            systemName: "forward.end.fill",
+                            accessibilityLabel: "Skip current program to end",
+                            tint: currentRowControlTint,
+                            fill: currentRowControlTint.opacity(0.12),
+                            action: onSkipToEnd
+                        )
+                        .help("Skip to end（跳至结束）")
+                    }
+                case .html:
+                    controlButton(
+                        systemName: rowModel.primarySystemName,
+                        accessibilityLabel: rowModel.primaryAccessibilityLabel,
+                        tint: .white,
+                        fill: currentRowControlTint,
+                        action: onEndHTML
+                    )
+                    .help(rowModel.primaryHelp)
+                case .presentation:
+                    controlButton(
+                        systemName: rowModel.primarySystemName,
+                        accessibilityLabel: rowModel.primaryAccessibilityLabel,
+                        tint: .white,
+                        fill: currentRowControlTint,
+                        action: onTogglePause
+                    )
+                    .help(rowModel.primaryHelp)
+                case .unsupported, .none:
+                    EmptyView()
                 }
             }
 
@@ -712,13 +733,13 @@ struct SignalSourceRow: View {
         switch queueRole {
         case .current:
             badge(
-                text: isBroadcasting ? "ON AIR" : "PREVIEW",
+                text: rowModel.stateBadgeText ?? "",
                 foreground: .white,
                 background: isBroadcasting ? StudioTheme.statusLive : StudioTheme.actionPrimary
             )
         case .next:
             badge(
-                text: "NEXT",
+                text: rowModel.stateBadgeText ?? "NEXT",
                 foreground: StudioTheme.statusWarn,
                 background: StudioTheme.statusWarn.opacity(0.14)
             )
@@ -756,10 +777,10 @@ struct SignalSourceRow: View {
     private var statusText: String {
         switch queueRole {
         case .current:
-            if item.subtitle.lowercased() == "html" || item.subtitle.lowercased() == "htm" {
+            if item.sourceKind == .html {
                 return isBroadcasting ? "当前大屏展示" : "当前预监源"
             }
-            if item.subtitle.lowercased().contains("key") || item.subtitle.lowercased().contains("ppt") {
+            if [.keynote, .pptx, .activeDeck].contains(item.sourceKind) {
                 return isBroadcasting ? "当前导播文稿" : "当前待播文稿"
             }
             return isPlaying ? "当前媒体播放中" : "当前已切入"
@@ -793,24 +814,7 @@ struct SignalSourceRow: View {
     }
 
     private var sourceLabel: String {
-        switch item.subtitle.lowercased() {
-        case "key", "keynote":
-            return "KEY"
-        case "key (活动)":
-            return "DECK"
-        case "pptx":
-            return "PPTX"
-        case "html", "htm":
-            return "HTML"
-        case "mp4", "mov", "m4v", "avi":
-            return "VIDEO"
-        case "mp3", "aac", "wav", "m4a":
-            return "AUDIO"
-        case "jpg", "jpeg", "png", "gif":
-            return "IMAGE"
-        default:
-            return item.subtitle.uppercased()
-        }
+        item.displaySourceLabel
     }
 
     private var currentRowControlTint: Color {
@@ -840,14 +844,7 @@ struct SignalSourceRow: View {
     }
 
     private var queueBadgeText: String {
-        switch queueRole {
-        case .current:
-            return "LIVE"
-        case .next:
-            return "\(queuePosition)"
-        case .queued:
-            return "\(queuePosition)"
-        }
+        rowModel.queueBadgeText
     }
 
     private var queueBadgeForeground: Color {
@@ -873,20 +870,16 @@ struct SignalSourceRow: View {
     }
 
     private var sourceTint: Color {
-        switch item.subtitle.lowercased() {
-        case "key", "keynote", "key (活动)":
+        switch item.sourceKind {
+        case .keynote, .activeDeck:
             return StudioTheme.statusMuted
-        case "pptx":
+        case .pptx:
             return StudioTheme.statusWarn
-        case "html", "htm":
+        case .html:
             return StudioTheme.statusReady
-        case "mp4", "mov", "m4v", "avi":
-            return StudioTheme.actionPrimary
-        case "mp3", "aac", "wav", "m4a":
-            return StudioTheme.pink
-        case "jpg", "jpeg", "png", "gif":
-            return StudioTheme.statusReady
-        default:
+        case .media:
+            return item.isVideoMedia ? StudioTheme.actionPrimary : StudioTheme.pink
+        case .unsupported:
             return StudioTheme.textSecondary
         }
     }
@@ -906,14 +899,17 @@ struct SignalSourceRow: View {
     }
 
     private func iconName(for item: ProgramItem) -> String {
-        switch item.subtitle.lowercased() {
-            case "key", "keynote": return "play.rectangle.fill"
-        case "pptx":           return "doc.richtext"
-        case "html", "htm":    return "globe"
-        case "mp4", "mov", "m4v", "avi": return "film"
-        case "mp3", "aac", "wav", "m4a": return "music.note"
-        case "jpg", "jpeg", "png", "gif": return "photo"
-        default: return "doc.fill"
+        switch item.sourceKind {
+        case .keynote, .activeDeck:
+            return "play.rectangle.fill"
+        case .pptx:
+            return "doc.richtext"
+        case .html:
+            return "globe"
+        case .media:
+            return item.isVideoMedia ? "film" : "music.note"
+        case .unsupported:
+            return "doc.fill"
         }
     }
 }
