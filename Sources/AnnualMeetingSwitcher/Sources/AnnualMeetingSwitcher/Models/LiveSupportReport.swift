@@ -7,8 +7,21 @@ enum LiveSupportEventKind: String, Equatable {
     case speakerModeChanged = "speaker.mode.changed"
     case panicModeChanged = "panic.mode.changed"
     case bgmTakeoverChanged = "bgm.takeover.changed"
+    case bgmPlaybackFailed = "bgm.playback.failed"
+    case bgmImportSkippedDuplicate = "bgm.import.duplicate"
     case projectionToggle = "projection.toggle"
     case projectionFailClosed = "projection.fail.closed"
+    case projectionStarted = "projection.started"
+    case projectionStopped = "projection.stopped"
+    case projectionStartFailed = "projection.start.failed"
+    case projectionLost = "projection.lost"
+    case countdownStarted = "overlay.countdown.started"
+    case countdownStopped = "overlay.countdown.stopped"
+    case tickerStarted = "overlay.ticker.started"
+    case tickerStopped = "overlay.ticker.stopped"
+    case lowerThirdShown = "overlay.lower-third.shown"
+    case lowerThirdHidden = "overlay.lower-third.hidden"
+    case overlaysCleared = "overlay.clear-all"
 }
 
 struct LiveSupportEvent: Equatable {

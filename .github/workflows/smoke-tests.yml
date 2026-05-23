@@ -35,3 +35,15 @@ jobs:
 
       - name: Release Hygiene
         run: ./script/check_release_hygiene.sh
+
+      - name: Release Hygiene Fallback PATH
+        run: PATH=/usr/bin:/bin:/usr/sbin:/sbin ./script/check_release_hygiene.sh
+
+      - name: Package App Bundle
+        run: bash Sources/AnnualMeetingSwitcher/build_v33.sh
+
+      - name: Lint App Info.plist
+        run: plutil -lint dist/LiveSwitcher.app/Contents/Info.plist
+
+      - name: Verify App Signature
+        run: codesign --verify --deep --strict dist/LiveSwitcher.app

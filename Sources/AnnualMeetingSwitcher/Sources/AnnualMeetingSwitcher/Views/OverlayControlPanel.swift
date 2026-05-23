@@ -15,10 +15,6 @@ struct OverlayControlPanel: View {
     @State private var ltNameInput = ""
     @State private var ltTitleInput = ""
 
-    private let tickerSpeeds: [(String, Double)] = [
-        ("慢", 55), ("中", 85), ("快", 130)
-    ]
-
     private var trimmedLowerThirdName: String {
         ltNameInput.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -28,7 +24,7 @@ struct OverlayControlPanel: View {
     }
 
     private var countdownTotalSeconds: Int {
-        countdownMinutes * 60 + countdownSecs
+        OverlayUIState.countdownTotalSeconds(minutes: countdownMinutes, seconds: countdownSecs) ?? 0
     }
 
     private var activeOverlayCount: Int {
@@ -67,6 +63,12 @@ struct OverlayControlPanel: View {
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .shadow(color: StudioTheme.shadowSoft, radius: 18, x: 0, y: 10)
+        .onAppear {
+            syncTickerSpeedFromViewModel()
+        }
+        .onChange(of: viewModel.tickerSpeed) { _, _ in
+            syncTickerSpeedFromViewModel()
+        }
     }
 
     private var controlsColumn: some View {
@@ -206,10 +208,14 @@ struct OverlayControlPanel: View {
                         title: "开始",
                         systemImage: "play.fill",
                         fill: StudioTheme.statusWarn,
-                        isDisabled: viewModel.isCountdownActive || countdownTotalSeconds <= 0
+                        isDisabled: OverlayUIState.countdownDisabledReason(
+                            minutes: countdownMinutes,
+                            seconds: countdownSecs,
+                            isLive: viewModel.isCountdownActive
+                        ) != nil
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
-                            viewModel.startCountdown(seconds: countdownTotalSeconds, title: countdownTitleInput)
+                            viewModel.startCountdown(minutes: countdownMinutes, seconds: countdownSecs, title: countdownTitleInput)
                         }
                     }
 
@@ -225,7 +231,7 @@ struct OverlayControlPanel: View {
                     }
                 }
 
-                if let reason = OverlayUIState.countdownDisabledReason(totalSeconds: countdownTotalSeconds, isLive: viewModel.isCountdownActive) {
+                if let reason = OverlayUIState.countdownDisabledReason(minutes: countdownMinutes, seconds: countdownSecs, isLive: viewModel.isCountdownActive) {
                     Text(reason)
                         .font(StudioTheme.caption())
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -257,13 +263,13 @@ struct OverlayControlPanel: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.secondary)
                     Picker("", selection: $tickerSpeedIndex) {
-                        ForEach(0..<tickerSpeeds.count, id: \.self) { index in
-                            Text(tickerSpeeds[index].0).tag(index)
+                        ForEach(OverlaySpeedSelection.options.indices, id: \.self) { index in
+                            Text(OverlaySpeedSelection.label(at: index)).tag(index)
                         }
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: tickerSpeedIndex) { _, index in
-                        viewModel.tickerSpeed = tickerSpeeds[index].1
+                        viewModel.tickerSpeed = OverlaySpeedSelection.speed(at: index)
                     }
                 }
 
@@ -488,5 +494,14 @@ struct OverlayControlPanel: View {
         let minutes = max(seconds, 0) / 60
         let remainingSeconds = max(seconds, 0) % 60
         return String(format: "%02d:%02d", minutes, remainingSeconds)
+    }
+
+    private func syncTickerSpeedFromViewModel() {
+        let index = OverlaySpeedSelection.nearestIndex(for: viewModel.tickerSpeed)
+        tickerSpeedIndex = index
+        let normalizedSpeed = OverlaySpeedSelection.speed(at: index)
+        if viewModel.tickerSpeed != normalizedSpeed {
+            viewModel.tickerSpeed = normalizedSpeed
+        }
     }
 }

@@ -849,9 +849,15 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - BGM 操作
 
-    func addBGMItem(_ item: BGMItem) {
+    @discardableResult
+    func addBGMItem(_ item: BGMItem) -> Bool {
+        guard BGMDuplicatePolicy.decision(for: item.url, existingItems: bgmItems) != .duplicateURL else {
+            recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
+            return false
+        }
         bgmItems.append(item)
         saveData()
+        return true
     }
 
     func removeBGMItem(_ item: BGMItem) {
@@ -1012,6 +1018,11 @@ final class SwitcherViewModel: ObservableObject {
         bgmProgressTimer = nil
     }
 
+    func cancelBGMFallbackFade() {
+        bgmFallbackVolumeFadeTask?.cancel()
+        bgmFallbackVolumeFadeTask = nil
+    }
+
     private func updateBGMProgress() {
         if let player = bgmAudioPlayer {
             bgmCurrentTime = player.currentTime
@@ -1028,14 +1039,17 @@ final class SwitcherViewModel: ObservableObject {
             broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
             LiveSwitcherTelemetry.projectionFailClosed()
             recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
+            recordSupportEvent(kind: .projectionStartFailed, detail: "externalDisplay=false")
             return
         }
 
         isBroadcasting.toggle()
         if isBroadcasting {
             showOutputWindow()
+            recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
         } else {
             hideOutputWindow()
+            recordSupportEvent(kind: .projectionStopped, detail: "isBroadcasting=false")
         }
         LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
         recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=\(isBroadcasting)")
@@ -1072,6 +1086,7 @@ final class SwitcherViewModel: ObservableObject {
         broadcastSafetyNotice = "副屏已断开，投射已停止"
         LiveSwitcherTelemetry.projectionFailClosed()
         recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
+        recordSupportEvent(kind: .projectionLost, detail: "externalDisplay=false")
     }
 
     func recordSupportEvent(
