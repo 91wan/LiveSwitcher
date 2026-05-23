@@ -1,60 +1,26 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - 音乐播放列表面板（V20：独立一栏，夹在监视器与音频推子之间）
-
-enum BGMPlaylistPanelMode {
-    case library
-    case liveDock
-}
-
 struct BGMPlaylistPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var categorySelection = BGMCategorySelectionState(selectedCategory: .warmUp)
 
-    let mode: BGMPlaylistPanelMode
-
-    init(mode: BGMPlaylistPanelMode = .library) {
-        self.mode = mode
-    }
-
     var body: some View {
-        Group {
-            if mode == .liveDock {
-                panelContent
-            } else {
-                ScrollView(.vertical, showsIndicators: false) {
-                    panelContent
-                }
-            }
-        }
-        .frame(
-            minWidth: mode == .liveDock ? 0 : 320,
-            idealWidth: mode == .liveDock ? StudioTheme.directorRailWidth : 420,
-            maxWidth: .infinity
-        )
-        .background(mode == .liveDock ? StudioTheme.surfacePrimary.opacity(0.78) : StudioTheme.surfacePrimary)
-        .clipShape(.rect(cornerRadius: mode == .liveDock ? StudioTheme.radiusXL : StudioTheme.radiusM, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: mode == .liveDock ? StudioTheme.radiusXL : StudioTheme.radiusM, style: .continuous)
-                .stroke(mode == .liveDock ? StudioTheme.borderSubtle : .clear, lineWidth: 1)
-        )
-        .shadow(color: StudioTheme.shadowSoft, radius: mode == .liveDock ? 6 : 8, x: 0, y: 2)
-        .onAppear {
-            syncLiveDockCategory()
-        }
-        .onChange(of: viewModel.currentBGMItem) { _, _ in
-            syncLiveDockCategory()
-        }
-    }
-
-    @ViewBuilder
-    private var panelContent: some View {
-        if mode == .liveDock {
-            liveDockContent
-        } else {
+        ScrollView(.vertical, showsIndicators: false) {
             libraryContent
         }
+        .frame(
+            minWidth: 320,
+            idealWidth: 420,
+            maxWidth: .infinity
+        )
+        .background(StudioTheme.surfacePrimary)
+        .clipShape(.rect(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(.clear, lineWidth: 1)
+        )
+        .shadow(color: StudioTheme.shadowSoft, radius: 8, x: 0, y: 2)
     }
 
     private var libraryContent: some View {
@@ -92,44 +58,6 @@ struct BGMPlaylistPanel: View {
         }
     }
 
-    private var liveDockContent: some View {
-        VStack(spacing: 0) {
-            headerRow
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
-                .padding(.bottom, 8)
-
-            currentTrackStrip
-                .padding(.horizontal, 14)
-                .padding(.bottom, 8)
-
-            bgmControlButtons
-                .padding(.horizontal, 14)
-                .padding(.bottom, 8)
-
-            bgmProgressBar
-                .padding(.horizontal, 14)
-                .padding(.bottom, 8)
-
-            HStack(spacing: 10) {
-                statusRow
-                Spacer(minLength: 0)
-                categoryPicker
-                    .frame(maxWidth: 144)
-            }
-            .padding(.horizontal, 14)
-            .padding(.bottom, 8)
-
-            bgmList
-                .padding(.horizontal, 14)
-                .padding(.bottom, 10)
-
-            addMusicButton
-                .padding(.horizontal, 14)
-                .padding(.bottom, 12)
-        }
-    }
-
     // MARK: - 标题行
 
     private var headerRow: some View {
@@ -137,8 +65,8 @@ struct BGMPlaylistPanel: View {
 
         return ZStack {
             VStack(spacing: 2) {
-                Text(mode == .liveDock ? "现场 BGM" : "音乐播放机")
-                    .font(mode == .liveDock ? StudioTheme.sectionTitle() : StudioTheme.title())
+                Text("音乐播放机")
+                    .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(viewModel.bgmItems.count) 首已入库")
                     .font(StudioTheme.caption())
@@ -153,52 +81,12 @@ struct BGMPlaylistPanel: View {
         }
     }
 
-    private var currentTrackStrip: some View {
-        HStack(spacing: 8) {
-            Image(systemName: viewModel.isBGMPlaying ? "waveform" : "music.note")
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.textSecondary)
-                .frame(width: 24, height: 24)
-                .background(StudioTheme.surfacePrimary, in: Circle())
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(currentTrackTitle)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                Text(viewModel.isBGMPlaying ? "Playing now" : "Ready for live playback")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 8)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill((viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary).opacity(0.07))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(viewModel.isBGMPlaying ? StudioTheme.statusLive.opacity(0.22) : StudioTheme.borderSubtle, lineWidth: 1)
-        )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Current BGM: \(currentTrackTitle)")
-    }
-
-    private var currentTrackTitle: String {
-        viewModel.currentBGMItem?.title ?? "No BGM selected"
-    }
-
     // MARK: - BGM 五颗大媒体控制键（V20 新增"跳回开头"）
 
     private var bgmControlButtons: some View {
-        let diskSize: CGFloat = mode == .liveDock ? 30 : 32
-        let iconSize: CGFloat = mode == .liveDock ? 18 : 20
-        let playSize: CGFloat = mode == .liveDock ? 32 : 34
+        let diskSize: CGFloat = 32
+        let iconSize: CGFloat = 20
+        let playSize: CGFloat = 34
         let controls = bgmControlsState
 
         return HStack(spacing: 8) {
@@ -353,7 +241,7 @@ struct BGMPlaylistPanel: View {
 
     private var categoryPicker: some View {
         HStack {
-            Text(mode == .liveDock ? "分类" : "当前分类")
+            Text("当前分类")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
@@ -389,7 +277,7 @@ struct BGMPlaylistPanel: View {
                     systemImage: "music.note.list"
                 )
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, mode == .liveDock ? 14 : 20)
+                .padding(.vertical, 20)
                 .background(StudioTheme.surfaceSecondary)
                 .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             } else {
@@ -401,7 +289,7 @@ struct BGMPlaylistPanel: View {
                                 .foregroundStyle(StudioTheme.textTertiary)
                                 .frame(width: 20)
                                 .help("拖动此图标可排序")
-                            BGMItemRow(bgm: bgm, viewModel: viewModel, compact: mode == .liveDock)
+                            BGMItemRow(bgm: bgm, viewModel: viewModel)
                         }
                         .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                         .listRowSeparator(.hidden)
@@ -412,7 +300,7 @@ struct BGMPlaylistPanel: View {
                     }
                 }
                 .listStyle(.plain)
-                .frame(height: min(CGFloat(filteredBGM.count) * 52, mode == .liveDock ? 156 : 280))
+                .frame(height: min(CGFloat(filteredBGM.count) * 52, 280))
                 .background(StudioTheme.surfaceSecondary)
                 .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             }
@@ -429,7 +317,7 @@ struct BGMPlaylistPanel: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16, weight: .bold))
                 Text("添加音乐文件")
-                    .font(.system(size: mode == .liveDock ? 14 : 16, weight: .bold))
+                    .font(.system(size: 16, weight: .bold))
                 Spacer()
                 Image(systemName: "arrow.up.doc.fill")
                     .font(.system(size: 14, weight: .semibold))
@@ -437,7 +325,7 @@ struct BGMPlaylistPanel: View {
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.horizontal, 14)
-            .padding(.vertical, mode == .liveDock ? 11 : 13)
+            .padding(.vertical, 13)
         }
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
@@ -506,12 +394,73 @@ struct BGMPlaylistPanel: View {
             isPlaying: viewModel.isBGMPlaying
         )
     }
+}
 
-    private func syncLiveDockCategory() {
-        categorySelection.syncWithCurrentItem(
-            viewModel.currentBGMItem,
-            allowsAutoSync: mode == .liveDock
-        )
+// MARK: - BGM 曲目行
+
+struct BGMItemRow: View {
+    let bgm: BGMItem
+    @ObservedObject var viewModel: SwitcherViewModel
+    var compact: Bool = false
+    @State private var isHovered = false
+
+    var isCurrentTrack: Bool {
+        viewModel.currentBGMItem?.id == bgm.id
+    }
+
+    var isPlaying: Bool {
+        isCurrentTrack && viewModel.isBGMPlaying
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: isPlaying ? "waveform" : (isCurrentTrack ? "pause.fill" : "music.note"))
+                .font(.system(size: 16))
+                .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textSecondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(bgm.title)
+                    .font(compact ? .system(size: 14, weight: .semibold) : .title3)
+                    .fontWeight(isCurrentTrack ? .semibold : .regular)
+                    .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Text(bgm.category.rawValue)
+                    .font(.system(size: compact ? 11 : 12))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            .layoutPriority(1)
+
+            Spacer()
+
+            HStack(spacing: compact ? 8 : 10) {
+                Button(action: { viewModel.toggleBGM(bgm) }) {
+                    Image(systemName: isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: compact ? 14 : 16))
+                        .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textSecondary)
+                }
+                .buttonStyle(.plain)
+                .help(isPlaying ? "暂停" : "播放")
+                .accessibilityLabel(isPlaying ? "Pause \(bgm.title)" : "Play \(bgm.title)")
+
+                Button(action: { viewModel.removeBGMItem(bgm) }) {
+                    Image(systemName: "trash")
+                        .font(.system(size: compact ? 13 : 14))
+                        .foregroundStyle(isHovered ? StudioTheme.actionDanger : StudioTheme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .help("删除")
+                .accessibilityLabel("Delete \(bgm.title)")
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, compact ? 6 : 8)
+        .background(isCurrentTrack ? StudioTheme.actionPrimary.opacity(0.08) : (isHovered ? StudioTheme.surfaceSecondary : Color.clear))
+        .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        .onHover { isHovered = $0 }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(bgm.title), \(bgm.category.rawValue)")
+        .accessibilityValue(isPlaying ? "Playing" : (isCurrentTrack ? "Current" : "Queued"))
     }
 }
 
