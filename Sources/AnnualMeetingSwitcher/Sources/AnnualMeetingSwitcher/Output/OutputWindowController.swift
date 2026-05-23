@@ -5,7 +5,7 @@ import Combine
 protocol OutputWindowControlling: AnyObject {
     var onExternalDisplayUnavailable: (() -> Void)? { get set }
     func mountAnyView(rootView: AnyView)
-    func show(on screen: NSScreen?, fullScreen: Bool)
+    func show(on screen: NSScreen?)
     func hide()
 }
 
@@ -158,7 +158,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     /// - window.setFrame(targetScreen.frame, display: true) 使用全局坐标系
     /// - contentView.frame 使用窗口局部坐标系（bounds，origin = (0,0)）
     /// - 两重 async 确保 SwiftUI layout pass 之后也保持正确
-    func show(on screen: NSScreen? = nil, fullScreen: Bool = false) {
+    func show(on screen: NSScreen? = nil) {
         guard let w = window else { return }
 
         // 确定目标屏幕：优先使用传入的外接屏，否则用智能副屏选择器。

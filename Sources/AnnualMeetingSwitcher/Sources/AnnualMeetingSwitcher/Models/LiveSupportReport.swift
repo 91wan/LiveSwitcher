@@ -8,7 +8,17 @@ enum LiveSupportEventKind: String, Equatable {
     case panicModeChanged = "panic.mode.changed"
     case bgmTakeoverChanged = "bgm.takeover.changed"
     case projectionToggle = "projection.toggle"
+    case projectionStarted = "projection.started"
+    case projectionStopped = "projection.stopped"
+    case projectionLost = "projection.lost"
     case projectionFailClosed = "projection.fail.closed"
+    case countdownStarted = "overlay.countdown.started"
+    case countdownStopped = "overlay.countdown.stopped"
+    case tickerStarted = "overlay.ticker.started"
+    case tickerStopped = "overlay.ticker.stopped"
+    case lowerThirdShown = "overlay.lower-third.shown"
+    case lowerThirdHidden = "overlay.lower-third.hidden"
+    case overlaysCleared = "overlay.cleared"
 }
 
 struct LiveSupportEvent: Equatable {
@@ -37,7 +47,7 @@ enum LiveSupportReport {
             architecture: snapshot.architecture,
             preflight: safePreflight
         )
-        let safeChecks = LivePreflightCheck.build(from: safePreflight)
+        let safeChecks = checks.map(supportSafeCheck)
         let diagnostics = LiveDiagnosticsReport.makePlainText(snapshot: safeDiagnostics, checks: safeChecks)
         let preflight = LivePreflightReport.makePlainText(snapshot: safePreflight, checks: safeChecks)
 
@@ -75,6 +85,18 @@ enum LiveSupportReport {
             safeSnapshot.currentProgramTitle = "Selected program"
         }
         return safeSnapshot
+    }
+
+    private static func supportSafeCheck(_ check: LivePreflightCheck) -> LivePreflightCheck {
+        LivePreflightCheck(
+            id: LiveSupportRedactor.safeText(check.id),
+            group: check.group,
+            status: check.status,
+            title: LiveSupportRedactor.safeText(check.title),
+            message: LiveSupportRedactor.safeText(check.message),
+            actionLabel: check.actionLabel.map(LiveSupportRedactor.safeText),
+            actionKind: check.actionKind
+        )
     }
 
     private static func isoString(_ date: Date) -> String {

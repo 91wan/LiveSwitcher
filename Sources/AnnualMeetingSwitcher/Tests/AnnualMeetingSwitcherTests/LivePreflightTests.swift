@@ -568,6 +568,40 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertFalse(report.localizedStandardContains("product.pptx"))
     }
 
+    func testSupportReportUsesCallerProvidedChecksAndSanitizesThem() {
+        var preflight = readySnapshot()
+        preflight.currentProgramTitle = "Customer Dinner Video.mov"
+        let customCheck = LivePreflightCheck(
+            id: "custom.operator-check",
+            group: .controls,
+            status: .warn,
+            title: "Client Deck.mov",
+            message: "Review /Users/" + "liuchangxi/Show/Client Deck.mov before showtime.",
+            actionLabel: "Manual review",
+            actionKind: .manualReview
+        )
+        let diagnostics = LiveDiagnosticsSnapshot(
+            appVersion: "0.4.0",
+            operatingSystem: "macOS Test",
+            architecture: "arm64-test",
+            preflight: preflight
+        )
+
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnostics,
+            checks: [customCheck],
+            events: [],
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
+        )
+
+        XCTAssertTrue(report.contains("custom.operator-check"))
+        XCTAssertTrue(report.contains("[filename redacted]"))
+        XCTAssertFalse(report.contains("display.external"))
+        XCTAssertFalse(report.localizedStandardContains("Client Deck.mov"))
+        XCTAssertFalse(report.localizedStandardContains("Customer Dinner Video.mov"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+    }
+
     func testSupportEventTimelineCapsAtEightyEntriesAndDropsOldest() {
         let viewModel = makeViewModel()
         let start = Date(timeIntervalSince1970: 1_790_000_000)
@@ -594,6 +628,13 @@ final class LivePreflightTests: XCTestCase {
         viewModel.toggleBGM(BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/missing.mp3")))
         viewModel.performLivePreflightAction(.manualReview)
         viewModel.handleExternalDisplayLost()
+        viewModel.startCountdown(seconds: 10, title: "Private countdown title")
+        viewModel.stopCountdown()
+        viewModel.startTicker(text: "Customer ticker text")
+        viewModel.stopTicker()
+        viewModel.showLowerThird(name: "Private Host", title: "Private Company")
+        viewModel.dismissLowerThird()
+        viewModel.clearAllOverlays()
 
         let kinds = viewModel.supportEvents.map(\.kind)
         XCTAssertTrue(kinds.contains(.speakerModeChanged))
@@ -601,7 +642,18 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertTrue(kinds.contains(.bgmTakeoverChanged))
         XCTAssertTrue(kinds.contains(.preflightAction))
         XCTAssertTrue(kinds.contains(.projectionFailClosed))
+        XCTAssertTrue(kinds.contains(.projectionLost))
+        XCTAssertTrue(kinds.contains(.countdownStarted))
+        XCTAssertTrue(kinds.contains(.countdownStopped))
+        XCTAssertTrue(kinds.contains(.tickerStarted))
+        XCTAssertTrue(kinds.contains(.tickerStopped))
+        XCTAssertTrue(kinds.contains(.lowerThirdShown))
+        XCTAssertTrue(kinds.contains(.lowerThirdHidden))
+        XCTAssertTrue(kinds.contains(.overlaysCleared))
         XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("/tmp/missing.mp3") })
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("Private countdown title") })
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("Customer ticker text") })
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("Private Host") })
     }
 
     func testViewModelSupportReportReflectsCurrentStateWithoutMutatingPlayback() {

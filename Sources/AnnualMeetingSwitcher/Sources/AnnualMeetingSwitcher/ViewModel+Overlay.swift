@@ -15,6 +15,7 @@ extension SwitcherViewModel {
         countdownTitle    = trimmedTitle.isEmpty ? "活动即将开始" : trimmedTitle
         countdownSeconds  = seconds
         isCountdownActive = true
+        recordSupportEvent(kind: .countdownStarted, detail: "seconds=\(seconds)")
 
         // 停止已有 Timer
         countdownTimer?.invalidate()
@@ -51,10 +52,14 @@ extension SwitcherViewModel {
 
     /// 停止倒计时
     func stopCountdown() {
+        let wasActive = isCountdownActive
         countdownTimer?.invalidate()
         countdownTimer    = nil
         isCountdownActive = false
         countdownSeconds  = 0
+        if wasActive {
+            recordSupportEvent(kind: .countdownStopped, detail: "isActive=false")
+        }
     }
 
     // MARK: - 游动字幕方法
@@ -66,11 +71,16 @@ extension SwitcherViewModel {
 
         tickerText     = trimmedText
         isTickerActive = true
+        recordSupportEvent(kind: .tickerStarted, detail: "isActive=true")
     }
 
     /// 停止游动字幕
     func stopTicker() {
+        let wasActive = isTickerActive
         isTickerActive = false
+        if wasActive {
+            recordSupportEvent(kind: .tickerStopped, detail: "isActive=false")
+        }
     }
 
     // MARK: - V27: 下三分之一条方法
@@ -83,19 +93,30 @@ extension SwitcherViewModel {
         lowerThirdName    = trimmedName
         lowerThirdTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)
         isLowerThirdVisible = true
+        recordSupportEvent(kind: .lowerThirdShown, detail: "isVisible=true")
     }
 
     /// 隐藏人名条（退场动画后消失）
     func dismissLowerThird() {
+        let wasVisible = isLowerThirdVisible
         isLowerThirdVisible = false
+        if wasVisible {
+            recordSupportEvent(kind: .lowerThirdHidden, detail: "isVisible=false")
+        }
     }
 
     /// 一键清空所有大屏叠层
     func clearAllOverlays() {
+        let activeCount = [
+            isCountdownActive,
+            isTickerActive,
+            isLowerThirdVisible
+        ].filter { $0 }.count
         stopCountdown()
         stopTicker()
         dismissLowerThird()
         lowerThirdName = ""
         lowerThirdTitle = ""
+        recordSupportEvent(kind: .overlaysCleared, detail: "activeOverlayCount=\(activeCount)")
     }
 }
