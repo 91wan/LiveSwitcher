@@ -5,7 +5,6 @@ enum OverlayUIState {
     static let maxCountdownSeconds = (maxCountdownMinutes * 60) + 59
 
     static func lowerThirdDisabledReason(name: String, isLive: Bool) -> String? {
-        if isLive { return "人名条已上屏" }
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "请输入姓名"
         }
@@ -13,7 +12,6 @@ enum OverlayUIState {
     }
 
     static func tickerDisabledReason(text: String, isLive: Bool) -> String? {
-        if isLive { return "游动字幕已上屏" }
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return "请输入字幕内容"
         }
@@ -21,7 +19,6 @@ enum OverlayUIState {
     }
 
     static func countdownDisabledReason(totalSeconds: Int, isLive: Bool) -> String? {
-        if isLive { return "倒计时已上屏" }
         if totalSeconds <= 0 {
             return "请设置有效倒计时"
         }
@@ -32,7 +29,6 @@ enum OverlayUIState {
     }
 
     static func countdownDisabledReason(minutes: Int, seconds: Int, isLive: Bool) -> String? {
-        if isLive { return "倒计时已上屏" }
         if minutes < 0 || seconds < 0 {
             return "倒计时不能为负数"
         }

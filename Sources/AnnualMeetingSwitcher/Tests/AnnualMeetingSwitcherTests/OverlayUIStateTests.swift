@@ -52,23 +52,11 @@ final class OverlayUIStateTests: XCTestCase {
         XCTAssertNil(OverlayUIState.countdownDisabledReason(minutes: 999, seconds: 59, isLive: false))
     }
 
-    func testLiveOverlayReasonsPreventDuplicateStart() {
-        XCTAssertEqual(
-            OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true),
-            "人名条已上屏"
-        )
-        XCTAssertEqual(
-            OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true),
-            "游动字幕已上屏"
-        )
-        XCTAssertEqual(
-            OverlayUIState.countdownDisabledReason(totalSeconds: 30, isLive: true),
-            "倒计时已上屏"
-        )
-        XCTAssertEqual(
-            OverlayUIState.countdownDisabledReason(minutes: 1, seconds: 0, isLive: true),
-            "倒计时已上屏"
-        )
+    func testLiveOverlayActionsAllowReplacingValidDrafts() {
+        XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
+        XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))
+        XCTAssertNil(OverlayUIState.countdownDisabledReason(totalSeconds: 30, isLive: true))
+        XCTAssertNil(OverlayUIState.countdownDisabledReason(minutes: 1, seconds: 0, isLive: true))
     }
 
     func testCountdownTotalSecondsReturnsNilForInvalidInput() {

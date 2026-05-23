@@ -141,8 +141,11 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "Send Live",
                         systemImage: "arrow.up.to.line",
-                        fill: StudioTheme.Tone.live,
-                        isDisabled: viewModel.isLowerThirdVisible || composerState.trimmedLowerThirdName.isEmpty
+                        fill: StudioTheme.Action.primary,
+                        isDisabled: OverlayUIState.lowerThirdDisabledReason(
+                            name: composerState.lowerThirdNameDraft,
+                            isLive: viewModel.isLowerThirdVisible
+                        ) != nil
                     ) {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             viewModel.showLowerThird(
@@ -207,7 +210,7 @@ struct OverlayControlPanel: View {
                     overlayActionButton(
                         title: "Send Live",
                         systemImage: "play.fill",
-                        fill: StudioTheme.Tone.warn,
+                        fill: StudioTheme.Action.primary,
                         isDisabled: OverlayUIState.countdownDisabledReason(
                             minutes: composerState.countdownMinutesDraft,
                             seconds: composerState.countdownSecondsDraft,
@@ -287,7 +290,10 @@ struct OverlayControlPanel: View {
                         title: "Send Live",
                         systemImage: "play.fill",
                         fill: StudioTheme.Action.primary,
-                        isDisabled: viewModel.isTickerActive || composerState.trimmedTickerText.isEmpty
+                        isDisabled: OverlayUIState.tickerDisabledReason(
+                            text: composerState.tickerTextDraft,
+                            isLive: viewModel.isTickerActive
+                        ) != nil
                     ) {
                         withAnimation(.easeInOut(duration: 0.25)) {
                             viewModel.startTicker(text: composerState.tickerTextDraft)
@@ -323,26 +329,9 @@ struct OverlayControlPanel: View {
             status: (hasActiveOverlay ? "\(activeOverlayCount) LIVE" : "OFF", hasActiveOverlay ? .live : .idle)
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                livePreviewCanvas
+                OverlayLivePreviewCanvas(model: livePreviewModel)
                 activeStackCard
             }
-        }
-    }
-
-    private var livePreviewCanvas: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.monitorSurfaceBottom.opacity(0.95))
-                .aspectRatio(16.0 / 9.0, contentMode: .fit)
-
-            VStack {
-                tickerPreview
-                Spacer()
-                countdownPreview
-                Spacer()
-                lowerThirdPreview
-            }
-            .padding(18)
         }
     }
 
@@ -374,34 +363,18 @@ struct OverlayControlPanel: View {
         .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
     }
 
-    private var tickerPreview: some View {
-        Text(composerState.trimmedTickerText.isEmpty ? "Ticker preview" : composerState.trimmedTickerText)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(viewModel.isTickerActive || !composerState.trimmedTickerText.isEmpty ? .white : .white.opacity(0.45))
-            .lineLimit(1)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var countdownPreview: some View {
-        Text(formattedTime(viewModel.isCountdownActive ? viewModel.countdownSeconds : composerState.countdownTotalSeconds))
-            .font(.system(size: 28, weight: .black, design: .rounded))
-            .foregroundStyle(composerState.countdownTotalSeconds > 0 || viewModel.isCountdownActive ? .white : .white.opacity(0.45))
-    }
-
-    private var lowerThirdPreview: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(composerState.trimmedLowerThirdName.isEmpty ? "Lower third name" : composerState.trimmedLowerThirdName)
-                    .font(.system(size: 13, weight: .black))
-                Text(composerState.lowerThirdTitleDraft.isEmpty ? "Title / organization" : composerState.lowerThirdTitleDraft)
-                    .font(.system(size: 10, weight: .medium))
-                    .opacity(0.78)
-            }
-            Spacer()
-        }
-        .foregroundStyle(.white)
-        .padding(10)
-        .background(StudioTheme.Tone.live.opacity(viewModel.isLowerThirdVisible || !composerState.trimmedLowerThirdName.isEmpty ? 0.72 : 0.25), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+    private var livePreviewModel: OverlayLivePreviewModel {
+        OverlayLivePreviewModel.make(
+            isLowerThirdVisible: viewModel.isLowerThirdVisible,
+            lowerThirdName: viewModel.lowerThirdName,
+            lowerThirdTitle: viewModel.lowerThirdTitle,
+            isCountdownActive: viewModel.isCountdownActive,
+            countdownSeconds: viewModel.countdownSeconds,
+            countdownTitle: viewModel.countdownTitle,
+            isTickerActive: viewModel.isTickerActive,
+            tickerText: viewModel.tickerText,
+            composerState: composerState
+        )
     }
 
     private func activeOverlaySummaryRow(title: String, isLive: Bool) -> some View {
