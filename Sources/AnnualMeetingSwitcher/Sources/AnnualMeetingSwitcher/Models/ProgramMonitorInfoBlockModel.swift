@@ -7,6 +7,10 @@ struct ProgramMonitorInfoBlockModel: Equatable {
     let badgeText: String
     let status: StudioTheme.StatusKind
 
+    var accessibilityLabel: String {
+        "\(title): \(value), \(subtitle), \(badgeText)"
+    }
+
     static func current(
         item: ProgramItem?,
         isBroadcasting: Bool,

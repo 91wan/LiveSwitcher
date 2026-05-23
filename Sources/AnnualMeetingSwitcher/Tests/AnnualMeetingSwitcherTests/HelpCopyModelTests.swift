@@ -24,6 +24,8 @@ final class HelpCopyModelTests: XCTestCase {
         XCTAssertFalse(text.contains("投射：关/开"))
         XCTAssertFalse(text.contains("查看列表"))
         XCTAssertTrue(text.contains("Live Ops"))
-        XCTAssertTrue(text.contains("Audio 页面") || text.contains("音频页面"))
+        XCTAssertTrue(text.contains("Output"))
+        XCTAssertTrue(text.contains("BGM Library"))
+        XCTAssertTrue(text.contains("Overlay Composer"))
     }
 }

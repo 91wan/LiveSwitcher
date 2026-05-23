@@ -41,49 +41,7 @@ struct PreflightPopoverView: View {
         let checks = preflightDisplayedChecks
 
         VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Text("Live Preflight / 现场检查")
-                        .font(.system(size: 18, weight: .black))
-                    Text("Reads the current runtime state. Use the summary first, then review fail/warn rows before a show.")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 7) {
-                    Button(action: onOpenSafetyCockpit) {
-                        Label("Open Cockpit", systemImage: "gauge.with.dots.needle.bottom.100percent")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-
-                    Button(action: copyPreflightReport) {
-                        Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    HStack(spacing: 7) {
-                        Button(action: copySupportReport) {
-                            Label("Copy Support", systemImage: "stethoscope")
-                                .font(.system(size: 11, weight: .bold))
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-
-                        Button(action: saveSupportReport) {
-                            Label("Save Support...", systemImage: "square.and.arrow.down")
-                                .font(.system(size: 11, weight: .bold))
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-                }
-            }
+            preflightHeader
 
             PreflightSummaryCard(summary: viewModel.livePreflightSummary)
 
@@ -137,7 +95,59 @@ struct PreflightPopoverView: View {
                     )
                 }
             }
+
+            preflightFooterActions
         }
+    }
+
+    private var preflightHeader: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text("Live Preflight / 现场检查")
+                .font(.system(size: 18, weight: .black))
+            Text("Reads the current runtime state. Use the summary first, then review fail/warn rows before a show.")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var preflightFooterActions: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Divider()
+            HStack(spacing: 8) {
+                Button(action: onOpenSafetyCockpit) {
+                    Label("Open Cockpit", systemImage: "gauge.with.dots.needle.bottom.100percent")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+                Button(action: copyPreflightReport) {
+                    Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Spacer(minLength: 0)
+
+                Button(action: copySupportReport) {
+                    Label("Copy Support", systemImage: "stethoscope")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button(action: saveSupportReport) {
+                    Label("Save Support...", systemImage: "square.and.arrow.down")
+                        .font(.system(size: 11, weight: .bold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+        }
+        .padding(.top, 4)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Preflight footer actions")
     }
 
     private var preflightDisplayedChecks: [LivePreflightCheck] {
