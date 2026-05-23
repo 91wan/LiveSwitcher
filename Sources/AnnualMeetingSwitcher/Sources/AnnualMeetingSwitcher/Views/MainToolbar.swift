@@ -68,9 +68,10 @@ struct MainToolbar: View {
     }
 
     private var embeddedToolbarActionCluster: some View {
-        ViewThatFits(in: .horizontal) {
-            toolbarActionRow(compact: false)
-            toolbarActionRow(compact: true)
+        HStack(spacing: 10) {
+            panicButton
+            preflightButton
+            helpButton
         }
     }
 
@@ -84,56 +85,47 @@ struct MainToolbar: View {
         PreflightButtonModel.make(summary: viewModel.livePreflightSummary)
     }
 
-    private func toolbarActionRow(compact: Bool) -> some View {
-        HStack(spacing: compact ? 8 : 10) {
-            ForEach(ToolbarActionModel.topActions) { action in
-                toolbarActionButton(action.id, compact: compact)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func toolbarActionButton(_ action: ToolbarActionModel.ActionID, compact: Bool) -> some View {
-        switch action {
-        case .panic:
-            if compact {
-                compactToolbarButton(
-                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
-                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
-                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    fill: panicTint,
-                    action: togglePanic
-                )
-            } else {
-                liveControlButton(
-                    title: viewModel.isPanicMode ? "老板键: 开" : "老板键",
-                    subtitle: viewModel.isPanicMode ? "切黑静音" : "紧急切黑",
-                    systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill",
-                    tint: panicTint,
-                    isCritical: viewModel.isPanicMode,
-                    help: viewModel.isPanicMode
-                        ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
-                        : "老板键（紧急）：一键切黑副屏并静音所有音频",
-                    action: togglePanic
-                )
-            }
-        case .preflight:
-            if compact {
-                compactPreflightButton
-            } else {
-                preflightButton
-            }
-        case .help:
-            helpButton
-        case .speaker, .ppt:
-            EmptyView()
-        }
-    }
-
     private func togglePanic() {
         withAnimation(.easeInOut(duration: 0.25)) {
             viewModel.togglePanicMode()
         }
+    }
+
+    private var panicButton: some View {
+        Button(action: togglePanic) {
+            HStack(spacing: 8) {
+                Image(systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill")
+                    .font(.system(size: 16, weight: .black))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(viewModel.isPanicMode ? "老板键: 开" : "老板键")
+                        .font(.system(size: 13, weight: .black))
+                    Text(viewModel.isPanicMode ? "切黑静音" : "紧急切黑")
+                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .opacity(0.88)
+                }
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 12)
+            .frame(height: 46)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .fill(panicTint)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(StudioTheme.surfaceElevated.opacity(viewModel.isPanicMode ? 0.46 : 0.18), lineWidth: 1)
+            )
+            .shadow(color: panicTint.opacity(viewModel.isPanicMode ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help(viewModel.isPanicMode
+            ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
+            : "老板键（紧急）：一键切黑副屏并静音所有音频")
+        .accessibilityLabel(viewModel.isPanicMode ? "老板键: 开" : "老板键")
+        .accessibilityHint(viewModel.isPanicMode
+            ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
+            : "老板键（紧急）：一键切黑副屏并静音所有音频")
     }
 
     private var preflightButton: some View {
@@ -149,7 +141,8 @@ struct MainToolbar: View {
                 }
             }
             .foregroundStyle(StudioTheme.statusColor(preflightModel.status))
-            .frame(width: 112, height: 46)
+            .padding(.horizontal, 12)
+            .frame(height: 46)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(StudioTheme.statusColor(preflightModel.status).opacity(0.10))
@@ -165,17 +158,6 @@ struct MainToolbar: View {
         .accessibilityLabel("Preflight")
         .accessibilityValue(preflightModel.value)
         .accessibilityHint("Open live preflight checks")
-    }
-
-    private var compactPreflightButton: some View {
-        compactToolbarButton(
-            title: "Preflight",
-            subtitle: preflightModel.value,
-            systemName: preflightModel.status == .fail ? "xmark.octagon.fill" : "checklist.checked",
-            fill: StudioTheme.statusColor(preflightModel.status)
-        ) {
-            showPreflight.toggle()
-        }
     }
 
     // MARK: - 使用说明按钮
@@ -200,84 +182,6 @@ struct MainToolbar: View {
         .accessibilityHint("Open usage help")
     }
 
-    private func compactToolbarButton(
-        title: String,
-        subtitle: String,
-        systemName: String,
-        fill: Color,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemName)
-                    .font(.system(size: 16, weight: .black))
-                    .foregroundStyle(.white)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 14, weight: .bold))
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .medium))
-                        .opacity(0.85)
-                }
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                    .fill(fill)
-            )
-            .shadow(color: fill.opacity(0.28), radius: 5, x: 0, y: 3)
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help("\(title): \(subtitle)")
-        .accessibilityLabel(title)
-        .accessibilityValue(subtitle)
-        .accessibilityHint("Toggle \(title)")
-    }
-
-    private func liveControlButton(
-        title: String,
-        subtitle: String,
-        systemName: String,
-        tint: Color,
-        isCritical: Bool,
-        help: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 8) {
-                Image(systemName: systemName)
-                    .font(.system(size: 16, weight: .black))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.system(size: 13, weight: .black))
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .opacity(0.88)
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(width: 112, height: 46)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(
-                        isCritical ? StudioTheme.actionDanger : tint
-                    )
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .stroke(StudioTheme.surfaceElevated.opacity(isCritical ? 0.46 : 0.18), lineWidth: 1)
-            )
-            .shadow(color: tint.opacity(isCritical ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
-        }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(help)
-        .accessibilityLabel(title)
-        .accessibilityHint(help)
-    }
 }
 
 // MARK: - Preview

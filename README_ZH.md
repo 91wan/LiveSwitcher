@@ -18,9 +18,9 @@
 
 ## 截图
 
-| 预览 / 切换 | 音频混音 | 叠层 / 字幕 |
+| Run Desk / 导播台 | Audio / BGM Library | Overlays / Overlay Composer |
 | --- | --- | --- |
-| ![预览和切换](docs/assets/readme/preview-switch.png) | ![音频混音](docs/assets/readme/audio-mixer.png) | ![叠层和字幕](docs/assets/readme/overlays.png) |
+| ![Run Desk 导播台](docs/assets/readme/preview-switch.png) | ![Audio 页面与 BGM Library](docs/assets/readme/audio-mixer.png) | ![Overlays 与 Overlay Composer](docs/assets/readme/overlays.png) |
 
 ## 项目说明
 
@@ -152,7 +152,7 @@ docs/assets/ui-matrix/2026-05-04/
 docs/assets/ui-matrix/2026-05-04-v021/
 ```
 
-矩阵覆盖三个窗口尺寸（`1360x760`、`1440x800`、最大化）和三个页面：预览/切换、音频混音、叠层/字幕。
+矩阵覆盖三个窗口尺寸（`1360x760`、`1440x800`、最大化）。旧截图作为回归素材保留；当前信息架构是 Run Desk / 导播台、Live Ops、Audio 页面 / BGM Library、Overlays / Overlay Composer。
 
 ## 仓库结构
 

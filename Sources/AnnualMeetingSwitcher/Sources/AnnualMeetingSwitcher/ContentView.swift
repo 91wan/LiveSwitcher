@@ -11,9 +11,6 @@ struct ContentView: View {
             LiveStatusStrip(model: liveStatusModel)
 
             mainContent
-
-            // ─── 底部状态栏 ───
-            StatusBar()
         }
         .background(StudioTheme.canvasGradient)
         .frame(minWidth: AppConfiguration.minWindowWidth,
@@ -309,28 +306,6 @@ final class KeyMonitorView: NSView {
             }
             return event
         }
-    }
-}
-
-// MARK: - 底部状态栏
-
-struct StatusBar: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(viewModel.programItems.isEmpty ? StudioTheme.statusIdle : StudioTheme.statusReady)
-                .frame(width: 7, height: 7)
-            Text(viewModel.programItems.isEmpty ? "就绪 - 请添加信号源" : "就绪 - \(viewModel.programItems.count) 个待播放项目")
-                .font(StudioTheme.caption())
-                .foregroundStyle(StudioTheme.textSecondary)
-            Spacer()
-        }
-        .padding(.horizontal, 14)
-        .frame(height: 24)
-        .background(StudioTheme.surfacePrimary.opacity(0.68))
-        .overlay(Divider(), alignment: .top)
     }
 }
 
