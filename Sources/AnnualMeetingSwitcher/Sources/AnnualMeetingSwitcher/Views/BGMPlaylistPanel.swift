@@ -14,7 +14,7 @@ struct BGMPlaylistPanel: View {
             idealWidth: 420,
             maxWidth: .infinity
         )
-        .background(StudioTheme.surfacePrimary)
+        .background(StudioTheme.Surface.base)
         .clipShape(.rect(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
@@ -134,7 +134,7 @@ struct BGMPlaylistPanel: View {
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(.system(size: playSize))
-                    .foregroundStyle(controls.canPlay ? (viewModel.isBGMPlaying ? StudioTheme.statusLive : StudioTheme.actionPrimary) : StudioTheme.textTertiary)
+                    .foregroundStyle(controls.canPlay ? (viewModel.isBGMPlaying ? StudioTheme.Tone.live : StudioTheme.Action.primary) : StudioTheme.textTertiary)
             }
             .buttonStyle(.plain)
             .disabled(!controls.canPlay)
@@ -163,7 +163,7 @@ struct BGMPlaylistPanel: View {
             Button(action: { viewModel.toggleLoopMode() }) {
                 Image(systemName: viewModel.bgmPlayMode == .loopOne ? "repeat.1" : "repeat")
                     .font(.system(size: iconSize))
-                    .foregroundStyle(viewModel.bgmPlayMode == .sequential ? StudioTheme.textSecondary : StudioTheme.actionPrimary)
+                    .foregroundStyle(viewModel.bgmPlayMode == .sequential ? StudioTheme.textSecondary : StudioTheme.Action.primary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
                     .clipShape(Circle())
@@ -178,7 +178,7 @@ struct BGMPlaylistPanel: View {
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(StudioTheme.surfaceSecondary)
+                .fill(StudioTheme.Surface.raised)
         )
     }
 
@@ -200,7 +200,7 @@ struct BGMPlaylistPanel: View {
                 ),
                 in: 0...1
             )
-            .tint(StudioTheme.actionPrimary)
+            .tint(StudioTheme.Action.primary)
             .frame(height: 20)
             .disabled(!bgmControlsState.canSeekToBeginning)
             .accessibilityLabel("BGM progress")
@@ -225,7 +225,7 @@ struct BGMPlaylistPanel: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 6)
-        .background(StudioTheme.surfaceSecondary)
+        .background(StudioTheme.Surface.raised)
         .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
     }
 
@@ -260,7 +260,7 @@ struct BGMPlaylistPanel: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                .fill(StudioTheme.surfaceSecondary)
+                .fill(StudioTheme.Surface.raised)
         )
     }
 
@@ -278,7 +278,7 @@ struct BGMPlaylistPanel: View {
                 )
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
-                .background(StudioTheme.surfaceSecondary)
+                .background(StudioTheme.Surface.raised)
                 .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             } else {
                 List {
@@ -301,7 +301,7 @@ struct BGMPlaylistPanel: View {
                 }
                 .listStyle(.plain)
                 .frame(height: min(CGFloat(filteredBGM.count) * 52, 280))
-                .background(StudioTheme.surfaceSecondary)
+                .background(StudioTheme.Surface.raised)
                 .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
             }
         }
@@ -329,7 +329,7 @@ struct BGMPlaylistPanel: View {
         }
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(StudioTheme.actionPrimary)
+                .fill(StudioTheme.Action.primary)
         )
         .buttonStyle(.plain)
         .accessibilityLabel("Add music files")
@@ -340,7 +340,7 @@ struct BGMPlaylistPanel: View {
     private var statusRow: some View {
         HStack(spacing: 6) {
             Circle()
-                .fill(viewModel.bgmItems.isEmpty ? StudioTheme.statusIdle.opacity(0.4) : StudioTheme.statusReady)
+                .fill(viewModel.bgmItems.isEmpty ? StudioTheme.Tone.idle.opacity(0.4) : StudioTheme.Tone.ready)
                 .frame(width: 8, height: 8)
             Text(viewModel.bgmItems.isEmpty ? "引擎已停止" : "BGM 已就绪")
                 .font(.system(size: 13, weight: .semibold))
@@ -350,7 +350,7 @@ struct BGMPlaylistPanel: View {
 
     private var controlDiskFill: some View {
         Circle()
-            .fill(StudioTheme.surfacePrimary)
+            .fill(StudioTheme.Surface.base)
             .shadow(color: StudioTheme.shadowSoft, radius: 3, x: 0, y: 1)
     }
 
@@ -416,14 +416,14 @@ struct BGMItemRow: View {
         HStack(spacing: 8) {
             Image(systemName: isPlaying ? "waveform" : (isCurrentTrack ? "pause.fill" : "music.note"))
                 .font(.system(size: 16))
-                .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textSecondary)
+                .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textSecondary)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(bgm.title)
                     .font(compact ? .system(size: 14, weight: .semibold) : .title3)
                     .fontWeight(isCurrentTrack ? .semibold : .regular)
-                    .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textPrimary)
+                    .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textPrimary)
                     .lineLimit(1)
                 Text(bgm.category.rawValue)
                     .font(.system(size: compact ? 11 : 12))
@@ -437,7 +437,7 @@ struct BGMItemRow: View {
                 Button(action: { viewModel.toggleBGM(bgm) }) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: compact ? 14 : 16))
-                        .foregroundStyle(isCurrentTrack ? StudioTheme.actionPrimary : StudioTheme.textSecondary)
+                        .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
                 .help(isPlaying ? "暂停" : "播放")
@@ -446,7 +446,7 @@ struct BGMItemRow: View {
                 Button(action: { viewModel.removeBGMItem(bgm) }) {
                     Image(systemName: "trash")
                         .font(.system(size: compact ? 13 : 14))
-                        .foregroundStyle(isHovered ? StudioTheme.actionDanger : StudioTheme.textTertiary)
+                        .foregroundStyle(isHovered ? StudioTheme.Action.danger : StudioTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
                 .help("删除")
@@ -455,7 +455,7 @@ struct BGMItemRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, compact ? 6 : 8)
-        .background(isCurrentTrack ? StudioTheme.actionPrimary.opacity(0.08) : (isHovered ? StudioTheme.surfaceSecondary : Color.clear))
+        .background(isCurrentTrack ? StudioTheme.Action.primary.opacity(0.08) : (isHovered ? StudioTheme.Surface.raised : Color.clear))
         .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .combine)

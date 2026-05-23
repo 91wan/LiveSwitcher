@@ -25,7 +25,7 @@
 - [x] Move `BGMItemRow` into `BGMPlaylistPanel.swift`, then delete `RightPanel.swift`.
 - [x] Remove `BGMPlaylistPanelMode`, `mode`, live-dock layout branches, and live-dock-only auto category sync from `BGMPlaylistPanel`.
 - [x] Run `swift build`, `swift test`, child package `swift test`, hygiene checks, app verify, bundle build, plist lint, and codesign.
-- [ ] Open PR, wait for CI, merge on green.
+- [x] Open PR, wait for CI, merge on green.
 
 ## PR B: Reset StudioTheme Tokens Without IA Layout Changes
 
@@ -34,11 +34,11 @@
 - Modify: SwiftUI files that reference old token names.
 - Add/modify: `StudioThemeTokenContractTests.swift`
 
-- [ ] Add failing token contract tests for nested `Tone`, `Action`, `Surface`, `Spacing`, `Radius`, and `TypeScale`.
-- [ ] Introduce nested token namespaces and `StudioTheme.color(for:)`.
-- [ ] Replace old color/surface/spacing/radius/font references across app sources.
-- [ ] Remove decorative `accent`, `accentSecondary`, `green`, `orange`, `pink`, `actionDanger`, and old surface constants from app view usage.
-- [ ] Convert common magic opacity values to `StudioTheme.Surface.Opacity`.
+- [x] Add failing token contract tests for nested `Tone`, `Action`, `Surface`, `Spacing`, `Radius`, and `TypeScale`.
+- [x] Introduce nested token namespaces and `StudioTheme.color(for:)`.
+- [x] Replace old color/surface/spacing/radius/font references across app sources.
+- [x] Remove decorative `accent`, `accentSecondary`, `green`, `orange`, `pink`, `actionDanger`, and old surface constants from app view usage.
+- [x] Convert common magic opacity values to `StudioTheme.Surface.Opacity`.
 - [ ] Run full local verification, open PR, wait for CI, merge on green.
 
 ## PR C: Collapse Top Chrome And Add Preflight Counts

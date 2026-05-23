@@ -62,22 +62,22 @@ struct PreflightPopoverView: View {
             if let preflightActionMessage {
                 Text(preflightActionMessage)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(StudioTheme.statusReady)
+                    .foregroundStyle(StudioTheme.Tone.ready)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(StudioTheme.statusReady.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                    .background(StudioTheme.Tone.ready.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
                     .accessibilityLabel("Preflight action result: \(preflightActionMessage)")
             }
 
             if let supportMessage {
                 Text(supportMessage)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(StudioTheme.actionPrimary)
+                    .foregroundStyle(StudioTheme.Action.primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(StudioTheme.actionPrimary.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                    .background(StudioTheme.Action.primary.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
                     .accessibilityLabel("Support report result: \(supportMessage)")
             }
 
@@ -241,7 +241,7 @@ private struct PreflightEmptyAttentionView: View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 17, weight: .black))
-                .foregroundStyle(StudioTheme.statusReady)
+                .foregroundStyle(StudioTheme.Tone.ready)
             VStack(alignment: .leading, spacing: 3) {
                 Text("No rows need attention")
                     .font(.system(size: 13, weight: .bold))
@@ -252,10 +252,10 @@ private struct PreflightEmptyAttentionView: View {
             Spacer(minLength: 0)
         }
         .padding(12)
-        .background(StudioTheme.statusReady.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(StudioTheme.Tone.ready.opacity(0.08), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.statusReady.opacity(0.18), lineWidth: 1)
+                .stroke(StudioTheme.Tone.ready.opacity(0.18), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("No preflight rows need attention")
@@ -293,9 +293,9 @@ private struct PreflightSummaryCard: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 6) {
-                countPill("P", summary.passCount, StudioTheme.statusReady)
-                countPill("W", summary.warnCount, StudioTheme.statusWarn)
-                countPill("F", summary.failCount, StudioTheme.statusFail)
+                countPill("P", summary.passCount, StudioTheme.Tone.ready)
+                countPill("W", summary.warnCount, StudioTheme.Tone.warn)
+                countPill("F", summary.failCount, StudioTheme.Tone.fail)
             }
         }
         .padding(13)
@@ -323,11 +323,11 @@ private struct PreflightSummaryCard: View {
     private var statusColor: Color {
         switch summary.status {
         case .pass:
-            return StudioTheme.statusReady
+            return StudioTheme.Tone.ready
         case .warn:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .fail:
-            return StudioTheme.statusFail
+            return StudioTheme.Tone.fail
         }
     }
 
@@ -425,11 +425,11 @@ private struct PreflightRowView: View {
     private var statusColor: Color {
         switch check.status {
         case .pass:
-            return StudioTheme.statusReady
+            return StudioTheme.Tone.ready
         case .warn:
-            return StudioTheme.statusWarn
+            return StudioTheme.Tone.warn
         case .fail:
-            return StudioTheme.statusFail
+            return StudioTheme.Tone.fail
         }
     }
 
@@ -450,7 +450,7 @@ private struct PreflightRowView: View {
             .foregroundStyle(.secondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
-            .background(StudioTheme.surfaceSecondary, in: Capsule())
+            .background(StudioTheme.Surface.raised, in: Capsule())
             .help(preflightActionHelp(for: action))
             .accessibilityLabel(label)
             .accessibilityHint(preflightActionHelp(for: action))

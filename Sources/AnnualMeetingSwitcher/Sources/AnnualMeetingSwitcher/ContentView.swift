@@ -103,7 +103,7 @@ struct ContentView: View {
         .padding(.top, 16)
         .padding(.bottom, 12)
         .frame(minHeight: 76)
-        .background(StudioTheme.surfacePrimary.opacity(0.55))
+        .background(StudioTheme.Surface.base.opacity(0.55))
         .overlay(Divider(), alignment: .bottom)
     }
 
@@ -114,7 +114,7 @@ struct ContentView: View {
             navigationTab(title: "叠层", systemName: "rectangle.3.group.bubble.left.fill", tag: .overlays)
         }
         .padding(5)
-        .background(Capsule(style: .continuous).fill(StudioTheme.surfacePrimary))
+        .background(Capsule(style: .continuous).fill(StudioTheme.Surface.base))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
     }
 
@@ -158,7 +158,7 @@ private struct LiveStatusStrip: View {
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 8)
-        .background(model.isCritical ? StudioTheme.statusLive.opacity(0.08) : StudioTheme.surfaceSecondary.opacity(0.92))
+        .background(model.isCritical ? StudioTheme.Tone.live.opacity(0.08) : StudioTheme.Surface.raised.opacity(StudioTheme.Surface.Opacity.strong))
         .overlay(
             Rectangle()
                 .fill(model.isCritical ? StudioTheme.borderCritical : StudioTheme.borderSubtle)
@@ -176,17 +176,17 @@ private struct LiveStatusStrip: View {
                 .foregroundStyle(StudioTheme.textTertiary)
             Text(item.value)
                 .font(.system(size: prominent ? 12 : 11, weight: prominent ? .black : .bold))
-                .foregroundStyle(StudioTheme.statusColor(item.status))
+                .foregroundStyle(StudioTheme.color(for: item.status))
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
         .padding(.horizontal, 9)
         .frame(maxWidth: CGFloat(item.layoutRole.maxWidth))
         .frame(height: 30)
-        .background(StudioTheme.statusColor(item.status).opacity(0.08), in: Capsule(style: .continuous))
+        .background(StudioTheme.color(for: item.status).opacity(0.08), in: Capsule(style: .continuous))
         .overlay(
             Capsule(style: .continuous)
-                .stroke(StudioTheme.statusColor(item.status).opacity(prominent ? 0.26 : 0.14), lineWidth: 1)
+                .stroke(StudioTheme.color(for: item.status).opacity(prominent ? 0.26 : 0.14), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(item.title): \(item.accessibilityValue)")

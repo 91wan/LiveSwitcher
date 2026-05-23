@@ -53,7 +53,7 @@ struct ProgramMonitorView: View {
 
             HStack(spacing: 8) {
                 Circle()
-                    .fill(viewModel.isBroadcasting ? StudioTheme.statusLive : StudioTheme.statusIdle)
+                    .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
                     .frame(width: 8, height: 8)
                 Text(monitorStateLabel)
                     .font(.system(size: 12, weight: .bold))
@@ -103,7 +103,7 @@ struct ProgramMonitorView: View {
                 Spacer()
                 Text(model.badgeText)
                     .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(StudioTheme.statusColor(model.status))
+                    .foregroundStyle(StudioTheme.color(for: model.status))
             }
             Text(model.value)
                 .font(.system(size: 15, weight: .black))
@@ -117,7 +117,7 @@ struct ProgramMonitorView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(model.status == .live ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
@@ -149,7 +149,7 @@ struct ProgramMonitorView: View {
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.surfacePrimary.opacity(0.76))
+                .fill(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.overlay))
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
@@ -173,20 +173,20 @@ struct ProgramMonitorView: View {
                 in: 0.5...3.0,
                 step: 0.05
             )
-            .tint(StudioTheme.statusWarn)
+            .tint(StudioTheme.Tone.warn)
             .accessibilityLabel("Transition duration")
             .accessibilityValue(String(format: "%.1f seconds", viewModel.crossfadeDuration))
 
             Text(String(format: "%.1fs", viewModel.crossfadeDuration))
                 .font(.system(size: 18, weight: .bold, design: .monospaced))
-                .foregroundStyle(StudioTheme.statusWarn)
+                .foregroundStyle(StudioTheme.Tone.warn)
                 .frame(width: 56, alignment: .trailing)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.surfacePrimary)
+                .fill(StudioTheme.Surface.base)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
@@ -216,7 +216,7 @@ struct ProgramMonitorView: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.surfacePrimary)
+                .fill(StudioTheme.Surface.base)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)

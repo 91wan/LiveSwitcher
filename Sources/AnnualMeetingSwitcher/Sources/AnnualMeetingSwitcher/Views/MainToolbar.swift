@@ -77,8 +77,8 @@ struct MainToolbar: View {
 
     private var panicTint: Color {
         viewModel.isPanicMode
-            ? StudioTheme.actionDanger
-            : StudioTheme.actionPrimary
+            ? StudioTheme.Action.danger
+            : StudioTheme.Action.primary
     }
 
     private var preflightModel: PreflightButtonModel {
@@ -114,7 +114,7 @@ struct MainToolbar: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .stroke(StudioTheme.surfaceElevated.opacity(viewModel.isPanicMode ? 0.46 : 0.18), lineWidth: 1)
+                    .stroke(StudioTheme.Surface.pressed.opacity(viewModel.isPanicMode ? 0.46 : 0.18), lineWidth: 1)
             )
             .shadow(color: panicTint.opacity(viewModel.isPanicMode ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
         }
@@ -141,17 +141,17 @@ struct MainToolbar: View {
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                 }
             }
-            .foregroundStyle(StudioTheme.statusColor(preflightModel.status))
+            .foregroundStyle(StudioTheme.color(for: preflightModel.status))
             .padding(.horizontal, 12)
             .frame(minWidth: ToolbarLayoutMetrics.preflightMinWidth)
             .frame(height: 46)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(StudioTheme.statusColor(preflightModel.status).opacity(0.10))
+                    .fill(StudioTheme.color(for: preflightModel.status).opacity(0.10))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .stroke(StudioTheme.statusColor(preflightModel.status).opacity(0.24), lineWidth: 1)
+                    .stroke(StudioTheme.color(for: preflightModel.status).opacity(0.24), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
@@ -172,7 +172,7 @@ struct MainToolbar: View {
                 .frame(minWidth: ToolbarLayoutMetrics.helpMinWidth)
                 .frame(height: 38)
                 .padding(.horizontal, 12)
-                .background(StudioTheme.surfacePrimary, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+                .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                         .stroke(StudioTheme.borderSubtle, lineWidth: 1)
