@@ -5,42 +5,42 @@ enum OverlayUIState {
     static let maxCountdownSeconds = (maxCountdownMinutes * 60) + 59
 
     static func lowerThirdDisabledReason(name: String, isLive: Bool) -> String? {
-        if isLive { return "Lower third is already live." }
+        if isLive { return "人名条已上屏" }
         if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Enter a name before sending the lower third live."
+            return "请输入姓名"
         }
         return nil
     }
 
     static func tickerDisabledReason(text: String, isLive: Bool) -> String? {
-        if isLive { return "Ticker is already live." }
+        if isLive { return "游动字幕已上屏" }
         if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return "Enter ticker text before starting."
+            return "请输入字幕内容"
         }
         return nil
     }
 
     static func countdownDisabledReason(totalSeconds: Int, isLive: Bool) -> String? {
-        if isLive { return "Countdown is already live." }
+        if isLive { return "倒计时已上屏" }
         if totalSeconds <= 0 {
-            return "Set a positive countdown duration before starting."
+            return "请设置有效倒计时"
         }
         if totalSeconds > maxCountdownSeconds {
-            return "Countdown cannot exceed 999:59."
+            return "倒计时不能超过 999:59"
         }
         return nil
     }
 
     static func countdownDisabledReason(minutes: Int, seconds: Int, isLive: Bool) -> String? {
-        if isLive { return "Countdown is already live." }
+        if isLive { return "倒计时已上屏" }
         if minutes < 0 || seconds < 0 {
-            return "Countdown values cannot be negative."
+            return "倒计时不能为负数"
         }
         if seconds > 59 {
-            return "Seconds must be between 0 and 59."
+            return "秒数需为 0-59"
         }
         guard let totalSeconds = countdownTotalSeconds(minutes: minutes, seconds: seconds) else {
-            return "Countdown cannot exceed 999:59."
+            return "倒计时不能超过 999:59"
         }
         return countdownDisabledReason(totalSeconds: totalSeconds, isLive: isLive)
     }

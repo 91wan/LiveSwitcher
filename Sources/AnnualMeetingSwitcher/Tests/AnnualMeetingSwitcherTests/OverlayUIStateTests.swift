@@ -5,7 +5,7 @@ final class OverlayUIStateTests: XCTestCase {
     func testLowerThirdEmptyNameProducesDisabledReason() {
         XCTAssertEqual(
             OverlayUIState.lowerThirdDisabledReason(name: "   ", isLive: false),
-            "Enter a name before sending the lower third live."
+            "请输入姓名"
         )
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: false))
     }
@@ -13,7 +13,7 @@ final class OverlayUIStateTests: XCTestCase {
     func testTickerEmptyTextProducesDisabledReason() {
         XCTAssertEqual(
             OverlayUIState.tickerDisabledReason(text: "\n\t", isLive: false),
-            "Enter ticker text before starting."
+            "请输入字幕内容"
         )
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: false))
     }
@@ -21,7 +21,7 @@ final class OverlayUIStateTests: XCTestCase {
     func testCountdownNonPositiveDurationProducesDisabledReason() {
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(totalSeconds: 0, isLive: false),
-            "Set a positive countdown duration before starting."
+            "请设置有效倒计时"
         )
         XCTAssertNil(OverlayUIState.countdownDisabledReason(totalSeconds: 1, isLive: false))
     }
@@ -29,25 +29,25 @@ final class OverlayUIStateTests: XCTestCase {
     func testCountdownInputRejectsNegativeValues() {
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(minutes: -1, seconds: 0, isLive: false),
-            "Countdown values cannot be negative."
+            "倒计时不能为负数"
         )
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(minutes: 0, seconds: -1, isLive: false),
-            "Countdown values cannot be negative."
+            "倒计时不能为负数"
         )
     }
 
     func testCountdownInputRejectsSecondsAboveFiftyNine() {
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(minutes: 1, seconds: 60, isLive: false),
-            "Seconds must be between 0 and 59."
+            "秒数需为 0-59"
         )
     }
 
     func testCountdownInputRejectsDurationsAboveMax() {
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(minutes: 1000, seconds: 0, isLive: false),
-            "Countdown cannot exceed 999:59."
+            "倒计时不能超过 999:59"
         )
         XCTAssertNil(OverlayUIState.countdownDisabledReason(minutes: 999, seconds: 59, isLive: false))
     }
@@ -55,19 +55,19 @@ final class OverlayUIStateTests: XCTestCase {
     func testLiveOverlayReasonsPreventDuplicateStart() {
         XCTAssertEqual(
             OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true),
-            "Lower third is already live."
+            "人名条已上屏"
         )
         XCTAssertEqual(
             OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true),
-            "Ticker is already live."
+            "游动字幕已上屏"
         )
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(totalSeconds: 30, isLive: true),
-            "Countdown is already live."
+            "倒计时已上屏"
         )
         XCTAssertEqual(
             OverlayUIState.countdownDisabledReason(minutes: 1, seconds: 0, isLive: true),
-            "Countdown is already live."
+            "倒计时已上屏"
         )
     }
 

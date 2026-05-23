@@ -1268,6 +1268,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var isPanicMode: Bool       = false
 
     // MARK: - Tier1: Overlay State（叠层状态变量）
+    @Published var overlayComposerState = OverlayComposerState()
     @Published var isCountdownActive: Bool = false
     @Published var countdownTitle: String  = "活动即将开始"
     @Published var countdownSeconds: Int   = 0

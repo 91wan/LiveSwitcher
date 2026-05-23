@@ -133,7 +133,9 @@ struct BGMPlaylistPanel: View {
     // MARK: - 标题行
 
     private var headerRow: some View {
-        ZStack {
+        let controls = bgmControlsState
+
+        return ZStack {
             VStack(spacing: 2) {
                 Text(mode == .liveDock ? "现场 BGM" : "音乐播放机")
                     .font(mode == .liveDock ? StudioTheme.sectionTitle() : StudioTheme.title())
@@ -146,7 +148,7 @@ struct BGMPlaylistPanel: View {
 
             HStack {
                 Spacer()
-                StatusBadge(viewModel.isBGMPlaying ? "Playing" : "Ready", kind: viewModel.isBGMPlaying ? .live : .ready)
+                StatusBadge(controls.displayStatusText, kind: controls.displayStatusKind)
             }
         }
     }
@@ -197,7 +199,7 @@ struct BGMPlaylistPanel: View {
         let diskSize: CGFloat = mode == .liveDock ? 30 : 32
         let iconSize: CGFloat = mode == .liveDock ? 18 : 20
         let playSize: CGFloat = mode == .liveDock ? 32 : 34
-        let controls = BGMControlsState.make(items: viewModel.bgmItems, currentItem: viewModel.currentBGMItem)
+        let controls = bgmControlsState
 
         return HStack(spacing: 8) {
             Spacer()
@@ -312,7 +314,7 @@ struct BGMPlaylistPanel: View {
             )
             .tint(StudioTheme.actionPrimary)
             .frame(height: 20)
-            .disabled(viewModel.currentBGMItem == nil)
+            .disabled(!bgmControlsState.canSeekToBeginning)
             .accessibilityLabel("BGM progress")
             .accessibilityValue("\(formatTime(viewModel.bgmCurrentTime)) of \(viewModel.bgmDuration.map { formatTime($0) } ?? "unknown duration")")
 
@@ -494,6 +496,14 @@ struct BGMPlaylistPanel: View {
         Binding(
             get: { categorySelection.selectedCategory },
             set: { categorySelection.selectCategory($0) }
+        )
+    }
+
+    private var bgmControlsState: BGMControlsState {
+        BGMControlsState.make(
+            items: viewModel.bgmItems,
+            currentItem: viewModel.currentBGMItem,
+            isPlaying: viewModel.isBGMPlaying
         )
     }
 

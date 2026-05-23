@@ -44,6 +44,22 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         XCTAssertEqual(state.tickerTextDraft, "Welcome ticker")
     }
 
+    @MainActor
+    func testOverlayComposerDraftLivesInViewModel() throws {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.overlayComposerState.lowerThirdNameDraft = "Guest A"
+        viewModel.overlayComposerState.tickerTextDraft = "Welcome ticker"
+        viewModel.selectedMainTab = .audioMixer
+        viewModel.selectedMainTab = .overlays
+
+        XCTAssertEqual(viewModel.overlayComposerState.lowerThirdNameDraft, "Guest A")
+        XCTAssertEqual(viewModel.overlayComposerState.tickerTextDraft, "Welcome ticker")
+
+        let overlayView = try String(contentsOf: sourceURL("Views/OverlayControlPanel.swift"), encoding: .utf8)
+        XCTAssertFalse(overlayView.contains("@State private var composerState = OverlayComposerState()"))
+        XCTAssertTrue(overlayView.contains("viewModel.overlayComposerState"))
+    }
+
     func testOverlayPageUsesSingleComposerAndActiveStackClearAction() throws {
         let content = try String(contentsOf: sourceURL("Views/OverlayControlPanel.swift"), encoding: .utf8)
 

@@ -43,7 +43,14 @@ final class HelpPreflightSplitTests: XCTestCase {
 
         let monitor = try sourceText("Views/ProgramMonitorView.swift")
         XCTAssertTrue(monitor.contains("struct ProgramMonitorView"))
-        XCTAssertTrue(monitor.contains("struct WallpaperGalleryRow"))
+        XCTAssertFalse(monitor.contains("struct WallpaperGalleryRow"))
+        XCTAssertFalse(monitor.contains("struct WallpaperThumbView"))
+        XCTAssertFalse(monitor.contains("NSOpenPanel"))
+        XCTAssertFalse(monitor.contains("persistDroppedWallpaperFile"))
+
+        let wallpaper = try sourceText("Views/WallpaperGalleryRow.swift")
+        XCTAssertTrue(wallpaper.contains("struct WallpaperGalleryRow"))
+        XCTAssertTrue(wallpaper.contains("struct WallpaperThumbView"))
     }
 
     func testQueueRowMovedOutOfLeftPanel() throws {
