@@ -30,7 +30,7 @@
 - [x] Change `routingStatusKind` fallback from `.ready` to `.idle`.
 - [x] Verify `routingImpactText` and `channelLimitText` still report `No emergency routing...` and `No forced mute`.
 - [x] Run targeted tests, then full local verification.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR G: Run Monitor Chrome Convergence
 
@@ -48,7 +48,7 @@
 - [x] Remove the Run Queue empty-state card and keep one concise drop-zone instruction.
 - [x] Add low-emphasis footers to LeftPanel and LiveOpsPanel to reduce large empty tails.
 - [x] Run targeted tests, then full local verification.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR H: Live Ops Control Affordance
 
@@ -56,12 +56,12 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift`
 - Test: update or add LiveOps layout/source tests.
 
-- [ ] Add tests/source checks proving mode rows use `Toggle`, BGM progress only renders with a current track, and output disabled styling does not apply whole-card opacity.
-- [ ] Replace Speaker/PPT button rows with `Toggle` rows using a local `LiveOpsToggleStyle`.
-- [ ] Keep accessibility labels `Speaker mode` and `PPT mode`, with values `On` or `Off`.
-- [ ] Hide `bgmProgressRow` when `currentBGMItem == nil`.
-- [ ] Replace output card disabled opacity with readable disabled button colors.
-- [ ] Run targeted tests, then full local verification.
+- [x] Add tests/source checks proving mode rows use `Toggle`, BGM progress only renders with a current track, and output disabled styling does not apply whole-card opacity.
+- [x] Replace Speaker/PPT button rows with `Toggle` rows using a local `LiveOpsToggleStyle`.
+- [x] Keep accessibility labels `Speaker mode` and `PPT mode`, with values `On` or `Off`.
+- [x] Hide `bgmProgressRow` when `currentBGMItem == nil`.
+- [x] Replace output card disabled opacity with readable disabled button colors.
+- [x] Run targeted tests, then full local verification.
 - [ ] Open PR, wait for CI, squash merge on green.
 
 ## PR I: Overlay Button Hierarchy and Type Scale

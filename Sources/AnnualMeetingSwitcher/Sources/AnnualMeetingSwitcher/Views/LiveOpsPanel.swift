@@ -53,7 +53,7 @@ struct LiveOpsPanel: View {
                     }
                     Spacer()
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(outputActionForeground(model))
                 .padding(.horizontal, 10)
                 .frame(height: LiveOpsLayoutMetrics.outputPrimaryButtonHeight)
                 .background(
@@ -64,7 +64,6 @@ struct LiveOpsPanel: View {
             .buttonStyle(.plain)
             .focusable(false)
             .disabled(!model.isEnabled)
-            .opacity(model.isEnabled ? 1 : 0.62)
             .help(model.helpText)
             .accessibilityLabel(model.title)
             .accessibilityHint(model.subtitle)
@@ -147,7 +146,9 @@ struct LiveOpsPanel: View {
                 .controlSize(.small)
             }
 
-            bgmProgressRow
+            if viewModel.currentBGMItem != nil {
+                bgmProgressRow
+            }
         }
     }
 
@@ -156,15 +157,25 @@ struct LiveOpsPanel: View {
             modeToggleRow(
                 title: "Speaker",
                 systemName: viewModel.isSpeakerMode ? "mic.fill" : "mic",
-                isOn: viewModel.isSpeakerMode,
-                action: { viewModel.toggleSpeakerMode() }
+                isOn: Binding(
+                    get: { viewModel.isSpeakerMode },
+                    set: { newValue in
+                        if newValue != viewModel.isSpeakerMode {
+                            viewModel.toggleSpeakerMode()
+                        }
+                    }
+                ),
+                accessibilityLabel: "Speaker mode"
             )
 
             modeToggleRow(
                 title: "PPT",
                 systemName: viewModel.isPageInterceptEnabled ? "hand.raised.fill" : "hand.raised.slash",
-                isOn: viewModel.isPageInterceptEnabled,
-                action: { viewModel.isPageInterceptEnabled.toggle() }
+                isOn: Binding(
+                    get: { viewModel.isPageInterceptEnabled },
+                    set: { viewModel.isPageInterceptEnabled = $0 }
+                ),
+                accessibilityLabel: "PPT mode"
             )
         }
     }
@@ -185,7 +196,6 @@ struct LiveOpsPanel: View {
         )
         .tint(StudioTheme.Action.primary)
         .controlSize(.small)
-        .disabled(viewModel.currentBGMItem == nil)
         .accessibilityLabel("BGM progress")
         .accessibilityValue("\(formatTime(viewModel.bgmCurrentTime)) of \(viewModel.bgmDuration.map { formatTime($0) } ?? "unknown duration")")
     }
@@ -253,36 +263,26 @@ struct LiveOpsPanel: View {
     private func modeToggleRow(
         title: String,
         systemName: String,
-        isOn: Bool,
-        action: @escaping () -> Void
+        isOn: Binding<Bool>,
+        accessibilityLabel: String
     ) -> some View {
-        Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: systemName)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textSecondary)
-                    .frame(width: 16)
-                Text(title)
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                Spacer()
-                Text(isOn ? "ON" : "OFF")
-                    .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 6)
-            .frame(height: LiveOpsLayoutMetrics.modeRowHeight)
-            .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        Toggle(isOn: isOn) {
+            Label(title, systemImage: systemName)
         }
-        .buttonStyle(.plain)
+        .toggleStyle(LiveOpsToggleStyle())
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityValue(isOn.wrappedValue ? "On" : "Off")
     }
 
     private func outputActionFill(_ model: ProjectionButtonModel) -> Color {
+        if !model.isEnabled { return StudioTheme.Tone.muted.opacity(0.18) }
         if model.statusKind == .fail { return StudioTheme.Action.danger }
         if model.isBroadcasting { return StudioTheme.Tone.live }
         return model.hasExternalDisplay ? StudioTheme.Action.primary : StudioTheme.Tone.muted
+    }
+
+    private func outputActionForeground(_ model: ProjectionButtonModel) -> Color {
+        model.isEnabled ? .white : StudioTheme.textSecondary
     }
 
     private var runtimeFooter: some View {
@@ -314,5 +314,40 @@ struct LiveOpsPanel: View {
         guard seconds.isFinite && seconds >= 0 else { return "00:00" }
         let total = Int(seconds)
         return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+}
+
+struct LiveOpsToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button {
+            configuration.isOn.toggle()
+        } label: {
+            HStack(spacing: 7) {
+                configuration.label
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(configuration.isOn ? StudioTheme.Tone.warn : StudioTheme.textPrimary)
+                    .lineLimit(1)
+                Spacer()
+                switchTrack(isOn: configuration.isOn)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 7)
+            .frame(height: LiveOpsLayoutMetrics.modeRowHeight)
+            .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func switchTrack(isOn: Bool) -> some View {
+        Capsule(style: .continuous)
+            .fill(isOn ? StudioTheme.Tone.warn.opacity(0.88) : StudioTheme.Tone.muted.opacity(0.28))
+            .frame(width: 34, height: 19)
+            .overlay(alignment: isOn ? .trailing : .leading) {
+                Circle()
+                    .fill(Color.white)
+                    .frame(width: 15, height: 15)
+                    .shadow(color: StudioTheme.shadowSoft, radius: 2, x: 0, y: 1)
+                    .padding(2)
+            }
     }
 }
