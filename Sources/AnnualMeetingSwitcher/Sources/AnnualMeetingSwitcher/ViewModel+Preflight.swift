@@ -18,7 +18,7 @@ extension SwitcherViewModel {
 
         return LivePreflightSnapshot(
             appVersion: AppConfiguration.appVersion,
-            hasExternalDisplay: externalScreenProvider() != nil,
+            hasExternalDisplay: hasExternalDisplay,
             isBroadcasting: isBroadcasting,
             broadcastSafetyNotice: broadcastSafetyNotice,
             programItemCount: programItems.count,

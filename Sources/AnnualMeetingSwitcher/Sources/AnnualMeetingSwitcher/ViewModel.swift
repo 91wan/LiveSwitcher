@@ -160,7 +160,12 @@ final class SwitcherViewModel: ObservableObject {
     private var outputWindowController: OutputWindowControlling?
     var externalScreenProvider: () -> NSScreen? = {
         SecondScreenSelector.pickExternal()
+    } {
+        didSet {
+            refreshExternalDisplayAvailability()
+        }
     }
+    @Published private(set) var isExternalDisplayAvailable: Bool = false
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
@@ -187,6 +192,7 @@ final class SwitcherViewModel: ObservableObject {
     private var mediaVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     private var systemVolumeObserver: SystemVolumeObserver?
+    private var externalDisplayChangeObserver: NSObjectProtocol?
     private let supportEventLimit = 80
 
     // MARK: - V25: 翻页拦截器状态
@@ -251,6 +257,7 @@ final class SwitcherViewModel: ObservableObject {
             loadData()
         }
         setupPlayerCoordinator()
+        setupExternalDisplayObserver()
         if enableSystemVolumeObserver {
             setupSystemVolumeObserver()
         }
@@ -261,6 +268,9 @@ final class SwitcherViewModel: ObservableObject {
         mediaVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
         systemVolumeObserver?.stop()
+        if let externalDisplayChangeObserver {
+            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
+        }
         let avCoordinator = avCoordinator
         Task { @MainActor in
             avCoordinator.shutdown()
@@ -396,11 +406,31 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     var projectionService: ProjectionService {
-        ProjectionService(externalScreenProvider: externalScreenProvider)
+        ProjectionService(
+            externalScreenProvider: externalScreenProvider,
+            hasExternalDisplaySnapshot: isExternalDisplayAvailable
+        )
     }
 
     var hasExternalDisplay: Bool {
-        projectionService.hasExternalDisplay
+        isExternalDisplayAvailable
+    }
+
+    func refreshExternalDisplayAvailability() {
+        isExternalDisplayAvailable = externalScreenProvider() != nil
+    }
+
+    private func setupExternalDisplayObserver() {
+        refreshExternalDisplayAvailability()
+        externalDisplayChangeObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.refreshExternalDisplayAvailability()
+            }
+        }
     }
 
     // MARK: - 持久化
@@ -526,10 +556,10 @@ final class SwitcherViewModel: ObservableObject {
             return
         case .media:
             guard let url = item.sourceURL else { return }
-            currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
             avCoordinator.play()
+            currentProgramItem = item
         case .keynote:
             guard let url = item.sourceURL else { return }
             if !isLikelyValidDeckDocument(url: url) {
