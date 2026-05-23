@@ -11,16 +11,31 @@ final class CISmokeWorkflowTests: XCTestCase {
         XCTAssertTrue(workflow.contains("codesign --verify --deep --strict dist/LiveSwitcher.app"))
     }
 
+    func testWorkflowsUseNode24CompatibleCheckoutAction() throws {
+        let smokeWorkflow = try String(contentsOf: workflowURL(), encoding: .utf8)
+        let releaseWorkflow = try String(contentsOf: workflowURL(named: "release.yml"), encoding: .utf8)
+
+        XCTAssertTrue(smokeWorkflow.contains("uses: actions/checkout@v6"))
+        XCTAssertTrue(releaseWorkflow.contains("uses: actions/checkout@v6"))
+        XCTAssertFalse(smokeWorkflow.contains("uses: actions/checkout@v4"))
+        XCTAssertFalse(releaseWorkflow.contains("uses: actions/checkout@v4"))
+    }
+
     private func workflowURL() throws -> URL {
+        try workflowURL(named: "smoke-tests.yml")
+    }
+
+    private func workflowURL(named filename: String) throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
             directory.deleteLastPathComponent()
             let candidate = directory
-                .appendingPathComponent(".github/workflows/smoke-tests.yml")
+                .appendingPathComponent(".github/workflows")
+                .appendingPathComponent(filename)
             if FileManager.default.fileExists(atPath: candidate.path) {
                 return candidate
             }
         }
-        throw XCTSkip("Could not locate smoke-tests.yml from test source path.")
+        throw XCTSkip("Could not locate \(filename) from test source path.")
     }
 }
