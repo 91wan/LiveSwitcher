@@ -31,3 +31,20 @@ extension LivePreflightActionKind {
         }
     }
 }
+
+struct PreflightActionRoutingModel: Equatable {
+    let action: LivePreflightActionKind
+    let shouldDismissPopover: Bool
+    let destinationTab: MainConsoleTab?
+    let shouldMutateState: Bool
+
+    static func make(action: LivePreflightActionKind) -> PreflightActionRoutingModel {
+        let destination = action.mainConsoleDestination
+        return PreflightActionRoutingModel(
+            action: action,
+            shouldDismissPopover: destination != nil,
+            destinationTab: destination,
+            shouldMutateState: action.presentationRole == .safeOneClick
+        )
+    }
+}

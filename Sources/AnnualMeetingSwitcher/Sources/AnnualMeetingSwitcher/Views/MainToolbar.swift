@@ -47,24 +47,23 @@ struct MainToolbar: View {
     }
 
     private func handlePreflightAction(_ action: LivePreflightActionKind) {
+        let routing = PreflightActionRoutingModel.make(action: action)
         viewModel.performLivePreflightAction(action)
-        switch action {
-        case .clearOverlays, .turnOffPanic:
-            break
-        case .openPreview:
+
+        switch routing.destinationTab {
+        case .preview:
             onOpenPreview()
-            showHelp = false
-            showPreflight = false
-        case .openAudioMixer:
+        case .audioMixer:
             onOpenAudioMixer()
-            showHelp = false
-            showPreflight = false
-        case .openOverlays:
+        case .overlays:
             onOpenOverlays()
+        case nil:
+            break
+        }
+
+        if routing.shouldDismissPopover {
             showHelp = false
             showPreflight = false
-        case .needsHardware, .manualReview:
-            break
         }
     }
 

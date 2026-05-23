@@ -4,7 +4,6 @@ import SwiftUI
 
 struct OverlayControlPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
-    @State private var composerState = OverlayComposerState()
 
     private var activeOverlayCount: Int {
         [
@@ -50,6 +49,17 @@ struct OverlayControlPanel: View {
         }
     }
 
+    private var composerState: OverlayComposerState {
+        viewModel.overlayComposerState
+    }
+
+    private func composerBinding<Value>(_ keyPath: WritableKeyPath<OverlayComposerState, Value>) -> Binding<Value> {
+        Binding(
+            get: { viewModel.overlayComposerState[keyPath: keyPath] },
+            set: { viewModel.overlayComposerState[keyPath: keyPath] = $0 }
+        )
+    }
+
     private var composerColumn: some View {
         VStack(alignment: .leading, spacing: 16) {
             panelHeader
@@ -85,14 +95,14 @@ struct OverlayControlPanel: View {
     }
 
     private var composerPicker: some View {
-        Picker("Overlay composer", selection: $composerState.selectedKind) {
+        Picker("Overlay composer", selection: composerBinding(\.selectedKind)) {
             ForEach(OverlayComposerKind.allCases) { kind in
                 Label(kind.pickerTitle, systemImage: kind.systemImage).tag(kind)
             }
         }
         .pickerStyle(.segmented)
         .onChange(of: composerState.selectedKind) { _, newKind in
-            composerState.select(newKind)
+            viewModel.overlayComposerState.select(newKind)
         }
         .accessibilityLabel("Overlay composer")
     }
@@ -119,11 +129,11 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextField("嘉宾姓名", text: $composerState.lowerThirdNameDraft)
+                TextField("嘉宾姓名", text: composerBinding(\.lowerThirdNameDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
-                TextField("职务 / 单位（可留空）", text: $composerState.lowerThirdTitleDraft)
+                TextField("职务 / 单位（可留空）", text: composerBinding(\.lowerThirdTitleDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
@@ -175,16 +185,16 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextField("标题（如：活动即将开始）", text: $composerState.countdownTitleDraft)
+                TextField("标题（如：活动即将开始）", text: composerBinding(\.countdownTitleDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 13))
 
                 HStack(spacing: 8) {
-                    numberInput(title: "分", value: $composerState.countdownMinutesDraft)
+                    numberInput(title: "分", value: composerBinding(\.countdownMinutesDraft))
                     Text(":")
                         .font(.system(size: 16, weight: .bold))
                         .foregroundStyle(.secondary)
-                    numberInput(title: "秒", value: $composerState.countdownSecondsDraft)
+                    numberInput(title: "秒", value: composerBinding(\.countdownSecondsDraft))
                     Spacer()
                     if viewModel.isCountdownActive {
                         Text("剩余 \(formattedTime(viewModel.countdownSeconds))")
@@ -246,7 +256,7 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
-                TextEditor(text: $composerState.tickerTextDraft)
+                TextEditor(text: composerBinding(\.tickerTextDraft))
                     .font(.system(size: 13))
                     .frame(height: 76)
                     .padding(6)
@@ -261,7 +271,7 @@ struct OverlayControlPanel: View {
                     Text("速度")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(.secondary)
-                    Picker("", selection: $composerState.tickerSpeedIndex) {
+                    Picker("", selection: composerBinding(\.tickerSpeedIndex)) {
                         ForEach(OverlaySpeedSelection.options.indices, id: \.self) { index in
                             Text(OverlaySpeedSelection.label(at: index)).tag(index)
                         }
@@ -509,7 +519,7 @@ struct OverlayControlPanel: View {
 
     private func syncTickerSpeedFromViewModel() {
         let index = OverlaySpeedSelection.nearestIndex(for: viewModel.tickerSpeed)
-        composerState.tickerSpeedIndex = index
+        viewModel.overlayComposerState.tickerSpeedIndex = index
         let normalizedSpeed = OverlaySpeedSelection.speed(at: index)
         if viewModel.tickerSpeed != normalizedSpeed {
             viewModel.tickerSpeed = normalizedSpeed

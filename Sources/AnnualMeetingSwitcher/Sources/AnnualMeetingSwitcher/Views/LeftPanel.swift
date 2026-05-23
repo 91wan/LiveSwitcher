@@ -131,79 +131,66 @@ struct LeftPanel: View {
 
     // MARK: - 已添加信号源列表（Issue #10: 显示拖拽排序手柄）
 
+    @ViewBuilder
     private var sourceList: some View {
         let currentIndex = viewModel.programItems.firstIndex { $0.id == viewModel.currentProgramItem?.id }
 
-        guard !viewModel.programItems.isEmpty else {
-            return AnyView(
-                EmptyStateView(
-                    title: "No sources queued",
-                    message: "Add or drag in video, audio, PPTX, Keynote, or HTML sources before switching.",
-                    systemImage: "rectangle.stack.badge.plus"
-                )
-                .frame(maxHeight: 190)
+        if viewModel.programItems.isEmpty {
+            EmptyStateView(
+                title: "No sources queued",
+                message: "Add or drag in video, audio, PPTX, Keynote, or HTML sources before switching.",
+                systemImage: "rectangle.stack.badge.plus"
+            )
+            .frame(maxHeight: 190)
+        } else {
+            List {
+                ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
+                    HStack(spacing: 6) {
+                        // Issue #10: 显式排序手柄图标
+                        Image(systemName: "line.3.horizontal")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .frame(width: 20)
+                            .help("拖动此图标可排序")
+
+                        SignalSourceRow(
+                            item: item,
+                            queuePosition: index + 1,
+                            queueRole: queueRole(for: index, currentIndex: currentIndex),
+                            isSelected: viewModel.currentProgramItem?.id == item.id,
+                            isBroadcasting: viewModel.isBroadcasting,
+                            isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
+                            avCoordinator: viewModel.avCoordinator,
+                            onSelect: { viewModel.switchToProgram(item) },
+                            onTogglePause: { viewModel.togglePause(for: item) },
+                            onEndHTML: { viewModel.endHTMLPresentation() },
+                            onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
+                            onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
+                            onDelete: { viewModel.removeProgramItem(withID: item.id) }
+                        )
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                }
+                .onMove { from, to in
+                    viewModel.moveProgramItems(from: from, to: to)
+                }
+                .onDelete { indexSet in
+                    indexSet.forEach { viewModel.removeProgramItem(withID: viewModel.programItems[$0].id) }
+                }
+            }
+            .listStyle(.plain)
+            .frame(maxHeight: .infinity)
+            .scrollContentBackground(.hidden)
+            .background(StudioTheme.surfacePrimary.opacity(0.7))
+            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                    .stroke(StudioTheme.borderSubtle, lineWidth: 1)
             )
         }
-
-        return AnyView(List {
-            ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
-                HStack(spacing: 6) {
-                    // Issue #10: 显式排序手柄图标
-                    Image(systemName: "line.3.horizontal")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .frame(width: 20)
-                        .help("拖动此图标可排序")
-
-                    SignalSourceRow(
-                        item: item,
-                        queuePosition: index + 1,
-                        queueRole: queueRole(for: index, currentIndex: currentIndex),
-                        isSelected: viewModel.currentProgramItem?.id == item.id,
-                        isBroadcasting: viewModel.isBroadcasting,
-                        isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
-                        avCoordinator: viewModel.avCoordinator,
-                        onSelect: { viewModel.switchToProgram(item) },
-                        onTogglePause: { viewModel.togglePause(for: item) },
-                        onEndHTML: { viewModel.endHTMLPresentation() },
-                        onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
-                        onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
-                        onDelete: { viewModel.removeProgramItem(withID: item.id) }
-                    )
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-            }
-            .onMove { from, to in
-                viewModel.moveProgramItems(from: from, to: to)
-            }
-            .onDelete { indexSet in
-                indexSet.forEach { viewModel.removeProgramItem(withID: viewModel.programItems[$0].id) }
-            }
-        }
-        .listStyle(.plain)
-        .frame(maxHeight: .infinity)
-        .scrollContentBackground(.hidden)
-        .background(StudioTheme.surfacePrimary.opacity(0.7))
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
-        ))
-    }
-
-    private var nextProgramItem: ProgramItem? {
-        guard !viewModel.programItems.isEmpty else { return nil }
-        guard let currentID = viewModel.currentProgramItem?.id,
-              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
-        else {
-            return viewModel.programItems.first
-        }
-        let nextIndex = viewModel.programItems.index(after: currentIndex)
-        guard nextIndex < viewModel.programItems.endIndex else { return nil }
-        return viewModel.programItems[nextIndex]
     }
 
     private func queueRole(for index: Int, currentIndex: Int?) -> QueueRole {

@@ -118,6 +118,20 @@ final class LiveConsoleStatusTests: XCTestCase {
         XCTAssertEqual(model.next.accessibilityValue, longNext)
     }
 
+    func testStatusBarItemsExposeStableLayoutRoles() {
+        let model = LiveStatusBarModel.make(
+            snapshot: snapshot(currentTitle: "Opening"),
+            nextProgramTitle: "Awards"
+        )
+
+        XCTAssertEqual(model.projection.layoutRole, .compact)
+        XCTAssertEqual(model.current.layoutRole, .primary)
+        XCTAssertEqual(model.next.layoutRole, .flexible)
+        XCTAssertEqual(model.audio.layoutRole, .compact)
+        XCTAssertEqual(model.current.layoutRole.maxWidth, 260)
+        XCTAssertEqual(model.next.layoutRole.maxWidth, 220)
+    }
+
     func testPreflightButtonStatusMapping() {
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.pass)).status, .ready)
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).status, .warn)

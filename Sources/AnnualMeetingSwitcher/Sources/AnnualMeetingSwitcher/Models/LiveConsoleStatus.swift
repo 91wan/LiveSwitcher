@@ -2,21 +2,41 @@ import Foundation
 
 struct LiveStatusBarModel: Equatable {
     struct Item: Equatable {
+        enum LayoutRole: Equatable {
+            case compact
+            case primary
+            case flexible
+
+            var maxWidth: Double {
+                switch self {
+                case .compact:
+                    return 170
+                case .primary:
+                    return 260
+                case .flexible:
+                    return 220
+                }
+            }
+        }
+
         let title: String
         let value: String
         let accessibilityValue: String
         let status: StudioTheme.StatusKind
+        let layoutRole: LayoutRole
 
         init(
             title: String,
             value: String,
             status: StudioTheme.StatusKind,
-            accessibilityValue: String? = nil
+            accessibilityValue: String? = nil,
+            layoutRole: LayoutRole = .compact
         ) {
             self.title = title
             self.value = value
             self.accessibilityValue = accessibilityValue ?? value
             self.status = status
+            self.layoutRole = layoutRole
         }
     }
 
@@ -55,13 +75,15 @@ struct LiveStatusBarModel: Equatable {
                 title: "Current",
                 value: truncatedDisplay(currentValue),
                 status: snapshot.currentProgramTitle == nil ? .warn : (snapshot.isBroadcasting ? .live : .idle),
-                accessibilityValue: currentValue
+                accessibilityValue: currentValue,
+                layoutRole: .primary
             ),
             next: Item(
                 title: "Next",
                 value: truncatedDisplay(nextValue),
                 status: nextProgramTitle == nil ? .idle : .ready,
-                accessibilityValue: nextValue
+                accessibilityValue: nextValue,
+                layoutRole: .flexible
             ),
             audio: audio,
             isCritical: snapshot.isPanicMode || snapshot.isBroadcasting

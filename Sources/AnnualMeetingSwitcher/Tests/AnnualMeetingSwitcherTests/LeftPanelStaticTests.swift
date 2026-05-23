@@ -8,6 +8,15 @@ final class LeftPanelStaticTests: XCTestCase {
         XCTAssertFalse(source.contains("private func importKeynotePicker()"))
     }
 
+    func testLeftPanelSourceListAvoidsTypeErasedViewsAndDeadNextProgramHelper() throws {
+        let source = try String(contentsOf: leftPanelURL(), encoding: .utf8)
+
+        XCTAssertFalse(source.contains("AnyView"))
+        XCTAssertFalse(source.contains("private var nextProgramItem"))
+        XCTAssertTrue(source.contains("@ViewBuilder"))
+        XCTAssertTrue(source.contains("private var sourceList: some View"))
+    }
+
     private func leftPanelURL() throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {

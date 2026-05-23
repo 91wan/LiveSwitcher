@@ -184,6 +184,7 @@ private struct LiveStatusStrip: View {
                 .truncationMode(.middle)
         }
         .padding(.horizontal, 9)
+        .frame(maxWidth: CGFloat(item.layoutRole.maxWidth))
         .frame(height: 30)
         .background(StudioTheme.statusColor(item.status).opacity(0.08), in: Capsule(style: .continuous))
         .overlay(
