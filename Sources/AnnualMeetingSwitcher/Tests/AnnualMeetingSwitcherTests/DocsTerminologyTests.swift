@@ -30,6 +30,8 @@ final class DocsTerminologyTests: XCTestCase {
         XCTAssertTrue(currentMain.contains("Audio / BGM Library"))
         XCTAssertTrue(currentMain.contains("Overlays / Overlay Composer"))
         XCTAssertTrue(currentMain.contains("screenshots"))
+        XCTAssertTrue(currentMain.contains("preview-switch.png"))
+        XCTAssertTrue(currentMain.contains("legacy filename"))
         XCTAssertFalse(currentMain.contains("预览 / 切换"))
         XCTAssertFalse(currentMain.contains("绿色按钮"))
     }

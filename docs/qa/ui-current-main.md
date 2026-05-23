@@ -8,3 +8,4 @@ This note tracks the current information architecture while older screenshots re
 - Overlays / Overlay Composer is where lower third, countdown, and ticker drafts are prepared and sent live.
 
 The screenshots in `docs/assets/readme/` and `docs/assets/ui-matrix/` may lag the current UI and should be refreshed during the next screenshot pass.
+`docs/assets/readme/preview-switch.png` is a legacy filename for the current Run Desk screenshot slot and should be replaced during the next screenshot refresh.
