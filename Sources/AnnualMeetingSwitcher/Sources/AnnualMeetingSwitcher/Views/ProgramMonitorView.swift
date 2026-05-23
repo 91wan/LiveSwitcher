@@ -123,7 +123,7 @@ struct ProgramMonitorView: View {
                 .stroke(model.status == .live ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(model.title): \(model.value), \(model.subtitle)")
+        .accessibilityLabel(model.accessibilityLabel)
     }
 
     private var utilitiesDisclosure: some View {

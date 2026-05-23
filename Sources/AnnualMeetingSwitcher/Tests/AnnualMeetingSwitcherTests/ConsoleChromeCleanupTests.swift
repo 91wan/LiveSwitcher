@@ -15,9 +15,16 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertFalse(source.contains("compactToolbarButton"))
         XCTAssertFalse(source.contains("compactPreflightButton"))
         XCTAssertFalse(source.contains("frame(width: 112"))
+        XCTAssertFalse(source.contains("ToolbarActionModel"))
+        XCTAssertFalse(source.contains("speaker"))
+        XCTAssertFalse(source.contains("ppt"))
         XCTAssertTrue(source.contains("panicButton"))
         XCTAssertTrue(source.contains("preflightButton"))
         XCTAssertTrue(source.contains("helpButton"))
+    }
+
+    func testStaleToolbarActionModelWasRemoved() throws {
+        XCTAssertFalse(sourceExists("Models/ToolbarActionModel.swift"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
@@ -36,5 +43,19 @@ final class ConsoleChromeCleanupTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func sourceExists(_ relativePath: String) -> Bool {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return true
+            }
+        }
+        return false
     }
 }

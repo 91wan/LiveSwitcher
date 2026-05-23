@@ -23,9 +23,9 @@ enum HelpCopyModel {
         ]),
         HelpCopySection(title: "壁纸与叠层", items: [
             "背景壁纸：中栏底部【壁纸库】，导入图片后点击即激活为大屏背景",
-            "倒计时叠层：Overlays 页面使用 Composer 准备倒计时，再 Send Live 上屏",
-            "游动字幕：Overlays 页面使用 Composer 输入内容后上屏，在大屏顶部横向滚动",
-            "下三分之一：Overlays 页面使用 Composer 准备嘉宾姓名/职位，再 Send Live 或 Stop 控制显示"
+            "倒计时叠层：Overlays / Overlay Composer 页面准备倒计时，再 Send Live 上屏",
+            "游动字幕：Overlays / Overlay Composer 页面输入内容后上屏，在大屏顶部横向滚动",
+            "下三分之一：Overlays / Overlay Composer 页面准备嘉宾姓名/职位，再 Send Live 或 Stop 控制显示"
         ]),
         HelpCopySection(title: "键盘快捷键", items: [
             "⌘⌥M：切换主讲人模式，压低媒体声道和 BGM，突出现场人声",
