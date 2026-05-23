@@ -32,7 +32,7 @@ struct AudioMixerPageModel: Equatable {
         if isPanicMode { return "PANIC MUTED" }
         if isBGMAudioTakeoverActive { return "BGM TAKEOVER" }
         if isSpeakerMode { return "SPEAKER" }
-        return strategy.rawValue
+        return strategy.displayTitle
     }
 
     var routingStatusKind: StudioTheme.StatusKind {

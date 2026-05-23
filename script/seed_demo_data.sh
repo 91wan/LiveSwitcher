@@ -54,7 +54,7 @@ defaults write "$SUITE_NAME" bgmList_categories -array \
 
 defaults write "$SUITE_NAME" backgroundWallpapers_paths -array "$DEMO_DIR/Neutral Wallpaper.png"
 defaults write "$SUITE_NAME" activeWallpaper_path "$DEMO_DIR/Neutral Wallpaper.png"
-defaults write "$SUITE_NAME" audioStrategy "混合"
+defaults write "$SUITE_NAME" audioStrategy "mixed"
 defaults write "$SUITE_NAME" speakerMode -bool false
 defaults write "$SUITE_NAME" autoPlayNextVideoOnEnd -bool false
 

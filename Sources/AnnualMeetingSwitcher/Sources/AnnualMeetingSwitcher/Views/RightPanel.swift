@@ -4,10 +4,43 @@ import UniformTypeIdentifiers
 // MARK: - 音频策略枚举
 
 enum AudioStrategy: String, CaseIterable {
-    case followProgram = "音频跟随"
-    case followSource  = "跟随源"
-    case bgmOnly       = "仅 BGM"
-    case mixed         = "混合"
+    case followProgram
+    case followSource
+    case bgmOnly
+    case mixed
+
+    init?(persistedValue: String) {
+        if let strategy = AudioStrategy(rawValue: persistedValue) {
+            self = strategy
+            return
+        }
+
+        switch persistedValue {
+        case "音频跟随":
+            self = .followProgram
+        case "跟随源":
+            self = .followSource
+        case "仅 BGM":
+            self = .bgmOnly
+        case "混合":
+            self = .mixed
+        default:
+            return nil
+        }
+    }
+
+    var displayTitle: String {
+        switch self {
+        case .followProgram:
+            return "音频跟随"
+        case .followSource:
+            return "跟随源"
+        case .bgmOnly:
+            return "仅 BGM"
+        case .mixed:
+            return "混合"
+        }
+    }
 }
 
 // MARK: - BGM 分类
@@ -128,7 +161,7 @@ struct RightPanel: View {
 
             Picker("", selection: audioStrategy) {
                 ForEach(AudioStrategy.allCases, id: \.self) { strategy in
-                    Text(strategy.rawValue).tag(strategy)
+                    Text(strategy.displayTitle).tag(strategy)
                 }
             }
             .pickerStyle(.segmented)
@@ -272,7 +305,7 @@ private extension RightPanel {
     }
 
     var strategyPill: some View {
-        Text(viewModel.audioStrategy.rawValue)
+        Text(viewModel.audioStrategy.displayTitle)
             .font(StudioTheme.statusLabel())
             .foregroundStyle(StudioTheme.actionPrimary)
             .padding(.horizontal, 10)
