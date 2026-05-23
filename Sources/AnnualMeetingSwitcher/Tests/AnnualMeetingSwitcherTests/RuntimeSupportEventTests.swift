@@ -93,6 +93,24 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("Private Company") })
     }
 
+    func testPageInterceptAutoReenabledEventAppearsInSanitizedSupportReport() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 0),
+            kind: .pageInterceptAutoReenabled,
+            detail: "reason=timeout"
+        )
+
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnosticsSnapshot(),
+            checks: [],
+            events: [event],
+            generatedAt: Date(timeIntervalSince1970: 0)
+        )
+
+        XCTAssertTrue(report.contains("page.intercept.auto-reenabled"))
+        XCTAssertTrue(report.contains("reason=timeout"))
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -107,5 +125,33 @@ final class RuntimeSupportEventTests: XCTestCase {
         viewModel.invalidDeckHandler = { _ in }
         viewModel.deckStopHandler = {}
         return viewModel
+    }
+
+    private func diagnosticsSnapshot() -> LiveDiagnosticsSnapshot {
+        LiveDiagnosticsSnapshot(
+            appVersion: "0.4.0",
+            operatingSystem: "macOS Test",
+            architecture: "arm64-test",
+            preflight: LivePreflightSnapshot(
+                appVersion: "0.4.0",
+                hasExternalDisplay: true,
+                isBroadcasting: false,
+                broadcastSafetyNotice: nil,
+                programItemCount: 0,
+                currentProgramTitle: nil,
+                currentProgramSource: nil,
+                bgmItemCount: 0,
+                isBGMPlaying: false,
+                isBGMAudioTakeoverActive: false,
+                isSpeakerMode: false,
+                isPanicMode: false,
+                isPageInterceptEnabled: false,
+                activeOverlayCount: 0,
+                wallpaperCount: 0,
+                autoPlayNextVideoOnEnd: false,
+                effectiveMediaVolume: 0.8,
+                effectiveBGMVolume: 0.5
+            )
+        )
     }
 }

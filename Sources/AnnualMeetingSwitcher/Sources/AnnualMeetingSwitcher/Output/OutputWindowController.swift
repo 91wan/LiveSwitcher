@@ -375,17 +375,38 @@ final class HTMLWebViewBridge {
     static let shared = HTMLWebViewBridge()
     private init() {}
 
-    weak var webView: WKWebView?
+    private let stateLock = NSLock()
+    private var activeWebViewID: ObjectIdentifier?
+    @MainActor private weak var currentWebView: WKWebView?
 
+    var hasActiveWebView: Bool {
+        stateLock.lock()
+        let hasWebView = activeWebViewID != nil
+        stateLock.unlock()
+        return hasWebView
+    }
+
+    @MainActor
+    func register(_ webView: WKWebView) {
+        currentWebView = webView
+        updateActiveWebViewID(ObjectIdentifier(webView))
+    }
+
+    @MainActor
     func clearIfCurrent(_ candidate: WKWebView) {
-        if webView === candidate {
-            webView = nil
+        if currentWebView === candidate {
+            currentWebView = nil
+            updateActiveWebViewID(nil)
         }
     }
 
+    @MainActor
+    func isCurrent(_ candidate: WKWebView) -> Bool {
+        currentWebView === candidate
+    }
+
     /// 注入翻页事件（ArrowRight=下一页，ArrowLeft=上一页）
-    func sendArrowKey(isNext: Bool) {
-        guard let wv = webView else { return }
+    func dispatchArrowKey(isNext: Bool) {
         let key = isNext ? "ArrowRight" : "ArrowLeft"
         let js = """
         (function() {
@@ -400,9 +421,16 @@ final class HTMLWebViewBridge {
             window.dispatchEvent(e);
         })();
         """
-        DispatchQueue.main.async {
-            wv.evaluateJavaScript(js, completionHandler: nil)
+        Task { @MainActor [weak self] in
+            guard let webView = self?.currentWebView else { return }
+            _ = try? await webView.evaluateJavaScript(js)
         }
+    }
+
+    private func updateActiveWebViewID(_ id: ObjectIdentifier?) {
+        stateLock.lock()
+        activeWebViewID = id
+        stateLock.unlock()
     }
 }
 
@@ -430,7 +458,7 @@ struct OutputWebView: NSViewRepresentable {
         webView.navigationDelegate = context.coordinator
         context.coordinator.webView = webView
         context.coordinator.configure(for: url)
-        HTMLWebViewBridge.shared.webView = webView   // 注册到 bridge，供翻页拦截器注入 JS
+        HTMLWebViewBridge.shared.register(webView)   // 注册到 bridge，供翻页拦截器注入 JS
         webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
         return webView
     }

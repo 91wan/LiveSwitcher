@@ -56,4 +56,8 @@ enum LiveSwitcherTelemetry {
     static func projectionFailClosed() {
         outputLogger.warning("Projection fail-closed; externalDisplay=false")
     }
+
+    static func pageInterceptAutoReenabled(reason: PageInterceptReenableReason, didReenable: Bool) {
+        controlsLogger.warning("Page intercept auto re-enabled; reason=\(reason.rawValue, privacy: .public), didReenable=\(didReenable, privacy: .public)")
+    }
 }
