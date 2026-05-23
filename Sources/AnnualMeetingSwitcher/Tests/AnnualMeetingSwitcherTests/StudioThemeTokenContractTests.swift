@@ -11,7 +11,9 @@ final class StudioThemeTokenContractTests: XCTestCase {
         XCTAssertTrue(content.contains("enum Radius"))
         XCTAssertTrue(content.contains("enum TypeScale"))
         XCTAssertTrue(content.contains("enum Opacity"))
+        XCTAssertTrue(content.contains("static let numeric = Font.system(size: 18, weight: .black, design: .rounded)"))
         XCTAssertTrue(content.contains("static func color(for kind: StatusKind)"))
+        XCTAssertFalse(content.contains("static func numeric()"))
     }
 
     func testStudioThemeNoLongerDefinesDecorativeColorTokens() throws {
@@ -45,6 +47,16 @@ final class StudioThemeTokenContractTests: XCTestCase {
             XCTAssertFalse(content.contains("StudioTheme.surfaceElevated"), relative)
             XCTAssertFalse(content.contains("StudioTheme.cardFill"), relative)
         }
+    }
+
+    func testViewsUseTypeScaleNumericTokenDirectly() throws {
+        for url in try sourceFiles(under: "Views") {
+            let content = try String(contentsOf: url, encoding: .utf8)
+            XCTAssertFalse(content.contains("StudioTheme.numeric()"), url.lastPathComponent)
+        }
+
+        let theme = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+        XCTAssertTrue(theme.contains(".font(StudioTheme.TypeScale.numeric)"))
     }
 
     private func sourceFiles(under relativeDirectory: String) throws -> [URL] {

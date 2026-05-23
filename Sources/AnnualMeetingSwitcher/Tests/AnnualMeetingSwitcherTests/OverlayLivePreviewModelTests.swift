@@ -75,6 +75,30 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertFalse(source.contains("fill: StudioTheme.Tone.warn"))
     }
 
+    func testOverlayActionButtonKeepsDisabledTintHierarchy() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains(".foregroundStyle(isDisabled ? .white.opacity(0.55) : .white)"))
+        XCTAssertTrue(source.contains(".fill(isDisabled ? fill.opacity(0.25) : fill)"))
+        XCTAssertFalse(source.contains("StudioTheme.Tone.muted.opacity(0.45)"))
+    }
+
+    func testOverlayEmptyPreviewUsesCompactCanvasSizing() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains("let previewModel = livePreviewModel"))
+        XCTAssertTrue(source.contains("let isEmptyPreview = previewModel.layers.isEmpty"))
+        XCTAssertTrue(source.contains(".frame(maxWidth: isEmptyPreview ? 320 : .infinity)"))
+        XCTAssertTrue(source.contains(".frame(height: isEmptyPreview ? 180 : nil)"))
+    }
+
+    func testOverlayComposerTitleUsesSharedTypeScale() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains(".font(StudioTheme.TypeScale.title)"))
+        XCTAssertFalse(source.contains(".font(.system(size: 24, weight: .bold))"))
+    }
+
     func testLiveOverlayCanBeReplacedBySendLiveWhenDraftIsValid() {
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))

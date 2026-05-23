@@ -73,6 +73,7 @@ enum StudioTheme {
         static let caption = Font.system(size: 11, weight: .medium)
         static let mono = Font.system(size: 13, weight: .medium, design: .monospaced)
         static let label = Font.system(size: 10, weight: .heavy, design: .rounded)
+        static let numeric = Font.system(size: 18, weight: .black, design: .rounded)
     }
 
     static let canvasTop = Color(red: 0.97, green: 0.98, blue: 1.00)
@@ -149,7 +150,6 @@ enum StudioTheme {
     static func sectionTitle() -> Font { TypeScale.heading }
     static func body() -> Font { TypeScale.body }
     static func caption() -> Font { TypeScale.caption }
-    static func numeric() -> Font { .system(size: 18, weight: .black, design: .rounded) }
     static func statusLabel() -> Font { TypeScale.label }
 }
 
@@ -471,7 +471,7 @@ struct MetricRow: View {
             }
             Spacer(minLength: 0)
             Text(value)
-                .font(StudioTheme.numeric())
+                .font(StudioTheme.TypeScale.numeric)
                 .foregroundStyle(StudioTheme.color(for: kind))
         }
         .accessibilityElement(children: .combine)
