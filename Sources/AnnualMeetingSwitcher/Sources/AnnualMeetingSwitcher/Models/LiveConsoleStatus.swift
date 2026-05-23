@@ -121,9 +121,20 @@ struct PreflightButtonModel: Equatable {
         case .pass:
             return PreflightButtonModel(title: "Preflight", value: "Ready", status: .ready)
         case .warn:
-            return PreflightButtonModel(title: "Preflight", value: "Review", status: .warn)
+            return PreflightButtonModel(title: "Preflight", value: countText(failCount: 0, warnCount: summary.warnCount), status: .warn)
         case .fail:
-            return PreflightButtonModel(title: "Preflight", value: "Fail", status: .fail)
+            return PreflightButtonModel(title: "Preflight", value: countText(failCount: summary.failCount, warnCount: summary.warnCount), status: .fail)
         }
+    }
+
+    private static func countText(failCount: Int, warnCount: Int) -> String {
+        var parts: [String] = []
+        if failCount > 0 {
+            parts.append("\(failCount) Fail")
+        }
+        if warnCount > 0 {
+            parts.append("\(warnCount) Warn")
+        }
+        return parts.isEmpty ? "Review" : parts.joined(separator: " · ")
     }
 }

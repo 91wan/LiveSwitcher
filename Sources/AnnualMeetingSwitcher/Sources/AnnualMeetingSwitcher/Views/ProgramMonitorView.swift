@@ -21,7 +21,7 @@ struct ProgramMonitorView: View {
 
             previewDeck
 
-            currentNextInfoRow
+            monitorInlineStatusRow
 
             utilitiesDisclosure
 
@@ -80,50 +80,60 @@ struct ProgramMonitorView: View {
         .accessibilityLabel(viewModel.isBroadcasting ? "Program monitor on air" : "Program monitor standby")
     }
 
-    private var currentNextInfoRow: some View {
-        HStack(spacing: 10) {
-            monitorInfoBlock(model: .current(
-                item: viewModel.currentProgramItem,
-                isBroadcasting: viewModel.isBroadcasting,
-                isPlaying: viewModel.avCoordinator.isPlaying,
-                isHTMLLoaded: viewModel.currentHTMLURL != nil
-            ))
-            monitorInfoBlock(model: .next(
-                item: nextProgramItem
-            ))
-        }
-    }
+    private var monitorInlineStatusRow: some View {
+        let current = ProgramMonitorInfoBlockModel.current(
+            item: viewModel.currentProgramItem,
+            isBroadcasting: viewModel.isBroadcasting,
+            isPlaying: viewModel.avCoordinator.isPlaying,
+            isHTMLLoaded: viewModel.currentHTMLURL != nil
+        )
+        let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
 
-    private func monitorInfoBlock(model: ProgramMonitorInfoBlockModel) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(model.title.uppercased())
-                    .font(StudioTheme.statusLabel())
-                    .foregroundStyle(StudioTheme.textTertiary)
-                Spacer()
-                Text(model.badgeText)
-                    .font(.system(size: 10, weight: .black, design: .rounded))
-                    .foregroundStyle(StudioTheme.color(for: model.status))
-            }
-            Text(model.value)
-                .font(.system(size: 15, weight: .black))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.middle)
-            Text(model.subtitle)
-                .font(StudioTheme.caption())
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
+        return HStack(spacing: 10) {
+            monitorInlineStatusItem(current)
+            Divider()
+                .frame(height: 30)
+            monitorInlineStatusItem(next)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
         .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(model.status == .live ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
+                .stroke(viewModel.isBroadcasting ? StudioTheme.borderCritical : StudioTheme.borderSubtle, lineWidth: 1)
         )
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(model.accessibilityLabel)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(monitorInlineAccessibilityLabel)
+    }
+
+    private func monitorInlineStatusItem(_ model: ProgramMonitorInfoBlockModel) -> some View {
+        HStack(spacing: 8) {
+            Text(model.title.uppercased())
+                .font(StudioTheme.statusLabel())
+                .foregroundStyle(StudioTheme.textTertiary)
+            Text(model.value)
+                .font(.system(size: 13, weight: .black))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 4)
+            Text(model.badgeText)
+                .font(.system(size: 10, weight: .black, design: .rounded))
+                .foregroundStyle(StudioTheme.color(for: model.status))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var monitorInlineAccessibilityLabel: String {
+        let current = ProgramMonitorInfoBlockModel.current(
+            item: viewModel.currentProgramItem,
+            isBroadcasting: viewModel.isBroadcasting,
+            isPlaying: viewModel.avCoordinator.isPlaying,
+            isHTMLLoaded: viewModel.currentHTMLURL != nil
+        )
+        let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
+
+        return "Program status. Current \(current.accessibilityLabel). Next \(next.accessibilityLabel)."
     }
 
     private var utilitiesDisclosure: some View {
