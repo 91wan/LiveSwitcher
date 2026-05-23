@@ -10,33 +10,16 @@ protocol OutputWindowControlling: AnyObject {
 }
 
 // MARK: - 副屏识别工具（MacBook screen mirroring 适配）
-// 副屏规格：1080P（确认实测分辨率）
-// 识别策略：优先找分辨率匹配 1080P 的非主屏；次选任意非主屏；无副屏时返回 nil
+// 识别策略：优先使用用户 pin 的副屏；否则选择物理分辨率最接近 1080P 的非主屏。
+// 无副屏时返回 nil，禁止回落主屏全屏。
 
 enum SecondScreenSelector {
-    /// 选取最佳副屏：
-    /// 1. 优先匹配 1080P（或 backingScaleFactor 换算后等效 1080P）的非主屏
-    /// 2. 其次取任意非主屏
-    /// 3. 无副屏时返回 nil，禁止回落主屏全屏
-    static func pickExternal() -> NSScreen? {
-        let screens = NSScreen.screens
-        guard screens.count > 1 else { return nil }
-        let mainScreen = NSScreen.main ?? screens[0]
-        let nonMain = screens.filter { $0 != mainScreen }
-        guard !nonMain.isEmpty else { return nil }
-
-        // 优先：物理分辨率匹配 1080P 副屏
-        let targetExact = nonMain.first { screen in
-            let physW = Int(screen.frame.width  * screen.backingScaleFactor)
-            let physH = Int(screen.frame.height * screen.backingScaleFactor)
-            // 1080P：物理像素直接匹配，或 macOS 点坐标 1080P（@1x）/640×512（@2x）
-            return (physW == 1920 && physH == 1080) ||
-                   (Int(screen.frame.width) == 1920 && Int(screen.frame.height) == 1080)
-        }
-        if let s = targetExact { return s }
-
-        // 次选：任意非主屏
-        return nonMain[0]
+    static func pickExternal(userDefaults: UserDefaults = .standard) -> NSScreen? {
+        DefaultScreenSelectionPolicy().pickExternal(
+            screens: NSScreen.screens,
+            main: NSScreen.main,
+            pinnedDisplayName: userDefaults.string(forKey: ProjectionDisplayPreferences.pinnedExternalDisplayNameKey)
+        )
     }
 
     /// 只用于构造隐藏窗口的初始 screen；真正投射路径必须使用 pickExternal()。
@@ -63,7 +46,7 @@ enum OutputWindowPresentationPolicy {
 
 // MARK: - 推流大屏窗口控制器
 // 副屏适配版（仅副屏适配相关改动，其余保持 V24 原始逻辑）：
-// - 使用 SecondScreenSelector.pickExternal() 智能识别 1080P 副屏
+// - 使用 SecondScreenSelector.pickExternal() 按 pin / 1080P 接近度识别副屏
 // - 利用 macOS screen mirroring 通知（NSApplication.didChangeScreenParametersNotification）
 //   监听屏幕热插拔，自动将推流窗口迁移到正确副屏
 // - 副屏 frame 在系统坐标系中可能是负数区间，始终用 targetScreen.frame（全局坐标系）
@@ -80,7 +63,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     // MARK: - Init
 
     convenience init() {
-        // 使用智能副屏选择器（识别 1080P 副屏）
+        // 使用智能副屏选择器（pin 优先，其次按 1080P 接近度选择）
         let targetScreen = SecondScreenSelector.pickInitialWindowScreen()
 
         // targetScreen.frame 是全局坐标系的 rect，可能是负数起点，这完全正常
@@ -136,11 +119,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
             onExternalDisplayUnavailable?()
             return
         }
-        let screenFrame = targetScreen.frame
-        if w.frame != screenFrame {
-            w.setFrame(screenFrame, display: true)
-            w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
-        }
+        syncWindowFrame(w, to: targetScreen, display: true)
     }
 
     // MARK: - 挂载 SwiftUI 视图
@@ -179,7 +158,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 
         // 确定目标屏幕：优先使用传入的外接屏，否则用智能副屏选择器。
         // 无副屏时直接隐藏并回调，绝不回落主屏全屏。
-        guard let targetScreen = screen ?? SecondScreenSelector.pickExternal() else {
+        guard let targetScreen = resolveCurrentTargetScreen(preferredScreen: screen) else {
             hide()
             onExternalDisplayUnavailable?()
             return
@@ -198,24 +177,53 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
 
         // ── 第三重：异步校正（对抗 SwiftUI layout pass 的干扰） ──
-        DispatchQueue.main.async { [weak w, screenFrame] in
-            guard let w = w else { return }
-            // 窗口 frame 用全局坐标系
-            if w.frame != screenFrame {
-                w.setFrame(screenFrame, display: true)
-            }
-            // contentView frame 用局部坐标系（origin 必须是 (0,0)）
-            w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
+        DispatchQueue.main.async { [weak self, weak w, weak screen] in
+            guard let self, let w else { return }
+            self.syncWindowFrameToCurrentDisplay(
+                w,
+                preferredScreen: screen,
+                display: true
+            )
         }
 
         // ── 第四重：稍后再确认（应对双屏初始化延迟） ──
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak w, screenFrame] in
-            guard let w = w, w.isVisible else { return }
-            if w.frame != screenFrame {
-                w.setFrame(screenFrame, display: true)
-            }
-            w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self, weak w, weak screen] in
+            guard let self, let w, w.isVisible else { return }
+            self.syncWindowFrameToCurrentDisplay(
+                w,
+                preferredScreen: screen,
+                display: true
+            )
         }
+    }
+
+    private func resolveCurrentTargetScreen(preferredScreen: NSScreen?) -> NSScreen? {
+        if let preferredScreen,
+           NSScreen.screens.contains(where: { $0 == preferredScreen }) {
+            return preferredScreen
+        }
+        return SecondScreenSelector.pickExternal()
+    }
+
+    private func syncWindowFrameToCurrentDisplay(
+        _ window: NSWindow,
+        preferredScreen: NSScreen?,
+        display: Bool
+    ) {
+        guard let targetScreen = resolveCurrentTargetScreen(preferredScreen: preferredScreen) else {
+            hide()
+            onExternalDisplayUnavailable?()
+            return
+        }
+        syncWindowFrame(window, to: targetScreen, display: display)
+    }
+
+    private func syncWindowFrame(_ window: NSWindow, to screen: NSScreen, display: Bool) {
+        let screenFrame = screen.frame
+        if window.frame != screenFrame {
+            window.setFrame(screenFrame, display: display)
+        }
+        window.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
     }
 
     /// 隐藏推流窗口
