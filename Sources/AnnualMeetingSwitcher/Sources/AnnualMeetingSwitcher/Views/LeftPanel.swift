@@ -17,6 +17,8 @@ struct LeftPanel: View {
             sourceList
 
             Spacer(minLength: 0)
+
+            queueFooter
         }
         .padding(16)
         .frame(width: StudioTheme.directorRailWidth)
@@ -106,6 +108,12 @@ struct LeftPanel: View {
                 .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .center)
+
+            Text("Or use one of the buttons above")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(StudioTheme.textTertiary.opacity(0.82))
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(10)
         .background(
@@ -146,12 +154,7 @@ struct LeftPanel: View {
         let currentIndex = viewModel.programItems.firstIndex { $0.id == viewModel.currentProgramItem?.id }
 
         if viewModel.programItems.isEmpty {
-            EmptyStateView(
-                title: "No sources queued",
-                message: "Add or drag in video, audio, PPTX, Keynote, or HTML sources before switching.",
-                systemImage: "rectangle.stack.badge.plus"
-            )
-            .frame(maxHeight: 190)
+            EmptyView()
         } else {
             List {
                 ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
@@ -201,6 +204,19 @@ struct LeftPanel: View {
                     .stroke(StudioTheme.borderSubtle, lineWidth: 1)
             )
         }
+    }
+
+    private var queueFooter: some View {
+        let currentTitle = viewModel.currentProgramItem?.title ?? "未选中"
+
+        return Text("共 \(viewModel.programItems.count) 个节目 · \(currentTitle)")
+            .font(StudioTheme.caption())
+            .foregroundStyle(StudioTheme.textTertiary)
+            .lineLimit(1)
+            .truncationMode(.middle)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 4)
+            .accessibilityLabel("Run queue footer. \(viewModel.programItems.count) programs. Current \(currentTitle).")
     }
 
     private func queueRole(for index: Int, currentIndex: Int?) -> QueueRole {

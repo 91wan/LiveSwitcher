@@ -24,6 +24,8 @@ struct LiveOpsPanel: View {
             bgmMiniCard
 
             Spacer(minLength: 0)
+
+            runtimeFooter
         }
         .frame(maxHeight: .infinity)
     }
@@ -281,6 +283,16 @@ struct LiveOpsPanel: View {
         if model.statusKind == .fail { return StudioTheme.Action.danger }
         if model.isBroadcasting { return StudioTheme.Tone.live }
         return model.hasExternalDisplay ? StudioTheme.Action.primary : StudioTheme.Tone.muted
+    }
+
+    private var runtimeFooter: some View {
+        Text("v\(AppConfiguration.appVersion) · \(ProcessInfo.processInfo.operatingSystemVersionString)")
+            .font(StudioTheme.caption())
+            .foregroundStyle(StudioTheme.textTertiary)
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .padding(.horizontal, 4)
+            .accessibilityLabel("LiveSwitcher version \(AppConfiguration.appVersion). \(ProcessInfo.processInfo.operatingSystemVersionString).")
     }
 
     private var audioStatusText: String {
