@@ -54,6 +54,11 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 主窗口导航
 
     @Published var selectedMainTab: MainConsoleTab = .preview
+    @Published var themeOverride: ThemeOverride = .system {
+        didSet {
+            userDefaults.set(themeOverride.rawValue, forKey: UDKeys.themeOverride)
+        }
+    }
 
     // MARK: - 节目状态
 
@@ -221,6 +226,7 @@ final class SwitcherViewModel: ObservableObject {
         static let audioStrategy = "audioStrategy"
         static let speakerMode = "speakerMode"
         static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
+        static let themeOverride = "themeOverride"
     }
 
     // MARK: - Init
@@ -530,6 +536,11 @@ final class SwitcherViewModel: ObservableObject {
 
         if userDefaults.object(forKey: UDKeys.autoPlayNextVideoOnEnd) != nil {
             autoPlayNextVideoOnEnd = userDefaults.bool(forKey: UDKeys.autoPlayNextVideoOnEnd)
+        }
+
+        if let rawTheme = userDefaults.string(forKey: UDKeys.themeOverride),
+           let storedTheme = ThemeOverride(rawValue: rawTheme) {
+            themeOverride = storedTheme
         }
     }
 

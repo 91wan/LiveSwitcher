@@ -15,6 +15,18 @@ struct LiveSwitcherApp: App {
                        minHeight: AppConfiguration.minWindowHeight)
         }
         .commands {
+            CommandGroup(after: .toolbar) {
+                Menu("Theme") {
+                    ForEach(ThemeOverride.allCases) { option in
+                        Button(option.menuTitle) {
+                            viewModel.themeOverride = option
+                        }
+                        .keyboardShortcut(themeShortcut(for: option), modifiers: [.command, .option])
+                        .disabled(viewModel.themeOverride == option)
+                    }
+                }
+            }
+
             CommandMenu("现场控制") {
                 Button("打开现场安全台") {
                     openWindow(id: "safety-cockpit")
@@ -57,5 +69,16 @@ struct LiveSwitcherApp: App {
             return SwitcherViewModel()
         }
         return SwitcherViewModel(userDefaults: userDefaults)
+    }
+
+    private func themeShortcut(for option: ThemeOverride) -> KeyEquivalent {
+        switch option {
+        case .system:
+            return "0"
+        case .light:
+            return "1"
+        case .dark:
+            return "2"
+        }
     }
 }

@@ -13,7 +13,7 @@ struct ContentView: View {
         .background(StudioTheme.canvasGradient)
         .frame(minWidth: AppConfiguration.minWindowWidth,
                minHeight: AppConfiguration.minWindowHeight)
-        .preferredColorScheme(.light)
+        .preferredColorScheme(viewModel.themeOverride.colorScheme)
         // V21 Fix #3: 使用 GlobalKeyMonitor 替代 onKeyPress，解决字符键失效问题
         .background(GlobalKeyMonitor(viewModel: viewModel))
         .accessibilityElement(children: .contain)
