@@ -100,7 +100,7 @@ struct ContentView: View {
     private var primaryNavigationBar: some View {
         HStack(spacing: 16) {
             Text(chromeTitle)
-                .font(.system(size: 15, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.heading.weight(.black))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .frame(width: 190, alignment: .leading)

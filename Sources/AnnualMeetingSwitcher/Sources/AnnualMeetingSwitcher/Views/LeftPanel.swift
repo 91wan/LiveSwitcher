@@ -36,7 +36,7 @@ struct LeftPanel: View {
         return Toggle(isOn: $viewModel.autoPlayNextVideoOnEnd) {
             HStack(spacing: 7) {
                 Image(systemName: model.systemImage)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.color(for: model.statusKind))
                 Text("Auto-next video")
                     .font(StudioTheme.caption())
@@ -68,7 +68,7 @@ struct LeftPanel: View {
             CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
             Button(action: { viewModel.scanAndAddKeynoteWindows() }) {
                 Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(StudioTheme.TypeScale.body.weight(.bold))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .frame(width: 32, height: 32)
                     .background(
@@ -112,7 +112,7 @@ struct LeftPanel: View {
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Text("Or use one of the buttons above")
-                .font(.system(size: 10, weight: .medium))
+                .font(StudioTheme.TypeScale.label.weight(.medium))
                 .foregroundStyle(StudioTheme.textTertiary.opacity(0.82))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .center)
@@ -138,7 +138,7 @@ struct LeftPanel: View {
     ) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemName)
-                .font(.system(size: 11, weight: .bold))
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.82)
                 .frame(maxWidth: .infinity)
@@ -363,7 +363,7 @@ struct SecondaryImportButtonStyle: ButtonStyle {
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 13, weight: .bold))
+            .font(StudioTheme.TypeScale.body.weight(.bold))
             .lineLimit(1)
             .foregroundStyle(tint)
             .frame(maxWidth: .infinity)
