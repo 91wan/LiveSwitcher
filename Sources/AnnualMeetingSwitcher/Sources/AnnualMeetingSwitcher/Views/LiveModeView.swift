@@ -496,13 +496,18 @@ struct LiveQuickRail: View {
     }
 
     private var wallpaperCard: some View {
-        quickCard(title: "Wallpaper", status: "\(viewModel.backgroundWallpapers.count)", kind: viewModel.backgroundWallpapers.isEmpty ? .warn : .ready) {
-            Text(activeWallpaperTitle)
+        let model = LiveWallpaperQuickStatusModel.make(
+            wallpaperCount: viewModel.backgroundWallpapers.count,
+            activeWallpaperTitle: viewModel.activeWallpaperURL?.lastPathComponent
+        )
+
+        return quickCard(title: "Wallpaper", status: model.statusText, kind: model.statusKind) {
+            Text(model.displayTitle)
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .help(activeWallpaperTitle)
+                .help(model.displayTitle)
 
             Button(action: cycleWallpaper) {
                 Label("Next wallpaper", systemImage: "photo.on.rectangle.angled")
@@ -512,7 +517,7 @@ struct LiveQuickRail: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .disabled(viewModel.backgroundWallpapers.count < 2)
+            .disabled(!model.canCycle)
         }
     }
 
@@ -637,10 +642,6 @@ struct LiveQuickRail: View {
 
     private var overlayStatusKind: StudioTheme.StatusKind {
         [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].contains(true) ? .warn : .idle
-    }
-
-    private var activeWallpaperTitle: String {
-        viewModel.activeWallpaperURL?.lastPathComponent ?? "No standby wallpaper"
     }
 
     private func cycleWallpaper() {
