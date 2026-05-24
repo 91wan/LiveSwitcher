@@ -72,6 +72,101 @@ extension SwitcherViewModel {
         }
     }
 
+    @discardableResult
+    func saveCountdownPresetFromDraft() -> Bool {
+        guard let totalSeconds = OverlayUIState.countdownTotalSeconds(
+            minutes: overlayComposerState.countdownMinutesDraft,
+            seconds: overlayComposerState.countdownSecondsDraft
+        ) else {
+            return false
+        }
+        return saveCountdownPreset(
+            title: overlayComposerState.countdownTitleDraft,
+            totalSeconds: totalSeconds,
+            updatingSelectedPreset: true
+        )
+    }
+
+    @discardableResult
+    func saveCountdownPreset(title: String, totalSeconds: Int) -> Bool {
+        saveCountdownPreset(title: title, totalSeconds: totalSeconds, updatingSelectedPreset: false)
+    }
+
+    @discardableResult
+    private func saveCountdownPreset(title: String, totalSeconds: Int, updatingSelectedPreset: Bool) -> Bool {
+        let selectedID = overlayComposerState.selectedCountdownPresetID
+        let existingIndex = updatingSelectedPreset ? selectedID.flatMap { selectedID in
+            countdownPresets.firstIndex { $0.id == selectedID }
+        } : nil
+        let orderIndex = existingIndex.map { countdownPresets[$0].orderIndex } ?? countdownPresets.count
+        let presetID = existingIndex.map { countdownPresets[$0].id } ?? UUID()
+
+        guard let preset = CountdownPreset.make(
+            id: presetID,
+            title: title,
+            totalSeconds: totalSeconds,
+            orderIndex: orderIndex
+        ) else {
+            return false
+        }
+
+        if let existingIndex {
+            countdownPresets[existingIndex] = preset
+        } else {
+            countdownPresets.append(preset)
+        }
+        countdownPresets = CountdownPreset.normalized(countdownPresets)
+        loadCountdownPreset(preset)
+        saveData()
+        return true
+    }
+
+    func loadCountdownPreset(_ preset: CountdownPreset) {
+        guard let storedPreset = countdownPresets.first(where: { $0.id == preset.id }) ?? CountdownPreset.make(
+            id: preset.id,
+            title: preset.title,
+            totalSeconds: preset.totalSeconds,
+            orderIndex: preset.orderIndex
+        ) else {
+            return
+        }
+
+        overlayComposerState.selectedKind = .countdown
+        overlayComposerState.selectedCountdownPresetID = storedPreset.id
+        overlayComposerState.countdownTitleDraft = storedPreset.title
+        overlayComposerState.countdownMinutesDraft = storedPreset.totalSeconds / 60
+        overlayComposerState.countdownSecondsDraft = storedPreset.totalSeconds % 60
+    }
+
+    func clearCountdownPresetDraft() {
+        overlayComposerState.selectedKind = .countdown
+        overlayComposerState.selectedCountdownPresetID = nil
+        overlayComposerState.countdownTitleDraft = CountdownPreset.defaultTitle
+        overlayComposerState.countdownMinutesDraft = 10
+        overlayComposerState.countdownSecondsDraft = 0
+    }
+
+    func deleteCountdownPreset(id: UUID) {
+        countdownPresets.removeAll { $0.id == id }
+        countdownPresets = CountdownPreset.normalized(countdownPresets)
+        if overlayComposerState.selectedCountdownPresetID == id {
+            clearCountdownPresetDraft()
+        }
+        saveData()
+    }
+
+    func startCountdownPreset(_ preset: CountdownPreset) {
+        guard let sanitizedPreset = CountdownPreset.make(
+            id: preset.id,
+            title: preset.title,
+            totalSeconds: preset.totalSeconds,
+            orderIndex: preset.orderIndex
+        ) else {
+            return
+        }
+        startCountdown(seconds: sanitizedPreset.totalSeconds, title: sanitizedPreset.title)
+    }
+
     // MARK: - 游动字幕方法
 
     /// 启动游动字幕

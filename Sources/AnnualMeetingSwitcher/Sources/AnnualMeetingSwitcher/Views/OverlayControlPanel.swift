@@ -298,6 +298,8 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
+                countdownPresetShelf
+
                 TextField("标题（如：活动即将开始）", text: composerBinding(\.countdownTitleDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(StudioTheme.TypeScale.body)
@@ -357,6 +359,113 @@ struct OverlayControlPanel: View {
                 )
             }
         }
+    }
+
+    private var countdownPresetShelf: some View {
+        let disabledReason = OverlayUIState.countdownDisabledReason(
+            minutes: composerState.countdownMinutesDraft,
+            seconds: composerState.countdownSecondsDraft,
+            isLive: false
+        )
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Countdown Presets")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
+                Spacer()
+
+                Button {
+                    viewModel.clearCountdownPresetDraft()
+                } label: {
+                    Label("New Countdown Preset", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    _ = viewModel.saveCountdownPresetFromDraft()
+                } label: {
+                    Label("Save Countdown Preset", systemImage: "tray.and.arrow.down.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(StudioTheme.Action.primary)
+                .disabled(disabledReason != nil)
+
+                Button {
+                    if let selectedID = composerState.selectedCountdownPresetID {
+                        viewModel.deleteCountdownPreset(id: selectedID)
+                    }
+                } label: {
+                    Label("Delete Countdown Preset", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(composerState.selectedCountdownPresetID == nil)
+            }
+
+            if viewModel.countdownPresets.isEmpty {
+                Text("No saved countdowns")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.countdownPresets) { preset in
+                            Button {
+                                viewModel.loadCountdownPreset(preset)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(preset.title)
+                                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                        .lineLimit(1)
+                                    Text(formattedTime(preset.totalSeconds))
+                                        .font(StudioTheme.caption())
+                                        .foregroundStyle(StudioTheme.textTertiary)
+                                        .lineLimit(1)
+                                }
+                                .frame(minWidth: 120, alignment: .leading)
+                                .padding(.vertical, 7)
+                                .padding(.horizontal, 10)
+                                .background(
+                                    preset.id == composerState.selectedCountdownPresetID
+                                    ? StudioTheme.Action.primary.opacity(0.14)
+                                    : StudioTheme.Surface.raised,
+                                    in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                        .stroke(
+                                            preset.id == composerState.selectedCountdownPresetID
+                                            ? StudioTheme.Action.primary.opacity(0.45)
+                                            : StudioTheme.borderSubtle,
+                                            lineWidth: 1
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .help("Load countdown preset")
+                            .accessibilityLabel("Load countdown preset")
+                            .accessibilityValue("\(preset.title), \(formattedTime(preset.totalSeconds))")
+                        }
+                    }
+                    .padding(.vertical, 1)
+                }
+            }
+        }
+        .padding(10)
+        .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     private var tickerEditor: some View {

@@ -246,6 +246,7 @@ final class SwitcherViewModel: ObservableObject {
         static let consoleMode = "consoleMode"
         static let themeOverride = "themeOverride"
         static let lowerThirdPresets = "overlay.presets.lowerThird.json"
+        static let countdownPresets = "overlay.presets.countdown.json"
     }
 
     // MARK: - Init
@@ -490,6 +491,10 @@ final class SwitcherViewModel: ObservableObject {
         if let lowerThirdPresetData = try? JSONEncoder().encode(lowerThirdPresets) {
             userDefaults.set(lowerThirdPresetData, forKey: UDKeys.lowerThirdPresets)
         }
+
+        if let countdownPresetData = try? JSONEncoder().encode(countdownPresets) {
+            userDefaults.set(countdownPresetData, forKey: UDKeys.countdownPresets)
+        }
     }
 
     func loadData() {
@@ -577,6 +582,11 @@ final class SwitcherViewModel: ObservableObject {
         if let lowerThirdPresetData = userDefaults.data(forKey: UDKeys.lowerThirdPresets),
            let storedPresets = try? JSONDecoder().decode([LowerThirdPreset].self, from: lowerThirdPresetData) {
             lowerThirdPresets = LowerThirdPreset.normalized(storedPresets)
+        }
+
+        if let countdownPresetData = userDefaults.data(forKey: UDKeys.countdownPresets),
+           let storedPresets = try? JSONDecoder().decode([CountdownPreset].self, from: countdownPresetData) {
+            countdownPresets = CountdownPreset.normalized(storedPresets)
         }
     }
 
@@ -1511,6 +1521,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var isCountdownActive: Bool = false
     @Published var countdownTitle: String  = "活动即将开始"
     @Published var countdownSeconds: Int   = 0
+    @Published var countdownPresets: [CountdownPreset] = []
     var countdownTimer: Timer?
 
     @Published var isTickerActive: Bool    = false
