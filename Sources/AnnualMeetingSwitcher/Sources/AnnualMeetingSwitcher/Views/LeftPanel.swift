@@ -55,17 +55,21 @@ struct LeftPanel: View {
     // MARK: - 标题行
 
     private var headerRow: some View {
-        HStack(alignment: .top) {
+        let programCount = viewModel.programItems.count
+
+        return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Run Queue")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("\(viewModel.programItems.count) 个节目")
+                Text("\(programCount) 个节目")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer()
-            CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
+            if CountPillVisibilityPolicy.shouldShow(count: programCount) {
+                CountPill("\(programCount)", kind: .ready)
+            }
             Button(action: { viewModel.scanAndAddKeynoteWindows() }) {
                 Image(systemName: "arrow.clockwise")
                     .font(StudioTheme.TypeScale.body.weight(.bold))
