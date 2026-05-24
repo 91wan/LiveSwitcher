@@ -8,7 +8,7 @@ struct PreflightPopoverView: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     @State private var copiedReport = false
     @State private var supportMessage: String?
-    @State private var preflightListMode: PreflightListMode = .needsAttention
+    @State private var preflightListMode: PreflightReviewMode = .needsAttention
     @State private var preflightActionMessage: String?
     var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
     var onOpenSafetyCockpit: () -> Void = {}
@@ -38,7 +38,7 @@ struct PreflightPopoverView: View {
 
     @ViewBuilder
     private var preflightContent: some View {
-        let checks = preflightDisplayedChecks
+        let review = preflightReview
 
         VStack(alignment: .leading, spacing: 16) {
             preflightHeader
@@ -47,8 +47,8 @@ struct PreflightPopoverView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $preflightListMode) {
-                    Text("Needs attention").tag(PreflightListMode.needsAttention)
-                    Text("All checks").tag(PreflightListMode.allChecks)
+                    Text("Needs attention").tag(PreflightReviewMode.needsAttention)
+                    Text("All checks").tag(PreflightReviewMode.allChecks)
                 }
                 .pickerStyle(.segmented)
 
@@ -81,19 +81,19 @@ struct PreflightPopoverView: View {
                     .accessibilityLabel("Support report result: \(supportMessage)")
             }
 
-            if checks.isEmpty {
-                PreflightEmptyAttentionView()
+            if review.isEmpty {
+                PreflightEmptyAttentionView(
+                    title: review.emptyTitle,
+                    message: review.emptyMessage
+                )
             }
 
-            ForEach(LivePreflightGroup.allCases, id: \.self) { group in
-                let groupChecks = checks.filter { $0.group == group }
-                if !groupChecks.isEmpty {
-                    PreflightGroupView(
-                        group: group,
-                        checks: groupChecks,
-                        onAction: handlePreflightRowAction
-                    )
-                }
+            ForEach(review.sections) { section in
+                PreflightGroupView(
+                    group: section.group,
+                    checks: section.checks,
+                    onAction: handlePreflightRowAction
+                )
             }
 
             preflightFooterActions
@@ -150,13 +150,11 @@ struct PreflightPopoverView: View {
         .accessibilityLabel("Preflight footer actions")
     }
 
-    private var preflightDisplayedChecks: [LivePreflightCheck] {
-        switch preflightListMode {
-        case .needsAttention:
-            return LivePreflightCheck.attentionChecks(from: viewModel.livePreflightChecks)
-        case .allChecks:
-            return viewModel.livePreflightChecks
-        }
+    private var preflightReview: PreflightReviewModel {
+        PreflightReviewModel.make(
+            checks: viewModel.livePreflightChecks,
+            mode: preflightListMode
+        )
     }
 
     private func handlePreflightRowAction(_ action: LivePreflightActionKind) {
@@ -231,21 +229,19 @@ struct PreflightPopoverView: View {
     }
 }
 
-private enum PreflightListMode: Hashable {
-    case needsAttention
-    case allChecks
-}
-
 private struct PreflightEmptyAttentionView: View {
+    let title: String
+    let message: String
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 17, weight: .black))
                 .foregroundStyle(StudioTheme.Tone.ready)
             VStack(alignment: .leading, spacing: 3) {
-                Text("No rows need attention")
+                Text(title)
                     .font(.system(size: 13, weight: .bold))
-                Text("Switch to All checks if you want to audit every passing row.")
+                Text(message)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(StudioTheme.textSecondary)
             }
