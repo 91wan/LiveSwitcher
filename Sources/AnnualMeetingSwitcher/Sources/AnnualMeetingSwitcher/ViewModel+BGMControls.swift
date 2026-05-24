@@ -59,6 +59,7 @@ extension SwitcherViewModel {
         guard let current = currentBGMItem else {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            resetBGMRealtimeMeter()
             LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
             recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
@@ -70,6 +71,7 @@ extension SwitcherViewModel {
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            resetBGMRealtimeMeter()
             LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
             recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
@@ -79,11 +81,13 @@ extension SwitcherViewModel {
 
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
 
         // 顺序播放：到最后一首时停止
         if bgmPlayMode == .sequential && index == items.count - 1 {
             isBGMPlaying = false
             isBGMAudioTakeoverActive = false
+            resetBGMRealtimeMeter()
             LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
             recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
@@ -100,6 +104,7 @@ extension SwitcherViewModel {
         stopBGMTimer()
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
         cancelBGMFallbackFade()
         bgmFallbackPlayer.volume = 0
         bgmFallbackPlayer.pause()
@@ -125,6 +130,7 @@ extension SwitcherViewModel {
         bgmAudioPlayer?.stop()
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
         toggleBGM(nextItem)
     }
 
@@ -139,6 +145,7 @@ extension SwitcherViewModel {
         bgmAudioPlayer?.stop()
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
         toggleBGM(prevItem)
     }
 }

@@ -2,17 +2,49 @@ import XCTest
 @testable import LiveSwitcher
 
 final class LiveModeMixerControlsTests: XCTestCase {
-    func testAudioMeterModelMapsMutedAndActiveLevels() {
+    func testAudioMeterModelMapsMutedRealtimeAndEstimatedLevels() {
         let muted = LiveAudioMeterModel.make(effectiveVolume: 0, isMuted: true)
         XCTAssertEqual(muted.level, 0)
         XCTAssertEqual(muted.decibelText, "-∞ dB")
         XCTAssertEqual(muted.statusKind, .muted)
+        XCTAssertFalse(muted.isEstimated)
 
-        let active = LiveAudioMeterModel.make(effectiveVolume: 0.5, isMuted: false)
-        XCTAssertGreaterThan(active.level, 0)
-        XCTAssertLessThan(active.level, 1)
-        XCTAssertEqual(active.decibelText, "-6 dB")
-        XCTAssertEqual(active.statusKind, .ready)
+        let realtime = LiveAudioMeterModel.make(realtimeDB: -12, fallbackEffectiveVolume: 1, isMuted: false)
+        XCTAssertEqual(realtime.level, 0.8, accuracy: 0.01)
+        XCTAssertEqual(realtime.decibelText, "-12 dB")
+        XCTAssertEqual(realtime.statusKind, .ready)
+        XCTAssertFalse(realtime.isEstimated)
+
+        let realtimeWithGain = LiveAudioMeterModel.make(realtimeDB: -6, fallbackEffectiveVolume: 0.5, isMuted: false)
+        XCTAssertEqual(realtimeWithGain.decibelText, "-12 dB")
+        XCTAssertFalse(realtimeWithGain.isEstimated)
+
+        let clipping = LiveAudioMeterModel.make(realtimeDB: -1, fallbackEffectiveVolume: 0.2, isMuted: false)
+        XCTAssertEqual(clipping.decibelText, "-15 dB")
+        XCTAssertEqual(clipping.statusKind, .ready)
+        XCTAssertFalse(clipping.isEstimated)
+
+        let realtimeClipping = LiveAudioMeterModel.make(realtimeDB: -1, fallbackEffectiveVolume: 1, isMuted: false)
+        XCTAssertEqual(realtimeClipping.decibelText, "-1 dB")
+        XCTAssertEqual(realtimeClipping.statusKind, .warn)
+        XCTAssertFalse(realtimeClipping.isEstimated)
+
+        let realtimeWithClosedFader = LiveAudioMeterModel.make(realtimeDB: -1, fallbackEffectiveVolume: 0, isMuted: false)
+        XCTAssertEqual(realtimeWithClosedFader.decibelText, "-∞ dB")
+        XCTAssertEqual(realtimeWithClosedFader.statusKind, .muted)
+        XCTAssertFalse(realtimeWithClosedFader.isEstimated)
+
+        let realtimeOverload = LiveAudioMeterModel.make(realtimeDB: 3, fallbackEffectiveVolume: 1, isMuted: false)
+        XCTAssertEqual(realtimeOverload.decibelText, "0 dB")
+        XCTAssertEqual(realtimeOverload.statusKind, .warn)
+        XCTAssertFalse(realtimeOverload.isEstimated)
+
+        let estimated = LiveAudioMeterModel.make(realtimeDB: nil, fallbackEffectiveVolume: 0.5, isMuted: false)
+        XCTAssertGreaterThan(estimated.level, 0)
+        XCTAssertLessThan(estimated.level, 1)
+        XCTAssertEqual(estimated.decibelText, "≈ -6 dB")
+        XCTAssertEqual(estimated.statusKind, .ready)
+        XCTAssertTrue(estimated.isEstimated)
     }
 
     func testCutBusModelEnablesTakeNextOnlyWhenQueueHasNextItem() {
@@ -125,6 +157,21 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.isPanicMode || viewModel.isMasterAudioMuted"))
         XCTAssertTrue(source.contains("Cut Bus"))
         XCTAssertTrue(source.contains("Take Next"))
+    }
+
+    func testBGMPlayerEnablesRealtimeMetering() throws {
+        let source = try sourceText("ViewModel.swift")
+
+        XCTAssertTrue(source.contains("bgmRealtimeLevelDB"))
+        XCTAssertTrue(source.contains("player.isMeteringEnabled = true"))
+        XCTAssertTrue(source.contains("averagePower(forChannel: 0)"))
+    }
+
+    func testLiveAudioStripUsesRealtimeBGMMeter() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
+        XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.effectiveBGMOutputVolume()"))
     }
 
     func testCutBusUsesFadeToBlackInsteadOfPanic() throws {
