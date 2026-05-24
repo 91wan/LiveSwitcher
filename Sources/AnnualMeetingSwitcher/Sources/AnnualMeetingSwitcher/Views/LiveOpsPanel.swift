@@ -286,13 +286,13 @@ struct LiveOpsPanel: View {
     }
 
     private var runtimeFooter: some View {
-        Text("v\(AppConfiguration.appVersion) · \(ProcessInfo.processInfo.operatingSystemVersionString)")
+        Text("v\(AppConfiguration.appVersion) · \(HostSystemSummary.shortVersionString)")
             .font(StudioTheme.caption())
             .foregroundStyle(StudioTheme.textTertiary)
             .lineLimit(1)
             .truncationMode(.tail)
             .padding(.horizontal, 4)
-            .accessibilityLabel("LiveSwitcher version \(AppConfiguration.appVersion). \(ProcessInfo.processInfo.operatingSystemVersionString).")
+            .accessibilityLabel("LiveSwitcher version \(AppConfiguration.appVersion). \(HostSystemSummary.shortVersionString).")
     }
 
     private var audioStatusText: String {

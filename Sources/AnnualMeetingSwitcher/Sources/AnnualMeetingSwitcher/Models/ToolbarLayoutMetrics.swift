@@ -5,6 +5,7 @@ enum ToolbarLayoutMetrics {
     static let preflightMinWidth: CGFloat = 112
     static let helpMinWidth: CGFloat = 76
     static let interItemSpacing: CGFloat = 10
+    static let actionHeight: CGFloat = 46
 
     static let availableWidthAtMinimumWindow: CGFloat = 360
 

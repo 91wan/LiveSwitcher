@@ -57,7 +57,8 @@ final class RunDeskControlConvergenceTests: XCTestCase {
 
         XCTAssertTrue(leftPanel.contains("queueFooter"))
         XCTAssertTrue(liveOps.contains("runtimeFooter"))
-        XCTAssertTrue(liveOps.contains("ProcessInfo.processInfo.operatingSystemVersionString"))
+        XCTAssertTrue(liveOps.contains("HostSystemSummary.shortVersionString"))
+        XCTAssertFalse(liveOps.contains("ProcessInfo.processInfo.operatingSystemVersionString"))
     }
 
     func testAutoNextIdleStateIsNeutralAndActiveStateWarns() {
