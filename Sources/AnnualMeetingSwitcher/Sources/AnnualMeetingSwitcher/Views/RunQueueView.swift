@@ -18,6 +18,7 @@ struct SignalSourceRow: View {
     let onDelete: () -> Void
 
     @State private var isHovered = false
+    private let rowContentIndent: CGFloat = 94
 
     private var rowModel: ProgramQueueRowModel {
         ProgramQueueRowModel(
@@ -34,15 +35,12 @@ struct SignalSourceRow: View {
             HStack(spacing: 9) {
                 queueBadge
 
-                Image(systemName: iconName(for: item))
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(sourceTint)
-                    .frame(width: 28, height: 28)
-                    .background(
-                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                            .fill(sourceTint.opacity(queueRole == .current ? 0.18 : 0.11))
-                    )
-                    .accessibilityHidden(true)
+                ProgramThumbnailView(
+                    sourceURL: item.sourceURL,
+                    kind: item.sourceKind,
+                    isVideo: item.isVideoMedia,
+                    displaySize: CGSize(width: 48, height: 27)
+                )
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)
@@ -67,7 +65,7 @@ struct SignalSourceRow: View {
                 sourceTypeChip
                 Spacer(minLength: 0)
             }
-            .padding(.leading, 50)
+            .padding(.leading, rowContentIndent)
             .fixedSize(horizontal: false, vertical: true)
 
             if isSelected && rowModel.controlStyle != .none && rowModel.controlStyle != .unsupported {
@@ -76,7 +74,7 @@ struct SignalSourceRow: View {
 
             if isSelected && rowModel.showsProgressSlider {
                 ProgressSliderRow(avCoordinator: avCoordinator)
-                    .padding(.leading, 50)
+                    .padding(.leading, rowContentIndent)
             }
         }
         .padding(.vertical, 9)
@@ -169,7 +167,7 @@ struct SignalSourceRow: View {
             .opacity(isHovered ? 1 : 0.28)
             .help("删除")
         }
-        .padding(.leading, 50)
+        .padding(.leading, rowContentIndent)
         .padding(.top, 2)
     }
 
