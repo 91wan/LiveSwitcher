@@ -245,7 +245,9 @@ struct LiveAudioStrip: View {
             )
 
             VStack(alignment: .trailing, spacing: 8) {
-                StatusBadge(viewModel.audioStrategy.displayTitle, kind: audioStatusKind)
+                if StatusBadgeVisibilityPolicy.shouldShow(text: audioStatusText, kind: audioStatusKind) {
+                    StatusBadge(audioStatusText, kind: audioStatusKind)
+                }
                 Button(action: onOpenMixer) {
                     Label("Mixer", systemImage: "slider.horizontal.3")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
@@ -264,6 +266,10 @@ struct LiveAudioStrip: View {
         )
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Live audio strip")
+    }
+
+    private var audioStatusText: String {
+        viewModel.audioStrategy.displayTitle
     }
 
     private var audioStatusKind: StudioTheme.StatusKind {
