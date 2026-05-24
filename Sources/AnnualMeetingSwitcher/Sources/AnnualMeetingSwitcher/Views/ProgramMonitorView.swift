@@ -291,7 +291,9 @@ struct ProgramMonitorView: View {
     }
 
     private var wallpaperTrayCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let wallpaperCount = viewModel.backgroundWallpapers.count
+
+        return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Standby Wallpaper")
@@ -299,7 +301,9 @@ struct ProgramMonitorView: View {
                         .foregroundStyle(StudioTheme.textPrimary)
                 }
                 Spacer()
-                CountPill("\(viewModel.backgroundWallpapers.count) 张", kind: viewModel.backgroundWallpapers.isEmpty ? .warn : .ready)
+                if CountPillVisibilityPolicy.shouldShow(count: wallpaperCount) {
+                    CountPill("\(wallpaperCount) 张", kind: .ready)
+                }
             }
 
             if viewModel.backgroundWallpapers.isEmpty {

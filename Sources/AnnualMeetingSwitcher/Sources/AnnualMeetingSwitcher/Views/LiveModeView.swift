@@ -50,13 +50,17 @@ struct LiveSourceRail: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let programCount = viewModel.programItems.count
+
+        return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Sources")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
+                if CountPillVisibilityPolicy.shouldShow(count: programCount) {
+                    CountPill("\(programCount)", kind: .ready)
+                }
             }
 
             if viewModel.programItems.isEmpty {
