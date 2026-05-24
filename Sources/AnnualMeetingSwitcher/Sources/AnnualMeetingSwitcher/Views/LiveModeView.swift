@@ -543,6 +543,10 @@ struct LiveQuickRail: View {
     }
 
     private var bgmCard: some View {
+        let picker = LiveBGMQuickPickerModel.make(
+            items: viewModel.bgmItems,
+            currentItem: viewModel.currentBGMItem
+        )
         let controls = BGMControlsState.make(
             items: viewModel.bgmItems,
             currentItem: viewModel.currentBGMItem,
@@ -550,11 +554,11 @@ struct LiveQuickRail: View {
         )
 
         return quickCard(title: "BGM", status: controls.displayStatusText, kind: controls.displayStatusKind) {
-            Text(viewModel.currentBGMItem?.title ?? "No BGM selected")
+            Text(picker.currentTitle)
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
-                .help(viewModel.currentBGMItem?.title ?? "No BGM selected")
+                .help(picker.currentTitle)
 
             HStack(spacing: 7) {
                 transportButton("backward.end.fill", enabled: controls.canSkipPrevious, hint: controls.skipDisabledReason) {
@@ -571,15 +575,47 @@ struct LiveQuickRail: View {
                     viewModel.playNextBGM()
                 }
                 Spacer()
-                Button(action: onOpenMixer) {
-                    Image(systemName: "music.note.list")
-                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .accessibilityLabel("Open BGM library")
+                bgmLibraryMenu(picker: picker)
             }
         }
+    }
+
+    private func bgmLibraryMenu(picker: LiveBGMQuickPickerModel) -> some View {
+        Menu {
+            if picker.isLibraryEmpty {
+                Text("No BGM in library")
+            } else {
+                ForEach(BGMCategory.allCases, id: \.self) { category in
+                    if let section = picker.section(for: category), !section.isEmpty {
+                        Menu(section.title) {
+                            ForEach(section.tracks) { item in
+                                Button {
+                                    viewModel.toggleBGM(item)
+                                } label: {
+                                    Label(
+                                        item.title,
+                                        systemImage: item.id == viewModel.currentBGMItem?.id ? "checkmark" : "music.note"
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Divider()
+            }
+
+            Button {
+                onOpenMixer()
+            } label: {
+                Label("Open BGM Library", systemImage: "music.note.list")
+            }
+        } label: {
+            Image(systemName: "music.note.list")
+                .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .accessibilityLabel("Choose BGM from library")
     }
 
     private func quickCard<Content: View>(

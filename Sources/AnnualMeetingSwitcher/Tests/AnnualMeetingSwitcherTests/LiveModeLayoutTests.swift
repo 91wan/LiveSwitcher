@@ -68,6 +68,16 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("BGM"))
     }
 
+    func testLiveBGMCardOffersLibraryPickerWithoutLeavingLiveMode() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("LiveBGMQuickPickerModel.make"))
+        XCTAssertTrue(source.contains("Choose BGM from library"))
+        XCTAssertTrue(source.contains("BGMCategory.allCases"))
+        XCTAssertTrue(source.contains("viewModel.toggleBGM(item)"))
+        XCTAssertTrue(source.contains("Open BGM Library"))
+    }
+
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
