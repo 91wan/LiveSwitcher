@@ -20,7 +20,7 @@ struct ProgramThumbnailView: View {
                     .scaledToFill()
             } else {
                 Image(systemName: fallbackSystemImage)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(StudioTheme.TypeScale.body.weight(.bold))
                     .foregroundStyle(didFail ? StudioTheme.Tone.warn : StudioTheme.textSecondary)
             }
         }

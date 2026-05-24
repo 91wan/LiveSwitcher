@@ -90,7 +90,7 @@ struct ProgramMonitorView: View {
                 .fill(StudioTheme.Tone.live)
                 .frame(width: 8, height: 8)
             Text("ON AIR")
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.caption.weight(.black))
                 .foregroundStyle(StudioTheme.monitorText)
         }
         .padding(.horizontal, 10)
@@ -125,7 +125,7 @@ struct ProgramMonitorView: View {
                 .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
                 .frame(width: 8, height: 8)
             Text(monitorStateLabel)
-                .font(.system(size: 12, weight: .bold))
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.monitorText)
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -169,13 +169,13 @@ struct ProgramMonitorView: View {
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
             Text(model.value)
-                .font(.system(size: 13, weight: .black))
+                .font(StudioTheme.TypeScale.body.weight(.black))
                 .foregroundStyle(StudioTheme.monitorText)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 4)
             Text(model.badgeText)
-                .font(.system(size: 10, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.label)
                 .foregroundStyle(StudioTheme.color(for: model.status))
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
@@ -200,7 +200,7 @@ struct ProgramMonitorView: View {
             Text(next.value)
                 .foregroundStyle(StudioTheme.monitorText.opacity(0.82))
         }
-        .font(.system(size: 12, weight: .bold))
+        .font(StudioTheme.TypeScale.caption.weight(.bold))
         .lineLimit(1)
         .minimumScaleFactor(0.78)
         .padding(.horizontal, 10)
@@ -274,7 +274,7 @@ struct ProgramMonitorView: View {
             .accessibilityValue(String(format: "%.1f seconds", viewModel.crossfadeDuration))
 
             Text(String(format: "%.1fs", viewModel.crossfadeDuration))
-                .font(.system(size: 18, weight: .bold, design: .monospaced))
+                .font(StudioTheme.TypeScale.numeric.weight(.bold))
                 .foregroundStyle(StudioTheme.Tone.warn)
                 .frame(width: 56, alignment: .trailing)
         }
@@ -308,7 +308,7 @@ struct ProgramMonitorView: View {
                     WallpaperImportService.presentPicker(viewModel: viewModel)
                 } label: {
                     Label("Import wallpaper...", systemImage: "photo.badge.plus")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
                 }
@@ -338,11 +338,11 @@ struct ProgramMonitorView: View {
         } else if let item = viewModel.currentProgramItem {
             VStack(spacing: 8) {
                 Text(item.title)
-                    .font(.system(size: 28, weight: .bold))
+                    .font(StudioTheme.TypeScale.display.weight(.bold))
                     .foregroundStyle(StudioTheme.monitorText)
                 if !item.subtitle.isEmpty {
                     Text(item.subtitle)
-                        .font(.system(size: 16, weight: .regular))
+                        .font(StudioTheme.TypeScale.heading.weight(.regular))
                         .foregroundStyle(StudioTheme.monitorText.opacity(0.6))
                 }
             }
@@ -350,10 +350,10 @@ struct ProgramMonitorView: View {
         } else {
             VStack(spacing: 8) {
                 Text("待机中")
-                    .font(.system(size: 30, weight: .bold))
+                    .font(StudioTheme.TypeScale.display.weight(.bold))
                     .foregroundStyle(StudioTheme.monitorText)
                 Text("NO SIGNAL LOADED")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .font(StudioTheme.TypeScale.body.weight(.black))
                     .foregroundStyle(StudioTheme.monitorText.opacity(0.7))
             }
             .transition(.opacity)

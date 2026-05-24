@@ -36,17 +36,17 @@ struct WallpaperGalleryRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 Image(systemName: "photo.on.rectangle.angled")
-                    .font(.system(size: 14))
+                    .font(StudioTheme.TypeScale.body)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .accessibilityHidden(true)
                 Text("待机图库")
-                    .font(.system(size: 14, weight: .bold))
+                    .font(StudioTheme.TypeScale.body.weight(.bold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 Button("导入...") {
                     WallpaperImportService.presentPicker(viewModel: viewModel)
                 }
-                .font(.system(size: 13))
+                .font(StudioTheme.TypeScale.body)
                 .buttonStyle(.plain)
                 .foregroundStyle(StudioTheme.Action.primary)
             }
@@ -76,11 +76,11 @@ struct WallpaperGalleryRow: View {
 
                         VStack(spacing: 4) {
                             Image(systemName: "plus")
-                                .font(.system(size: 18, weight: .light))
+                                .font(StudioTheme.TypeScale.numeric.weight(.light))
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .accessibilityHidden(true)
                             Text("拖入图片")
-                                .font(.system(size: 10))
+                                .font(StudioTheme.TypeScale.label.weight(.regular))
                                 .foregroundStyle(StudioTheme.textSecondary)
                         }
                     }
@@ -185,7 +185,7 @@ struct WallpaperThumbView: View {
                     HStack {
                         Spacer()
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 14))
+                            .font(StudioTheme.TypeScale.body)
                             .foregroundStyle(StudioTheme.Action.primary)
                             .background(StudioTheme.Surface.base.clipShape(Circle()))
                             .padding(4)
