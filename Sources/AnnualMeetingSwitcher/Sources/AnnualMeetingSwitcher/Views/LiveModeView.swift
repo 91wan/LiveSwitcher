@@ -210,21 +210,33 @@ struct LiveAudioStrip: View {
                 title: "Master",
                 subtitle: "Global",
                 value: $viewModel.masterVolume,
-                effectiveValue: viewModel.masterVolume,
+                isMuted: $viewModel.isMasterAudioMuted,
+                meter: LiveAudioMeterModel.make(
+                    effectiveVolume: viewModel.isPanicMode || viewModel.isMasterAudioMuted ? 0 : Float(viewModel.masterVolume),
+                    isMuted: viewModel.isPanicMode || viewModel.isMasterAudioMuted
+                ),
                 tint: StudioTheme.Action.primary
             )
             LiveAudioFader(
                 title: "Media",
                 subtitle: "Program",
                 value: $viewModel.mediaVolume,
-                effectiveValue: Double(viewModel.effectiveMediaOutputVolume()),
+                isMuted: $viewModel.isMediaAudioMuted,
+                meter: LiveAudioMeterModel.make(
+                    effectiveVolume: viewModel.effectiveMediaOutputVolume(),
+                    isMuted: viewModel.isMasterAudioMuted || viewModel.isMediaAudioMuted
+                ),
                 tint: StudioTheme.Action.primary
             )
             LiveAudioFader(
                 title: "BGM",
                 subtitle: "Music",
                 value: $viewModel.bgmVolume,
-                effectiveValue: Double(viewModel.effectiveBGMOutputVolume()),
+                isMuted: $viewModel.isBGMAudioMuted,
+                meter: LiveAudioMeterModel.make(
+                    effectiveVolume: viewModel.effectiveBGMOutputVolume(),
+                    isMuted: viewModel.isMasterAudioMuted || viewModel.isBGMAudioMuted
+                ),
                 tint: StudioTheme.Tone.warn
             )
 
@@ -261,7 +273,8 @@ private struct LiveAudioFader: View {
     let title: String
     let subtitle: String
     @Binding var value: Double
-    let effectiveValue: Double
+    @Binding var isMuted: Bool
+    let meter: LiveAudioMeterModel
     let tint: Color
 
     var body: some View {
@@ -276,16 +289,31 @@ private struct LiveAudioFader: View {
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer()
-                Text("\(percent(effectiveValue))")
+                Text(meter.decibelText)
                     .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(tint)
+                    .foregroundStyle(StudioTheme.color(for: meter.statusKind))
             }
 
             Slider(value: $value, in: 0...1)
                 .tint(tint)
                 .controlSize(.small)
                 .accessibilityLabel("\(title) volume")
-                .accessibilityValue("User \(percent(value)), effective \(percent(effectiveValue))")
+                .accessibilityValue("User \(percent(value)), meter \(meter.decibelText)")
+
+            HStack(spacing: 8) {
+                LiveAudioMeter(model: meter, tint: tint)
+                Button {
+                    isMuted.toggle()
+                } label: {
+                    Label(isMuted ? "Unmute" : "Mute", systemImage: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.system(size: 11, weight: .bold))
+                        .labelStyle(.iconOnly)
+                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 22)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help(isMuted ? "Unmute \(title)" : "Mute \(title)")
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(10)
@@ -301,6 +329,26 @@ private struct LiveAudioFader: View {
     }
 }
 
+private struct LiveAudioMeter: View {
+    let model: LiveAudioMeterModel
+    let tint: Color
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule(style: .continuous)
+                    .fill(StudioTheme.Tone.muted.opacity(0.18))
+                Capsule(style: .continuous)
+                    .fill(model.statusKind == .muted ? StudioTheme.Tone.muted.opacity(0.35) : tint.opacity(0.78))
+                    .frame(width: proxy.size.width * model.level)
+            }
+        }
+        .frame(height: 8)
+        .accessibilityLabel("Audio meter")
+        .accessibilityValue(model.decibelText)
+    }
+}
+
 struct LiveQuickRail: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
     let onOpenMixer: () -> Void
@@ -308,7 +356,7 @@ struct LiveQuickRail: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             outputCard
-            blackoutCard
+            cutBusCard
             overlayCard
             wallpaperCard
             bgmCard
@@ -352,21 +400,42 @@ struct LiveQuickRail: View {
         }
     }
 
-    private var blackoutCard: some View {
-        quickCard(title: "Blackout", status: viewModel.isPanicMode ? "ACTIVE" : "READY", kind: viewModel.isPanicMode ? .fail : .idle) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    viewModel.togglePanicMode()
+    private var cutBusCard: some View {
+        let model = LiveCutBusModel.make(
+            programItems: viewModel.programItems,
+            currentProgramItem: viewModel.currentProgramItem
+        )
+
+        return quickCard(title: "Cut Bus", status: viewModel.isPanicMode ? "BLACK" : "READY", kind: viewModel.isPanicMode ? .fail : .idle) {
+            HStack(spacing: 7) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        viewModel.togglePanicMode()
+                    }
+                } label: {
+                    Label(viewModel.isPanicMode ? "Restore" : "FTB", systemImage: viewModel.isPanicMode ? "play.fill" : "moon.fill")
+                        .font(.system(size: 12, weight: .black))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
                 }
-            } label: {
-                Label(viewModel.isPanicMode ? "Restore" : "Fade to Black", systemImage: viewModel.isPanicMode ? "play.fill" : "moon.fill")
-                    .font(.system(size: 12, weight: .black))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 40)
+                .buttonStyle(.borderedProminent)
+                .tint(viewModel.isPanicMode ? StudioTheme.Tone.live : StudioTheme.Action.danger)
+                .accessibilityLabel(viewModel.isPanicMode ? "Restore from blackout" : "Fade to black")
+
+                Button {
+                    if let index = model.nextIndex {
+                        viewModel.switchToProgram(at: index)
+                    }
+                } label: {
+                    Label("Take Next", systemImage: "arrow.right.to.line.compact")
+                        .font(.system(size: 12, weight: .black))
+                        .labelStyle(.iconOnly)
+                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 40)
+                }
+                .buttonStyle(.bordered)
+                .disabled(!model.canTakeNext)
+                .help(model.canTakeNext ? "Take next source: \(model.nextTitle)" : "No next source")
             }
-            .buttonStyle(.borderedProminent)
-            .tint(viewModel.isPanicMode ? StudioTheme.Tone.live : StudioTheme.Action.danger)
-            .accessibilityLabel(viewModel.isPanicMode ? "Restore from blackout" : "Fade to black")
         }
     }
 
@@ -604,28 +673,14 @@ struct LiveRuntimeStatusBar: View {
     }
 
     private var statusKindColor: Color {
-        if viewModel.isPanicMode { return StudioTheme.Tone.fail }
-        if viewModel.isBroadcasting { return StudioTheme.Tone.live }
-        if !viewModel.hasExternalDisplay { return StudioTheme.Tone.warn }
-        return StudioTheme.Tone.ready
+        StudioTheme.color(for: runtimeStatus.kind)
     }
 
     private var statusText: String {
-        let output = viewModel.isBroadcasting ? "ON AIR" : (viewModel.hasExternalDisplay ? "Standby" : "No external display")
-        let current = viewModel.currentProgramItem?.title ?? "No program"
-        let next = nextProgramItem?.title ?? "No next"
-        return "\(output) · Current: \(current) · Next: \(next) · \(viewModel.programItems.count) sources queued"
+        runtimeStatus.text
     }
 
-    private var nextProgramItem: ProgramItem? {
-        guard !viewModel.programItems.isEmpty else { return nil }
-        guard let currentID = viewModel.currentProgramItem?.id,
-              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
-        else {
-            return viewModel.programItems.first
-        }
-        let nextIndex = viewModel.programItems.index(after: currentIndex)
-        guard nextIndex < viewModel.programItems.endIndex else { return nil }
-        return viewModel.programItems[nextIndex]
+    private var runtimeStatus: LiveRuntimeStatusModel {
+        LiveRuntimeStatusModel.make(snapshot: viewModel.livePreflightSnapshot)
     }
 }

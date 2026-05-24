@@ -12,6 +12,9 @@ final class AudioRoutingEngineTests: XCTestCase {
         isBGMAudioTakeoverActive: Bool = false,
         isSpeakerMode: Bool = false,
         isPanicMode: Bool = false,
+        isMasterMuted: Bool = false,
+        isMediaMuted: Bool = false,
+        isBGMMuted: Bool = false,
         speakerModeDuckedRatio: Float = 0.07
     ) -> AudioRoutingInput {
         AudioRoutingInput(
@@ -24,6 +27,9 @@ final class AudioRoutingEngineTests: XCTestCase {
             isBGMAudioTakeoverActive: isBGMAudioTakeoverActive,
             isSpeakerMode: isSpeakerMode,
             isPanicMode: isPanicMode,
+            isMasterMuted: isMasterMuted,
+            isMediaMuted: isMediaMuted,
+            isBGMMuted: isBGMMuted,
             speakerModeDuckedRatio: speakerModeDuckedRatio
         )
     }
@@ -40,6 +46,20 @@ final class AudioRoutingEngineTests: XCTestCase {
 
         XCTAssertEqual(output.media, 0, accuracy: 0.0001)
         XCTAssertEqual(output.bgm, 0, accuracy: 0.0001)
+    }
+
+    func testLiveMuteControlsApplyThroughRoutingEngine() {
+        let masterMuted = AudioRoutingEngine.output(for: input(isMasterMuted: true))
+        XCTAssertEqual(masterMuted.media, 0, accuracy: 0.0001)
+        XCTAssertEqual(masterMuted.bgm, 0, accuracy: 0.0001)
+
+        let mediaMuted = AudioRoutingEngine.output(for: input(isMediaMuted: true))
+        XCTAssertEqual(mediaMuted.media, 0, accuracy: 0.0001)
+        XCTAssertEqual(mediaMuted.bgm, 0.48, accuracy: 0.0001)
+
+        let bgmMuted = AudioRoutingEngine.output(for: input(isBGMMuted: true))
+        XCTAssertEqual(bgmMuted.media, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(bgmMuted.bgm, 0, accuracy: 0.0001)
     }
 
     func testBGMTakeoverMutesMediaAndKeepsBGM() {
