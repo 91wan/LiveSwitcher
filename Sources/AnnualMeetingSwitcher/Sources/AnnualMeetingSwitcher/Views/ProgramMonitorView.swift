@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ProgramMonitorView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
+    @State private var isHoveringPreviewDeck = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -65,13 +66,45 @@ struct ProgramMonitorView: View {
             }
             .padding(.top, 12)
             .padding(.horizontal, 12)
+            .opacity(monitorChromeVisibility.inlineChromeOpacity)
+            .allowsHitTesting(monitorChromeVisibility.inlineChromeAllowsHitTesting)
+        }
+        .overlay(alignment: .bottomTrailing) {
+            if monitorChromeVisibility.showsCompactLiveIndicator {
+                compactLiveIndicator
+                    .opacity(monitorChromeVisibility.compactLiveIndicatorOpacity)
+                    .padding(12)
+                    .transition(.opacity)
+            }
         }
         .frame(maxWidth: .infinity)
         .frame(maxHeight: 342)
         .aspectRatio(16.0 / 9.0, contentMode: .fit)
         .shadow(color: StudioTheme.shadowStrong, radius: 12, x: 0, y: 8)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.16)) {
+                isHoveringPreviewDeck = hovering
+            }
+        }
+        .animation(.easeInOut(duration: 0.16), value: monitorChromeVisibility)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(viewModel.isBroadcasting ? "Program monitor on air" : "Program monitor standby")
+    }
+
+    private var compactLiveIndicator: some View {
+        HStack(spacing: 7) {
+            Circle()
+                .fill(StudioTheme.Tone.live)
+                .frame(width: 8, height: 8)
+            Text("ON AIR")
+                .font(.system(size: 11, weight: .black, design: .rounded))
+                .foregroundStyle(StudioTheme.monitorText)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderCritical.opacity(0.75), lineWidth: 1))
+        .accessibilityLabel("Program monitor on air")
     }
 
     private var monitorInlineStatusRow: some View {
@@ -128,6 +161,18 @@ struct ProgramMonitorView: View {
         let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
 
         return "Program status. Current \(current.accessibilityLabel). Next \(next.accessibilityLabel)."
+    }
+
+    private var monitorChromeVisibility: MonitorChromeVisibility {
+        MonitorChromeVisibility.make(
+            isPlaying: isMediaPlaybackActive,
+            isHovering: isHoveringPreviewDeck,
+            isBroadcasting: viewModel.isBroadcasting
+        )
+    }
+
+    private var isMediaPlaybackActive: Bool {
+        viewModel.currentProgramItem?.supportsSeeking == true && viewModel.avCoordinator.isPlaying
     }
 
     private var monitorUtilitiesStack: some View {

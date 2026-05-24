@@ -50,7 +50,7 @@
 - [x] Add `LiveSwitcher main console` containment label to the main console container without changing visuals.
 - [x] Run targeted accessibility/source tests, then the full local verification chain.
 - [x] Capture local Run, Audio, and Overlays screenshots to confirm no visual changes.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR K: Program Monitor Chrome Auto-Hide
 
@@ -59,12 +59,12 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift`
 - Test: create `Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/MonitorChromeVisibilityTests.swift`
 
-- [ ] Add failing tests for `MonitorChromeVisibility.make(isPlaying:isHovering:isBroadcasting:)` and opacity mapping.
-- [ ] Add hover state to `ProgramMonitorView` preview deck.
-- [ ] Fade monitor inline status chrome out while media is playing and not hovered.
-- [ ] Keep a small bottom-right live indicator visible when broadcasting.
-- [ ] Run targeted monitor tests, then the full local verification chain.
-- [ ] Capture local Run screenshots for standby and playback-like states where feasible.
+- [x] Add failing tests for `MonitorChromeVisibility.make(isPlaying:isHovering:isBroadcasting:)` and opacity mapping.
+- [x] Add hover state to `ProgramMonitorView` preview deck.
+- [x] Fade monitor inline status chrome out while media is playing and not hovered.
+- [x] Keep a small bottom-right live indicator visible when broadcasting.
+- [x] Run targeted monitor tests, then the full local verification chain.
+- [x] Capture local Run screenshots for standby and playback-like states where feasible.
 - [ ] Open PR, wait for CI, squash merge on green.
 
 ## PR M: Mixer Accent And Audio Strategy Localization
