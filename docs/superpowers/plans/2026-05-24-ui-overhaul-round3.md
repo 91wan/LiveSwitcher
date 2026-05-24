@@ -65,7 +65,7 @@
 - [x] Keep a small bottom-right live indicator visible when broadcasting.
 - [x] Run targeted monitor tests, then the full local verification chain.
 - [x] Capture local Run screenshots for standby and playback-like states where feasible.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR M: Mixer Accent And Audio Strategy Localization
 
@@ -77,14 +77,14 @@
 - Create: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Resources/en.lproj/Localizable.strings`
 - Test: update audio strategy and source-hygiene tests.
 
-- [ ] Add failing tests/source checks for three mixer accent stripe colors and AudioStrategy localized keys.
-- [ ] Add a semantic left accent stripe to `MixerFaderCard` for Master, Media, and BGM.
-- [ ] Move `AudioStrategy.displayTitle` to stable localized keys while preserving ASCII raw values.
-- [ ] Add `en` and `zh-Hans` Localizable strings for the four audio strategy labels.
-- [ ] Ensure SwiftPM resources include the localization files and bundle localizations if required by the package layout.
-- [ ] Run targeted audio/i18n tests, then the full local verification chain.
-- [ ] Capture local Audio screenshots to inspect accent stripes and strategy labels.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Add failing tests/source checks for three mixer accent stripe colors and AudioStrategy localized keys.
+- [x] Add a semantic left accent stripe to `MixerFaderCard` for Master, Media, and BGM.
+- [x] Move `AudioStrategy.displayTitle` to stable localized keys while preserving ASCII raw values.
+- [x] Add `en` and `zh-Hans` Localizable strings for the four audio strategy labels.
+- [x] Ensure SwiftPM resources include the localization files and bundle localizations if required by the package layout.
+- [x] Run targeted audio/i18n tests, then the full local verification chain.
+- [x] Capture local Audio screenshots to inspect accent stripes and strategy labels.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## Verification For Every Code PR
 

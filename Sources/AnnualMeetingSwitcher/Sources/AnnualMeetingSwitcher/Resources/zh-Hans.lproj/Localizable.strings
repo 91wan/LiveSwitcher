@@ -1,0 +1,4 @@
+"audio.strategy.followProgram.title" = "音频跟随";
+"audio.strategy.followSource.title" = "跟随源";
+"audio.strategy.bgmOnly.title" = "仅 BGM";
+"audio.strategy.mixed.title" = "混合";

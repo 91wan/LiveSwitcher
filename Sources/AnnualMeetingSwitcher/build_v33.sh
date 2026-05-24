@@ -15,7 +15,9 @@ MARKETING_VERSION="$(tr -d '[:space:]' < "$REPO_ROOT/VERSION")"
 
 echo "Building $APP_NAME release app..."
 swift build -c release
-BINARY="$(swift build -c release --show-bin-path)/$APP_NAME"
+BUILD_DIR="$(swift build -c release --show-bin-path)"
+BINARY="$BUILD_DIR/$APP_NAME"
+RESOURCE_BUNDLE="$BUILD_DIR/LiveSwitcher_LiveSwitcher.bundle"
 
 if [[ ! -x "$BINARY" ]]; then
   echo "error: built binary not found at $BINARY" >&2
@@ -27,6 +29,10 @@ mkdir -p "$APP_BUNDLE/Contents/MacOS" "$APP_BUNDLE/Contents/Resources"
 
 cp "$BINARY" "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
 chmod +x "$APP_BUNDLE/Contents/MacOS/$APP_NAME"
+
+if [[ -d "$RESOURCE_BUNDLE" ]]; then
+  cp -R "$RESOURCE_BUNDLE" "$APP_BUNDLE/Contents/Resources/"
+fi
 
 if [[ -f "$ICON_SRC" ]]; then
   cp "$ICON_SRC" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
