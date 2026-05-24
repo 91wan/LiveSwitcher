@@ -69,6 +69,52 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(ready.text.contains("Current: Opening"))
     }
 
+    func testRuntimeStatusModelExposesExceptionChipsAndSummaryTogether() {
+        let snapshot = LivePreflightSnapshot.fixture(
+            hasExternalDisplay: false,
+            isBroadcasting: false,
+            currentProgramTitle: nil,
+            wallpaperCount: 0,
+            effectiveMediaVolume: 0,
+            effectiveBGMVolume: 0
+        )
+
+        let model = LiveRuntimeStatusModel.make(snapshot: snapshot)
+
+        XCTAssertGreaterThanOrEqual(model.chips.count, 3)
+        XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("External Display") })
+        XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("Current Program") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("STANDBY") && $0.text.contains("0 sources") })
+    }
+
+    @MainActor
+    func testFadeToBlackDoesNotTogglePanicOrMuteAudio() {
+        let suite = "FadeToBlack-\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suite) else {
+            XCTFail("Could not create isolated defaults")
+            return
+        }
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+        viewModel.isMasterAudioMuted = false
+        viewModel.isMediaAudioMuted = false
+        viewModel.isBGMAudioMuted = false
+
+        viewModel.toggleFadeToBlack()
+
+        XCTAssertTrue(viewModel.isFadeToBlackActive)
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.isMasterAudioMuted)
+        XCTAssertFalse(viewModel.isMediaAudioMuted)
+        XCTAssertFalse(viewModel.isBGMAudioMuted)
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .fadeToBlackChanged })
+    }
+
     func testLiveModeViewContainsMetersMuteButtonsAndCutBus() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
@@ -79,6 +125,14 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.isPanicMode || viewModel.isMasterAudioMuted"))
         XCTAssertTrue(source.contains("Cut Bus"))
         XCTAssertTrue(source.contains("Take Next"))
+    }
+
+    func testCutBusUsesFadeToBlackInsteadOfPanic() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("viewModel.toggleFadeToBlack()"))
+        XCTAssertTrue(source.contains("Restore from FTB"))
+        XCTAssertFalse(source.contains("viewModel.togglePanicMode()"))
     }
 
     func testLiveModeMuteButtonsUseTransportHitTargetHeight() throws {

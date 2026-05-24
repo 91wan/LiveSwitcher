@@ -1470,6 +1470,7 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - Tier1: Panic State（老板键状态变量）
     @Published var isPanicMode: Bool       = false
+    @Published var isFadeToBlackActive: Bool = false
 
     // MARK: - Tier1: Overlay State（叠层状态变量）
     @Published var overlayComposerState = OverlayComposerState()

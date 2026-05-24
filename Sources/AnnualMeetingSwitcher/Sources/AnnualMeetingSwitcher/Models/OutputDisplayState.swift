@@ -8,6 +8,7 @@ struct OutputDisplayState: Equatable {
     var lowerThirdName: String
     var lowerThirdTitle: String
     var isPanicMode: Bool
+    var isFadeToBlackActive: Bool
 
     static func make(
         currentHTMLURL: URL?,
@@ -16,7 +17,8 @@ struct OutputDisplayState: Equatable {
         isLowerThirdVisible: Bool,
         lowerThirdName: String,
         lowerThirdTitle: String,
-        isPanicMode: Bool
+        isPanicMode: Bool,
+        isFadeToBlackActive: Bool
     ) -> OutputDisplayState {
         OutputDisplayState(
             currentHTMLURL: currentHTMLURL,
@@ -25,7 +27,8 @@ struct OutputDisplayState: Equatable {
             isLowerThirdVisible: isLowerThirdVisible,
             lowerThirdName: lowerThirdName,
             lowerThirdTitle: lowerThirdTitle,
-            isPanicMode: isPanicMode
+            isPanicMode: isPanicMode,
+            isFadeToBlackActive: isFadeToBlackActive
         )
     }
 
@@ -38,7 +41,8 @@ struct OutputDisplayState: Equatable {
             isLowerThirdVisible: viewModel.isLowerThirdVisible,
             lowerThirdName: viewModel.lowerThirdName,
             lowerThirdTitle: viewModel.lowerThirdTitle,
-            isPanicMode: viewModel.isPanicMode
+            isPanicMode: viewModel.isPanicMode,
+            isFadeToBlackActive: viewModel.isFadeToBlackActive
         )
     }
 }

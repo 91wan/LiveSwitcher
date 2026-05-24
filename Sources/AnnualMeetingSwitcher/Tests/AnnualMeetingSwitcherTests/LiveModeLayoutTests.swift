@@ -41,6 +41,14 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains("scanAndAddKeynoteWindows"))
     }
 
+    func testLiveSourcesEmptyStateOffersSetupCTA() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("Switch to Setup"))
+        XCTAssertTrue(source.contains("viewModel.consoleMode = .setup"))
+        XCTAssertTrue(source.contains("viewModel.selectedMainTab = .preview"))
+    }
+
     func testProgramMonitorLiveModeHidesSetupUtilitiesAndHeightCap() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
@@ -65,6 +73,16 @@ final class LiveModeLayoutTests: XCTestCase {
 
         XCTAssertTrue(source.contains(".frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)"))
         XCTAssertFalse(source.contains(".frame(height: 30)"))
+    }
+
+    func testAudioAndOverlaySubtitlesUseEnglishCopy() throws {
+        let audio = try sourceText("Views/AudioMixerView.swift")
+        let overlays = try sourceText("Views/SettingsView.swift")
+
+        XCTAssertTrue(audio.contains("Mixer faders, routing strategy, and BGM library"))
+        XCTAssertTrue(overlays.contains("Compose on the left, preview on the right."))
+        XCTAssertFalse(audio.contains("routing strategy 和 BGM library 分区管理"))
+        XCTAssertFalse(overlays.contains("当前 live 状态"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

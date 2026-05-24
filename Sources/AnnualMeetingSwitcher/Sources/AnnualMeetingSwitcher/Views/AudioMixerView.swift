@@ -57,7 +57,7 @@ struct AudioMixerView: View {
             Text("Audio / 音频")
                 .font(StudioTheme.titleLarge())
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text("Mixer、routing strategy 和 BGM library 分区管理；每个推子同时显示用户值和实际输出。")
+            Text("Mixer faders, routing strategy, and BGM library - every fader shows user value and effective output.")
                 .font(StudioTheme.body())
                 .foregroundStyle(StudioTheme.textSecondary)
         }

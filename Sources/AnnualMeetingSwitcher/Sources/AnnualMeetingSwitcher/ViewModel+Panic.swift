@@ -18,6 +18,12 @@ extension SwitcherViewModel {
         recordSupportEvent(kind: .panicModeChanged, detail: "isOn=\(isPanicMode)")
     }
 
+    /// Fade-to-black is a visual output state only. It must not change panic or audio routing.
+    func toggleFadeToBlack() {
+        isFadeToBlackActive.toggle()
+        recordSupportEvent(kind: .fadeToBlackChanged, detail: "isActive=\(isFadeToBlackActive)")
+    }
+
     // MARK: - Private
 
     private func activatePanic() {

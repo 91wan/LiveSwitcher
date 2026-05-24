@@ -53,24 +53,42 @@ struct LiveCutBusModel: Equatable {
     }
 }
 
-struct LiveRuntimeStatusModel: Equatable {
+struct LiveRuntimeStatusChip: Equatable {
     let text: String
     let kind: StudioTheme.StatusKind
+}
+
+struct LiveRuntimeStatusModel: Equatable {
+    let chips: [LiveRuntimeStatusChip]
+
+    var text: String {
+        chips.map(\.text).joined(separator: " │ ")
+    }
+
+    var kind: StudioTheme.StatusKind {
+        chips.first?.kind ?? .idle
+    }
 
     static func make(snapshot: LivePreflightSnapshot) -> LiveRuntimeStatusModel {
         let checks = LivePreflightCheck.build(from: snapshot)
-        if let fail = checks.first(where: { $0.status == .fail }) {
-            return LiveRuntimeStatusModel(text: "FAIL · \(fail.title)", kind: .fail)
-        }
-        if let warn = checks.first(where: { $0.status == .warn }) {
-            return LiveRuntimeStatusModel(text: "WARN · \(warn.title)", kind: .warn)
-        }
+        let failChips = checks
+            .filter { $0.status == .fail }
+            .prefix(3)
+            .map { LiveRuntimeStatusChip(text: "FAIL · \($0.title)", kind: .fail) }
+        let warnChips = checks
+            .filter { $0.status == .warn }
+            .prefix(3)
+            .map { LiveRuntimeStatusChip(text: "WARN · \($0.title)", kind: .warn) }
 
-        let output = snapshot.isBroadcasting ? "ON AIR" : "Standby"
+        let output = snapshot.isBroadcasting ? "ON AIR" : "STANDBY"
         let current = snapshot.currentProgramTitle ?? "No program"
-        return LiveRuntimeStatusModel(
-            text: "\(output) · Current: \(current) · \(snapshot.programItemCount) sources queued",
+        let summary = LiveRuntimeStatusChip(
+            text: "\(output) · Current: \(current) · \(snapshot.programItemCount) sources",
             kind: snapshot.isBroadcasting ? .live : .ready
+        )
+
+        return LiveRuntimeStatusModel(
+            chips: Array(failChips) + Array(warnChips) + [summary]
         )
     }
 }

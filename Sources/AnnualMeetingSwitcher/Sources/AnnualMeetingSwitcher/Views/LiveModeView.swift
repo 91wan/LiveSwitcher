@@ -64,11 +64,29 @@ struct LiveSourceRail: View {
             }
 
             if viewModel.programItems.isEmpty {
-                EmptyStateView(
-                    title: "No sources",
-                    message: "Prepare the run queue in Setup mode.",
-                    systemImage: "rectangle.stack"
-                )
+                VStack(spacing: 10) {
+                    EmptyStateView(
+                        title: "No sources",
+                        message: "Prepare the run queue in Setup mode.",
+                        systemImage: "rectangle.stack"
+                    )
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.16)) {
+                            viewModel.consoleMode = .setup
+                            viewModel.selectedMainTab = .preview
+                        }
+                    } label: {
+                        Label("Switch to Setup", systemImage: "gearshape.fill")
+                            .font(StudioTheme.TypeScale.caption.weight(.black))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(StudioTheme.Action.primary)
+                    .focusable(false)
+                    .accessibilityLabel("Switch to Setup")
+                    .accessibilityHint("Open Setup Run Queue to add sources.")
+                }
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
@@ -416,21 +434,21 @@ struct LiveQuickRail: View {
             currentProgramItem: viewModel.currentProgramItem
         )
 
-        return quickCard(title: "Cut Bus", status: viewModel.isPanicMode ? "BLACK" : "READY", kind: viewModel.isPanicMode ? .fail : .idle) {
+        return quickCard(title: "Cut Bus", status: viewModel.isFadeToBlackActive ? "FTB" : "READY", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) {
-                        viewModel.togglePanicMode()
+                        viewModel.toggleFadeToBlack()
                     }
                 } label: {
-                    Label(viewModel.isPanicMode ? "Restore" : "FTB", systemImage: viewModel.isPanicMode ? "play.fill" : "moon.fill")
+                    Label(viewModel.isFadeToBlackActive ? "Restore from FTB" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
                         .font(StudioTheme.TypeScale.caption.weight(.black))
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(viewModel.isPanicMode ? StudioTheme.Tone.live : StudioTheme.Action.danger)
-                .accessibilityLabel(viewModel.isPanicMode ? "Restore from blackout" : "Fade to black")
+                .tint(viewModel.isFadeToBlackActive ? StudioTheme.Tone.live : StudioTheme.Action.danger)
+                .accessibilityLabel(viewModel.isFadeToBlackActive ? "Restore from FTB" : "Fade to black")
 
                 Button {
                     if let index = model.nextIndex {
@@ -660,12 +678,14 @@ struct LiveRuntimeStatusBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            statusDot
-            Text(statusText)
-                .font(StudioTheme.caption())
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(runtimeStatus.chips.enumerated()), id: \.offset) { _, chip in
+                        statusChip(chip)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
             Spacer()
             Text("v\(AppConfiguration.appVersion)")
                 .font(StudioTheme.caption())
@@ -678,15 +698,22 @@ struct LiveRuntimeStatusBar: View {
         .accessibilityLabel("Live runtime status. \(statusText)")
     }
 
-    private var statusDot: some View {
-        Circle()
-            .fill(statusKindColor)
-            .frame(width: 7, height: 7)
-            .accessibilityHidden(true)
-    }
-
-    private var statusKindColor: Color {
-        StudioTheme.color(for: runtimeStatus.kind)
+    private func statusChip(_ chip: LiveRuntimeStatusChip) -> some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(StudioTheme.color(for: chip.kind))
+                .frame(width: 7, height: 7)
+                .accessibilityHidden(true)
+            Text(chip.text)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+        }
+        .padding(.horizontal, 8)
+        .frame(height: 24)
+        .background(StudioTheme.Surface.raised.opacity(0.82), in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
     }
 
     private var statusText: String {
