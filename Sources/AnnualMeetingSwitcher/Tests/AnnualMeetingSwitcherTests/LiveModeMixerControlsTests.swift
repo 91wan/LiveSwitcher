@@ -132,6 +132,55 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     @MainActor
+    func testMasterMeterUsesRealtimeMediaWhenMediaIsLouder() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.masterVolume = 1
+        viewModel.mediaVolume = 1
+        viewModel.bgmVolume = 0.1
+        viewModel.currentProgramItem = ProgramItem(
+            title: "Clip",
+            subtitle: "MP4",
+            sourceURL: URL(fileURLWithPath: "/tmp/clip.mp4")
+        )
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.avCoordinator.realtimeLevelDB = -9
+        viewModel.bgmRealtimeLevelDB = -24
+        viewModel.isBGMPlaying = true
+
+        XCTAssertEqual(viewModel.liveMasterMeterRealtimeDB(), -9)
+        XCTAssertEqual(viewModel.liveMasterMeterFallbackVolume(), viewModel.effectiveMediaOutputVolume())
+    }
+
+    @MainActor
+    func testMasterMeterChoosesRealtimeSourceAfterFaderGain() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.masterVolume = 1
+        viewModel.mediaVolume = 0.1
+        viewModel.bgmVolume = 1
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.avCoordinator.realtimeLevelDB = -6
+        viewModel.bgmRealtimeLevelDB = -18
+        viewModel.isBGMPlaying = true
+
+        XCTAssertEqual(viewModel.liveMasterMeterRealtimeDB(), -18)
+        XCTAssertEqual(viewModel.liveMasterMeterFallbackVolume(), viewModel.effectiveBGMOutputVolume())
+    }
+
+    @MainActor
+    func testMasterMeterIgnoresPausedMediaRealtimeLevel() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.masterVolume = 1
+        viewModel.mediaVolume = 1
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.realtimeLevelDB = -3
+        viewModel.bgmRealtimeLevelDB = -24
+        viewModel.isBGMPlaying = true
+
+        XCTAssertEqual(viewModel.liveMasterMeterRealtimeDB(), -24)
+        XCTAssertEqual(viewModel.liveMasterMeterFallbackVolume(), viewModel.effectiveBGMOutputVolume())
+    }
+
+    @MainActor
     func testMasterMeterFallsBackToEffectiveOutputWhenRealtimeUnavailable() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.masterVolume = 0.7
@@ -198,8 +247,17 @@ final class LiveModeMixerControlsTests: XCTestCase {
 
         XCTAssertTrue(source.contains("realtimeDB: viewModel.liveMasterMeterRealtimeDB()"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.liveMasterMeterFallbackVolume()"))
+        XCTAssertTrue(source.contains("realtimeDB: viewModel.avCoordinator.realtimeLevelDB"))
         XCTAssertTrue(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.effectiveBGMOutputVolume()"))
+    }
+
+    func testAVPlayerCoordinatorInstallsMediaAudioMeterTap() throws {
+        let source = try sourceText("Engines/AVPlayerCoordinator.swift")
+
+        XCTAssertTrue(source.contains("MediaAudioMeterTap"))
+        XCTAssertTrue(source.contains("realtimeLevelDB"))
+        XCTAssertTrue(source.contains("installMeterTap"))
     }
 
     func testLiveAudioFaderMarksEstimatedMeters() throws {
