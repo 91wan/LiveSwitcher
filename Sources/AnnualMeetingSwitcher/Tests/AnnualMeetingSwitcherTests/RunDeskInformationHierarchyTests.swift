@@ -26,10 +26,12 @@ final class RunDeskInformationHierarchyTests: XCTestCase {
 
     func testRunNavigationUsesRunAudioOverlaysLanguage() throws {
         let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
+        let tabs = try String(contentsOf: sourceURL("Models/MainConsoleTab.swift"), encoding: .utf8)
 
-        XCTAssertTrue(content.contains("导播台"))
-        XCTAssertTrue(content.contains("音频"))
-        XCTAssertTrue(content.contains("叠层"))
+        XCTAssertTrue(content.contains("setupModeMenuButton"))
+        XCTAssertTrue(tabs.contains("Run Queue"))
+        XCTAssertTrue(tabs.contains("Audio"))
+        XCTAssertTrue(tabs.contains("Overlays"))
         XCTAssertFalse(content.contains("预览 / 切换"))
     }
 

@@ -108,12 +108,7 @@ struct ContentView: View {
                 .frame(width: 190, alignment: .leading)
 
             Spacer(minLength: 0)
-            VStack(spacing: 6) {
-                consoleModeCluster
-                if viewModel.consoleMode == .setup {
-                    setupTabCluster
-                }
-            }
+            consoleModeCluster
                 .layoutPriority(1)
             Spacer(minLength: 16)
             MainToolbar(
@@ -139,15 +134,14 @@ struct ContentView: View {
 
     private var consoleModeCluster: some View {
         HStack(spacing: 6) {
-            ForEach(ConsoleMode.allCases) { mode in
-                NavigationTabButton(
-                    title: mode.displayTitle,
-                    systemImage: mode.systemImage,
-                    isSelected: viewModel.consoleMode == mode
-                ) {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        viewModel.consoleMode = mode
-                    }
+            setupModeControl
+            NavigationTabButton(
+                title: ConsoleMode.live.displayTitle,
+                systemImage: ConsoleMode.live.systemImage,
+                isSelected: viewModel.consoleMode == .live
+            ) {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .live
                 }
             }
         }
@@ -156,23 +150,58 @@ struct ContentView: View {
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
     }
 
-    private var setupTabCluster: some View {
-        HStack(spacing: 6) {
-            navigationTab(title: "导播台", systemName: "play.square.stack.fill", tag: .preview)
-            navigationTab(title: "音频", systemName: "slider.horizontal.3", tag: .audioMixer)
-            navigationTab(title: "叠层", systemName: "rectangle.3.group.bubble.left.fill", tag: .overlays)
-        }
-        .padding(5)
-        .background(Capsule(style: .continuous).fill(StudioTheme.Surface.base))
-        .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
-    }
-
-    private func navigationTab(title: String, systemName: String, tag: MainConsoleTab) -> some View {
-        NavigationTabButton(title: title, systemImage: systemName, isSelected: viewModel.selectedMainTab == tag) {
-            withAnimation(.easeInOut(duration: 0.16)) {
-                viewModel.selectedMainTab = tag
+    @ViewBuilder
+    private var setupModeControl: some View {
+        if viewModel.consoleMode == .setup {
+            setupModeMenuButton
+        } else {
+            NavigationTabButton(
+                title: ConsoleMode.setup.displayTitle,
+                systemImage: ConsoleMode.setup.systemImage,
+                isSelected: false
+            ) {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .setup
+                }
             }
         }
+    }
+
+    private var setupModeMenuButton: some View {
+        Menu {
+            ForEach(MainConsoleTab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        viewModel.consoleMode = .setup
+                        viewModel.selectedMainTab = tab
+                    }
+                } label: {
+                    Label(tab.setupMenuTitle, systemImage: tab.systemImage)
+                }
+                .disabled(tab == viewModel.selectedMainTab)
+            }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: ConsoleMode.setup.systemImage)
+                    .font(StudioTheme.TypeScale.body.weight(.semibold))
+                    .accessibilityHidden(true)
+                Text("\(ConsoleMode.setup.displayTitle): \(viewModel.selectedMainTab.setupMenuTitle)")
+                    .font(StudioTheme.TypeScale.heading.weight(.bold))
+                Image(systemName: "chevron.down")
+                    .font(StudioTheme.TypeScale.label.weight(.black))
+                    .accessibilityHidden(true)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16)
+            .frame(height: StudioTheme.controlHeightL)
+            .background(Capsule(style: .continuous).fill(StudioTheme.Action.primary))
+        }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .focusable(false)
+        .accessibilityLabel("Setup mode")
+        .accessibilityValue(viewModel.selectedMainTab.setupMenuTitle)
+        .accessibilityHint("Choose setup section")
     }
 }
 
