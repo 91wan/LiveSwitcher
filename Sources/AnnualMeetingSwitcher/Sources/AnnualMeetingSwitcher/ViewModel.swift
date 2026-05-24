@@ -322,6 +322,29 @@ final class SwitcherViewModel: ObservableObject {
         audioRoutingOutput.bgm
     }
 
+    func liveMasterMeterRealtimeDB() -> Float? {
+        let effectiveMedia = effectiveMediaOutputVolume()
+        let effectiveBGM = effectiveBGMOutputVolume()
+        guard isBGMPlaying,
+              !isPanicMode,
+              !isMasterAudioMuted,
+              !isBGMAudioMuted,
+              effectiveBGM > 0,
+              effectiveBGM >= effectiveMedia,
+              let realtimeDB = bgmRealtimeLevelDB,
+              realtimeDB.isFinite else {
+            return nil
+        }
+        return realtimeDB
+    }
+
+    func liveMasterMeterFallbackVolume() -> Float {
+        if liveMasterMeterRealtimeDB() != nil {
+            return effectiveBGMOutputVolume()
+        }
+        return max(effectiveMediaOutputVolume(), effectiveBGMOutputVolume())
+    }
+
     private var audioRoutingOutput: AudioRoutingOutput {
         AudioRoutingEngine.output(
             for: AudioRoutingInput(

@@ -120,6 +120,32 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     @MainActor
+    func testMasterMeterUsesRealtimeBGMWhenAvailable() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.masterVolume = 0.8
+        viewModel.bgmVolume = 0.5
+        viewModel.isBGMPlaying = true
+        viewModel.bgmRealtimeLevelDB = -18
+
+        XCTAssertEqual(viewModel.liveMasterMeterRealtimeDB(), -18)
+        XCTAssertEqual(viewModel.liveMasterMeterFallbackVolume(), viewModel.effectiveBGMOutputVolume())
+    }
+
+    @MainActor
+    func testMasterMeterFallsBackToEffectiveOutputWhenRealtimeUnavailable() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.masterVolume = 0.7
+        viewModel.bgmVolume = 0.4
+        viewModel.bgmRealtimeLevelDB = nil
+
+        XCTAssertNil(viewModel.liveMasterMeterRealtimeDB())
+        XCTAssertEqual(
+            viewModel.liveMasterMeterFallbackVolume(),
+            max(viewModel.effectiveMediaOutputVolume(), viewModel.effectiveBGMOutputVolume())
+        )
+    }
+
+    @MainActor
     func testFadeToBlackDoesNotTogglePanicOrMuteAudio() {
         let suite = "FadeToBlack-\(UUID().uuidString)"
         guard let defaults = UserDefaults(suiteName: suite) else {
@@ -170,8 +196,18 @@ final class LiveModeMixerControlsTests: XCTestCase {
     func testLiveAudioStripUsesRealtimeBGMMeter() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
+        XCTAssertTrue(source.contains("realtimeDB: viewModel.liveMasterMeterRealtimeDB()"))
+        XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.liveMasterMeterFallbackVolume()"))
         XCTAssertTrue(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.effectiveBGMOutputVolume()"))
+    }
+
+    func testLiveAudioFaderMarksEstimatedMeters() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("meter.isEstimated"))
+        XCTAssertTrue(source.contains("exclamationmark.triangle.fill"))
+        XCTAssertTrue(source.contains("Estimated meter"))
     }
 
     func testCutBusUsesFadeToBlackInsteadOfPanic() throws {
