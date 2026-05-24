@@ -17,7 +17,7 @@ struct PreflightPopoverView: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Text("LiveSwitcher")
-                    .font(.system(size: 16, weight: .black))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
 
                 Spacer()
 
@@ -54,14 +54,14 @@ struct PreflightPopoverView: View {
 
                 if preflightListMode == .needsAttention {
                     Text("Shows only fail and warn rows, so the operator sees what must be handled first.")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(StudioTheme.TypeScale.caption)
                         .foregroundStyle(.secondary)
                 }
             }
 
             if let preflightActionMessage {
                 Text(preflightActionMessage)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.Tone.ready)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -72,7 +72,7 @@ struct PreflightPopoverView: View {
 
             if let supportMessage {
                 Text(supportMessage)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.Action.primary)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 7)
@@ -103,9 +103,9 @@ struct PreflightPopoverView: View {
     private var preflightHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
             Text("Live Preflight / 现场检查")
-                .font(.system(size: 18, weight: .black))
+                .font(StudioTheme.TypeScale.numeric)
             Text("Reads the current runtime state. Use the summary first, then review fail/warn rows before a show.")
-                .font(.system(size: 12, weight: .medium))
+                .font(StudioTheme.TypeScale.caption)
                 .foregroundStyle(.secondary)
         }
     }
@@ -116,14 +116,14 @@ struct PreflightPopoverView: View {
             HStack(spacing: 8) {
                 Button(action: onOpenSafetyCockpit) {
                     Label("Open Cockpit", systemImage: "gauge.with.dots.needle.bottom.100percent")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
 
                 Button(action: copyPreflightReport) {
                     Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -132,14 +132,14 @@ struct PreflightPopoverView: View {
 
                 Button(action: copySupportReport) {
                     Label("Copy Support", systemImage: "stethoscope")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
                 Button(action: saveSupportReport) {
                     Label("Save Support...", systemImage: "square.and.arrow.down")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -236,13 +236,13 @@ private struct PreflightEmptyAttentionView: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 17, weight: .black))
+                .font(StudioTheme.TypeScale.numeric)
                 .foregroundStyle(StudioTheme.Tone.ready)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
-                    .font(.system(size: 13, weight: .bold))
+                    .font(StudioTheme.TypeScale.body.weight(.bold))
                 Text(message)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(StudioTheme.TypeScale.caption)
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             Spacer(minLength: 0)
@@ -264,17 +264,17 @@ private struct PreflightSummaryCard: View {
     var body: some View {
         HStack(alignment: .center, spacing: 13) {
             Image(systemName: iconName)
-                .font(.system(size: 22, weight: .black))
+                .font(StudioTheme.TypeScale.title.weight(.black))
                 .foregroundStyle(statusColor)
                 .frame(width: 30, height: 30)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(summary.title)
-                        .font(.system(size: 15, weight: .black))
+                        .font(StudioTheme.TypeScale.heading.weight(.black))
 
                     Text(summary.status.displayTitle)
-                        .font(.system(size: 10, weight: .black, design: .rounded))
+                        .font(StudioTheme.TypeScale.label)
                         .foregroundStyle(statusColor)
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
@@ -282,7 +282,7 @@ private struct PreflightSummaryCard: View {
                 }
 
                 Text(summary.message)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(StudioTheme.TypeScale.caption)
                     .foregroundStyle(.secondary)
             }
 
@@ -309,7 +309,7 @@ private struct PreflightSummaryCard: View {
 
     private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
         Text("\(label) \(count)")
-            .font(.system(size: 10, weight: .black, design: .rounded))
+            .font(StudioTheme.TypeScale.label)
             .foregroundStyle(color)
             .padding(.horizontal, 7)
             .padding(.vertical, 4)
@@ -347,7 +347,7 @@ private struct PreflightGroupView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(group.displayTitle)
-                .font(.system(size: 13, weight: .black))
+                .font(StudioTheme.TypeScale.body.weight(.black))
                 .foregroundStyle(.secondary)
 
             VStack(spacing: 8) {
@@ -366,16 +366,16 @@ private struct PreflightRowView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: iconName)
-                .font(.system(size: 14, weight: .black))
+                .font(StudioTheme.TypeScale.heading.weight(.black))
                 .foregroundStyle(statusColor)
                 .frame(width: 18, height: 18)
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 7) {
                     Text(check.title)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(StudioTheme.TypeScale.body.weight(.bold))
                     Text(check.status.displayTitle)
-                        .font(.system(size: 9, weight: .black, design: .rounded))
+                        .font(StudioTheme.TypeScale.label)
                         .foregroundStyle(statusColor)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
@@ -383,7 +383,7 @@ private struct PreflightRowView: View {
                 }
 
                 Text(check.message)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(StudioTheme.TypeScale.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -442,7 +442,7 @@ private struct PreflightRowView: View {
 
     private func guidanceBadge(_ label: String, _ action: LivePreflightActionKind) -> some View {
         Label(label, systemImage: guidanceIcon(for: action))
-            .font(.system(size: 11, weight: .bold))
+            .font(StudioTheme.TypeScale.caption.weight(.bold))
             .foregroundStyle(.secondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
