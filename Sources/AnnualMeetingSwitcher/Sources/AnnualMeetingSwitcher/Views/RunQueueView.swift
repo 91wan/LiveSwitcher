@@ -182,7 +182,10 @@ struct SignalSourceRow: View {
             Image(systemName: systemName)
                 .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(tint)
-                .frame(width: 30, height: 30)
+                .frame(
+                    width: RunQueueLayoutMetrics.rowControlButtonSize,
+                    height: RunQueueLayoutMetrics.rowControlButtonSize
+                )
                 .background(
                     RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                         .fill(fill)
