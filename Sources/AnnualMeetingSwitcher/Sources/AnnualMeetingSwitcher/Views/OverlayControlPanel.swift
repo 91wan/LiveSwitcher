@@ -76,6 +76,7 @@ struct OverlayControlPanel: View {
                 Image(systemName: "rectangle.3.group.bubble.left.fill")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(StudioTheme.Action.primary)
+                    .accessibilityHidden(true)
             }
             .frame(width: 48, height: 48)
 

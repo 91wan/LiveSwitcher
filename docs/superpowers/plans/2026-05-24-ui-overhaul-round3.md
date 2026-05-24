@@ -35,7 +35,7 @@
 - [x] Tint the Auto-next switch with `StudioTheme.Tone.warn`.
 - [x] Run targeted tests, then the full local verification chain.
 - [x] Capture local Run and Overlays screenshots and inspect toolbar alignment, no drag handles, EMPTY badge, and footer without build number.
-- [ ] Open PR, wait for CI, squash merge on green.
+- [x] Open PR, wait for CI, squash merge on green.
 
 ## PR L: Accessibility Decorative Icon Sweep
 
@@ -44,12 +44,12 @@
 - Modify: selected SwiftUI files under `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/`
 - Test: create `Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AccessibilityHiddenContractTests.swift`
 
-- [ ] Add source-hygiene tests for key view files proving SF Symbol images are either hidden as decoration or covered by explicit accessibility labels.
-- [ ] Hide pure decorative adjacent icons with `.accessibilityHidden(true)`.
-- [ ] Preserve transport/action button icons as semantic controls and ensure parent buttons have useful labels.
-- [ ] Add `LiveSwitcher main console` containment label to the main console container without changing visuals.
-- [ ] Run targeted accessibility/source tests, then the full local verification chain.
-- [ ] Capture local Run, Audio, and Overlays screenshots to confirm no visual changes.
+- [x] Add source-hygiene tests for key view files proving SF Symbol images are either hidden as decoration or covered by explicit accessibility labels.
+- [x] Hide pure decorative adjacent icons with `.accessibilityHidden(true)`.
+- [x] Preserve transport/action button icons as semantic controls and ensure parent buttons have useful labels.
+- [x] Add `LiveSwitcher main console` containment label to the main console container without changing visuals.
+- [x] Run targeted accessibility/source tests, then the full local verification chain.
+- [x] Capture local Run, Audio, and Overlays screenshots to confirm no visual changes.
 - [ ] Open PR, wait for CI, squash merge on green.
 
 ## PR K: Program Monitor Chrome Auto-Hide

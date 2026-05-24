@@ -42,6 +42,7 @@ struct LiveOpsPanel: View {
                 HStack(spacing: 8) {
                     Image(systemName: viewModel.isBroadcasting ? "stop.fill" : "antenna.radiowaves.left.and.right")
                         .font(.system(size: 13, weight: .black))
+                        .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(model.title)
                             .font(.system(size: 12, weight: .black))
@@ -81,6 +82,7 @@ struct LiveOpsPanel: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(StudioTheme.Action.primary)
                     .frame(width: 18)
+                    .accessibilityHidden(true)
                 Slider(value: $viewModel.masterVolume, in: 0...1)
                     .tint(StudioTheme.Action.primary)
                     .controlSize(.small)
@@ -124,17 +126,17 @@ struct LiveOpsPanel: View {
                 .help(viewModel.currentBGMItem?.title ?? "No BGM selected")
 
             HStack(spacing: 6) {
-                iconButton("backward.end.fill", enabled: controls.canSkipPrevious, hint: controls.skipDisabledReason) {
+                iconButton("backward.end.fill", accessibilityLabel: "Previous BGM", enabled: controls.canSkipPrevious, hint: controls.skipDisabledReason) {
                     viewModel.playPreviousBGM()
                 }
-                iconButton(viewModel.isBGMPlaying ? "pause.fill" : "play.fill", enabled: controls.canPlay, hint: controls.playDisabledReason) {
+                iconButton(viewModel.isBGMPlaying ? "pause.fill" : "play.fill", accessibilityLabel: viewModel.isBGMPlaying ? "Pause BGM" : "Play BGM", enabled: controls.canPlay, hint: controls.playDisabledReason) {
                     if let current = viewModel.currentBGMItem {
                         viewModel.toggleBGM(current)
                     } else if let first = viewModel.bgmItems.first {
                         viewModel.toggleBGM(first)
                     }
                 }
-                iconButton("forward.end.fill", enabled: controls.canSkipNext, hint: controls.skipDisabledReason) {
+                iconButton("forward.end.fill", accessibilityLabel: "Next BGM", enabled: controls.canSkipNext, hint: controls.skipDisabledReason) {
                     viewModel.playNextBGM()
                 }
                 Spacer()
@@ -243,6 +245,7 @@ struct LiveOpsPanel: View {
 
     private func iconButton(
         _ systemName: String,
+        accessibilityLabel: String,
         enabled: Bool,
         hint: String?,
         action: @escaping () -> Void
@@ -257,6 +260,7 @@ struct LiveOpsPanel: View {
         .buttonStyle(.plain)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.42)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityHint(hint ?? "BGM transport control")
     }
 

@@ -42,6 +42,7 @@ struct SignalSourceRow: View {
                         RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                             .fill(sourceTint.opacity(queueRole == .current ? 0.18 : 0.11))
                     )
+                    .accessibilityHidden(true)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)

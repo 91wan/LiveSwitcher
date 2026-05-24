@@ -96,6 +96,7 @@ struct MainToolbar: View {
             HStack(spacing: 8) {
                 Image(systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill")
                     .font(.system(size: 16, weight: .black))
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(viewModel.isPanicMode ? "老板键: 开" : "老板键")
                         .font(.system(size: 13, weight: .black))
@@ -134,6 +135,7 @@ struct MainToolbar: View {
             HStack(spacing: 8) {
                 Image(systemName: preflightModel.status == .fail ? "xmark.octagon.fill" : "checklist.checked")
                     .font(.system(size: 15, weight: .black))
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(preflightModel.title)
                         .font(.system(size: 13, weight: .black))

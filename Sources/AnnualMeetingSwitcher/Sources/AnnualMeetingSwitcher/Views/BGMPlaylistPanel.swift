@@ -310,11 +310,13 @@ struct BGMPlaylistPanel: View {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 16, weight: .bold))
+                    .accessibilityHidden(true)
                 Text("添加音乐文件")
                     .font(.system(size: 16, weight: .bold))
                 Spacer()
                 Image(systemName: "arrow.up.doc.fill")
                     .font(.system(size: 14, weight: .semibold))
+                    .accessibilityHidden(true)
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
@@ -412,6 +414,7 @@ struct BGMItemRow: View {
                 .font(.system(size: 16))
                 .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textSecondary)
                 .frame(width: 20)
+                .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(bgm.title)
