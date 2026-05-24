@@ -11,6 +11,15 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
         XCTAssertFalse(source.contains(".disabled(viewModel.currentBGMItem == nil)"))
     }
 
+    func testBGMRowsUseWaveformThumbnailView() throws {
+        let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("ProgramThumbnailView("))
+        XCTAssertTrue(source.contains("sourceURL: bgm.url"))
+        XCTAssertTrue(source.contains("kind: .media"))
+        XCTAssertTrue(source.contains("isVideo: false"))
+    }
+
     private func sourceURL(_ relativePath: String) throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {

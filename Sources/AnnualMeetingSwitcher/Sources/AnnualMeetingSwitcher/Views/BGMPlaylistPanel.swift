@@ -410,11 +410,24 @@ struct BGMItemRow: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: isPlaying ? "waveform" : (isCurrentTrack ? "pause.fill" : "music.note"))
-                .font(.system(size: 16))
-                .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textSecondary)
-                .frame(width: 20)
-                .accessibilityHidden(true)
+            ZStack(alignment: .bottomTrailing) {
+                ProgramThumbnailView(
+                    sourceURL: bgm.url,
+                    kind: .media,
+                    isVideo: false,
+                    displaySize: CGSize(width: compact ? 42 : 54, height: compact ? 24 : 30)
+                )
+
+                if isCurrentTrack {
+                    Image(systemName: isPlaying ? "waveform" : "pause.fill")
+                        .font(.system(size: 8, weight: .black))
+                        .foregroundStyle(.white)
+                        .frame(width: 15, height: 15)
+                        .background(Circle().fill(StudioTheme.Action.primary))
+                        .accessibilityHidden(true)
+                        .offset(x: 3, y: 3)
+                }
+            }
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(bgm.title)

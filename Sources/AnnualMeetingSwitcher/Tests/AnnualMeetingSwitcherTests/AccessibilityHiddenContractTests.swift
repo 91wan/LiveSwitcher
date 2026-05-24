@@ -23,7 +23,7 @@ final class AccessibilityHiddenContractTests: XCTestCase {
 
         XCTAssertTrue(runQueue.contains("ProgramThumbnailView("))
         XCTAssertTrue(thumbnailView.contains(".accessibilityHidden(true)"))
-        assertDynamicSymbolHidden("isPlaying ? \"waveform\" : (isCurrentTrack ? \"pause.fill\" : \"music.note\")", in: try sourceText("Views/BGMPlaylistPanel.swift"))
+        assertDynamicSymbolHidden("isPlaying ? \"waveform\" : \"pause.fill\"", in: try sourceText("Views/BGMPlaylistPanel.swift"))
     }
 
     func testIconOnlyControlsExposeSemanticLabels() throws {
