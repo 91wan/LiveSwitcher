@@ -38,6 +38,7 @@ struct WallpaperGalleryRow: View {
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: 14))
                     .foregroundStyle(StudioTheme.textSecondary)
+                    .accessibilityHidden(true)
                 Text("待机图库")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(StudioTheme.textPrimary)
@@ -77,6 +78,7 @@ struct WallpaperGalleryRow: View {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .light))
                                 .foregroundStyle(StudioTheme.textSecondary)
+                                .accessibilityHidden(true)
                             Text("拖入图片")
                                 .font(.system(size: 10))
                                 .foregroundStyle(StudioTheme.textSecondary)
@@ -171,6 +173,7 @@ struct WallpaperThumbView: View {
                     .frame(width: 80, height: 60)
                 Image(systemName: "photo")
                     .foregroundStyle(StudioTheme.textSecondary)
+                    .accessibilityHidden(true)
             }
 
             if isActive {
@@ -186,6 +189,7 @@ struct WallpaperThumbView: View {
                             .foregroundStyle(StudioTheme.Action.primary)
                             .background(StudioTheme.Surface.base.clipShape(Circle()))
                             .padding(4)
+                            .accessibilityHidden(true)
                     }
                     Spacer()
                 }

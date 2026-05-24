@@ -79,6 +79,7 @@ struct LeftPanel: View {
             .buttonStyle(.plain)
             .focusable(false)
             .help("刷新 / 重新扫描 Keynote")
+            .accessibilityLabel("Refresh Keynote sources")
         }
     }
 
