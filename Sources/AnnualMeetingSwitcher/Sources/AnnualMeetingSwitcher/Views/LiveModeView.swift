@@ -472,6 +472,8 @@ struct LiveQuickRail: View {
 
     private var overlayCard: some View {
         quickCard(title: "Overlays", status: overlayStatusText, kind: overlayStatusKind) {
+            lowerThirdPresetMenu
+
             overlayButton(
                 title: "Lower Third",
                 isActive: viewModel.isLowerThirdVisible,
@@ -513,6 +515,52 @@ struct LiveQuickRail: View {
                 start: { viewModel.startTicker(text: viewModel.overlayComposerState.tickerTextDraft) },
                 stop: { viewModel.stopTicker() }
             )
+        }
+    }
+
+    @ViewBuilder
+    private var lowerThirdPresetMenu: some View {
+        if viewModel.lowerThirdPresets.isEmpty {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .overlays
+                    viewModel.overlayComposerState.selectedKind = .lowerThird
+                }
+            } label: {
+                Label("Choose lower third preset", systemImage: "person.badge.plus")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Create lower third presets in Setup Overlays.")
+            .accessibilityLabel("Choose lower third preset")
+            .accessibilityHint("No lower third presets are saved. Opens Setup Overlays.")
+        } else {
+            Menu {
+                ForEach(viewModel.lowerThirdPresets) { preset in
+                    Button {
+                        viewModel.showLowerThirdPreset(preset)
+                    } label: {
+                        Label(
+                            preset.name,
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedLowerThirdPresetID ? "checkmark" : "person.text.rectangle"
+                        )
+                    }
+                }
+            } label: {
+                Label("Choose lower third preset", systemImage: "person.text.rectangle")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityLabel("Choose lower third preset")
+            .accessibilityHint("Send a saved lower third preset live.")
         }
     }
 

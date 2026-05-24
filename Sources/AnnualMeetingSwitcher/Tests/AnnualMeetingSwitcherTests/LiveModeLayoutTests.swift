@@ -88,6 +88,15 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains("Next wallpaper"))
     }
 
+    func testLiveLowerThirdPresetMenuSendsSelectedPresetDirectly() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("lowerThirdPresetMenu"))
+        XCTAssertTrue(source.contains("ForEach(viewModel.lowerThirdPresets)"))
+        XCTAssertTrue(source.contains("viewModel.showLowerThirdPreset(preset)"))
+        XCTAssertTrue(source.contains("Choose lower third preset"))
+    }
+
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 

@@ -95,6 +95,93 @@ extension SwitcherViewModel {
 
     // MARK: - V27: 下三分之一条方法
 
+    @discardableResult
+    func saveLowerThirdPresetFromDraft() -> Bool {
+        saveLowerThirdPreset(
+            name: overlayComposerState.lowerThirdNameDraft,
+            subtitle: overlayComposerState.lowerThirdTitleDraft,
+            updatingSelectedPreset: true
+        )
+    }
+
+    @discardableResult
+    func saveLowerThirdPreset(name: String, subtitle: String) -> Bool {
+        saveLowerThirdPreset(name: name, subtitle: subtitle, updatingSelectedPreset: false)
+    }
+
+    @discardableResult
+    private func saveLowerThirdPreset(name: String, subtitle: String, updatingSelectedPreset: Bool) -> Bool {
+        let selectedID = overlayComposerState.selectedLowerThirdPresetID
+        let existingIndex = updatingSelectedPreset ? selectedID.flatMap { selectedID in
+            lowerThirdPresets.firstIndex { $0.id == selectedID }
+        } : nil
+        let orderIndex = existingIndex.map { lowerThirdPresets[$0].orderIndex } ?? lowerThirdPresets.count
+        let presetID = existingIndex.map { lowerThirdPresets[$0].id } ?? UUID()
+
+        guard let preset = LowerThirdPreset.make(
+            id: presetID,
+            name: name,
+            subtitle: subtitle,
+            orderIndex: orderIndex
+        ) else {
+            return false
+        }
+
+        if let existingIndex {
+            lowerThirdPresets[existingIndex] = preset
+        } else {
+            lowerThirdPresets.append(preset)
+        }
+        lowerThirdPresets = LowerThirdPreset.normalized(lowerThirdPresets)
+        loadLowerThirdPreset(preset)
+        saveData()
+        return true
+    }
+
+    func loadLowerThirdPreset(_ preset: LowerThirdPreset) {
+        guard let storedPreset = lowerThirdPresets.first(where: { $0.id == preset.id }) ?? LowerThirdPreset.make(
+            id: preset.id,
+            name: preset.name,
+            subtitle: preset.subtitle,
+            orderIndex: preset.orderIndex
+        ) else {
+            return
+        }
+
+        overlayComposerState.selectedKind = .lowerThird
+        overlayComposerState.selectedLowerThirdPresetID = storedPreset.id
+        overlayComposerState.lowerThirdNameDraft = storedPreset.name
+        overlayComposerState.lowerThirdTitleDraft = storedPreset.subtitle
+    }
+
+    func clearLowerThirdPresetDraft() {
+        overlayComposerState.selectedKind = .lowerThird
+        overlayComposerState.selectedLowerThirdPresetID = nil
+        overlayComposerState.lowerThirdNameDraft = ""
+        overlayComposerState.lowerThirdTitleDraft = ""
+    }
+
+    func deleteLowerThirdPreset(id: UUID) {
+        lowerThirdPresets.removeAll { $0.id == id }
+        lowerThirdPresets = LowerThirdPreset.normalized(lowerThirdPresets)
+        if overlayComposerState.selectedLowerThirdPresetID == id {
+            clearLowerThirdPresetDraft()
+        }
+        saveData()
+    }
+
+    func showLowerThirdPreset(_ preset: LowerThirdPreset) {
+        guard let sanitizedPreset = LowerThirdPreset.make(
+            id: preset.id,
+            name: preset.name,
+            subtitle: preset.subtitle,
+            orderIndex: preset.orderIndex
+        ) else {
+            return
+        }
+        showLowerThird(name: sanitizedPreset.name, title: sanitizedPreset.subtitle)
+    }
+
     /// 显示人名条（弹簧飞入）
     func showLowerThird(name: String, title: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -99,6 +99,17 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertFalse(source.contains(".font(.system(size: 24, weight: .bold))"))
     }
 
+    func testOverlayComposerExposesLowerThirdPresetShelf() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains("lowerThirdPresetShelf"))
+        XCTAssertTrue(source.contains("Save Preset"))
+        XCTAssertTrue(source.contains("New Preset"))
+        XCTAssertTrue(source.contains("Delete Preset"))
+        XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
+        XCTAssertTrue(source.contains("viewModel.saveLowerThirdPresetFromDraft()"))
+    }
+
     func testLiveOverlayCanBeReplacedBySendLiveWhenDraftIsValid() {
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))

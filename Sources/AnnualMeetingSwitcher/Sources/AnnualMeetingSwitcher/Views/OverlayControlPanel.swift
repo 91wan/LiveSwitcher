@@ -133,6 +133,8 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
+                lowerThirdPresetShelf
+
                 TextField("嘉宾姓名", text: composerBinding(\.lowerThirdNameDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(StudioTheme.TypeScale.body)
@@ -179,6 +181,109 @@ struct OverlayControlPanel: View {
                 )
             }
         }
+    }
+
+    private var lowerThirdPresetShelf: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Lower Third Presets")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
+                Spacer()
+
+                Button {
+                    viewModel.clearLowerThirdPresetDraft()
+                } label: {
+                    Label("New Preset", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    _ = viewModel.saveLowerThirdPresetFromDraft()
+                } label: {
+                    Label("Save Preset", systemImage: "tray.and.arrow.down.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(StudioTheme.Action.primary)
+                .disabled(composerState.trimmedLowerThirdName.isEmpty)
+
+                Button {
+                    if let selectedID = composerState.selectedLowerThirdPresetID {
+                        viewModel.deleteLowerThirdPreset(id: selectedID)
+                    }
+                } label: {
+                    Label("Delete Preset", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(composerState.selectedLowerThirdPresetID == nil)
+            }
+
+            if viewModel.lowerThirdPresets.isEmpty {
+                Text("No saved lower thirds")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.lowerThirdPresets) { preset in
+                            Button {
+                                viewModel.loadLowerThirdPreset(preset)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(preset.name)
+                                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                        .lineLimit(1)
+                                    if !preset.subtitle.isEmpty {
+                                        Text(preset.subtitle)
+                                            .font(StudioTheme.caption())
+                                            .foregroundStyle(StudioTheme.textTertiary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                .frame(minWidth: 120, alignment: .leading)
+                                .padding(.vertical, 7)
+                                .padding(.horizontal, 10)
+                                .background(
+                                    preset.id == composerState.selectedLowerThirdPresetID
+                                    ? StudioTheme.Action.primary.opacity(0.14)
+                                    : StudioTheme.Surface.raised,
+                                    in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                        .stroke(
+                                            preset.id == composerState.selectedLowerThirdPresetID
+                                            ? StudioTheme.Action.primary.opacity(0.45)
+                                            : StudioTheme.borderSubtle,
+                                            lineWidth: 1
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .help("Load lower third preset")
+                            .accessibilityLabel("Load lower third preset")
+                            .accessibilityValue(preset.subtitle.isEmpty ? preset.name : "\(preset.name), \(preset.subtitle)")
+                        }
+                    }
+                    .padding(.vertical, 1)
+                }
+            }
+        }
+        .padding(10)
+        .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     private var countdownEditor: some View {
