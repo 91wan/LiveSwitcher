@@ -6,7 +6,15 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.cardPadding, 10)
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.outputPrimaryButtonHeight, 42)
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.bgmTransportButtonSize, 32)
+        XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.secondaryButtonHeight, 32)
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.modeRowHeight, 34)
+    }
+
+    func testLiveOpsMixerButtonUsesMinimumHitTarget() throws {
+        let source = try sourceText("Views/LiveOpsPanel.swift")
+
+        XCTAssertFalse(source.contains(".frame(height: 28)"))
+        XCTAssertTrue(source.contains(".frame(height: LiveOpsLayoutMetrics.secondaryButtonHeight)"))
     }
 
     func testLiveOpsModeControlsUseSwitchToggles() throws {

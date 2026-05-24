@@ -100,7 +100,7 @@ struct LiveOpsPanel: View {
                 Button(action: onOpenMixer) {
                     Label("Mixer", systemImage: "slider.horizontal.3")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
-                        .frame(height: 28)
+                        .frame(height: LiveOpsLayoutMetrics.secondaryButtonHeight)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
