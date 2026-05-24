@@ -80,3 +80,31 @@ struct ProgramMonitorStateModel: Equatable {
         return ProgramMonitorStateModel(label: "STANDBY", kind: .idle)
     }
 }
+
+struct ProgramMonitorChromeLayoutModel: Equatable {
+    enum Variant: Equatable {
+        case full
+        case compact
+        case stateOnly
+    }
+
+    let variant: Variant
+
+    var showsFullInlineStatus: Bool {
+        variant == .full
+    }
+
+    var showsCompactInlineStatus: Bool {
+        variant == .compact
+    }
+
+    static func make(width: Double) -> ProgramMonitorChromeLayoutModel {
+        if width >= 520 {
+            return ProgramMonitorChromeLayoutModel(variant: .full)
+        }
+        if width >= 320 {
+            return ProgramMonitorChromeLayoutModel(variant: .compact)
+        }
+        return ProgramMonitorChromeLayoutModel(variant: .stateOnly)
+    }
+}
