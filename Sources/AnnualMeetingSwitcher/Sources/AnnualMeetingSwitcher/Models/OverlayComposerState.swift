@@ -43,6 +43,7 @@ struct OverlayComposerState: Equatable {
     var lowerThirdTitleDraft = ""
     var selectedLowerThirdPresetID: UUID?
     var selectedCountdownPresetID: UUID?
+    var selectedTickerPresetID: UUID?
 
     var visibleComposerTitles: [String] {
         [selectedKind.title]

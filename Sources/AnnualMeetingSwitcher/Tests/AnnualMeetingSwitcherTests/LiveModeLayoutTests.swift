@@ -106,6 +106,15 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("Choose countdown preset"))
     }
 
+    func testLiveTickerPresetMenuStartsSelectedPresetDirectly() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("tickerPresetMenu"))
+        XCTAssertTrue(source.contains("ForEach(viewModel.tickerPresets)"))
+        XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
+        XCTAssertTrue(source.contains("Choose ticker preset"))
+    }
+
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 

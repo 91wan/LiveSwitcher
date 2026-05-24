@@ -509,6 +509,8 @@ struct LiveQuickRail: View {
                 stop: { viewModel.stopCountdown() }
             )
 
+            tickerPresetMenu
+
             overlayButton(
                 title: "Ticker",
                 isActive: viewModel.isTickerActive,
@@ -517,6 +519,52 @@ struct LiveQuickRail: View {
                 start: { viewModel.startTicker(text: viewModel.overlayComposerState.tickerTextDraft) },
                 stop: { viewModel.stopTicker() }
             )
+        }
+    }
+
+    @ViewBuilder
+    private var tickerPresetMenu: some View {
+        if viewModel.tickerPresets.isEmpty {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .overlays
+                    viewModel.overlayComposerState.selectedKind = .ticker
+                }
+            } label: {
+                Label("Choose ticker preset", systemImage: "text.badge.star")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Create ticker presets in Setup Overlays.")
+            .accessibilityLabel("Choose ticker preset")
+            .accessibilityHint("No ticker presets are saved. Opens Setup Overlays.")
+        } else {
+            Menu {
+                ForEach(viewModel.tickerPresets) { preset in
+                    Button {
+                        viewModel.startTickerPreset(preset)
+                    } label: {
+                        Label(
+                            "\(preset.text) · \(OverlaySpeedSelection.label(at: preset.speedIndex))",
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedTickerPresetID ? "checkmark" : "text.badge.star"
+                        )
+                    }
+                }
+            } label: {
+                Label("Choose ticker preset", systemImage: "text.badge.star")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityLabel("Choose ticker preset")
+            .accessibilityHint("Start a saved ticker preset live.")
         }
     }
 
