@@ -11,7 +11,7 @@ struct OverlayLivePreviewCanvas: View {
 
             if model.layers.isEmpty {
                 Text(model.emptyMessage)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(StudioTheme.TypeScale.body.weight(.bold))
                     .foregroundStyle(StudioTheme.monitorText.opacity(0.45))
             } else {
                 VStack {
@@ -36,7 +36,7 @@ struct OverlayLivePreviewCanvas: View {
                     draftBadge
                 }
                 Text(layer.primaryText)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .lineLimit(1)
             }
             .foregroundStyle(StudioTheme.monitorText)
@@ -56,12 +56,12 @@ struct OverlayLivePreviewCanvas: View {
                 }
                 if let secondary = layer.secondaryText, !secondary.isEmpty {
                     Text(secondary)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .foregroundStyle(StudioTheme.monitorText.opacity(0.72))
                         .lineLimit(1)
                 }
                 Text(layer.primaryText)
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(StudioTheme.TypeScale.display.weight(.black))
                     .foregroundStyle(StudioTheme.monitorText)
             }
             .opacity(layer.opacity)
@@ -80,11 +80,11 @@ struct OverlayLivePreviewCanvas: View {
                             draftBadge
                         }
                         Text(layer.primaryText)
-                            .font(.system(size: 13, weight: .black))
+                            .font(StudioTheme.TypeScale.body.weight(.black))
                     }
                     if let secondary = layer.secondaryText {
                         Text(secondary)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(StudioTheme.TypeScale.label.weight(.medium))
                             .opacity(0.78)
                     }
                 }
@@ -101,7 +101,7 @@ struct OverlayLivePreviewCanvas: View {
 
     private var draftBadge: some View {
         Text("DRAFT")
-            .font(.system(size: 9, weight: .black, design: .rounded))
+            .font(StudioTheme.TypeScale.label.weight(.black))
             .foregroundStyle(StudioTheme.monitorText.opacity(0.9))
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
