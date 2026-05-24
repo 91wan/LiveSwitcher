@@ -59,6 +59,16 @@ final class StudioThemeTokenContractTests: XCTestCase {
         XCTAssertTrue(theme.contains(".font(StudioTheme.TypeScale.numeric)"))
     }
 
+    func testStudioThemeGenericComponentsUseTypeScaleInsteadOfRawFontViewModifiers() throws {
+        let theme = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+
+        XCTAssertFalse(
+            theme.contains(".font(.system(size:"),
+            "StudioTheme reusable components should use StudioTheme.TypeScale instead of raw view font literals."
+        )
+        XCTAssertTrue(theme.contains("Font.system(size: 28"), "TypeScale token declarations should remain explicit.")
+    }
+
     private func sourceFiles(under relativeDirectory: String) throws -> [URL] {
         let root = try sourceRoot().appendingPathComponent(relativeDirectory)
         guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else {
