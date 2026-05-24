@@ -85,8 +85,6 @@ struct BGMPlaylistPanel: View {
 
     private var bgmControlButtons: some View {
         let diskSize: CGFloat = 32
-        let iconSize: CGFloat = 20
-        let playSize: CGFloat = 34
         let controls = bgmControlsState
 
         return HStack(spacing: 8) {
@@ -95,7 +93,7 @@ struct BGMPlaylistPanel: View {
             // 跳回开头（V20 新增）
             Button(action: { viewModel.seekBGMToBeginning() }) {
                 Image(systemName: "backward.end.alt.fill")
-                    .font(.system(size: iconSize))
+                    .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(controls.canSeekToBeginning ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
@@ -111,7 +109,7 @@ struct BGMPlaylistPanel: View {
             // 上一首
             Button(action: { viewModel.playPreviousBGM() }) {
                 Image(systemName: "backward.end.fill")
-                    .font(.system(size: iconSize))
+                    .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(controls.canSkipPrevious ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
@@ -133,7 +131,7 @@ struct BGMPlaylistPanel: View {
                 }
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
-                    .font(.system(size: playSize))
+                    .font(StudioTheme.TypeScale.display)
                     .foregroundStyle(controls.canPlay ? (viewModel.isBGMPlaying ? StudioTheme.Tone.live : StudioTheme.Action.primary) : StudioTheme.textTertiary)
             }
             .buttonStyle(.plain)
@@ -146,7 +144,7 @@ struct BGMPlaylistPanel: View {
             // 下一首
             Button(action: { viewModel.playNextBGM() }) {
                 Image(systemName: "forward.end.fill")
-                    .font(.system(size: iconSize))
+                    .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(controls.canSkipNext ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
@@ -162,7 +160,7 @@ struct BGMPlaylistPanel: View {
             // 循环模式
             Button(action: { viewModel.toggleLoopMode() }) {
                 Image(systemName: viewModel.bgmPlayMode == .loopOne ? "repeat.1" : "repeat")
-                    .font(.system(size: iconSize))
+                    .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(viewModel.bgmPlayMode == .sequential ? StudioTheme.textSecondary : StudioTheme.Action.primary)
                     .frame(width: diskSize, height: diskSize)
                     .background(controlDiskFill)
@@ -209,16 +207,16 @@ struct BGMPlaylistPanel: View {
             // 时间标签行
             HStack {
                 Text(formatTime(viewModel.bgmCurrentTime))
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(StudioTheme.TypeScale.monoCaption)
                     .foregroundStyle(StudioTheme.textSecondary)
                 Spacer()
                 if let dur = viewModel.bgmDuration {
                     Text(formatTime(dur))
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(StudioTheme.TypeScale.monoCaption)
                         .foregroundStyle(StudioTheme.textSecondary)
                 } else {
                     Text("--:--")
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(StudioTheme.TypeScale.monoCaption)
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
             }
@@ -242,7 +240,7 @@ struct BGMPlaylistPanel: View {
     private var categoryPicker: some View {
         HStack {
             Text("当前分类")
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.caption.weight(.black))
                 .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
             Picker("", selection: selectedCategoryBinding) {
@@ -252,7 +250,7 @@ struct BGMPlaylistPanel: View {
             }
             .pickerStyle(.menu)
             .labelsHidden()
-            .font(.system(size: 15))
+            .font(StudioTheme.TypeScale.heading)
             .accessibilityLabel("BGM category")
             .accessibilityValue(categorySelection.selectedCategory.rawValue)
         }
@@ -309,13 +307,13 @@ struct BGMPlaylistPanel: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(StudioTheme.TypeScale.heading.weight(.bold))
                     .accessibilityHidden(true)
                 Text("添加音乐文件")
-                    .font(.system(size: 16, weight: .bold))
+                    .font(StudioTheme.TypeScale.heading.weight(.bold))
                 Spacer()
                 Image(systemName: "arrow.up.doc.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(StudioTheme.TypeScale.body.weight(.semibold))
                     .accessibilityHidden(true)
             }
             .foregroundStyle(.white)
@@ -339,7 +337,7 @@ struct BGMPlaylistPanel: View {
                 .fill(viewModel.bgmItems.isEmpty ? StudioTheme.Tone.idle.opacity(0.4) : StudioTheme.Tone.ready)
                 .frame(width: 8, height: 8)
             Text(viewModel.bgmItems.isEmpty ? "引擎已停止" : "BGM 已就绪")
-                .font(.system(size: 13, weight: .semibold))
+                .font(StudioTheme.TypeScale.body.weight(.semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
         }
     }
@@ -420,7 +418,7 @@ struct BGMItemRow: View {
 
                 if isCurrentTrack {
                     Image(systemName: isPlaying ? "waveform" : "pause.fill")
-                        .font(.system(size: 8, weight: .black))
+                        .font(StudioTheme.TypeScale.monoCaption.weight(.black))
                         .foregroundStyle(.white)
                         .frame(width: 15, height: 15)
                         .background(Circle().fill(StudioTheme.Action.primary))
@@ -431,12 +429,12 @@ struct BGMItemRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(bgm.title)
-                    .font(compact ? .system(size: 14, weight: .semibold) : .title3)
+                    .font(compact ? StudioTheme.TypeScale.heading.weight(.semibold) : StudioTheme.TypeScale.title)
                     .fontWeight(isCurrentTrack ? .semibold : .regular)
                     .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textPrimary)
                     .lineLimit(1)
                 Text(bgm.category.rawValue)
-                    .font(.system(size: compact ? 11 : 12))
+                    .font(compact ? StudioTheme.TypeScale.caption : StudioTheme.TypeScale.body)
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             .layoutPriority(1)
@@ -446,7 +444,7 @@ struct BGMItemRow: View {
             HStack(spacing: compact ? 8 : 10) {
                 Button(action: { viewModel.toggleBGM(bgm) }) {
                     Image(systemName: isPlaying ? "pause.fill" : "play.fill")
-                        .font(.system(size: compact ? 14 : 16))
+                        .font(compact ? StudioTheme.TypeScale.body : StudioTheme.TypeScale.heading)
                         .foregroundStyle(isCurrentTrack ? StudioTheme.Action.primary : StudioTheme.textSecondary)
                 }
                 .buttonStyle(.plain)
@@ -455,7 +453,7 @@ struct BGMItemRow: View {
 
                 Button(action: { viewModel.removeBGMItem(bgm) }) {
                     Image(systemName: "trash")
-                        .font(.system(size: compact ? 13 : 14))
+                        .font(compact ? StudioTheme.TypeScale.caption : StudioTheme.TypeScale.body)
                         .foregroundStyle(isHovered ? StudioTheme.Action.danger : StudioTheme.textTertiary)
                 }
                 .buttonStyle(.plain)
