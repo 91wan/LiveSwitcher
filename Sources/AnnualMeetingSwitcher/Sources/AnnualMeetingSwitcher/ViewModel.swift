@@ -59,7 +59,7 @@ final class SwitcherViewModel: ObservableObject {
             userDefaults.set(consoleMode.rawValue, forKey: UDKeys.consoleMode)
         }
     }
-    @Published var themeOverride: ThemeOverride = .system {
+    @Published var themeOverride: ThemeOverride = .dark {
         didSet {
             userDefaults.set(themeOverride.rawValue, forKey: UDKeys.themeOverride)
         }

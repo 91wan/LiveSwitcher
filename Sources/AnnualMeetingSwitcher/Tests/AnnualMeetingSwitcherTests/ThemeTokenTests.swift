@@ -66,7 +66,7 @@ final class ThemeTokenTests: XCTestCase {
             enableSystemVolumeObserver: false,
             userDefaults: defaults
         )
-        XCTAssertEqual(viewModel.themeOverride, .system)
+        XCTAssertEqual(viewModel.themeOverride, .dark)
 
         viewModel.themeOverride = .dark
         XCTAssertEqual(defaults.string(forKey: "themeOverride"), "dark")
@@ -77,6 +77,27 @@ final class ThemeTokenTests: XCTestCase {
             userDefaults: defaults
         )
         XCTAssertEqual(restored.themeOverride, .dark)
+    }
+
+    func testThemeOverrideRestoresEveryExplicitUserChoice() {
+        for option in ThemeOverride.allCases {
+            let suite = "ThemeOverrideRestore-\(option.rawValue)-\(UUID().uuidString)"
+            guard let defaults = UserDefaults(suiteName: suite) else {
+                XCTFail("Could not create isolated defaults")
+                return
+            }
+            defer { defaults.removePersistentDomain(forName: suite) }
+
+            defaults.set(option.rawValue, forKey: "themeOverride")
+
+            let restored = SwitcherViewModel(
+                loadPersistedData: true,
+                enableSystemVolumeObserver: false,
+                userDefaults: defaults
+            )
+
+            XCTAssertEqual(restored.themeOverride, option)
+        }
     }
 
     func testAppAddsThemeMenuCommands() throws {
