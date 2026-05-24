@@ -9,6 +9,7 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.quickRailWidth, 200)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.footerHeight, 26)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.transportButtonSize, 32)
+        XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.quickActionButtonHeight, 34)
     }
 
     func testLiveModeViewDefinesDedicatedStageFourRegions() throws {
@@ -57,6 +58,13 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("Master"))
         XCTAssertTrue(source.contains("Media"))
         XCTAssertTrue(source.contains("BGM"))
+    }
+
+    func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains(".frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)"))
+        XCTAssertFalse(source.contains(".frame(height: 30)"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

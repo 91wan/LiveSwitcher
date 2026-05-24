@@ -7,5 +7,6 @@ enum LiveModeLayoutMetrics {
     static let footerHeight: CGFloat = 34
     static let monitorHeightRatio: CGFloat = 0.52
     static let transportButtonSize: CGFloat = 34
+    static let quickActionButtonHeight: CGFloat = 34
     static let railThumbnailSize = CGSize(width: 88, height: 50)
 }
