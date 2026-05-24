@@ -245,7 +245,8 @@ struct StudioSectionCard<Content: View>: View {
                         }
                     }
                     Spacer(minLength: 0)
-                    if let status {
+                    if let status,
+                       StatusBadgeVisibilityPolicy.shouldShow(text: status.0, kind: status.1) {
                         StatusBadge(status.0, kind: status.1)
                     }
                 }
