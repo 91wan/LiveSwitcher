@@ -1,6 +1,39 @@
+import AppKit
 import SwiftUI
 
 enum StudioTheme {
+    private struct ThemeRGBA {
+        let red: CGFloat
+        let green: CGFloat
+        let blue: CGFloat
+        let alpha: CGFloat
+
+        init(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat, _ alpha: CGFloat = 1) {
+            self.red = red
+            self.green = green
+            self.blue = blue
+            self.alpha = alpha
+        }
+
+        var nsColor: NSColor {
+            NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha)
+        }
+    }
+
+    private static func dynamicColor(name: String, light: ThemeRGBA, dark: ThemeRGBA) -> Color {
+        let color = NSColor(name: NSColor.Name("LiveSwitcher.\(name)"), dynamicProvider: { appearance in
+            let match = appearance.bestMatch(from: [
+                .accessibilityHighContrastDarkAqua,
+                .darkAqua,
+                .accessibilityHighContrastAqua,
+                .aqua
+            ])
+            let isDark = match == .darkAqua || match == .accessibilityHighContrastDarkAqua
+            return (isDark ? dark : light).nsColor
+        })
+        return Color(nsColor: color)
+    }
+
     enum StatusKind: String, Equatable {
         case ready
         case live
@@ -22,17 +55,17 @@ enum StudioTheme {
     }
 
     enum Tone {
-        static let ready = Color(red: 0.10, green: 0.58, blue: 0.32)
-        static let live = Color(red: 0.82, green: 0.14, blue: 0.12)
-        static let warn = Color(red: 0.88, green: 0.45, blue: 0.08)
+        static let ready = dynamicColor(name: "ready", light: ThemeRGBA(0.10, 0.58, 0.32), dark: ThemeRGBA(0.32, 0.78, 0.50))
+        static let live = dynamicColor(name: "live", light: ThemeRGBA(0.82, 0.14, 0.12), dark: ThemeRGBA(0.95, 0.30, 0.28))
+        static let warn = dynamicColor(name: "warn", light: ThemeRGBA(0.88, 0.45, 0.08), dark: ThemeRGBA(1.00, 0.62, 0.20))
         static let fail = live
-        static let muted = Color(red: 0.39, green: 0.42, blue: 0.48)
-        static let idle = Color(red: 0.45, green: 0.49, blue: 0.55)
+        static let muted = dynamicColor(name: "muted", light: ThemeRGBA(0.39, 0.42, 0.48), dark: ThemeRGBA(0.54, 0.56, 0.62))
+        static let idle = dynamicColor(name: "idle", light: ThemeRGBA(0.45, 0.49, 0.55), dark: ThemeRGBA(0.58, 0.61, 0.68))
     }
 
     enum Action {
-        static let primary = Color(red: 0.12, green: 0.49, blue: 0.96)
-        static let secondary = Color(red: 0.25, green: 0.28, blue: 0.34)
+        static let primary = dynamicColor(name: "primary", light: ThemeRGBA(0.12, 0.49, 0.96), dark: ThemeRGBA(0.30, 0.62, 1.00))
+        static let secondary = dynamicColor(name: "secondary", light: ThemeRGBA(0.25, 0.28, 0.34), dark: ThemeRGBA(0.62, 0.68, 0.76))
         static var danger: Color { Tone.fail }
     }
 
@@ -44,9 +77,9 @@ enum StudioTheme {
             static let overlay = 0.78
         }
 
-        static let base = Color.white.opacity(Opacity.strong)
-        static let raised = Color(red: 0.96, green: 0.97, blue: 0.99)
-        static let pressed = Color.white.opacity(0.98)
+        static let base = dynamicColor(name: "base", light: ThemeRGBA(1.00, 1.00, 1.00, Opacity.strong), dark: ThemeRGBA(0.18, 0.19, 0.22, 0.96))
+        static let raised = dynamicColor(name: "raised", light: ThemeRGBA(0.96, 0.97, 0.99), dark: ThemeRGBA(0.24, 0.25, 0.28))
+        static let pressed = dynamicColor(name: "pressed", light: ThemeRGBA(1.00, 1.00, 1.00, 0.98), dark: ThemeRGBA(0.30, 0.31, 0.34))
     }
 
     enum Spacing {
@@ -76,22 +109,22 @@ enum StudioTheme {
         static let numeric = Font.system(size: 18, weight: .black, design: .rounded)
     }
 
-    static let canvasTop = Color(red: 0.97, green: 0.98, blue: 1.00)
-    static let canvasBottom = Color(red: 0.94, green: 0.96, blue: 0.99)
+    static let canvasTop = dynamicColor(name: "canvasTop", light: ThemeRGBA(0.97, 0.98, 1.00), dark: ThemeRGBA(0.10, 0.10, 0.12))
+    static let canvasBottom = dynamicColor(name: "canvasBottom", light: ThemeRGBA(0.94, 0.96, 0.99), dark: ThemeRGBA(0.07, 0.07, 0.09))
 
-    static let textPrimary = Color(red: 0.12, green: 0.13, blue: 0.16)
-    static let textSecondary = Color(red: 0.43, green: 0.45, blue: 0.50)
-    static let textTertiary = Color(red: 0.58, green: 0.60, blue: 0.65)
+    static let textPrimary = dynamicColor(name: "textPrimary", light: ThemeRGBA(0.12, 0.13, 0.16), dark: ThemeRGBA(0.92, 0.93, 0.95))
+    static let textSecondary = dynamicColor(name: "textSecondary", light: ThemeRGBA(0.43, 0.45, 0.50), dark: ThemeRGBA(0.65, 0.67, 0.72))
+    static let textTertiary = dynamicColor(name: "textTertiary", light: ThemeRGBA(0.58, 0.60, 0.65), dark: ThemeRGBA(0.50, 0.52, 0.58))
 
-    static let borderSubtle = Color.black.opacity(0.07)
+    static let borderSubtle = dynamicColor(name: "borderSubtle", light: ThemeRGBA(0.00, 0.00, 0.00, 0.07), dark: ThemeRGBA(1.00, 1.00, 1.00, 0.10))
     static let borderActive = Action.primary.opacity(0.38)
     static let borderCritical = Tone.live.opacity(Surface.Opacity.medium)
 
-    static let cardBorder = Color.white.opacity(0.82)
-    static let hairline = Color.black.opacity(0.06)
-    static let shadow = Color.black.opacity(0.10)
-    static let shadowSoft = Color.black.opacity(0.05)
-    static let shadowStrong = Color.black.opacity(0.18)
+    static let cardBorder = dynamicColor(name: "cardBorder", light: ThemeRGBA(1.00, 1.00, 1.00, 0.82), dark: ThemeRGBA(1.00, 1.00, 1.00, 0.10))
+    static let hairline = dynamicColor(name: "hairline", light: ThemeRGBA(0.00, 0.00, 0.00, 0.06), dark: ThemeRGBA(1.00, 1.00, 1.00, 0.08))
+    static let shadow = dynamicColor(name: "shadow", light: ThemeRGBA(0.00, 0.00, 0.00, 0.10), dark: ThemeRGBA(0.00, 0.00, 0.00, 0.42))
+    static let shadowSoft = dynamicColor(name: "shadowSoft", light: ThemeRGBA(0.00, 0.00, 0.00, 0.05), dark: ThemeRGBA(0.00, 0.00, 0.00, 0.30))
+    static let shadowStrong = dynamicColor(name: "shadowStrong", light: ThemeRGBA(0.00, 0.00, 0.00, 0.18), dark: ThemeRGBA(0.00, 0.00, 0.00, 0.55))
 
     static let monitorSurfaceTop = Color(red: 0.08, green: 0.09, blue: 0.13)
     static let monitorSurfaceBottom = Color(red: 0.03, green: 0.03, blue: 0.05)
