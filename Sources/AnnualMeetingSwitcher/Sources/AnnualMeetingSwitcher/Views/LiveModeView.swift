@@ -488,6 +488,8 @@ struct LiveQuickRail: View {
                 stop: { viewModel.dismissLowerThird() }
             )
 
+            countdownPresetMenu
+
             overlayButton(
                 title: "Countdown",
                 isActive: viewModel.isCountdownActive,
@@ -561,6 +563,52 @@ struct LiveQuickRail: View {
             .controlSize(.small)
             .accessibilityLabel("Choose lower third preset")
             .accessibilityHint("Send a saved lower third preset live.")
+        }
+    }
+
+    @ViewBuilder
+    private var countdownPresetMenu: some View {
+        if viewModel.countdownPresets.isEmpty {
+            Button {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .overlays
+                    viewModel.overlayComposerState.selectedKind = .countdown
+                }
+            } label: {
+                Label("Choose countdown preset", systemImage: "timer")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Create countdown presets in Setup Overlays.")
+            .accessibilityLabel("Choose countdown preset")
+            .accessibilityHint("No countdown presets are saved. Opens Setup Overlays.")
+        } else {
+            Menu {
+                ForEach(viewModel.countdownPresets) { preset in
+                    Button {
+                        viewModel.startCountdownPreset(preset)
+                    } label: {
+                        Label(
+                            "\(preset.title) · \(formattedTime(preset.totalSeconds))",
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedCountdownPresetID ? "checkmark" : "timer"
+                        )
+                    }
+                }
+            } label: {
+                Label("Choose countdown preset", systemImage: "timer")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+            }
+            .menuStyle(.button)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .accessibilityLabel("Choose countdown preset")
+            .accessibilityHint("Start a saved countdown preset live.")
         }
     }
 
@@ -772,6 +820,12 @@ struct LiveQuickRail: View {
 
     private var overlayStatusKind: StudioTheme.StatusKind {
         [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].contains(true) ? .warn : .idle
+    }
+
+    private func formattedTime(_ seconds: Int) -> String {
+        let minutes = max(seconds, 0) / 60
+        let remainingSeconds = max(seconds, 0) % 60
+        return String(format: "%02d:%02d", minutes, remainingSeconds)
     }
 
 }

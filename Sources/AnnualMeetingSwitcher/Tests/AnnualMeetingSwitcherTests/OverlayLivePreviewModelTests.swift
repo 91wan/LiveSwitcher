@@ -110,6 +110,17 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.saveLowerThirdPresetFromDraft()"))
     }
 
+    func testOverlayComposerExposesCountdownPresetShelf() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains("countdownPresetShelf"))
+        XCTAssertTrue(source.contains("Save Countdown Preset"))
+        XCTAssertTrue(source.contains("New Countdown Preset"))
+        XCTAssertTrue(source.contains("Delete Countdown Preset"))
+        XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
+        XCTAssertTrue(source.contains("viewModel.saveCountdownPresetFromDraft()"))
+    }
+
     func testLiveOverlayCanBeReplacedBySendLiveWhenDraftIsValid() {
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))
