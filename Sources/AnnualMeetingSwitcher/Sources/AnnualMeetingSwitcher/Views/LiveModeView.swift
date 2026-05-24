@@ -234,8 +234,8 @@ struct LiveAudioStrip: View {
                 value: $viewModel.masterVolume,
                 isMuted: $viewModel.isMasterAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    realtimeDB: nil,
-                    fallbackEffectiveVolume: viewModel.isPanicMode || viewModel.isMasterAudioMuted ? 0 : Float(viewModel.masterVolume),
+                    realtimeDB: viewModel.liveMasterMeterRealtimeDB(),
+                    fallbackEffectiveVolume: viewModel.liveMasterMeterFallbackVolume(),
                     isMuted: viewModel.isPanicMode || viewModel.isMasterAudioMuted
                 ),
                 tint: StudioTheme.Action.primary
@@ -320,9 +320,18 @@ private struct LiveAudioFader: View {
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer()
-                Text(meter.decibelText)
-                    .font(StudioTheme.TypeScale.heading.weight(.black))
-                    .foregroundStyle(StudioTheme.color(for: meter.statusKind))
+                HStack(spacing: 4) {
+                    if meter.isEstimated {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(StudioTheme.caption().weight(.black))
+                            .foregroundStyle(StudioTheme.Tone.warn)
+                            .help("Estimated meter")
+                            .accessibilityLabel("Estimated meter")
+                    }
+                    Text(meter.decibelText)
+                        .font(StudioTheme.TypeScale.heading.weight(.black))
+                        .foregroundStyle(StudioTheme.color(for: meter.statusKind))
+                }
             }
 
             Slider(value: $value, in: 0...1)
@@ -376,7 +385,7 @@ private struct LiveAudioMeter: View {
         }
         .frame(height: 8)
         .accessibilityLabel("Audio meter")
-        .accessibilityValue(model.decibelText)
+        .accessibilityValue(model.isEstimated ? "Estimated meter, \(model.decibelText)" : model.decibelText)
     }
 }
 
