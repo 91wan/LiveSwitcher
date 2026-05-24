@@ -7,7 +7,7 @@ struct HelpPopoverView: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 Text("LiveSwitcher")
-                    .font(.system(size: 16, weight: .black))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
 
                 Spacer()
 
@@ -49,10 +49,10 @@ private struct HelpSectionView: View {
             ForEach(items, id: \.self) { item in
                 HStack(alignment: .top) {
                     Text("•")
-                        .font(.system(size: 14))
+                        .font(StudioTheme.TypeScale.body.weight(.bold))
                         .foregroundStyle(StudioTheme.textSecondary)
                     Text(item)
-                        .font(.system(size: 13))
+                        .font(StudioTheme.TypeScale.body)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
