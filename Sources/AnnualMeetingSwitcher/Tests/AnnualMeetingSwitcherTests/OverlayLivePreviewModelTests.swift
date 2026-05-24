@@ -121,6 +121,17 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.saveCountdownPresetFromDraft()"))
     }
 
+    func testOverlayComposerExposesTickerPresetShelf() throws {
+        let source = try sourceText("Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains("tickerPresetShelf"))
+        XCTAssertTrue(source.contains("Save Ticker Preset"))
+        XCTAssertTrue(source.contains("New Ticker Preset"))
+        XCTAssertTrue(source.contains("Delete Ticker Preset"))
+        XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
+        XCTAssertTrue(source.contains("viewModel.saveTickerPresetFromDraft()"))
+    }
+
     func testLiveOverlayCanBeReplacedBySendLiveWhenDraftIsValid() {
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))

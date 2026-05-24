@@ -247,6 +247,7 @@ final class SwitcherViewModel: ObservableObject {
         static let themeOverride = "themeOverride"
         static let lowerThirdPresets = "overlay.presets.lowerThird.json"
         static let countdownPresets = "overlay.presets.countdown.json"
+        static let tickerPresets = "overlay.presets.ticker.json"
     }
 
     // MARK: - Init
@@ -495,6 +496,10 @@ final class SwitcherViewModel: ObservableObject {
         if let countdownPresetData = try? JSONEncoder().encode(countdownPresets) {
             userDefaults.set(countdownPresetData, forKey: UDKeys.countdownPresets)
         }
+
+        if let tickerPresetData = try? JSONEncoder().encode(tickerPresets) {
+            userDefaults.set(tickerPresetData, forKey: UDKeys.tickerPresets)
+        }
     }
 
     func loadData() {
@@ -587,6 +592,11 @@ final class SwitcherViewModel: ObservableObject {
         if let countdownPresetData = userDefaults.data(forKey: UDKeys.countdownPresets),
            let storedPresets = try? JSONDecoder().decode([CountdownPreset].self, from: countdownPresetData) {
             countdownPresets = CountdownPreset.normalized(storedPresets)
+        }
+
+        if let tickerPresetData = userDefaults.data(forKey: UDKeys.tickerPresets),
+           let storedPresets = try? JSONDecoder().decode([TickerPreset].self, from: tickerPresetData) {
+            tickerPresets = TickerPreset.normalized(storedPresets)
         }
     }
 
@@ -1527,6 +1537,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var isTickerActive: Bool    = false
     @Published var tickerText: String      = "Welcome · The program will begin shortly"
     @Published var tickerSpeed: Double     = 80.0
+    @Published var tickerPresets: [TickerPreset] = []
 
     // MARK: - V27: Lower Third（下三分之一条）状态
     @Published var isLowerThirdVisible: Bool = false

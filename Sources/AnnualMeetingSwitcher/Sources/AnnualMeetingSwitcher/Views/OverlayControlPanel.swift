@@ -479,6 +479,8 @@ struct OverlayControlPanel: View {
             )
         ) {
             VStack(alignment: .leading, spacing: 10) {
+                tickerPresetShelf
+
                 TextEditor(text: composerBinding(\.tickerTextDraft))
                     .font(StudioTheme.TypeScale.body)
                     .frame(height: 76)
@@ -540,6 +542,112 @@ struct OverlayControlPanel: View {
                 )
             }
         }
+    }
+
+    private var tickerPresetShelf: some View {
+        let disabledReason = OverlayUIState.tickerDisabledReason(
+            text: composerState.tickerTextDraft,
+            isLive: false
+        )
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Text("Ticker Presets")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textSecondary)
+
+                Spacer()
+
+                Button {
+                    viewModel.clearTickerPresetDraft()
+                } label: {
+                    Label("New Ticker Preset", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    _ = viewModel.saveTickerPresetFromDraft()
+                } label: {
+                    Label("Save Ticker Preset", systemImage: "tray.and.arrow.down.fill")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(StudioTheme.Action.primary)
+                .disabled(disabledReason != nil)
+
+                Button {
+                    if let selectedID = composerState.selectedTickerPresetID {
+                        viewModel.deleteTickerPreset(id: selectedID)
+                    }
+                } label: {
+                    Label("Delete Ticker Preset", systemImage: "trash")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(composerState.selectedTickerPresetID == nil)
+            }
+
+            if viewModel.tickerPresets.isEmpty {
+                Text("No saved tickers")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(viewModel.tickerPresets) { preset in
+                            Button {
+                                viewModel.loadTickerPreset(preset)
+                            } label: {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text(preset.text)
+                                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                        .lineLimit(1)
+                                    Text("Speed: \(OverlaySpeedSelection.label(at: preset.speedIndex))")
+                                        .font(StudioTheme.caption())
+                                        .foregroundStyle(StudioTheme.textTertiary)
+                                        .lineLimit(1)
+                                }
+                                .frame(minWidth: 150, alignment: .leading)
+                                .padding(.vertical, 7)
+                                .padding(.horizontal, 10)
+                                .background(
+                                    preset.id == composerState.selectedTickerPresetID
+                                    ? StudioTheme.Action.primary.opacity(0.14)
+                                    : StudioTheme.Surface.raised,
+                                    in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                )
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                                        .stroke(
+                                            preset.id == composerState.selectedTickerPresetID
+                                            ? StudioTheme.Action.primary.opacity(0.45)
+                                            : StudioTheme.borderSubtle,
+                                            lineWidth: 1
+                                        )
+                                )
+                            }
+                            .buttonStyle(.plain)
+                            .help("Load ticker preset")
+                            .accessibilityLabel("Load ticker preset")
+                            .accessibilityValue("\(preset.text), speed \(OverlaySpeedSelection.label(at: preset.speedIndex))")
+                        }
+                    }
+                    .padding(.vertical, 1)
+                }
+            }
+        }
+        .padding(10)
+        .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     private var livePreviewColumn: some View {
