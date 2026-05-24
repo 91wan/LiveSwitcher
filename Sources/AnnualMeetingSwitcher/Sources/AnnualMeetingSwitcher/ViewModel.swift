@@ -166,6 +166,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var bgmProgress: Double = 0.0
     @Published var bgmCurrentTime: Double = 0.0
     @Published var bgmDuration: Double? = nil
+    @Published var bgmRealtimeLevelDB: Float? = nil
 
     /// BGM 播放器
     var bgmAudioPlayer: AVAudioPlayer?
@@ -1040,6 +1041,7 @@ final class SwitcherViewModel: ObservableObject {
             bgmProgress = 0
             bgmCurrentTime = 0
             bgmDuration = nil
+            resetBGMRealtimeMeter()
         }
         saveData()
     }
@@ -1076,6 +1078,7 @@ final class SwitcherViewModel: ObservableObject {
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = false
                 isBGMAudioTakeoverActive = false
+                resetBGMRealtimeMeter()
                 LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
                 recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
                 fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
@@ -1107,6 +1110,7 @@ final class SwitcherViewModel: ObservableObject {
                 LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
                 recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=true")
                 bgmAudioPlayer?.volume = 0
+                bgmAudioPlayer?.isMeteringEnabled = true
                 bgmAudioPlayer?.play()
                 bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
@@ -1131,6 +1135,7 @@ final class SwitcherViewModel: ObservableObject {
             }
             bgmAudioPlayer?.delegate = nil
             bgmAudioPlayer = nil
+            resetBGMRealtimeMeter()
             bgmFallbackPlayer.pause()
             bgmFallbackPlayer.replaceCurrentItem(with: nil)
 
@@ -1145,6 +1150,7 @@ final class SwitcherViewModel: ObservableObject {
                 player.volume = 0  // Bug Fix #1: 从0开始，淡入至目标音量
                 player.numberOfLoops = 0   // V21 Fix #1: 0 = 播完停，delegate 触发自动下一首
                 player.delegate = bgmDelegate  // V21 Fix #1: 播完回调
+                player.isMeteringEnabled = true
                 player.prepareToPlay()
                 player.play()
                 player.setVolume(targetVolume, fadeDuration: fadeDur)  // Bug Fix #1: 淡入
@@ -1156,6 +1162,7 @@ final class SwitcherViewModel: ObservableObject {
                 bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
                 bgmDuration = nil
+                resetBGMRealtimeMeter()
             }
             bgmProgress = 0
             bgmCurrentTime = 0
@@ -1168,7 +1175,7 @@ final class SwitcherViewModel: ObservableObject {
 
     private func startBGMTimer() {
         stopBGMTimer()
-        bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateBGMProgress()
             }
@@ -1191,7 +1198,24 @@ final class SwitcherViewModel: ObservableObject {
             let dur = player.duration
             bgmDuration = dur > 0 ? dur : nil
             bgmProgress = dur > 0 ? player.currentTime / dur : 0
+            updateBGMRealtimeMeter(from: player)
+        } else {
+            resetBGMRealtimeMeter()
         }
+    }
+
+    func resetBGMRealtimeMeter() {
+        bgmRealtimeLevelDB = nil
+    }
+
+    private func updateBGMRealtimeMeter(from player: AVAudioPlayer) {
+        guard player.isMeteringEnabled, player.numberOfChannels > 0 else {
+            resetBGMRealtimeMeter()
+            return
+        }
+
+        player.updateMeters()
+        bgmRealtimeLevelDB = player.averagePower(forChannel: 0)
     }
 
     // MARK: - 推流控制

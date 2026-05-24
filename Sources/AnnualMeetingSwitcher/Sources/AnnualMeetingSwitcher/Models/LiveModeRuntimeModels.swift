@@ -4,20 +4,49 @@ struct LiveAudioMeterModel: Equatable {
     let level: Double
     let decibelText: String
     let statusKind: StudioTheme.StatusKind
+    let isEstimated: Bool
 
     static func make(effectiveVolume: Float, isMuted: Bool) -> LiveAudioMeterModel {
-        guard !isMuted, effectiveVolume > 0 else {
-            return LiveAudioMeterModel(level: 0, decibelText: "-∞ dB", statusKind: .muted)
+        make(realtimeDB: nil, fallbackEffectiveVolume: effectiveVolume, isMuted: isMuted)
+    }
+
+    static func make(realtimeDB: Float?, fallbackEffectiveVolume: Float, isMuted: Bool) -> LiveAudioMeterModel {
+        guard !isMuted else {
+            return LiveAudioMeterModel(level: 0, decibelText: "-∞ dB", statusKind: .muted, isEstimated: false)
         }
 
-        let clamped = min(max(Double(effectiveVolume), 0), 1)
+        if let realtimeDB, realtimeDB.isFinite {
+            let outputGain = min(max(Double(fallbackEffectiveVolume), 0), 1)
+            guard outputGain > 0 else {
+                return LiveAudioMeterModel(level: 0, decibelText: "-∞ dB", statusKind: .muted, isEstimated: false)
+            }
+
+            let gainDB = 20 * log10(outputGain)
+            let clampedDB = min(max(Double(realtimeDB) + gainDB, -60), 0)
+            let roundedDB = Int(clampedDB.rounded())
+            let level = max(0, min((clampedDB + 60) / 60, 1))
+            let status: StudioTheme.StatusKind = roundedDB >= -3 ? .warn : .ready
+            return LiveAudioMeterModel(
+                level: level,
+                decibelText: roundedDB <= -60 ? "-∞ dB" : "\(roundedDB) dB",
+                statusKind: status,
+                isEstimated: false
+            )
+        }
+
+        let clamped = min(max(Double(fallbackEffectiveVolume), 0), 1)
+        guard clamped > 0 else {
+            return LiveAudioMeterModel(level: 0, decibelText: "-∞ dB", statusKind: .muted, isEstimated: true)
+        }
+
         let decibels = 20 * log10(clamped)
         let roundedDB = Int(decibels.rounded())
         let status: StudioTheme.StatusKind = roundedDB >= -3 ? .warn : .ready
         return LiveAudioMeterModel(
             level: clamped,
-            decibelText: "\(roundedDB) dB",
-            statusKind: status
+            decibelText: "≈ \(roundedDB) dB",
+            statusKind: status,
+            isEstimated: true
         )
     }
 }

@@ -234,7 +234,8 @@ struct LiveAudioStrip: View {
                 value: $viewModel.masterVolume,
                 isMuted: $viewModel.isMasterAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    effectiveVolume: viewModel.isPanicMode || viewModel.isMasterAudioMuted ? 0 : Float(viewModel.masterVolume),
+                    realtimeDB: nil,
+                    fallbackEffectiveVolume: viewModel.isPanicMode || viewModel.isMasterAudioMuted ? 0 : Float(viewModel.masterVolume),
                     isMuted: viewModel.isPanicMode || viewModel.isMasterAudioMuted
                 ),
                 tint: StudioTheme.Action.primary
@@ -245,7 +246,8 @@ struct LiveAudioStrip: View {
                 value: $viewModel.mediaVolume,
                 isMuted: $viewModel.isMediaAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    effectiveVolume: viewModel.effectiveMediaOutputVolume(),
+                    realtimeDB: nil,
+                    fallbackEffectiveVolume: viewModel.effectiveMediaOutputVolume(),
                     isMuted: viewModel.isMasterAudioMuted || viewModel.isMediaAudioMuted
                 ),
                 tint: StudioTheme.Action.primary
@@ -256,8 +258,9 @@ struct LiveAudioStrip: View {
                 value: $viewModel.bgmVolume,
                 isMuted: $viewModel.isBGMAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    effectiveVolume: viewModel.effectiveBGMOutputVolume(),
-                    isMuted: viewModel.isMasterAudioMuted || viewModel.isBGMAudioMuted
+                    realtimeDB: viewModel.bgmRealtimeLevelDB,
+                    fallbackEffectiveVolume: viewModel.effectiveBGMOutputVolume(),
+                    isMuted: viewModel.isMasterAudioMuted || viewModel.isBGMAudioMuted || !viewModel.isBGMPlaying
                 ),
                 tint: StudioTheme.Tone.warn
             )
