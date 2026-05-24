@@ -22,30 +22,42 @@ struct ContentView: View {
 
     @ViewBuilder
     private var mainContent: some View {
-        ZStack {
-            StudioTheme.canvasGradient
-                .ignoresSafeArea()
+        VStack(spacing: 0) {
+            ZStack {
+                StudioTheme.canvasGradient
+                    .ignoresSafeArea()
 
-            retainedTab(.preview) {
-                if viewModel.consoleMode == .live {
-                    LiveModeView {
-                        viewModel.selectedMainTab = .audioMixer
+                retainedTab(.preview) {
+                    if viewModel.consoleMode == .live {
+                        LiveModeView {
+                            viewModel.selectedMainTab = .audioMixer
+                        }
+                    } else {
+                        runDesk()
                     }
-                } else {
-                    runDesk()
+                }
+
+                retainedTab(.audioMixer) {
+                    AudioMixerView()
+                        .frame(maxWidth: 940, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+
+                retainedTab(.overlays) {
+                    SettingsView()
+                        .frame(maxWidth: 1100, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            retainedTab(.audioMixer) {
-                AudioMixerView()
-                    .frame(maxWidth: 940, maxHeight: .infinity)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            retainedTab(.overlays) {
-                SettingsView()
-                    .frame(maxWidth: 1100, maxHeight: .infinity)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if SetupAudioDockModel.shouldShow(consoleMode: viewModel.consoleMode, selectedTab: viewModel.selectedMainTab) {
+                SetupAudioDock {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        viewModel.selectedMainTab = .audioMixer
+                    }
+                }
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
     }

@@ -54,25 +54,9 @@ struct ProgramMonitorView: View {
             }
         }
         .overlay(alignment: .top) {
-            HStack(spacing: 10) {
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
-                        .frame(width: 8, height: 8)
-                    Text(monitorStateLabel)
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(StudioTheme.monitorText)
-                }
-                .padding(.horizontal, 10)
-                .padding(.vertical, 8)
-                .background(StudioTheme.monitorOverlayFill, in: Capsule())
-
-                monitorInlineStatusRow
-            }
-            .padding(.top, 12)
-            .padding(.horizontal, 12)
-            .opacity(monitorChromeVisibility.inlineChromeOpacity)
-            .allowsHitTesting(monitorChromeVisibility.inlineChromeAllowsHitTesting)
+            monitorTopChrome
+                .opacity(monitorChromeVisibility.inlineChromeOpacity)
+                .allowsHitTesting(monitorChromeVisibility.inlineChromeAllowsHitTesting)
         }
         .overlay(alignment: .bottomTrailing) {
             if monitorChromeVisibility.showsCompactLiveIndicator {
@@ -116,6 +100,41 @@ struct ProgramMonitorView: View {
         .accessibilityLabel("Program monitor on air")
     }
 
+    private var monitorTopChrome: some View {
+        GeometryReader { proxy in
+            let layout = ProgramMonitorChromeLayoutModel.make(width: Double(proxy.size.width))
+
+            HStack(spacing: 10) {
+                monitorStatePill
+
+                if layout.showsFullInlineStatus {
+                    monitorInlineStatusRow
+                } else if layout.showsCompactInlineStatus {
+                    monitorCompactStatusPill
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .padding(.top, 12)
+            .padding(.horizontal, 12)
+        }
+    }
+
+    private var monitorStatePill: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(viewModel.isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Tone.idle)
+                .frame(width: 8, height: 8)
+            Text(monitorStateLabel)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(StudioTheme.monitorText)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(StudioTheme.monitorOverlayFill, in: Capsule())
+    }
+
     private var monitorInlineStatusRow: some View {
         let current = ProgramMonitorInfoBlockModel.current(
             item: viewModel.currentProgramItem,
@@ -147,6 +166,8 @@ struct ProgramMonitorView: View {
             Text(model.title.uppercased())
                 .font(StudioTheme.statusLabel())
                 .foregroundStyle(StudioTheme.monitorText.opacity(0.58))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
             Text(model.value)
                 .font(.system(size: 13, weight: .black))
                 .foregroundStyle(StudioTheme.monitorText)
@@ -156,8 +177,37 @@ struct ProgramMonitorView: View {
             Text(model.badgeText)
                 .font(.system(size: 10, weight: .black, design: .rounded))
                 .foregroundStyle(StudioTheme.color(for: model.status))
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var monitorCompactStatusPill: some View {
+        let current = ProgramMonitorInfoBlockModel.current(
+            item: viewModel.currentProgramItem,
+            isBroadcasting: viewModel.isBroadcasting,
+            isPlaying: viewModel.avCoordinator.isPlaying,
+            isHTMLLoaded: viewModel.currentHTMLURL != nil
+        )
+        let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
+
+        return HStack(spacing: 7) {
+            Text(current.value)
+                .foregroundStyle(StudioTheme.monitorText)
+            Text("->")
+                .foregroundStyle(StudioTheme.monitorText.opacity(0.55))
+            Text(next.value)
+                .foregroundStyle(StudioTheme.monitorText.opacity(0.82))
+        }
+        .font(.system(size: 12, weight: .bold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(monitorInlineAccessibilityLabel)
     }
 
     private var monitorInlineAccessibilityLabel: String {

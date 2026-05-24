@@ -77,4 +77,10 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
         XCTAssertEqual(onAir.label, "ON AIR")
         XCTAssertEqual(onAir.kind, .live)
     }
+
+    func testMonitorChromeLayoutDowngradesBeforeInlineStatusWraps() {
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 700).variant, .full)
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 375).variant, .compact)
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 280).variant, .stateOnly)
+    }
 }
