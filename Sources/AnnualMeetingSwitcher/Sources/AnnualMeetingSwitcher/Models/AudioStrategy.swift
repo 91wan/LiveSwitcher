@@ -12,30 +12,33 @@ enum AudioStrategy: String, CaseIterable {
             return
         }
 
-        switch persistedValue {
-        case "音频跟随":
-            self = .followProgram
-        case "跟随源":
-            self = .followSource
-        case "仅 BGM":
-            self = .bgmOnly
-        case "混合":
-            self = .mixed
-        default:
+        guard let strategy = Self.legacyPersistedValues[persistedValue] else {
             return nil
+        }
+        self = strategy
+    }
+
+    var displayTitleKey: String {
+        switch self {
+        case .followProgram:
+            return "audio.strategy.followProgram.title"
+        case .followSource:
+            return "audio.strategy.followSource.title"
+        case .bgmOnly:
+            return "audio.strategy.bgmOnly.title"
+        case .mixed:
+            return "audio.strategy.mixed.title"
         }
     }
 
     var displayTitle: String {
-        switch self {
-        case .followProgram:
-            return "音频跟随"
-        case .followSource:
-            return "跟随源"
-        case .bgmOnly:
-            return "仅 BGM"
-        case .mixed:
-            return "混合"
-        }
+        NSLocalizedString(displayTitleKey, bundle: .module, comment: "")
     }
+
+    private static let legacyPersistedValues: [String: AudioStrategy] = [
+        "音频跟随": .followProgram,
+        "跟随源": .followSource,
+        "仅 BGM": .bgmOnly,
+        "混合": .mixed
+    ]
 }

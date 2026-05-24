@@ -96,7 +96,7 @@ struct AudioMixerView: View {
                     value: $viewModel.masterVolume,
                     userValue: viewModel.masterVolume,
                     effectiveValue: viewModel.masterVolume,
-                    tint: StudioTheme.Action.primary
+                    tint: AudioMixerFaderAccent.master.color
                 )
                 MixerFaderCard(
                     title: "Media",
@@ -104,7 +104,7 @@ struct AudioMixerView: View {
                     value: $viewModel.mediaVolume,
                     userValue: viewModel.mediaVolume,
                     effectiveValue: pageModel.mediaEffectiveVolume,
-                    tint: StudioTheme.Action.primary
+                    tint: AudioMixerFaderAccent.media.color
                 )
                 MixerFaderCard(
                     title: "BGM",
@@ -112,7 +112,7 @@ struct AudioMixerView: View {
                     value: $viewModel.bgmVolume,
                     userValue: viewModel.bgmVolume,
                     effectiveValue: pageModel.bgmEffectiveVolume,
-                    tint: StudioTheme.Action.primary
+                    tint: AudioMixerFaderAccent.bgm.color
                 )
             }
         }
@@ -228,6 +228,17 @@ private struct MixerFaderCard: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(tint.opacity(0.12), lineWidth: 1)
         )
+        .overlay(alignment: .leading) {
+            accentStripe(tint)
+        }
+    }
+
+    private func accentStripe(_ color: Color) -> some View {
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
+            .fill(color)
+            .frame(width: 4)
+            .padding(.vertical, 10)
+            .accessibilityHidden(true)
     }
 
     private func valuePair(label: String, value: Double, tint: Color) -> some View {
@@ -263,7 +274,8 @@ private struct RoutingStrategyCard: View {
             VStack(alignment: .leading, spacing: 12) {
                 Picker("", selection: $strategy) {
                     ForEach(AudioStrategy.allCases, id: \.self) { strategy in
-                        Text(strategy.displayTitle).tag(strategy)
+                        Text(LocalizedStringKey(strategy.displayTitleKey), bundle: .module)
+                            .tag(strategy)
                     }
                 }
                 .pickerStyle(.segmented)

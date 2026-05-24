@@ -32,9 +32,13 @@ kill_running_app() {
 
 build_bundle() {
   local build_binary
+  local build_dir
+  local resource_bundle
 
   swift build --package-path "$PACKAGE_DIR"
-  build_binary="$(swift build --package-path "$PACKAGE_DIR" --show-bin-path)/$APP_BINARY_NAME"
+  build_dir="$(swift build --package-path "$PACKAGE_DIR" --show-bin-path)"
+  build_binary="$build_dir/$APP_BINARY_NAME"
+  resource_bundle="$build_dir/LiveSwitcher_LiveSwitcher.bundle"
 
   if [[ ! -x "$build_binary" ]]; then
     echo "error: built binary not found at $build_binary" >&2
@@ -46,6 +50,11 @@ build_bundle() {
 
   cp "$build_binary" "$APP_BINARY"
   chmod +x "$APP_BINARY"
+
+  if [[ -d "$resource_bundle" ]]; then
+    RESOURCE_BUNDLE="$resource_bundle"
+    cp -R "$RESOURCE_BUNDLE" "$APP_RESOURCES/"
+  fi
 
   if [[ -f "$ICON_SOURCE" ]]; then
     cp "$ICON_SOURCE" "$APP_RESOURCES/AppIcon.icns"

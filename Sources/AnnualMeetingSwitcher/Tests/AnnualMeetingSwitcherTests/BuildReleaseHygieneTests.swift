@@ -26,6 +26,17 @@ final class BuildReleaseHygieneTests: XCTestCase {
         }
     }
 
+    func testBuildScriptsCopySwiftPMResourceBundleIntoAppBundle() throws {
+        let buildAndRun = try repoText("script/build_and_run.sh")
+        let releaseBuild = try repoText("Sources/AnnualMeetingSwitcher/build_v33.sh")
+
+        for script in [buildAndRun, releaseBuild] {
+            XCTAssertTrue(script.contains("LiveSwitcher_LiveSwitcher.bundle"))
+            XCTAssertTrue(script.contains("cp -R \"$RESOURCE_BUNDLE\""))
+            XCTAssertTrue(script.contains("Contents/Resources") || script.contains("APP_RESOURCES=\"$APP_CONTENTS/Resources\""))
+        }
+    }
+
     func testPackageManifestTargetsStayAligned() throws {
         let rootPackage = try repoText("Package.swift")
         let nestedPackage = try repoText("Sources/AnnualMeetingSwitcher/Package.swift")

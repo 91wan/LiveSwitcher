@@ -6,13 +6,17 @@ import PackageDescription
 
 let package = Package(
     name: "LiveSwitcher",
+    defaultLocalization: "en",
     platforms: [
         .macOS("14.0")
     ],
     targets: [
         .executableTarget(
             name: "LiveSwitcher",
-            path: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher"
+            path: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "LiveSwitcherTests",

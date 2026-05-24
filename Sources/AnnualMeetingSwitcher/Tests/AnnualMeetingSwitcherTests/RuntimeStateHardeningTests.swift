@@ -14,7 +14,8 @@ final class RuntimeStateHardeningTests: XCTestCase {
         XCTAssertEqual(AudioStrategy(persistedValue: "音频跟随"), .followProgram)
         XCTAssertEqual(AudioStrategy(persistedValue: "跟随源"), .followSource)
         XCTAssertEqual(AudioStrategy(persistedValue: "仅 BGM"), .bgmOnly)
-        XCTAssertEqual(AudioStrategy.mixed.displayTitle, "混合")
+        XCTAssertEqual(AudioStrategy.mixed.displayTitleKey, "audio.strategy.mixed.title")
+        XCTAssertFalse(AudioStrategy.mixed.displayTitle.isEmpty)
 
         let (_, defaults) = makeIsolatedDefaults()
         defaults.set("跟随源", forKey: "audioStrategy")
