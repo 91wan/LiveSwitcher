@@ -10,6 +10,9 @@ struct AudioRoutingInput: Equatable {
     var isBGMAudioTakeoverActive: Bool
     var isSpeakerMode: Bool
     var isPanicMode: Bool
+    var isMasterMuted: Bool = false
+    var isMediaMuted: Bool = false
+    var isBGMMuted: Bool = false
     var speakerModeDuckedRatio: Float
 }
 
@@ -20,15 +23,15 @@ struct AudioRoutingOutput: Equatable {
 
 enum AudioRoutingEngine {
     static func output(for input: AudioRoutingInput) -> AudioRoutingOutput {
-        guard !input.isPanicMode else {
+        guard !input.isPanicMode, !input.isMasterMuted else {
             return AudioRoutingOutput(media: 0, bgm: 0)
         }
 
-        let media = shouldOutputMedia(input) ? duckedVolumeIfNeeded(
+        let media = shouldOutputMedia(input) && !input.isMediaMuted ? duckedVolumeIfNeeded(
             Float(input.masterVolume * input.mediaVolume),
             input: input
         ) : 0
-        let bgm = shouldOutputBGM(input) ? duckedVolumeIfNeeded(
+        let bgm = shouldOutputBGM(input) && !input.isBGMMuted ? duckedVolumeIfNeeded(
             Float(input.masterVolume * input.bgmVolume),
             input: input
         ) : 0

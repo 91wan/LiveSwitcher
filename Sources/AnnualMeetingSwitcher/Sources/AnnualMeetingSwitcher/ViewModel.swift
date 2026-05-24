@@ -100,6 +100,17 @@ final class SwitcherViewModel: ObservableObject {
         didSet { applyBGMVolume() }
     }
 
+    /// Live mode mute controls are session-scoped operator actions and are not persisted.
+    @Published var isMasterAudioMuted: Bool = false {
+        didSet { applyAudioRouting() }
+    }
+    @Published var isMediaAudioMuted: Bool = false {
+        didSet { applyAudioRouting() }
+    }
+    @Published var isBGMAudioMuted: Bool = false {
+        didSet { applyAudioRouting() }
+    }
+
     /// 音频输出策略。默认保持“混合”，与当前已存在的实际行为一致。
     @Published var audioStrategy: AudioStrategy = .mixed {
         didSet {
@@ -319,6 +330,9 @@ final class SwitcherViewModel: ObservableObject {
                 isBGMAudioTakeoverActive: isBGMAudioTakeoverActive,
                 isSpeakerMode: isSpeakerMode,
                 isPanicMode: isPanicMode,
+                isMasterMuted: isMasterAudioMuted,
+                isMediaMuted: isMediaAudioMuted,
+                isBGMMuted: isBGMAudioMuted,
                 speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         )
