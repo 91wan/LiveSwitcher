@@ -5,6 +5,7 @@ import SwiftUI
 struct ProgramMonitorView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var isHoveringPreviewDeck = false
+    var isLiveMode: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -178,7 +179,9 @@ struct ProgramMonitorView: View {
     private var monitorUtilitiesStack: some View {
         VStack(spacing: 10) {
             transitionControlCard
-            wallpaperTrayCard
+            if !isLiveMode {
+                wallpaperTrayCard
+            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)

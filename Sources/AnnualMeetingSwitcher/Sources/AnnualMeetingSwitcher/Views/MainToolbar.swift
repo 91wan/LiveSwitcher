@@ -9,6 +9,7 @@ struct MainToolbar: View {
     @State private var showHelp = false
     @State private var showPreflight = false
     var embedded: Bool = false
+    var consoleMode: ConsoleMode = .setup
     var onOpenPreview: () -> Void = {}
     var onOpenAudioMixer: () -> Void = {}
     var onOpenOverlays: () -> Void = {}
@@ -76,9 +77,17 @@ struct MainToolbar: View {
     }
 
     private var panicTint: Color {
-        viewModel.isPanicMode
+        consoleMode == .live || viewModel.isPanicMode
             ? StudioTheme.Action.danger
             : StudioTheme.Action.primary
+    }
+
+    private var panicMinWidth: CGFloat {
+        ToolbarLayoutMetrics.panicMinWidth + (consoleMode == .live ? 32 : 0)
+    }
+
+    private var panicHeight: CGFloat {
+        consoleMode == .live ? 58 : ToolbarLayoutMetrics.actionHeight
     }
 
     private var preflightModel: PreflightButtonModel {
@@ -107,8 +116,8 @@ struct MainToolbar: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
-            .frame(minWidth: ToolbarLayoutMetrics.panicMinWidth)
-            .frame(height: ToolbarLayoutMetrics.actionHeight)
+            .frame(minWidth: panicMinWidth)
+            .frame(height: panicHeight)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(panicTint)

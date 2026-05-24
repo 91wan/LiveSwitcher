@@ -2,3 +2,5 @@
 "audio.strategy.followSource" = "跟随源";
 "audio.strategy.bgmOnly" = "仅 BGM";
 "audio.strategy.mixed" = "混合";
+"console.mode.setup" = "准备";
+"console.mode.live" = "现场";

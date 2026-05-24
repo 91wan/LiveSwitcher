@@ -27,6 +27,20 @@ struct LiveSwitcherApp: App {
                 }
             }
 
+            CommandMenu("Mode") {
+                Button("Setup") {
+                    viewModel.consoleMode = .setup
+                }
+                .keyboardShortcut("s", modifiers: [.command, .shift])
+                .disabled(viewModel.consoleMode == .setup)
+
+                Button("Live") {
+                    viewModel.consoleMode = .live
+                }
+                .keyboardShortcut("l", modifiers: [.command, .shift])
+                .disabled(viewModel.consoleMode == .live)
+            }
+
             CommandMenu("现场控制") {
                 Button("打开现场安全台") {
                     openWindow(id: "safety-cockpit")

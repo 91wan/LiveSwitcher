@@ -2,3 +2,5 @@
 "audio.strategy.followSource" = "Follow Source";
 "audio.strategy.bgmOnly" = "BGM Only";
 "audio.strategy.mixed" = "Mixed";
+"console.mode.setup" = "Setup";
+"console.mode.live" = "Live";
