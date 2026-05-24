@@ -76,7 +76,12 @@ struct BGMPlaylistPanel: View {
 
             HStack {
                 Spacer()
-                StatusBadge(controls.displayStatusText, kind: controls.displayStatusKind)
+                if StatusBadgeVisibilityPolicy.shouldShow(
+                    text: controls.displayStatusText,
+                    kind: controls.displayStatusKind
+                ) {
+                    StatusBadge(controls.displayStatusText, kind: controls.displayStatusKind)
+                }
             }
         }
     }

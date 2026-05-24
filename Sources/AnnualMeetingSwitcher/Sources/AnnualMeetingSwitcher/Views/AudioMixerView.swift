@@ -309,7 +309,6 @@ private struct BGMLibraryCard: View {
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                StatusBadge("LIBRARY", kind: .idle)
             }
             Text("分类、曲目列表、添加、删除和排序集中在音频页管理。")
                 .font(StudioTheme.caption())
