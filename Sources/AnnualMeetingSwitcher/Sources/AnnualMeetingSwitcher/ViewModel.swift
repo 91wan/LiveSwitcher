@@ -48,6 +48,15 @@ struct BGMItem: Identifiable, Equatable {
 
 // MARK: - 导播台核心 ViewModel
 
+private struct LiveMasterMeterCandidate {
+    let realtimeDB: Float
+    let effectiveVolume: Float
+
+    var postFaderDB: Double {
+        Double(realtimeDB) + 20 * log10(Double(effectiveVolume))
+    }
+}
+
 @MainActor
 final class SwitcherViewModel: ObservableObject {
 
@@ -323,26 +332,43 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func liveMasterMeterRealtimeDB() -> Float? {
-        let effectiveMedia = effectiveMediaOutputVolume()
-        let effectiveBGM = effectiveBGMOutputVolume()
-        guard isBGMPlaying,
-              !isPanicMode,
-              !isMasterAudioMuted,
-              !isBGMAudioMuted,
-              effectiveBGM > 0,
-              effectiveBGM >= effectiveMedia,
-              let realtimeDB = bgmRealtimeLevelDB,
-              realtimeDB.isFinite else {
-            return nil
-        }
-        return realtimeDB
+        liveMasterMeterRealtimeCandidate()?.realtimeDB
     }
 
     func liveMasterMeterFallbackVolume() -> Float {
-        if liveMasterMeterRealtimeDB() != nil {
-            return effectiveBGMOutputVolume()
+        if let candidate = liveMasterMeterRealtimeCandidate() {
+            return candidate.effectiveVolume
         }
+
         return max(effectiveMediaOutputVolume(), effectiveBGMOutputVolume())
+    }
+
+    private func liveMasterMeterRealtimeCandidate() -> LiveMasterMeterCandidate? {
+        let effectiveMedia = effectiveMediaOutputVolume()
+        let effectiveBGM = effectiveBGMOutputVolume()
+        guard !isPanicMode, !isMasterAudioMuted else {
+            return nil
+        }
+
+        var candidates: [LiveMasterMeterCandidate] = []
+        if avCoordinator.isPlaying,
+           !isMediaAudioMuted,
+           effectiveMedia > 0,
+           let mediaDB = avCoordinator.realtimeLevelDB,
+           mediaDB.isFinite {
+            candidates.append(LiveMasterMeterCandidate(realtimeDB: mediaDB, effectiveVolume: effectiveMedia))
+        }
+        if isBGMPlaying,
+           !isBGMAudioMuted,
+           effectiveBGM > 0,
+           let bgmDB = bgmRealtimeLevelDB,
+           bgmDB.isFinite {
+            candidates.append(LiveMasterMeterCandidate(realtimeDB: bgmDB, effectiveVolume: effectiveBGM))
+        }
+
+        return candidates.max { lhs, rhs in
+            lhs.postFaderDB < rhs.postFaderDB
+        }
     }
 
     private var audioRoutingOutput: AudioRoutingOutput {

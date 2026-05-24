@@ -246,7 +246,7 @@ struct LiveAudioStrip: View {
                 value: $viewModel.mediaVolume,
                 isMuted: $viewModel.isMediaAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    realtimeDB: nil,
+                    realtimeDB: viewModel.avCoordinator.realtimeLevelDB,
                     fallbackEffectiveVolume: viewModel.effectiveMediaOutputVolume(),
                     isMuted: viewModel.isMasterAudioMuted || viewModel.isMediaAudioMuted
                 ),

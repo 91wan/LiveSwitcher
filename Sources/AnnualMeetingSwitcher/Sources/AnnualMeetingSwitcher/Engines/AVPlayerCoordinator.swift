@@ -34,6 +34,9 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 当前加载的视频 URL
     @Published var currentURL: URL?
 
+    /// Realtime media-channel power in dBFS when the current AVPlayerItem exposes readable audio.
+    @Published var realtimeLevelDB: Float?
+
     /// 播放到末尾时的回调（由 ViewModel 绑定）
     var onPlaybackEnded: (() -> Void)?
 
@@ -49,6 +52,7 @@ final class AVPlayerCoordinator: ObservableObject {
     private var timeObserverToken: Any?
     private var durationCancellable: AnyCancellable?
     private var endObserver: NSObjectProtocol?
+    private var mediaAudioMeterTap: MediaAudioMeterTap?
 
     // MARK: - Init / Deinit
 
@@ -77,7 +81,9 @@ final class AVPlayerCoordinator: ObservableObject {
         progress = 0.0
         currentTime = 0.0
 
+        realtimeLevelDB = nil
         let item = AVPlayerItem(url: url)
+        installMeterTap(on: item)
         player.replaceCurrentItem(with: item)
 
         observeItem(item)
@@ -101,6 +107,7 @@ final class AVPlayerCoordinator: ObservableObject {
         player.pause()
         player.replaceCurrentItem(with: nil)  // Bug3/4修复：清空player，监视器和大屏均回到壁纸
         currentURL = nil
+        realtimeLevelDB = nil
         isPlaying = false
         progress = 0.0
         currentTime = 0.0
@@ -205,5 +212,16 @@ final class AVPlayerCoordinator: ObservableObject {
             endObserver = nil
         }
         durationCancellable = nil
+        mediaAudioMeterTap = nil
+    }
+
+    private func installMeterTap(on item: AVPlayerItem) {
+        let tap = MediaAudioMeterTap { [weak self] levelDB in
+            Task { @MainActor [weak self] in
+                self?.realtimeLevelDB = levelDB
+            }
+        }
+        mediaAudioMeterTap = tap
+        tap.install(on: item)
     }
 }
