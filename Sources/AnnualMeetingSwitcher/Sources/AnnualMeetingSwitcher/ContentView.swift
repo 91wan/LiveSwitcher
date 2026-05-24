@@ -86,7 +86,9 @@ struct ContentView: View {
                 .layoutPriority(3)
 
             LiveOpsPanel {
-                viewModel.selectedMainTab = .audioMixer
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.consoleMode = .live
+                }
             }
             .frame(width: StudioTheme.directorRailWidth)
             .layoutPriority(1)

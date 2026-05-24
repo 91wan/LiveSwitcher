@@ -31,13 +31,24 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertTrue(source.contains(" 张"))
     }
 
-    func testLiveOpsMergesModesIntoAudioCard() throws {
+    func testSetupRunDeskRightRailNoLongerOwnsModeControls() throws {
         let source = try sourceText("Views/LiveOpsPanel.swift")
 
         XCTAssertFalse(source.contains("modesCard"))
         XCTAssertFalse(source.contains("opsCard(title: \"Modes\""))
-        XCTAssertTrue(source.contains("audioModesRow"))
-        XCTAssertTrue(source.contains("modeToggleRow("))
+        XCTAssertFalse(source.contains("audioModesRow"))
+        XCTAssertFalse(source.contains("modeToggleRow("))
+    }
+
+    func testSetupRunDeskRightRailDoesNotDuplicateSetupAudioDock() throws {
+        let source = try sourceText("Views/LiveOpsPanel.swift")
+
+        XCTAssertFalse(source.contains("private var audioCard"))
+        XCTAssertFalse(source.contains("private var bgmMiniCard"))
+        XCTAssertFalse(source.contains("BGM progress"))
+        XCTAssertFalse(source.contains("Open audio mixer page"))
+        XCTAssertTrue(source.contains("Switch to Live"))
+        XCTAssertTrue(source.contains("onSwitchToLive"))
     }
 
     func testLeftPanelUsesVisibleAddSourceGridAndNonFocusableRefresh() throws {
