@@ -517,28 +517,53 @@ struct LiveQuickRail: View {
     }
 
     private var wallpaperCard: some View {
-        let model = LiveWallpaperQuickStatusModel.make(
-            wallpaperCount: viewModel.backgroundWallpapers.count,
-            activeWallpaperTitle: viewModel.activeWallpaperURL?.lastPathComponent
+        let picker = LiveWallpaperQuickPickerModel.make(
+            wallpapers: viewModel.backgroundWallpapers,
+            activeWallpaperURL: viewModel.activeWallpaperURL
         )
 
-        return quickCard(title: "Wallpaper", status: model.statusText, kind: model.statusKind) {
-            Text(model.displayTitle)
+        return quickCard(title: "Wallpaper", status: picker.statusText, kind: picker.statusKind) {
+            Text(picker.displayTitle)
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
-                .help(model.displayTitle)
+                .help(picker.displayTitle)
 
-            Button(action: cycleWallpaper) {
-                Label("Next wallpaper", systemImage: "photo.on.rectangle.angled")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 32)
+            if picker.isEmpty {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        viewModel.consoleMode = .setup
+                        viewModel.selectedMainTab = .preview
+                    }
+                } label: {
+                    Label("Add wallpaper", systemImage: "photo.badge.plus")
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 32)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Open Setup Run Queue to import standby wallpaper.")
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(picker.items) { item in
+                            Button {
+                                viewModel.setActiveWallpaper(url: item.url)
+                            } label: {
+                                LiveWallpaperPickerThumb(item: item)
+                            }
+                            .buttonStyle(.plain)
+                            .help(item.title)
+                            .accessibilityLabel("Choose standby wallpaper")
+                            .accessibilityValue(item.isActive ? "\(item.title), active" : item.title)
+                        }
+                    }
+                    .padding(.vertical, 1)
+                }
+                .accessibilityLabel("Choose standby wallpaper")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(!model.canCycle)
         }
     }
 
@@ -701,14 +726,46 @@ struct LiveQuickRail: View {
         [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].contains(true) ? .warn : .idle
     }
 
-    private func cycleWallpaper() {
-        let wallpapers = viewModel.backgroundWallpapers
-        guard wallpapers.count >= 2 else { return }
-        let currentIndex = viewModel.activeWallpaperURL.flatMap { current in
-            wallpapers.firstIndex(of: current)
-        } ?? -1
-        let nextIndex = wallpapers.index(after: currentIndex)
-        viewModel.setActiveWallpaper(url: wallpapers[nextIndex < wallpapers.endIndex ? nextIndex : wallpapers.startIndex])
+}
+
+private struct LiveWallpaperPickerThumb: View {
+    let item: LiveWallpaperQuickPickerModel.Item
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Group {
+                if let image = NSImage(contentsOf: item.url) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle()
+                        .fill(StudioTheme.Surface.raised)
+                        .overlay {
+                            Image(systemName: "photo")
+                                .font(StudioTheme.TypeScale.caption)
+                                .foregroundStyle(StudioTheme.textTertiary)
+                                .accessibilityHidden(true)
+                        }
+                }
+            }
+            .frame(width: 44, height: 32)
+            .clipShape(.rect(cornerRadius: StudioTheme.radiusS))
+
+            if item.isActive {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(StudioTheme.TypeScale.caption)
+                    .foregroundStyle(StudioTheme.Action.primary)
+                    .background(StudioTheme.Surface.base.clipShape(Circle()))
+                    .offset(x: -3, y: 3)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(width: 46, height: 34)
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                .stroke(item.isActive ? StudioTheme.Action.primary : StudioTheme.borderSubtle, lineWidth: item.isActive ? 2 : 1)
+        )
     }
 }
 
