@@ -73,6 +73,11 @@ build_bundle() {
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
   <string>$BUNDLE_ID</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh-Hans</string>
+  </array>
   <key>CFBundleName</key>
   <string>$APP_DISPLAY_NAME</string>
   <key>CFBundlePackageType</key>

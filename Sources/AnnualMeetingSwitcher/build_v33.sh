@@ -51,6 +51,11 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << PLIST
   <string>AppIcon</string>
   <key>CFBundleIdentifier</key>
   <string>com.91wan.liveswitcher</string>
+  <key>CFBundleLocalizations</key>
+  <array>
+    <string>en</string>
+    <string>zh-Hans</string>
+  </array>
   <key>CFBundleName</key>
   <string>LiveSwitcher</string>
   <key>CFBundlePackageType</key>

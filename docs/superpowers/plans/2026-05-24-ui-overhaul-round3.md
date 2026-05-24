@@ -86,6 +86,12 @@
 - [x] Capture local Audio screenshots to inspect accent stripes and strategy labels.
 - [x] Open PR, wait for CI, squash merge on green.
 
+## Goal Sweep Follow-Up
+
+- [x] Align mixer accent semantics exactly with the review brief: Master `Action.primary`, Media `Action.secondary`, and BGM `Tone.warn`.
+- [x] Keep mixer slider tint on `Action.primary` so the channel stripe is only a fader fingerprint, not a changed transport/action color.
+- [x] Shorten AudioStrategy localization keys to the stable `audio.strategy.*` form and declare `en` / `zh-Hans` bundle localizations in generated app bundles.
+
 ## Verification For Every Code PR
 
 - `swift build`

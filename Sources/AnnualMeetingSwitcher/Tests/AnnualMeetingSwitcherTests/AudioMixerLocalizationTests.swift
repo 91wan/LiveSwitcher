@@ -4,8 +4,8 @@ import XCTest
 final class AudioMixerLocalizationTests: XCTestCase {
     func testMixerFaderAccentModelExposesThreeDistinctSemanticTokens() {
         XCTAssertEqual(AudioMixerFaderAccent.master.rawValue, "action.primary")
-        XCTAssertEqual(AudioMixerFaderAccent.media.rawValue, "tone.warn")
-        XCTAssertEqual(AudioMixerFaderAccent.bgm.rawValue, "tone.ready")
+        XCTAssertEqual(AudioMixerFaderAccent.media.rawValue, "action.secondary")
+        XCTAssertEqual(AudioMixerFaderAccent.bgm.rawValue, "tone.warn")
         XCTAssertEqual(Set(AudioMixerFaderAccent.allCases.map(\.rawValue)).count, 3)
     }
 
@@ -13,9 +13,10 @@ final class AudioMixerLocalizationTests: XCTestCase {
         let view = try String(contentsOf: sourceURL("Views/AudioMixerView.swift"), encoding: .utf8)
 
         XCTAssertTrue(view.contains("accentStripe("), "Mixer fader cards should expose a visible semantic left accent stripe.")
-        XCTAssertTrue(view.contains("AudioMixerFaderAccent.master.color"))
-        XCTAssertTrue(view.contains("AudioMixerFaderAccent.media.color"))
-        XCTAssertTrue(view.contains("AudioMixerFaderAccent.bgm.color"))
+        XCTAssertTrue(view.contains("accentColor: AudioMixerFaderAccent.master.color"))
+        XCTAssertTrue(view.contains("accentColor: AudioMixerFaderAccent.media.color"))
+        XCTAssertTrue(view.contains("accentColor: AudioMixerFaderAccent.bgm.color"))
+        XCTAssertTrue(view.contains("sliderTint: StudioTheme.Action.primary"))
     }
 
     func testAudioMixerFaderAccentModelDefinesDistinctTokens() throws {
@@ -26,8 +27,9 @@ final class AudioMixerLocalizationTests: XCTestCase {
         XCTAssertTrue(model.contains("case media"))
         XCTAssertTrue(model.contains("case bgm"))
         XCTAssertTrue(model.contains("\"action.primary\""))
+        XCTAssertTrue(model.contains("\"action.secondary\""))
         XCTAssertTrue(model.contains("\"tone.warn\""))
-        XCTAssertTrue(model.contains("\"tone.ready\""))
+        XCTAssertFalse(model.contains("\"tone.ready\""))
     }
 
     func testAudioStrategyUsesStableLocalizedDisplayKeys() throws {
@@ -35,10 +37,14 @@ final class AudioMixerLocalizationTests: XCTestCase {
 
         XCTAssertTrue(strategy.contains("var displayTitleKey: String"))
         XCTAssertTrue(strategy.contains("NSLocalizedString(displayTitleKey"))
-        XCTAssertTrue(strategy.contains("audio.strategy.followProgram.title"))
-        XCTAssertTrue(strategy.contains("audio.strategy.followSource.title"))
-        XCTAssertTrue(strategy.contains("audio.strategy.bgmOnly.title"))
-        XCTAssertTrue(strategy.contains("audio.strategy.mixed.title"))
+        XCTAssertTrue(strategy.contains("audio.strategy.followProgram"))
+        XCTAssertTrue(strategy.contains("audio.strategy.followSource"))
+        XCTAssertTrue(strategy.contains("audio.strategy.bgmOnly"))
+        XCTAssertTrue(strategy.contains("audio.strategy.mixed"))
+        XCTAssertFalse(strategy.contains("audio.strategy.followProgram.title"))
+        XCTAssertFalse(strategy.contains("audio.strategy.followSource.title"))
+        XCTAssertFalse(strategy.contains("audio.strategy.bgmOnly.title"))
+        XCTAssertFalse(strategy.contains("audio.strategy.mixed.title"))
         XCTAssertFalse(strategy.contains("return \"音频跟随\""))
         XCTAssertFalse(strategy.contains("return \"跟随源\""))
         XCTAssertFalse(strategy.contains("return \"仅 BGM\""))
@@ -50,18 +56,18 @@ final class AudioMixerLocalizationTests: XCTestCase {
         let chinese = try String(contentsOf: sourceURL("Resources/zh-Hans.lproj/Localizable.strings"), encoding: .utf8)
 
         for key in [
-            "audio.strategy.followProgram.title",
-            "audio.strategy.followSource.title",
-            "audio.strategy.bgmOnly.title",
-            "audio.strategy.mixed.title"
+            "audio.strategy.followProgram",
+            "audio.strategy.followSource",
+            "audio.strategy.bgmOnly",
+            "audio.strategy.mixed"
         ] {
             XCTAssertTrue(english.contains("\"\(key)\""))
             XCTAssertTrue(chinese.contains("\"\(key)\""))
         }
 
-        XCTAssertTrue(english.contains("\"Follow program\""))
-        XCTAssertTrue(english.contains("\"Follow source\""))
-        XCTAssertTrue(english.contains("\"BGM only\""))
+        XCTAssertTrue(english.contains("\"Follow Program\""))
+        XCTAssertTrue(english.contains("\"Follow Source\""))
+        XCTAssertTrue(english.contains("\"BGM Only\""))
         XCTAssertTrue(english.contains("\"Mixed\""))
         XCTAssertTrue(chinese.contains("\"音频跟随\""))
         XCTAssertTrue(chinese.contains("\"跟随源\""))
