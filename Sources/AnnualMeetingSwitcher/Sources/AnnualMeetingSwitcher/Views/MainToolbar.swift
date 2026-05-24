@@ -107,7 +107,7 @@ struct MainToolbar: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
             .frame(minWidth: ToolbarLayoutMetrics.panicMinWidth)
-            .frame(height: 46)
+            .frame(height: ToolbarLayoutMetrics.actionHeight)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(panicTint)
@@ -144,7 +144,7 @@ struct MainToolbar: View {
             .foregroundStyle(StudioTheme.color(for: preflightModel.status))
             .padding(.horizontal, 12)
             .frame(minWidth: ToolbarLayoutMetrics.preflightMinWidth)
-            .frame(height: 46)
+            .frame(height: ToolbarLayoutMetrics.actionHeight)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(StudioTheme.color(for: preflightModel.status).opacity(0.10))
@@ -170,7 +170,7 @@ struct MainToolbar: View {
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .frame(minWidth: ToolbarLayoutMetrics.helpMinWidth)
-                .frame(height: 38)
+                .frame(height: ToolbarLayoutMetrics.actionHeight)
                 .padding(.horizontal, 12)
                 .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
                 .overlay(

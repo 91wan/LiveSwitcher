@@ -45,6 +45,7 @@ struct LeftPanel: View {
             }
         }
         .toggleStyle(.switch)
+        .tint(StudioTheme.Tone.warn)
         .controlSize(.small)
         .padding(.horizontal, 2)
         .padding(.vertical, 2)
@@ -158,31 +159,23 @@ struct LeftPanel: View {
         } else {
             List {
                 ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
-                    HStack(spacing: 6) {
-                        // Issue #10: 显式排序手柄图标
-                        Image(systemName: "line.3.horizontal")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(width: 20)
-                            .help("拖动此图标可排序")
-
-                        SignalSourceRow(
-                            item: item,
-                            queuePosition: index + 1,
-                            queueRole: queueRole(for: index, currentIndex: currentIndex),
-                            isSelected: viewModel.currentProgramItem?.id == item.id,
-                            isBroadcasting: viewModel.isBroadcasting,
-                            isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
-                            avCoordinator: viewModel.avCoordinator,
-                            onSelect: { viewModel.switchToProgram(item) },
-                            onTogglePause: { viewModel.togglePause(for: item) },
-                            onEndHTML: { viewModel.endHTMLPresentation() },
-                            onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
-                            onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
-                            onDelete: { viewModel.removeProgramItem(withID: item.id) }
-                        )
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
+                    SignalSourceRow(
+                        item: item,
+                        queuePosition: index + 1,
+                        queueRole: queueRole(for: index, currentIndex: currentIndex),
+                        isSelected: viewModel.currentProgramItem?.id == item.id,
+                        isBroadcasting: viewModel.isBroadcasting,
+                        isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
+                        avCoordinator: viewModel.avCoordinator,
+                        onSelect: { viewModel.switchToProgram(item) },
+                        onTogglePause: { viewModel.togglePause(for: item) },
+                        onEndHTML: { viewModel.endHTMLPresentation() },
+                        onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
+                        onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
+                        onDelete: { viewModel.removeProgramItem(withID: item.id) }
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityHint("Drag to reorder.")
                     .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)

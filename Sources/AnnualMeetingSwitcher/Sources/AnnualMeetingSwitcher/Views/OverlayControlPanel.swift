@@ -123,6 +123,7 @@ struct OverlayControlPanel: View {
         overlaySection(
             kind: .lowerThird,
             isLive: viewModel.isLowerThirdVisible,
+            hasDraftInput: !composerState.trimmedLowerThirdName.isEmpty,
             disabledReason: OverlayUIState.lowerThirdDisabledReason(
                 name: composerState.lowerThirdNameDraft,
                 isLive: viewModel.isLowerThirdVisible
@@ -181,6 +182,7 @@ struct OverlayControlPanel: View {
         overlaySection(
             kind: .countdown,
             isLive: viewModel.isCountdownActive,
+            hasDraftInput: composerState.countdownTotalSeconds > 0,
             disabledReason: OverlayUIState.countdownDisabledReason(
                 minutes: composerState.countdownMinutesDraft,
                 seconds: composerState.countdownSecondsDraft,
@@ -253,6 +255,7 @@ struct OverlayControlPanel: View {
         overlaySection(
             kind: .ticker,
             isLive: viewModel.isTickerActive,
+            hasDraftInput: !composerState.trimmedTickerText.isEmpty,
             disabledReason: OverlayUIState.tickerDisabledReason(
                 text: composerState.tickerTextDraft,
                 isLive: viewModel.isTickerActive
@@ -396,6 +399,7 @@ struct OverlayControlPanel: View {
     private func overlaySection<Content: View>(
         kind: OverlayComposerKind,
         isLive: Bool,
+        hasDraftInput: Bool,
         disabledReason: String?,
         @ViewBuilder content: () -> Content
     ) -> some View {
@@ -405,7 +409,14 @@ struct OverlayControlPanel: View {
                     .font(.system(size: 15, weight: .bold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                statusBadge(title: composerStatusText(isLive: isLive, disabledReason: disabledReason), isLive: isLive)
+                statusBadge(
+                    title: OverlayComposerStatus.text(
+                        isLive: isLive,
+                        hasDraftInput: hasDraftInput,
+                        disabledReason: disabledReason
+                    ),
+                    isLive: isLive
+                )
             }
 
             content()
@@ -419,12 +430,6 @@ struct OverlayControlPanel: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(isLive ? StudioTheme.borderCritical.opacity(0.50) : StudioTheme.borderSubtle, lineWidth: 1)
         )
-    }
-
-    private func composerStatusText(isLive: Bool, disabledReason: String?) -> String {
-        if isLive { return "LIVE" }
-        if disabledReason == nil { return "READY" }
-        return "DRAFT"
     }
 
     private func statusBadge(title: String, isLive: Bool) -> some View {

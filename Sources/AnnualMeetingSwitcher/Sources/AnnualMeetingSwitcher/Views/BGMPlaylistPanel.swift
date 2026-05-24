@@ -283,14 +283,8 @@ struct BGMPlaylistPanel: View {
             } else {
                 List {
                     ForEach(filteredBGM) { bgm in
-                        HStack(spacing: 6) {
-                            Image(systemName: "line.3.horizontal")
-                                .font(.system(size: 16))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                                .frame(width: 20)
-                                .help("拖动此图标可排序")
-                            BGMItemRow(bgm: bgm, viewModel: viewModel)
-                        }
+                        BGMItemRow(bgm: bgm, viewModel: viewModel)
+                            .accessibilityHint("Drag to reorder.")
                         .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
