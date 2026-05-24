@@ -263,6 +263,7 @@ struct OutputView: View {
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .animation(.easeInOut(duration: 0.25), value: displayState.isPanicMode)
+        .animation(.easeInOut(duration: 1.0), value: displayState.isFadeToBlackActive)
         .animation(.easeInOut(duration: 0.25), value: displayState.isCountdownActive)
         .animation(.easeInOut(duration: 0.25), value: displayState.isTickerActive)
         .animation(.easeInOut(duration: 0.25), value: displayState.isLowerThirdVisible)
@@ -328,10 +329,19 @@ private struct OutputOverlayLayer: View, Equatable {
                 .zIndex(5)
             }
 
+            if displayState.isFadeToBlackActive {
+                Color.black
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+                    .zIndex(8)
+                    .accessibilityLabel("Fade to black active")
+            }
+
             // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）
             if displayState.isPanicMode {
                 PanicLayer()
                     .transition(.opacity)
+                    .zIndex(10)
             }
         }
     }

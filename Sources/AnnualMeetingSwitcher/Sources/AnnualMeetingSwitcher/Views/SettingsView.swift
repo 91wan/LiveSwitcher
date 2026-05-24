@@ -12,7 +12,7 @@ struct SettingsView: View {
                     Text("Overlays / 叠层字幕")
                         .font(StudioTheme.titleLarge())
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text("左侧控制上屏，右侧预览位置和当前 live 状态。输入为空时会显示禁用原因，避免误上屏。")
+                    Text("Compose on the left, preview on the right. Empty input shows the reason so nothing accidentally goes live.")
                         .font(StudioTheme.body())
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
