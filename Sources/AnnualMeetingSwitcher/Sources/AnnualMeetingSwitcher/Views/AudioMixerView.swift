@@ -96,7 +96,8 @@ struct AudioMixerView: View {
                     value: $viewModel.masterVolume,
                     userValue: viewModel.masterVolume,
                     effectiveValue: viewModel.masterVolume,
-                    tint: AudioMixerFaderAccent.master.color
+                    accentColor: AudioMixerFaderAccent.master.color,
+                    sliderTint: StudioTheme.Action.primary
                 )
                 MixerFaderCard(
                     title: "Media",
@@ -104,7 +105,8 @@ struct AudioMixerView: View {
                     value: $viewModel.mediaVolume,
                     userValue: viewModel.mediaVolume,
                     effectiveValue: pageModel.mediaEffectiveVolume,
-                    tint: AudioMixerFaderAccent.media.color
+                    accentColor: AudioMixerFaderAccent.media.color,
+                    sliderTint: StudioTheme.Action.primary
                 )
                 MixerFaderCard(
                     title: "BGM",
@@ -112,7 +114,8 @@ struct AudioMixerView: View {
                     value: $viewModel.bgmVolume,
                     userValue: viewModel.bgmVolume,
                     effectiveValue: pageModel.bgmEffectiveVolume,
-                    tint: AudioMixerFaderAccent.bgm.color
+                    accentColor: AudioMixerFaderAccent.bgm.color,
+                    sliderTint: StudioTheme.Action.primary
                 )
             }
         }
@@ -196,7 +199,8 @@ private struct MixerFaderCard: View {
     @Binding var value: Double
     let userValue: Double
     let effectiveValue: Double
-    let tint: Color
+    let accentColor: Color
+    let sliderTint: Color
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -212,24 +216,24 @@ private struct MixerFaderCard: View {
                 }
                 Spacer()
                 HStack(spacing: 10) {
-                    valuePair(label: "User", value: userValue, tint: tint)
-                    valuePair(label: "Effective", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.Tone.muted : tint)
+                    valuePair(label: "User", value: userValue, tint: sliderTint)
+                    valuePair(label: "Effective", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.Tone.muted : sliderTint)
                 }
             }
 
             Slider(value: $value, in: 0...1)
-                .tint(tint)
+                .tint(sliderTint)
                 .accessibilityLabel("\(title) volume")
                 .accessibilityValue("User \(percent(userValue)), effective \(percent(effectiveValue))")
         }
         .padding(12)
-        .background(tint.opacity(0.055), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(accentColor.opacity(0.055), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(tint.opacity(0.12), lineWidth: 1)
+                .stroke(accentColor.opacity(0.12), lineWidth: 1)
         )
         .overlay(alignment: .leading) {
-            accentStripe(tint)
+            accentStripe(accentColor)
         }
     }
 

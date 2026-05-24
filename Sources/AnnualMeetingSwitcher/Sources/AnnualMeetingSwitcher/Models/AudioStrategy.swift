@@ -21,13 +21,13 @@ enum AudioStrategy: String, CaseIterable {
     var displayTitleKey: String {
         switch self {
         case .followProgram:
-            return "audio.strategy.followProgram.title"
+            return "audio.strategy.followProgram"
         case .followSource:
-            return "audio.strategy.followSource.title"
+            return "audio.strategy.followSource"
         case .bgmOnly:
-            return "audio.strategy.bgmOnly.title"
+            return "audio.strategy.bgmOnly"
         case .mixed:
-            return "audio.strategy.mixed.title"
+            return "audio.strategy.mixed"
         }
     }
 

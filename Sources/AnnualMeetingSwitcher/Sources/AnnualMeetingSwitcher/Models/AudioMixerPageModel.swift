@@ -52,17 +52,17 @@ struct AudioMixerPageModel: Equatable {
 
 enum AudioMixerFaderAccent: String, CaseIterable, Equatable {
     case master = "action.primary"
-    case media = "tone.warn"
-    case bgm = "tone.ready"
+    case media = "action.secondary"
+    case bgm = "tone.warn"
 
     var color: Color {
         switch self {
         case .master:
             return StudioTheme.Action.primary
         case .media:
-            return StudioTheme.Tone.warn
+            return StudioTheme.Action.secondary
         case .bgm:
-            return StudioTheme.Tone.ready
+            return StudioTheme.Tone.warn
         }
     }
 }

@@ -37,6 +37,17 @@ final class BuildReleaseHygieneTests: XCTestCase {
         }
     }
 
+    func testBuildScriptsDeclareSupportedBundleLocalizations() throws {
+        let buildAndRun = try repoText("script/build_and_run.sh")
+        let releaseBuild = try repoText("Sources/AnnualMeetingSwitcher/build_v33.sh")
+
+        for script in [buildAndRun, releaseBuild] {
+            XCTAssertTrue(script.contains("CFBundleLocalizations"))
+            XCTAssertTrue(script.contains("<string>en</string>"))
+            XCTAssertTrue(script.contains("<string>zh-Hans</string>"))
+        }
+    }
+
     func testPackageManifestTargetsStayAligned() throws {
         let rootPackage = try repoText("Package.swift")
         let nestedPackage = try repoText("Sources/AnnualMeetingSwitcher/Package.swift")
