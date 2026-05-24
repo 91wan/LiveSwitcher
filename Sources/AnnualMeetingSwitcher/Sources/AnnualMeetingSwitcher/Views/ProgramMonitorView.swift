@@ -8,24 +8,28 @@ struct ProgramMonitorView: View {
     var isLiveMode: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Program")
-                    .font(StudioTheme.title())
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text("Monitor")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-                Spacer()
+        VStack(alignment: .leading, spacing: isLiveMode ? 0 : 12) {
+            if !isLiveMode {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Program")
+                        .font(StudioTheme.title())
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text("Monitor")
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
+                    Spacer()
+                }
             }
 
             previewDeck
 
-            monitorUtilitiesStack
+            if !isLiveMode {
+                monitorUtilitiesStack
+            }
 
             Spacer(minLength: 0)
         }
-        .padding(18)
+        .padding(isLiveMode ? 12 : 18)
         .studioCard(cornerRadius: 24)
     }
 
@@ -79,7 +83,7 @@ struct ProgramMonitorView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(maxHeight: 342)
+        .frame(maxHeight: livePreviewMaxHeight)
         .aspectRatio(16.0 / 9.0, contentMode: .fit)
         .shadow(color: StudioTheme.shadowStrong, radius: 12, x: 0, y: 8)
         .onHover { hovering in
@@ -90,6 +94,10 @@ struct ProgramMonitorView: View {
         .animation(.easeInOut(duration: 0.16), value: monitorChromeVisibility)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(viewModel.isBroadcasting ? "Program monitor on air" : "Program monitor standby")
+    }
+
+    private var livePreviewMaxHeight: CGFloat {
+        isLiveMode ? .infinity : 342
     }
 
     private var compactLiveIndicator: some View {
