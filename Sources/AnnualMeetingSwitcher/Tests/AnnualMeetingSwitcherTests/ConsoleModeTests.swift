@@ -22,6 +22,15 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(chinese.contains("\"console.mode.live\" = \"现场\";"))
     }
 
+    func testSetupTabsExposeCompactNavigationMetadata() {
+        XCTAssertEqual(MainConsoleTab.preview.setupMenuTitle, "Run Queue")
+        XCTAssertEqual(MainConsoleTab.preview.systemImage, "play.square.stack.fill")
+        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuTitle, "Audio")
+        XCTAssertEqual(MainConsoleTab.audioMixer.systemImage, "slider.horizontal.3")
+        XCTAssertEqual(MainConsoleTab.overlays.setupMenuTitle, "Overlays")
+        XCTAssertEqual(MainConsoleTab.overlays.systemImage, "rectangle.3.group.bubble.left.fill")
+    }
+
     @MainActor
     func testViewModelDefaultsToSetupAndPersistsConsoleMode() {
         let suiteName = "ConsoleModeTests-\(UUID().uuidString)"
@@ -40,7 +49,9 @@ final class ConsoleModeTests: XCTestCase {
         let source = try sourceText("ContentView.swift")
 
         XCTAssertTrue(source.contains("consoleModeCluster"))
-        XCTAssertTrue(source.contains("setupTabCluster"))
+        XCTAssertTrue(source.contains("setupModeMenuButton"))
+        XCTAssertFalse(source.contains("setupTabCluster"))
+        XCTAssertFalse(source.contains("navigationTab("))
         XCTAssertTrue(source.contains("viewModel.consoleMode == .setup"))
         XCTAssertTrue(source.contains("activeContentTab"))
     }
@@ -68,6 +79,13 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(app.contains("viewModel.consoleMode = .live"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"s\", modifiers: [.command, .shift])"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"l\", modifiers: [.command, .shift])"))
+    }
+
+    func testMainConsoleUsesAutoPresentedWindowGroup() throws {
+        let app = try sourceText("App.swift")
+
+        XCTAssertTrue(app.contains("WindowGroup(\"LiveSwitcher\", id: \"main-console\")"))
+        XCTAssertTrue(app.contains("Window(\"Live Safety Cockpit\", id: \"safety-cockpit\")"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

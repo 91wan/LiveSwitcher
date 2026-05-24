@@ -15,6 +15,28 @@ enum MainConsoleTab: Int, CaseIterable, Equatable {
             return "LiveSwitcher · Overlays"
         }
     }
+
+    var setupMenuTitle: String {
+        switch self {
+        case .preview:
+            return "Run Queue"
+        case .audioMixer:
+            return "Audio"
+        case .overlays:
+            return "Overlays"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .preview:
+            return "play.square.stack.fill"
+        case .audioMixer:
+            return "slider.horizontal.3"
+        case .overlays:
+            return "rectangle.3.group.bubble.left.fill"
+        }
+    }
 }
 
 struct TabRetentionModel: Equatable {
