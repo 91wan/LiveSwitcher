@@ -51,7 +51,7 @@
 - [x] Keep BGM waveform thumbnails out of this PR, per the review brief.
 - [x] Run targeted thumbnail tests, then the full local verification chain.
 - [x] Capture Run Queue screenshots with media, HTML, and presentation/fallback rows.
-- [ ] Open PR, wait for CI, and squash merge on green.
+- [x] Open PR, wait for CI, and squash merge on green.
 
 ## PR P: Setup / Live Mode Switcher
 
@@ -73,7 +73,7 @@
 - [x] Add menu commands for `Command-Shift-S` Setup and `Command-Shift-L` Live.
 - [x] Run targeted console-mode tests, then the full local verification chain.
 - [x] Capture Setup and Live mode screenshots.
-- [ ] Open PR, wait for CI, and squash merge on green.
+- [x] Open PR, wait for CI, and squash merge on green.
 
 ## Verification For Every PR
 
