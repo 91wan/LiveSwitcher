@@ -21,7 +21,10 @@ struct PreflightPopoverView: View {
 
                 Spacer()
 
-                StatusBadge("Preflight", kind: PreflightButtonModel.make(summary: viewModel.livePreflightSummary).status)
+                let headerBadge = PreflightHeaderBadgeModel.make(summary: viewModel.livePreflightSummary)
+                if headerBadge.isVisible {
+                    StatusBadge(headerBadge.text, kind: headerBadge.kind)
+                }
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 16)
