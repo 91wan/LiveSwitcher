@@ -318,7 +318,7 @@ private struct LiveAudioFader: View {
                     Label(isMuted ? "Unmute" : "Mute", systemImage: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .labelStyle(.iconOnly)
-                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 22)
+                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
