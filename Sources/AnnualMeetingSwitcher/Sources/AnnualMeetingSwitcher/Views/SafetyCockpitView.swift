@@ -32,7 +32,7 @@ struct SafetyCockpitView: View {
     private var header: some View {
         HStack(alignment: .center, spacing: 18) {
             Image(systemName: headerIcon)
-                .font(.system(size: 34, weight: .black))
+                .font(StudioTheme.TypeScale.display.weight(.black))
                 .foregroundStyle(StudioTheme.color(for: headerKind))
                 .frame(width: 48, height: 48)
 
@@ -116,7 +116,7 @@ struct SafetyCockpitView: View {
         HStack(spacing: 10) {
             Image(systemName: "checkmark.seal.fill")
                 .foregroundStyle(StudioTheme.Tone.ready)
-                .font(.system(size: 18, weight: .black))
+                .font(StudioTheme.TypeScale.numeric)
             VStack(alignment: .leading, spacing: 3) {
                 Text("No blocking rows")
                     .font(StudioTheme.body())
@@ -163,15 +163,15 @@ struct SafetyCockpitView: View {
                     ForEach(cockpit.recentEvents) { event in
                         HStack(alignment: .top, spacing: 9) {
                             Text(event.timestamp)
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .font(StudioTheme.TypeScale.monoCaption)
                                 .foregroundStyle(StudioTheme.textSecondary)
                                 .frame(width: 150, alignment: .leading)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(event.kind)
-                                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                                    .font(StudioTheme.TypeScale.mono.weight(.bold))
                                     .foregroundStyle(StudioTheme.textPrimary)
                                 Text(event.detail)
-                                    .font(.system(size: 11, weight: .medium))
+                                    .font(StudioTheme.TypeScale.caption)
                                     .foregroundStyle(StudioTheme.textSecondary)
                             }
                             Spacer(minLength: 0)
@@ -210,7 +210,7 @@ struct SafetyCockpitView: View {
 
     private func messageBanner(_ message: String, color: Color) -> some View {
         Text(message)
-            .font(.system(size: 12, weight: .bold))
+            .font(StudioTheme.TypeScale.caption.weight(.bold))
             .foregroundStyle(color)
             .padding(.horizontal, 11)
             .padding(.vertical, 8)
@@ -331,20 +331,20 @@ private struct SafetyCheckRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: iconName)
-                .font(.system(size: 14, weight: .black))
+                .font(StudioTheme.TypeScale.heading.weight(.black))
                 .foregroundStyle(StudioTheme.color(for: statusKind))
                 .frame(width: 18, height: 18)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 7) {
                     Text(check.title)
-                        .font(.system(size: 13, weight: .bold))
+                        .font(StudioTheme.TypeScale.body.weight(.bold))
                         .foregroundStyle(StudioTheme.textPrimary)
                     StatusBadge(check.status.displayTitle, kind: statusKind)
                 }
 
                 Text(check.message)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(StudioTheme.TypeScale.caption)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
@@ -400,7 +400,7 @@ private struct SafetyCheckRow: View {
 
     private func guidanceBadge(_ label: String, _ action: LivePreflightActionKind) -> some View {
         Label(label, systemImage: guidanceIcon(for: action))
-            .font(.system(size: 11, weight: .bold))
+            .font(StudioTheme.TypeScale.caption.weight(.bold))
             .foregroundStyle(StudioTheme.textSecondary)
             .padding(.horizontal, 9)
             .padding(.vertical, 5)
