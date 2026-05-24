@@ -41,14 +41,14 @@ struct LiveOpsPanel: View {
             Button(action: { viewModel.handleSafeBroadcastToggle() }) {
                 HStack(spacing: 8) {
                     Image(systemName: viewModel.isBroadcasting ? "stop.fill" : "antenna.radiowaves.left.and.right")
-                        .font(.system(size: 13, weight: .black))
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(model.title)
-                            .font(.system(size: 12, weight: .black))
+                            .font(StudioTheme.TypeScale.caption.weight(.black))
                             .lineLimit(1)
                         Text(model.screenLabel)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(StudioTheme.TypeScale.label.weight(.semibold))
                             .opacity(0.82)
                             .lineLimit(1)
                     }
@@ -79,7 +79,7 @@ struct LiveOpsPanel: View {
         opsCard(title: "Audio", status: audioStatusText, kind: audioStatusKind) {
             HStack(spacing: 10) {
                 Image(systemName: "speaker.wave.2.fill")
-                    .font(.system(size: 14, weight: .semibold))
+                    .font(StudioTheme.TypeScale.body.weight(.semibold))
                     .foregroundStyle(StudioTheme.Action.primary)
                     .frame(width: 18)
                     .accessibilityHidden(true)
@@ -89,7 +89,7 @@ struct LiveOpsPanel: View {
                     .accessibilityLabel("Master volume")
                     .accessibilityValue("\(Int(viewModel.masterVolume * 100)) percent")
                 Text("\(Int(viewModel.masterVolume * 100))%")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.Action.primary)
                     .frame(width: 38, alignment: .trailing)
             }
@@ -99,7 +99,7 @@ struct LiveOpsPanel: View {
                 miniMetric("BGM", value: "\(Int(viewModel.effectiveBGMOutputVolume() * 100))%")
                 Button(action: onOpenMixer) {
                     Label("Mixer", systemImage: "slider.horizontal.3")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(height: 28)
                 }
                 .buttonStyle(.bordered)
@@ -120,7 +120,7 @@ struct LiveOpsPanel: View {
 
         return opsCard(title: "BGM", status: controls.displayStatusText, kind: controls.displayStatusKind) {
             Text(viewModel.currentBGMItem?.title ?? "No BGM selected")
-                .font(.system(size: 12, weight: .bold))
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .help(viewModel.currentBGMItem?.title ?? "No BGM selected")
@@ -142,7 +142,7 @@ struct LiveOpsPanel: View {
                 Spacer()
                 Button(action: onOpenMixer) {
                     Text("Library")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -235,7 +235,7 @@ struct LiveOpsPanel: View {
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textTertiary)
             Text(value)
-                .font(.system(size: 12, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.caption.weight(.black))
                 .foregroundStyle(StudioTheme.textPrimary)
         }
         .padding(.horizontal, 6)
@@ -252,7 +252,7 @@ struct LiveOpsPanel: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 13, weight: .bold))
+                .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
                 .frame(width: LiveOpsLayoutMetrics.bgmTransportButtonSize, height: LiveOpsLayoutMetrics.bgmTransportButtonSize)
                 .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
@@ -328,7 +328,7 @@ struct LiveOpsToggleStyle: ToggleStyle {
         } label: {
             HStack(spacing: 7) {
                 configuration.label
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(configuration.isOn ? StudioTheme.Tone.warn : StudioTheme.textPrimary)
                     .lineLimit(1)
                 Spacer()

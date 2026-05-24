@@ -19,7 +19,7 @@ struct SetupAudioDock: View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Audio")
-                    .font(.system(size: 12, weight: .black, design: .rounded))
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(model.mutedChannelCount == 0 ? "Setup dock" : "\(model.mutedChannelCount) muted")
                     .font(StudioTheme.caption())
@@ -58,7 +58,7 @@ struct SetupAudioDock: View {
                 onOpenMixer()
             } label: {
                 Label("Mixer", systemImage: "slider.horizontal.3")
-                    .font(.system(size: 12, weight: .black))
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
@@ -84,10 +84,10 @@ private struct SetupAudioDockChannel: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Text(title)
-                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text("User \(userText) · Out \(effectiveText)")
-                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
                 Spacer(minLength: 4)
@@ -95,7 +95,7 @@ private struct SetupAudioDockChannel: View {
                     isMuted.toggle()
                 } label: {
                     Image(systemName: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .font(.system(size: 10, weight: .black))
+                        .font(StudioTheme.TypeScale.label)
                         .frame(width: 24, height: 20)
                 }
                 .buttonStyle(.bordered)
