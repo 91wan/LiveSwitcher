@@ -34,7 +34,7 @@
 - [x] Wire a `View -> Theme -> System / Light / Dark` command menu that changes the active override.
 - [x] Run targeted theme tests, then the full local verification chain.
 - [x] Capture Run, Audio, and Overlays screenshots in dark and light modes.
-- [ ] Open PR, wait for CI, and squash merge on green.
+- [x] Open PR, wait for CI, and squash merge on green.
 
 ## PR O: Program Source Thumbnails
 
@@ -45,12 +45,12 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift` if `SignalSourceRow` still lives there.
 - Test: `Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ThumbnailServiceTests.swift`
 
-- [ ] Add failing tests for deterministic thumbnail cache keys, cache directory location, source-kind fallback symbols, and cache invalidation on mtime changes.
-- [ ] Implement `ThumbnailService` as an actor with cached async generation for media, HTML, and presentation sources.
-- [ ] Render 48x27 16:9 thumbnails in program rows with loading and fallback states.
-- [ ] Keep BGM waveform thumbnails out of this PR, per the review brief.
-- [ ] Run targeted thumbnail tests, then the full local verification chain.
-- [ ] Capture Run Queue screenshots with media, HTML, and presentation/fallback rows.
+- [x] Add failing tests for deterministic thumbnail cache keys, cache directory location, source-kind fallback symbols, and cache invalidation on mtime changes.
+- [x] Implement `ThumbnailService` as an actor with cached async generation for media, HTML, and presentation sources.
+- [x] Render 48x27 16:9 thumbnails in program rows with loading and fallback states.
+- [x] Keep BGM waveform thumbnails out of this PR, per the review brief.
+- [x] Run targeted thumbnail tests, then the full local verification chain.
+- [x] Capture Run Queue screenshots with media, HTML, and presentation/fallback rows.
 - [ ] Open PR, wait for CI, and squash merge on green.
 
 ## PR P: Setup / Live Mode Switcher

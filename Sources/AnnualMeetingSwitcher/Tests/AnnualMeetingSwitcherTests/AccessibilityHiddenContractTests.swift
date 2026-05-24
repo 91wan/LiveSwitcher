@@ -18,7 +18,11 @@ final class AccessibilityHiddenContractTests: XCTestCase {
     }
 
     func testQueueAndBGMRowDecorativeStateIconsAreHidden() throws {
-        assertDynamicSymbolHidden("iconName(for: item)", in: try sourceText("Views/RunQueueView.swift"))
+        let runQueue = try sourceText("Views/RunQueueView.swift")
+        let thumbnailView = try sourceText("Views/ThumbnailView.swift")
+
+        XCTAssertTrue(runQueue.contains("ProgramThumbnailView("))
+        XCTAssertTrue(thumbnailView.contains(".accessibilityHidden(true)"))
         assertDynamicSymbolHidden("isPlaying ? \"waveform\" : (isCurrentTrack ? \"pause.fill\" : \"music.note\")", in: try sourceText("Views/BGMPlaylistPanel.swift"))
     }
 
