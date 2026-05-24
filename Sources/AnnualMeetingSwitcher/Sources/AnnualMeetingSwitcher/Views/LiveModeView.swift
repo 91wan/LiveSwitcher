@@ -558,7 +558,9 @@ struct LiveQuickRail: View {
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                StatusBadge(status, kind: kind)
+                if StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind) {
+                    StatusBadge(status, kind: kind)
+                }
             }
             content()
         }
