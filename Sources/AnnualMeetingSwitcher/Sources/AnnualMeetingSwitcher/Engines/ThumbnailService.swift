@@ -105,6 +105,9 @@ actor ThumbnailService {
                 return video
             }
             if ProgramSourceKind.isAudioFileURL(sourceURL) {
+                if let waveform = await generateAudioThumbnail(for: sourceURL, targetSize: targetSize) {
+                    return waveform
+                }
                 return await MainActor.run {
                     Self.renderAudioPlaceholder(size: targetSize)
                 }
@@ -140,6 +143,67 @@ actor ThumbnailService {
         }
     }
 
+    private func generateAudioThumbnail(for sourceURL: URL, targetSize: CGSize) async -> NSImage? {
+        do {
+            let samples = try Self.normalizedAudioSamples(for: sourceURL, sampleCount: 36)
+            guard samples.contains(where: { $0 > 0 }) else { return nil }
+            return await MainActor.run {
+                Self.renderAudioWaveform(samples: samples, size: targetSize)
+            }
+        } catch {
+            return nil
+        }
+    }
+
+    static func normalizedAudioSamples(for sourceURL: URL, sampleCount: Int) throws -> [CGFloat] {
+        guard sampleCount > 0 else { return [] }
+
+        let file = try AVAudioFile(forReading: sourceURL)
+        let totalFrames = file.length
+        guard totalFrames > 0 else {
+            return Array(repeating: 0, count: sampleCount)
+        }
+
+        let format = file.processingFormat
+        let framesPerBucket = max(1, totalFrames / AVAudioFramePosition(sampleCount))
+        var peaks: [CGFloat] = []
+        peaks.reserveCapacity(sampleCount)
+
+        for bucket in 0..<sampleCount {
+            let framePosition = min(AVAudioFramePosition(bucket) * framesPerBucket, totalFrames - 1)
+            file.framePosition = framePosition
+            let remainingFrames = max(1, totalFrames - framePosition)
+            let framesToRead = AVAudioFrameCount(min(remainingFrames, min(framesPerBucket, 2_048)))
+            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: framesToRead) else {
+                peaks.append(0)
+                continue
+            }
+
+            try file.read(into: buffer, frameCount: framesToRead)
+            peaks.append(peakAmplitude(in: buffer))
+        }
+
+        let maxPeak = peaks.max() ?? 0
+        guard maxPeak > 0 else { return peaks }
+        return peaks.map { min(max($0 / maxPeak, 0), 1) }
+    }
+
+    private static func peakAmplitude(in buffer: AVAudioPCMBuffer) -> CGFloat {
+        guard let channelData = buffer.floatChannelData else { return 0 }
+        let channelCount = Int(buffer.format.channelCount)
+        let frameLength = Int(buffer.frameLength)
+        guard channelCount > 0, frameLength > 0 else { return 0 }
+
+        var peak: Float = 0
+        for channel in 0..<channelCount {
+            let samples = channelData[channel]
+            for frame in 0..<frameLength {
+                peak = max(peak, abs(samples[frame]))
+            }
+        }
+        return CGFloat(min(max(peak, 0), 1))
+    }
+
     private func generateQuickLookThumbnail(for sourceURL: URL, targetSize: CGSize) async -> NSImage? {
         await withCheckedContinuation { continuation in
             let request = QLThumbnailGenerator.Request(
@@ -171,6 +235,14 @@ actor ThumbnailService {
 
     @MainActor
     private static func renderAudioPlaceholder(size: CGSize) -> NSImage {
+        let samples = (0..<22).map { index in
+            CGFloat(sin(CGFloat(index) * 0.86) * 0.5 + 0.5)
+        }
+        return renderAudioWaveform(samples: samples, size: size)
+    }
+
+    @MainActor
+    private static func renderAudioWaveform(samples: [CGFloat], size: CGSize) -> NSImage {
         let image = NSImage(size: size)
         image.lockFocus()
         defer { image.unlockFocus() }
@@ -181,10 +253,11 @@ actor ThumbnailService {
         NSColor.systemBlue.withAlphaComponent(0.80).setStroke()
         let path = NSBezierPath()
         let midY = size.height / 2
-        let columns = 22
+        let columns = max(samples.count, 1)
         for index in 0..<columns {
-            let x = CGFloat(index) / CGFloat(columns - 1) * size.width
-            let height = (sin(CGFloat(index) * 0.86) * 0.5 + 0.5) * size.height * 0.56 + 4
+            let x = columns == 1 ? size.width / 2 : CGFloat(index) / CGFloat(columns - 1) * size.width
+            let amplitude = min(max(samples[index], 0), 1)
+            let height = amplitude * size.height * 0.64 + 4
             path.move(to: CGPoint(x: x, y: midY - height / 2))
             path.line(to: CGPoint(x: x, y: midY + height / 2))
         }

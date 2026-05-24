@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import XCTest
 @testable import LiveSwitcher
 
@@ -70,6 +71,22 @@ final class ThumbnailServiceTests: XCTestCase {
         XCTAssertNotEqual(firstURL.lastPathComponent, secondURL.lastPathComponent)
     }
 
+    func testAudioWaveformSamplesAreDerivedFromReadableAudioFile() throws {
+        let temp = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LiveSwitcherWaveformTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: temp, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: temp) }
+
+        let audio = temp.appendingPathComponent("tone.wav")
+        try writeSineWaveFixture(to: audio)
+
+        let samples = try ThumbnailService.normalizedAudioSamples(for: audio, sampleCount: 24)
+
+        XCTAssertEqual(samples.count, 24)
+        XCTAssertTrue(samples.allSatisfy { $0 >= 0 && $0 <= 1 })
+        XCTAssertTrue(samples.contains { $0 > 0.1 })
+    }
+
     func testRunQueueRowsRenderThumbnailViewInsteadOfPlainIconOnlySourceRows() throws {
         let source = try sourceText("Views/RunQueueView.swift")
 
@@ -98,5 +115,22 @@ final class ThumbnailServiceTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate app source root from test path.")
+    }
+
+    private func writeSineWaveFixture(to url: URL) throws {
+        let sampleRate = 44_100.0
+        let frameCount = AVAudioFrameCount(sampleRate / 4)
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
+        buffer.frameLength = frameCount
+
+        let channel = buffer.floatChannelData![0]
+        for frame in 0..<Int(frameCount) {
+            let phase = (Double(frame) / sampleRate) * 440.0 * 2.0 * Double.pi
+            channel[frame] = Float(sin(phase) * 0.8)
+        }
+
+        let file = try AVAudioFile(forWriting: url, settings: format.settings)
+        try file.write(from: buffer)
     }
 }
