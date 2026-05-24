@@ -76,18 +76,18 @@ struct MainToolbar: View {
         }
     }
 
+    private var panicModel: PanicButtonModel {
+        PanicButtonModel.make(
+            isActive: viewModel.isPanicMode,
+            consoleMode: consoleMode
+        )
+    }
+
     private var panicTint: Color {
-        consoleMode == .live || viewModel.isPanicMode
-            ? StudioTheme.Action.danger
-            : StudioTheme.Action.primary
-    }
-
-    private var panicMinWidth: CGFloat {
-        ToolbarLayoutMetrics.panicMinWidth + (consoleMode == .live ? 32 : 0)
-    }
-
-    private var panicHeight: CGFloat {
-        consoleMode == .live ? 58 : ToolbarLayoutMetrics.actionHeight
+        switch panicModel.visualRole {
+        case .danger:
+            return StudioTheme.Action.danger
+        }
     }
 
     private var preflightModel: PreflightButtonModel {
@@ -103,21 +103,21 @@ struct MainToolbar: View {
     private var panicButton: some View {
         Button(action: togglePanic) {
             HStack(spacing: 8) {
-                Image(systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill")
+                Image(systemName: panicModel.systemImage)
                     .font(StudioTheme.TypeScale.heading.weight(.black))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(viewModel.isPanicMode ? "老板键: 开" : "老板键")
+                    Text(panicModel.title)
                         .font(StudioTheme.TypeScale.body.weight(.black))
-                    Text(viewModel.isPanicMode ? "切黑静音" : "紧急切黑")
+                    Text(panicModel.subtitle)
                         .font(StudioTheme.TypeScale.label.weight(.bold))
                         .opacity(0.88)
                 }
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 12)
-            .frame(minWidth: panicMinWidth)
-            .frame(height: panicHeight)
+            .frame(minWidth: panicModel.minWidth)
+            .frame(height: panicModel.height)
             .background(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(panicTint)
@@ -130,13 +130,9 @@ struct MainToolbar: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help(viewModel.isPanicMode
-            ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
-            : "老板键（紧急）：一键切黑副屏并静音所有音频")
-        .accessibilityLabel(viewModel.isPanicMode ? "老板键: 开" : "老板键")
-        .accessibilityHint(viewModel.isPanicMode
-            ? "老板键已激活：副屏已切黑，音频已静音（再次点击恢复）"
-            : "老板键（紧急）：一键切黑副屏并静音所有音频")
+        .help(panicModel.help)
+        .accessibilityLabel(panicModel.accessibilityLabel)
+        .accessibilityHint(panicModel.accessibilityHint)
     }
 
     private var preflightButton: some View {
