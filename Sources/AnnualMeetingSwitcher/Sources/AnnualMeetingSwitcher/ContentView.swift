@@ -27,7 +27,7 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             retainedTab(.preview) {
-                runDesk
+                runDesk(isLiveMode: viewModel.consoleMode == .live)
             }
 
             retainedTab(.audioMixer) {
@@ -45,7 +45,7 @@ struct ContentView: View {
     }
 
     private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
-        let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
+        let model = TabRetentionModel(tab: tab, selectedTab: activeContentTab)
         return content()
             .opacity(model.opacity)
             .allowsHitTesting(model.allowsHitTesting)
@@ -53,13 +53,17 @@ struct ContentView: View {
             .zIndex(model.zIndex)
     }
 
-    private var runDesk: some View {
+    private var activeContentTab: MainConsoleTab {
+        viewModel.consoleMode == .live ? .preview : viewModel.selectedMainTab
+    }
+
+    private func runDesk(isLiveMode: Bool) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            LeftPanel()
+            LeftPanel(isLiveMode: isLiveMode)
                 .frame(width: StudioTheme.directorRailWidth)
                 .layoutPriority(1)
 
-            ProgramMonitorView()
+            ProgramMonitorView(isLiveMode: isLiveMode)
                 .frame(minWidth: 500, idealWidth: 720, maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(3)
 
@@ -77,18 +81,24 @@ struct ContentView: View {
 
     private var primaryNavigationBar: some View {
         HStack(spacing: 16) {
-            Text(viewModel.selectedMainTab.chromeTitle)
+            Text(chromeTitle)
                 .font(.system(size: 15, weight: .black, design: .rounded))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .frame(width: 190, alignment: .leading)
 
             Spacer(minLength: 0)
-            navigationTabCluster
+            VStack(spacing: 6) {
+                consoleModeCluster
+                if viewModel.consoleMode == .setup {
+                    setupTabCluster
+                }
+            }
                 .layoutPriority(1)
             Spacer(minLength: 16)
             MainToolbar(
                 embedded: true,
+                consoleMode: viewModel.consoleMode,
                 onOpenPreview: { viewModel.selectedMainTab = .preview },
                 onOpenAudioMixer: { viewModel.selectedMainTab = .audioMixer },
                 onOpenOverlays: { viewModel.selectedMainTab = .overlays }
@@ -103,7 +113,30 @@ struct ContentView: View {
         .overlay(Divider(), alignment: .bottom)
     }
 
-    private var navigationTabCluster: some View {
+    private var chromeTitle: String {
+        viewModel.consoleMode == .live ? "LiveSwitcher · LIVE" : viewModel.selectedMainTab.chromeTitle
+    }
+
+    private var consoleModeCluster: some View {
+        HStack(spacing: 6) {
+            ForEach(ConsoleMode.allCases) { mode in
+                NavigationTabButton(
+                    title: mode.displayTitle,
+                    systemImage: mode.systemImage,
+                    isSelected: viewModel.consoleMode == mode
+                ) {
+                    withAnimation(.easeInOut(duration: 0.16)) {
+                        viewModel.consoleMode = mode
+                    }
+                }
+            }
+        }
+        .padding(5)
+        .background(Capsule(style: .continuous).fill(StudioTheme.Surface.base))
+        .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
+    }
+
+    private var setupTabCluster: some View {
         HStack(spacing: 6) {
             navigationTab(title: "导播台", systemName: "play.square.stack.fill", tag: .preview)
             navigationTab(title: "音频", systemName: "slider.horizontal.3", tag: .audioMixer)

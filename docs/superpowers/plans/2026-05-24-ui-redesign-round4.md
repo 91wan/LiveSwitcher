@@ -65,14 +65,14 @@
 - Modify: `Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/App.swift`
 - Test: `Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ConsoleModeTests.swift`
 
-- [ ] Add failing tests for default `.setup`, persistence, localization keys, and live-mode UI source contracts.
-- [ ] Add `ConsoleMode` to `SwitcherViewModel`, persisted to `UserDefaults`.
-- [ ] Replace the top three-tab cluster with a Setup/Live mode segmented control, and render setup tabs only in Setup mode.
-- [ ] In Live mode, retain the Run Desk but hide setup-only controls: Add Source/dropzone, Auto-next, Keynote refresh, and wallpaper management.
-- [ ] Make Panic visually stronger in Live mode without moving Speaker/PPT back into the toolbar.
-- [ ] Add menu commands for `Command-Shift-S` Setup and `Command-Shift-L` Live.
-- [ ] Run targeted console-mode tests, then the full local verification chain.
-- [ ] Capture Setup and Live mode screenshots.
+- [x] Add failing tests for default `.setup`, persistence, localization keys, and live-mode UI source contracts.
+- [x] Add `ConsoleMode` to `SwitcherViewModel`, persisted to `UserDefaults`.
+- [x] Replace the top three-tab cluster with a Setup/Live mode segmented control, and render setup tabs only in Setup mode.
+- [x] In Live mode, retain the Run Desk but hide setup-only controls: Add Source/dropzone, Auto-next, Keynote refresh, and wallpaper management.
+- [x] Make Panic visually stronger in Live mode without moving Speaker/PPT back into the toolbar.
+- [x] Add menu commands for `Command-Shift-S` Setup and `Command-Shift-L` Live.
+- [x] Run targeted console-mode tests, then the full local verification chain.
+- [x] Capture Setup and Live mode screenshots.
 - [ ] Open PR, wait for CI, and squash merge on green.
 
 ## Verification For Every PR
