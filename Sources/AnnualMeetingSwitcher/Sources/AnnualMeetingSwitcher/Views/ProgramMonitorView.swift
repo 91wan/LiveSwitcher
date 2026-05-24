@@ -254,7 +254,9 @@ struct ProgramMonitorView: View {
     }
 
     private var transitionControlCard: some View {
-        HStack(spacing: 14) {
+        let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
+
+        return HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Transition")
                     .font(StudioTheme.sectionTitle())
@@ -269,13 +271,13 @@ struct ProgramMonitorView: View {
                 in: 0.5...3.0,
                 step: 0.05
             )
-            .tint(StudioTheme.Tone.warn)
+            .tint(model.controlTone.sliderTint)
             .accessibilityLabel("Transition duration")
             .accessibilityValue(String(format: "%.1f seconds", viewModel.crossfadeDuration))
 
-            Text(String(format: "%.1fs", viewModel.crossfadeDuration))
+            Text(model.statusText)
                 .font(StudioTheme.TypeScale.numeric.weight(.bold))
-                .foregroundStyle(StudioTheme.Tone.warn)
+                .foregroundStyle(model.controlTone.valueTint)
                 .frame(width: 56, alignment: .trailing)
         }
         .padding(.horizontal, 12)

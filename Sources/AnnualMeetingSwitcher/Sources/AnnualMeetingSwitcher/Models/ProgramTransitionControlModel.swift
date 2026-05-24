@@ -1,7 +1,41 @@
 import Foundation
+import SwiftUI
+
+enum ProgramTransitionControlTone: String, Equatable {
+    case configuration
+
+    var semanticToken: String {
+        switch self {
+        case .configuration:
+            return "action.primary"
+        }
+    }
+
+    var sliderTint: Color {
+        switch self {
+        case .configuration:
+            return StudioTheme.Action.primary
+        }
+    }
+
+    var valueTint: Color {
+        switch self {
+        case .configuration:
+            return StudioTheme.textSecondary
+        }
+    }
+}
 
 struct ProgramTransitionControlModel: Equatable {
     let crossfadeDuration: Double
+
+    var statusKind: StudioTheme.StatusKind {
+        .idle
+    }
+
+    var controlTone: ProgramTransitionControlTone {
+        .configuration
+    }
 
     var title: String {
         "Program transition"

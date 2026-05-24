@@ -138,14 +138,14 @@ struct AudioMixerView: View {
         return StudioSectionCard(
             title: model.title,
             subtitle: model.subtitle,
-            status: (model.statusText, .idle)
+            status: (model.statusText, model.statusKind)
         ) {
             HStack(spacing: 10) {
                 Text(model.currentValueText)
                     .font(StudioTheme.TypeScale.body.weight(.semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
-                    .tint(StudioTheme.Tone.warn)
+                    .tint(model.controlTone.sliderTint)
                     .accessibilityLabel("Program transition duration")
                     .accessibilityValue(model.currentValueText)
                 Text("0.5s-3.0s")
