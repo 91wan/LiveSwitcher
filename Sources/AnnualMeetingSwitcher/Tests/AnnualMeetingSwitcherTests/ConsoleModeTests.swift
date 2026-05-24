@@ -45,15 +45,16 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(source.contains("activeContentTab"))
     }
 
-    func testLiveModeRoutesRunDeskPanelsWithLiveFlag() throws {
+    func testLiveModeRoutesDedicatedLayoutInsteadOfSetupRunDesk() throws {
         let content = try sourceText("ContentView.swift")
         let leftPanel = try sourceText("Views/LeftPanel.swift")
         let monitor = try sourceText("Views/ProgramMonitorView.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
 
-        XCTAssertTrue(content.contains("runDesk(isLiveMode:"))
-        XCTAssertTrue(leftPanel.contains("var isLiveMode: Bool"))
-        XCTAssertTrue(leftPanel.contains("if !isLiveMode"))
+        XCTAssertTrue(content.contains("LiveModeView"))
+        XCTAssertTrue(content.contains("runDesk()"))
+        XCTAssertFalse(content.contains("runDesk(isLiveMode:"))
+        XCTAssertFalse(leftPanel.contains("var isLiveMode: Bool"))
         XCTAssertTrue(monitor.contains("var isLiveMode: Bool"))
         XCTAssertTrue(monitor.contains("if !isLiveMode"))
         XCTAssertTrue(toolbar.contains("var consoleMode: ConsoleMode"))

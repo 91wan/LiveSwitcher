@@ -27,7 +27,13 @@ struct ContentView: View {
                 .ignoresSafeArea()
 
             retainedTab(.preview) {
-                runDesk(isLiveMode: viewModel.consoleMode == .live)
+                if viewModel.consoleMode == .live {
+                    LiveModeView {
+                        viewModel.selectedMainTab = .audioMixer
+                    }
+                } else {
+                    runDesk()
+                }
             }
 
             retainedTab(.audioMixer) {
@@ -57,13 +63,13 @@ struct ContentView: View {
         viewModel.consoleMode == .live ? .preview : viewModel.selectedMainTab
     }
 
-    private func runDesk(isLiveMode: Bool) -> some View {
+    private func runDesk() -> some View {
         HStack(alignment: .top, spacing: 12) {
-            LeftPanel(isLiveMode: isLiveMode)
+            LeftPanel()
                 .frame(width: StudioTheme.directorRailWidth)
                 .layoutPriority(1)
 
-            ProgramMonitorView(isLiveMode: isLiveMode)
+            ProgramMonitorView()
                 .frame(minWidth: 500, idealWidth: 720, maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(3)
 

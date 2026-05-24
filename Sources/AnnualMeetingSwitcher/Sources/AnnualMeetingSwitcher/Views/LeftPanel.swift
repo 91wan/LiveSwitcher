@@ -6,16 +6,13 @@ import UniformTypeIdentifiers
 struct LeftPanel: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
     @State private var isDraggingOver = false
-    var isLiveMode: Bool = false
 
     var body: some View {
         VStack(spacing: 10) {
             headerRow
-            if !isLiveMode {
-                autoPlayOptionRow
+            autoPlayOptionRow
 
-                dropZone
-            }
+            dropZone
 
             sourceList
 
@@ -69,22 +66,20 @@ struct LeftPanel: View {
             }
             Spacer()
             CountPill("\(viewModel.programItems.count)", kind: viewModel.programItems.isEmpty ? .idle : .ready)
-            if !isLiveMode {
-                Button(action: { viewModel.scanAndAddKeynoteWindows() }) {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(width: 32, height: 32)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                                .fill(StudioTheme.Surface.raised)
-                        )
-                }
-                .buttonStyle(.plain)
-                .focusable(false)
-                .help("刷新 / 重新扫描 Keynote")
-                .accessibilityLabel("Refresh Keynote sources")
+            Button(action: { viewModel.scanAndAddKeynoteWindows() }) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                            .fill(StudioTheme.Surface.raised)
+                    )
             }
+            .buttonStyle(.plain)
+            .focusable(false)
+            .help("刷新 / 重新扫描 Keynote")
+            .accessibilityLabel("Refresh Keynote sources")
         }
     }
 
