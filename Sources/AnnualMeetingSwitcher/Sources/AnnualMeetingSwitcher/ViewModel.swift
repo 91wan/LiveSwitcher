@@ -245,6 +245,7 @@ final class SwitcherViewModel: ObservableObject {
         static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
         static let consoleMode = "consoleMode"
         static let themeOverride = "themeOverride"
+        static let lowerThirdPresets = "overlay.presets.lowerThird.json"
     }
 
     // MARK: - Init
@@ -485,6 +486,10 @@ final class SwitcherViewModel: ObservableObject {
         } else {
             userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
         }
+
+        if let lowerThirdPresetData = try? JSONEncoder().encode(lowerThirdPresets) {
+            userDefaults.set(lowerThirdPresetData, forKey: UDKeys.lowerThirdPresets)
+        }
     }
 
     func loadData() {
@@ -567,6 +572,11 @@ final class SwitcherViewModel: ObservableObject {
         if let rawTheme = userDefaults.string(forKey: UDKeys.themeOverride),
            let storedTheme = ThemeOverride(rawValue: rawTheme) {
             themeOverride = storedTheme
+        }
+
+        if let lowerThirdPresetData = userDefaults.data(forKey: UDKeys.lowerThirdPresets),
+           let storedPresets = try? JSONDecoder().decode([LowerThirdPreset].self, from: lowerThirdPresetData) {
+            lowerThirdPresets = LowerThirdPreset.normalized(storedPresets)
         }
     }
 
@@ -1511,6 +1521,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var isLowerThirdVisible: Bool = false
     @Published var lowerThirdName: String    = ""
     @Published var lowerThirdTitle: String   = ""
+    @Published var lowerThirdPresets: [LowerThirdPreset] = []
 }
 
 // MARK: - V25: 翻页拦截 CGEventTap 全局 C 回调

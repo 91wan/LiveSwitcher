@@ -41,6 +41,7 @@ struct OverlayComposerState: Equatable {
     var tickerSpeedIndex = 1
     var lowerThirdNameDraft = ""
     var lowerThirdTitleDraft = ""
+    var selectedLowerThirdPresetID: UUID?
 
     var visibleComposerTitles: [String] {
         [selectedKind.title]
