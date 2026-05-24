@@ -142,7 +142,7 @@ struct AudioMixerView: View {
         ) {
             HStack(spacing: 10) {
                 Text(model.currentValueText)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(StudioTheme.TypeScale.body.weight(.semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                 Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
                     .tint(StudioTheme.Tone.warn)
@@ -207,7 +207,7 @@ private struct MixerFaderCard: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 15, weight: .black))
+                        .font(StudioTheme.TypeScale.heading.weight(.black))
                         .foregroundStyle(StudioTheme.textPrimary)
                     Text(subtitle)
                         .font(StudioTheme.caption())
@@ -248,10 +248,10 @@ private struct MixerFaderCard: View {
     private func valuePair(label: String, value: Double, tint: Color) -> some View {
         VStack(alignment: .trailing, spacing: 1) {
             Text(label)
-                .font(.system(size: 9, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.label.weight(.black))
                 .foregroundStyle(StudioTheme.textTertiary)
             Text(percent(value))
-                .font(.system(size: 13, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.body.weight(.black))
                 .foregroundStyle(tint)
         }
     }
