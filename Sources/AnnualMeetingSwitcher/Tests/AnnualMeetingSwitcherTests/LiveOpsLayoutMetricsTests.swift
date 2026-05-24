@@ -5,33 +5,31 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
     func testLiveOpsHitTargetsStayOperatorSized() {
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.cardPadding, 10)
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.outputPrimaryButtonHeight, 42)
-        XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.bgmTransportButtonSize, 32)
         XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.secondaryButtonHeight, 32)
-        XCTAssertGreaterThanOrEqual(LiveOpsLayoutMetrics.modeRowHeight, 34)
     }
 
-    func testLiveOpsMixerButtonUsesMinimumHitTarget() throws {
+    func testLiveOpsSwitchToLiveButtonUsesMinimumHitTarget() throws {
         let source = try sourceText("Views/LiveOpsPanel.swift")
 
         XCTAssertFalse(source.contains(".frame(height: 28)"))
         XCTAssertTrue(source.contains(".frame(height: LiveOpsLayoutMetrics.secondaryButtonHeight)"))
     }
 
-    func testLiveOpsModeControlsUseSwitchToggles() throws {
+    func testLiveOpsPanelNoLongerOwnsSetupModeToggles() throws {
         let source = try sourceText("Views/LiveOpsPanel.swift")
 
-        XCTAssertTrue(source.contains("LiveOpsToggleStyle"))
-        XCTAssertTrue(source.contains("Toggle(isOn:"))
-        XCTAssertTrue(source.contains("accessibilityLabel: \"Speaker mode\""))
-        XCTAssertTrue(source.contains("accessibilityLabel: \"PPT mode\""))
-        XCTAssertTrue(source.contains(".accessibilityLabel(accessibilityLabel)"))
+        XCTAssertFalse(source.contains("LiveOpsToggleStyle"))
+        XCTAssertFalse(source.contains("Toggle(isOn:"))
+        XCTAssertFalse(source.contains("accessibilityLabel: \"Speaker mode\""))
+        XCTAssertFalse(source.contains("accessibilityLabel: \"PPT mode\""))
         XCTAssertFalse(source.contains("Text(isOn ? \"ON\" : \"OFF\")"))
     }
 
-    func testLiveOpsBGMProgressOnlyRendersForCurrentTrack() throws {
+    func testLiveOpsPanelNoLongerOwnsBGMTransportOrProgress() throws {
         let source = try sourceText("Views/LiveOpsPanel.swift")
 
-        XCTAssertTrue(source.contains("if viewModel.currentBGMItem != nil {\n                bgmProgressRow"))
+        XCTAssertFalse(source.contains("bgmProgressRow"))
+        XCTAssertFalse(source.contains("bgmTransportButtonSize"))
         XCTAssertFalse(source.contains(".disabled(viewModel.currentBGMItem == nil)"))
     }
 

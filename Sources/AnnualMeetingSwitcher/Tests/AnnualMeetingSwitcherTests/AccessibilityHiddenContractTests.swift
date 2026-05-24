@@ -10,7 +10,7 @@ final class AccessibilityHiddenContractTests: XCTestCase {
 
     func testDecorativeHeaderAndStatusIconsAreHidden() throws {
         assertSymbolHidden("rectangle.3.group.bubble.left.fill", in: try sourceText("Views/OverlayControlPanel.swift"))
-        assertSymbolHidden("speaker.wave.2.fill", in: try sourceText("Views/LiveOpsPanel.swift"))
+        assertDynamicSymbolHidden("viewModel.isBroadcasting ? \"stop.fill\" : \"antenna.radiowaves.left.and.right\"", in: try sourceText("Views/LiveOpsPanel.swift"))
         assertSymbolHidden("photo.on.rectangle.angled", in: try sourceText("Views/WallpaperGalleryRow.swift"))
         assertSymbolHidden("plus", in: try sourceText("Views/WallpaperGalleryRow.swift"))
         assertSymbolHidden("photo", in: try sourceText("Views/WallpaperGalleryRow.swift"))
@@ -30,8 +30,8 @@ final class AccessibilityHiddenContractTests: XCTestCase {
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
         let leftPanel = try sourceText("Views/LeftPanel.swift")
 
-        XCTAssertTrue(liveOps.contains("accessibilityLabel: String"))
-        XCTAssertTrue(liveOps.contains(".accessibilityLabel(accessibilityLabel)"))
+        XCTAssertTrue(liveOps.contains(".accessibilityLabel(model.title)"))
+        XCTAssertTrue(liveOps.contains(".accessibilityLabel(\"Switch to Live mode\")"))
         XCTAssertTrue(leftPanel.contains(".accessibilityLabel(\"Refresh Keynote sources\")"))
     }
 
