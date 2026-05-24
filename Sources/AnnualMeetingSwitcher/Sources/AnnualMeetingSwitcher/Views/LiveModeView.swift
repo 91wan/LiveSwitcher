@@ -149,16 +149,16 @@ private struct LiveSourceRailRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
                         Text(rowModel.queueBadgeText)
-                            .font(.system(size: 10, weight: .black, design: .rounded))
+                            .font(StudioTheme.TypeScale.label)
                             .foregroundStyle(statusColor)
                             .lineLimit(1)
                         Text(item.displaySourceLabel)
-                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                            .font(StudioTheme.TypeScale.label.weight(.bold))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
                     }
                     Text(item.title)
-                        .font(.system(size: 12, weight: isSelected ? .black : .semibold))
+                        .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(2)
                         .truncationMode(.middle)
@@ -244,7 +244,7 @@ struct LiveAudioStrip: View {
                 StatusBadge(viewModel.audioStrategy.displayTitle, kind: audioStatusKind)
                 Button(action: onOpenMixer) {
                     Label("Mixer", systemImage: "slider.horizontal.3")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(height: 32)
                 }
                 .buttonStyle(.bordered)
@@ -282,7 +282,7 @@ private struct LiveAudioFader: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 13, weight: .black))
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                         .foregroundStyle(StudioTheme.textPrimary)
                     Text(subtitle)
                         .font(StudioTheme.caption())
@@ -290,7 +290,7 @@ private struct LiveAudioFader: View {
                 }
                 Spacer()
                 Text(meter.decibelText)
-                    .font(.system(size: 15, weight: .black, design: .rounded))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
                     .foregroundStyle(StudioTheme.color(for: meter.statusKind))
             }
 
@@ -306,7 +306,7 @@ private struct LiveAudioFader: View {
                     isMuted.toggle()
                 } label: {
                     Label(isMuted ? "Unmute" : "Mute", systemImage: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .labelStyle(.iconOnly)
                         .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 22)
                 }
@@ -381,7 +381,7 @@ struct LiveQuickRail: View {
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(model.title)
-                            .font(.system(size: 12, weight: .black))
+                            .font(StudioTheme.TypeScale.caption.weight(.black))
                             .lineLimit(1)
                         Text(model.screenLabel)
                             .font(StudioTheme.caption())
@@ -414,7 +414,7 @@ struct LiveQuickRail: View {
                     }
                 } label: {
                     Label(viewModel.isPanicMode ? "Restore" : "FTB", systemImage: viewModel.isPanicMode ? "play.fill" : "moon.fill")
-                        .font(.system(size: 12, weight: .black))
+                        .font(StudioTheme.TypeScale.caption.weight(.black))
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
                 }
@@ -428,7 +428,7 @@ struct LiveQuickRail: View {
                     }
                 } label: {
                     Label("Take Next", systemImage: "arrow.right.to.line.compact")
-                        .font(.system(size: 12, weight: .black))
+                        .font(StudioTheme.TypeScale.caption.weight(.black))
                         .labelStyle(.iconOnly)
                         .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 40)
                 }
@@ -488,7 +488,7 @@ struct LiveQuickRail: View {
     private var wallpaperCard: some View {
         quickCard(title: "Wallpaper", status: "\(viewModel.backgroundWallpapers.count)", kind: viewModel.backgroundWallpapers.isEmpty ? .warn : .ready) {
             Text(activeWallpaperTitle)
-                .font(.system(size: 12, weight: .bold))
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.middle)
@@ -496,7 +496,7 @@ struct LiveQuickRail: View {
 
             Button(action: cycleWallpaper) {
                 Label("Next wallpaper", systemImage: "photo.on.rectangle.angled")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
             }
@@ -515,7 +515,7 @@ struct LiveQuickRail: View {
 
         return quickCard(title: "BGM", status: controls.displayStatusText, kind: controls.displayStatusKind) {
             Text(viewModel.currentBGMItem?.title ?? "No BGM selected")
-                .font(.system(size: 12, weight: .bold))
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .help(viewModel.currentBGMItem?.title ?? "No BGM selected")
@@ -581,7 +581,7 @@ struct LiveQuickRail: View {
         Button(action: isActive ? stop : start) {
             HStack {
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .lineLimit(1)
                 Spacer()
                 Text(isActive ? "LIVE" : "OFF")
@@ -601,7 +601,7 @@ struct LiveQuickRail: View {
     private func transportButton(_ systemName: String, enabled: Bool, hint: String?, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 13, weight: .black))
+                .font(StudioTheme.TypeScale.body.weight(.black))
                 .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
         }
         .buttonStyle(.bordered)

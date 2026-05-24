@@ -44,13 +44,13 @@ struct SignalSourceRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)
-                        .font(.system(size: 14, weight: queueRole == .current ? .bold : .semibold))
+                        .font(StudioTheme.TypeScale.body.weight(queueRole == .current ? .bold : .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
                         .lineLimit(1)
                         .help(item.title)
 
                     Text(statusText)
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(StudioTheme.TypeScale.label.weight(.semibold))
                         .foregroundStyle(statusTint)
                         .lineLimit(1)
                 }
@@ -97,7 +97,7 @@ struct SignalSourceRow: View {
     private var selectedControlRail: some View {
         HStack(spacing: 10) {
             Text(rowModel.controlRailLabel)
-                .font(.system(size: 10, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.label)
                 .foregroundStyle(currentRowControlTint)
                 .lineLimit(1)
 
@@ -180,7 +180,7 @@ struct SignalSourceRow: View {
     ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 13, weight: .bold))
+                .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(tint)
                 .frame(width: 30, height: 30)
                 .background(
@@ -214,7 +214,7 @@ struct SignalSourceRow: View {
 
     private var sourceTypeChip: some View {
         Text(sourceLabel)
-            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .font(StudioTheme.TypeScale.label.weight(.bold))
             .foregroundStyle(sourceTint)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
@@ -228,7 +228,7 @@ struct SignalSourceRow: View {
 
     private var queueBadge: some View {
         Text(queueBadgeText)
-            .font(.system(size: queueRole == .current ? 11 : 10, weight: .black, design: .rounded))
+            .font(StudioTheme.TypeScale.label)
             .foregroundStyle(queueBadgeForeground)
             .frame(minWidth: 28)
             .padding(.vertical, 6)
@@ -350,7 +350,7 @@ struct SignalSourceRow: View {
 
     private func badge(text: String, foreground: Color, background: Color) -> some View {
         Text(text)
-            .font(.system(size: 10, weight: .black, design: .rounded))
+            .font(StudioTheme.TypeScale.label)
             .foregroundStyle(foreground)
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
@@ -390,7 +390,7 @@ struct ProgressSliderRow: View {
     var body: some View {
         HStack(spacing: 6) {
             Text(formatTime(avCoordinator.currentTime))
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(StudioTheme.TypeScale.monoCaption.weight(.medium))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 38, alignment: .leading)
 
@@ -416,7 +416,7 @@ struct ProgressSliderRow: View {
             .accessibilityValue("\(formatTime(avCoordinator.currentTime)) of \(avCoordinator.duration.map { formatTime($0) } ?? "unknown duration")")
 
             Text(avCoordinator.duration.map { formatTime($0) } ?? "--:--")
-                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .font(StudioTheme.TypeScale.monoCaption.weight(.medium))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 38, alignment: .trailing)
         }

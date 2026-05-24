@@ -104,13 +104,13 @@ struct MainToolbar: View {
         Button(action: togglePanic) {
             HStack(spacing: 8) {
                 Image(systemName: viewModel.isPanicMode ? "eye.slash.fill" : "bolt.fill")
-                    .font(.system(size: 16, weight: .black))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(viewModel.isPanicMode ? "老板键: 开" : "老板键")
-                        .font(.system(size: 13, weight: .black))
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                     Text(viewModel.isPanicMode ? "切黑静音" : "紧急切黑")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(StudioTheme.TypeScale.label.weight(.bold))
                         .opacity(0.88)
                 }
             }
@@ -143,13 +143,13 @@ struct MainToolbar: View {
         Button(action: { showPreflight.toggle() }) {
             HStack(spacing: 8) {
                 Image(systemName: preflightModel.status == .fail ? "xmark.octagon.fill" : "checklist.checked")
-                    .font(.system(size: 15, weight: .black))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(preflightModel.title)
-                        .font(.system(size: 13, weight: .black))
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                     Text(preflightModel.value)
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(StudioTheme.TypeScale.label.weight(.bold))
                 }
             }
             .foregroundStyle(StudioTheme.color(for: preflightModel.status))
@@ -178,7 +178,7 @@ struct MainToolbar: View {
     private var helpButton: some View {
         Button(action: { showHelp.toggle() }) {
             Label("Help", systemImage: "questionmark.circle")
-                .font(.system(size: 13, weight: .bold))
+                .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .frame(minWidth: ToolbarLayoutMetrics.helpMinWidth)
                 .frame(height: ToolbarLayoutMetrics.actionHeight)
