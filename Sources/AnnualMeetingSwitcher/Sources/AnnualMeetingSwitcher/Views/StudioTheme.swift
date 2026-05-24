@@ -280,7 +280,7 @@ struct StatusBadge: View {
         HStack(spacing: 5) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: 9, weight: .black))
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
             }
             Text(text)
                 .font(StudioTheme.statusLabel())
@@ -336,7 +336,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: StudioTheme.spacingS) {
             Image(systemName: systemImage)
-                .font(.system(size: 22, weight: .semibold))
+                .font(StudioTheme.TypeScale.title.weight(.semibold))
                 .foregroundStyle(StudioTheme.textTertiary)
             Text(title)
                 .font(StudioTheme.sectionTitle())
@@ -378,10 +378,10 @@ struct CriticalActionButton: View {
         Button(action: action) {
             HStack(spacing: StudioTheme.spacingS) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 15, weight: .black))
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
-                        .font(.system(size: 13, weight: .black))
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                     if let subtitle {
                         Text(subtitle)
                             .font(StudioTheme.caption())
@@ -426,10 +426,10 @@ struct SecondaryActionButton: View {
             HStack(spacing: 6) {
                 if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 Text(title)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
             }
             .foregroundStyle(tint)
             .frame(minHeight: StudioTheme.controlHeightM)
@@ -459,9 +459,9 @@ struct NavigationTabButton: View {
         Button(action: action) {
             HStack(spacing: 7) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(StudioTheme.TypeScale.body.weight(.semibold))
                 Text(title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(StudioTheme.TypeScale.heading.weight(.bold))
             }
             .foregroundStyle(isSelected ? .white : StudioTheme.textPrimary)
             .padding(.horizontal, 16)
@@ -499,7 +499,7 @@ struct MetricRow: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                 if let subtitle {
                     Text(subtitle)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(StudioTheme.TypeScale.label.weight(.medium))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
             }
@@ -544,7 +544,7 @@ struct InlineWarningBanner: View {
                 .foregroundStyle(StudioTheme.color(for: kind))
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.system(size: 12, weight: .black))
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(message)
                     .font(StudioTheme.caption())
