@@ -92,12 +92,12 @@ struct SafetyCockpitView: View {
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                Text("\(cockpit.priorityChecks.filter { $0.status != .pass }.count) rows")
+                Text(cockpit.attentionReview.rowCountText)
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textSecondary)
             }
 
-            let attention = cockpit.priorityChecks.filter { $0.status != .pass }
+            let attention = cockpit.attentionReview.checks
             if attention.isEmpty {
                 readyCard
             } else {

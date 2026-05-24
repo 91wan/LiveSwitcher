@@ -28,7 +28,8 @@ final class HelpPreflightSplitTests: XCTestCase {
         let preflight = try sourceText("Views/PreflightPopoverView.swift")
 
         XCTAssertTrue(preflight.contains("struct PreflightPopoverView"))
-        XCTAssertTrue(preflight.contains("PreflightListMode"))
+        XCTAssertTrue(preflight.contains("PreflightReviewMode"))
+        XCTAssertTrue(preflight.contains("PreflightReviewModel.make"))
         XCTAssertTrue(preflight.contains("Copy Support"))
         XCTAssertTrue(preflight.contains("Save Support"))
         XCTAssertFalse(preflight.contains("HelpCopyModel.sections"))

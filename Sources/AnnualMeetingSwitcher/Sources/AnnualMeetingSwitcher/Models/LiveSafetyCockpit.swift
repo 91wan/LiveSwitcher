@@ -3,6 +3,7 @@ import Foundation
 struct LiveSafetyCockpitState: Equatable {
     var summary: LivePreflightSummary
     var priorityChecks: [LivePreflightCheck]
+    var attentionReview: PreflightReviewModel
     var sections: [LiveSafetyCockpitSection]
     var recentEvents: [LiveSafetyCockpitEventRow]
     var safeActionCount: Int
@@ -28,14 +29,9 @@ enum LiveSafetyCockpit {
         checks: [LivePreflightCheck],
         events: [LiveSupportEvent]
     ) -> LiveSafetyCockpitState {
-        let priorityChecks = checks.sorted { lhs, rhs in
-            let lhsRank = rank(lhs.status)
-            let rhsRank = rank(rhs.status)
-            if lhsRank != rhsRank {
-                return lhsRank < rhsRank
-            }
-            return checkOrder(checks, lhs) < checkOrder(checks, rhs)
-        }
+        let allChecksReview = PreflightReviewModel.make(checks: checks, mode: .allChecks)
+        let attentionReview = PreflightReviewModel.make(checks: checks, mode: .needsAttention)
+        let priorityChecks = allChecksReview.checks
 
         let sections = LivePreflightGroup.allCases.compactMap { group -> LiveSafetyCockpitSection? in
             let groupChecks = priorityChecks.filter { $0.group == group }
@@ -53,6 +49,7 @@ enum LiveSafetyCockpit {
         return LiveSafetyCockpitState(
             summary: LivePreflightSummary.make(from: checks),
             priorityChecks: priorityChecks,
+            attentionReview: attentionReview,
             sections: sections,
             recentEvents: recentSupportEvents.enumerated().map { offset, event in
                 eventRow(event, sequence: firstRecentSequence + offset)
@@ -61,21 +58,6 @@ enum LiveSafetyCockpit {
                 check.actionKind == .clearOverlays || check.actionKind == .turnOffPanic
             }.count
         )
-    }
-
-    private static func rank(_ status: LivePreflightStatus) -> Int {
-        switch status {
-        case .fail:
-            return 0
-        case .warn:
-            return 1
-        case .pass:
-            return 2
-        }
-    }
-
-    private static func checkOrder(_ checks: [LivePreflightCheck], _ check: LivePreflightCheck) -> Int {
-        checks.firstIndex(where: { $0.id == check.id }) ?? Int.max
     }
 
     private static func eventRow(_ event: LiveSupportEvent, sequence: Int) -> LiveSafetyCockpitEventRow {
