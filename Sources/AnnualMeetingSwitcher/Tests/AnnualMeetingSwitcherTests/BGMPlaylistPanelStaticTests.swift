@@ -20,6 +20,16 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("isVideo: false"))
     }
 
+    func testBGMPlaylistPanelUsesStudioTypeScaleInsteadOfRawFontLiterals() throws {
+        let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
+
+        XCTAssertFalse(
+            source.contains(".font(.system(size:"),
+            "BGM library UI should use StudioTheme.TypeScale instead of raw font sizes."
+        )
+        XCTAssertTrue(source.contains("StudioTheme.TypeScale"))
+    }
+
     private func sourceURL(_ relativePath: String) throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
