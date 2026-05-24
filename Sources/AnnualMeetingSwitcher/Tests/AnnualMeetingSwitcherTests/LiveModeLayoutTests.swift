@@ -78,6 +78,16 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("Open BGM Library"))
     }
 
+    func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("LiveWallpaperQuickPickerModel.make"))
+        XCTAssertTrue(source.contains("Choose standby wallpaper"))
+        XCTAssertTrue(source.contains("viewModel.setActiveWallpaper(url: item.url)"))
+        XCTAssertTrue(source.contains("ForEach(picker.items)"))
+        XCTAssertFalse(source.contains("Next wallpaper"))
+    }
+
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
