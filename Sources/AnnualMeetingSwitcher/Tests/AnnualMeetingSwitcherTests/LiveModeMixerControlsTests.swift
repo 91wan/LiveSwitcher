@@ -81,6 +81,13 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("Take Next"))
     }
 
+    func testLiveModeMuteButtonsUseTransportHitTargetHeight() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertFalse(source.contains("height: 22"))
+        XCTAssertTrue(source.contains("height: LiveModeLayoutMetrics.transportButtonSize"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
