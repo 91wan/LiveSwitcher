@@ -74,7 +74,7 @@ struct OverlayControlPanel: View {
                 RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                     .fill(StudioTheme.Action.primary.opacity(0.12))
                 Image(systemName: "rectangle.3.group.bubble.left.fill")
-                    .font(.system(size: 22, weight: .bold))
+                    .font(StudioTheme.TypeScale.title.weight(.bold))
                     .foregroundStyle(StudioTheme.Action.primary)
                     .accessibilityHidden(true)
             }
@@ -85,7 +85,7 @@ struct OverlayControlPanel: View {
                     .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(.primary)
                 Text("一次准备一种叠层；Preview 和 Active Stack 会显示当前上屏状态。")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(StudioTheme.TypeScale.body.weight(.medium))
                     .foregroundStyle(.secondary)
             }
 
@@ -133,11 +133,11 @@ struct OverlayControlPanel: View {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("嘉宾姓名", text: composerBinding(\.lowerThirdNameDraft))
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
+                    .font(StudioTheme.TypeScale.body)
 
                 TextField("职务 / 单位（可留空）", text: composerBinding(\.lowerThirdTitleDraft))
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
+                    .font(StudioTheme.TypeScale.body)
 
                 HStack(spacing: 10) {
                     overlayActionButton(
@@ -193,18 +193,18 @@ struct OverlayControlPanel: View {
             VStack(alignment: .leading, spacing: 10) {
                 TextField("标题（如：活动即将开始）", text: composerBinding(\.countdownTitleDraft))
                     .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 13))
+                    .font(StudioTheme.TypeScale.body)
 
                 HStack(spacing: 8) {
                     numberInput(title: "分", value: composerBinding(\.countdownMinutesDraft))
                     Text(":")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(StudioTheme.TypeScale.heading.weight(.bold))
                         .foregroundStyle(.secondary)
                     numberInput(title: "秒", value: composerBinding(\.countdownSecondsDraft))
                     Spacer()
                     if viewModel.isCountdownActive {
                         Text("剩余 \(formattedTime(viewModel.countdownSeconds))")
-                            .font(.system(size: 13, weight: .bold, design: .monospaced))
+                            .font(StudioTheme.TypeScale.mono.weight(.bold))
                             .foregroundStyle(StudioTheme.Tone.warn)
                     }
                 }
@@ -264,7 +264,7 @@ struct OverlayControlPanel: View {
         ) {
             VStack(alignment: .leading, spacing: 10) {
                 TextEditor(text: composerBinding(\.tickerTextDraft))
-                    .font(.system(size: 13))
+                    .font(StudioTheme.TypeScale.body)
                     .frame(height: 76)
                     .padding(6)
                     .background(StudioTheme.Surface.raised)
@@ -276,7 +276,7 @@ struct OverlayControlPanel: View {
 
                 HStack {
                     Text("速度")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .foregroundStyle(.secondary)
                     Picker("", selection: composerBinding(\.tickerSpeedIndex)) {
                         ForEach(OverlaySpeedSelection.options.indices, id: \.self) { index in
@@ -358,7 +358,7 @@ struct OverlayControlPanel: View {
                     }
                 } label: {
                     Label("Clear All", systemImage: "xmark.circle.fill")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -407,7 +407,7 @@ struct OverlayControlPanel: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 8) {
                 Label(kind.title, systemImage: kind.systemImage)
-                    .font(.system(size: 15, weight: .bold))
+                    .font(StudioTheme.TypeScale.heading.weight(.bold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
                 statusBadge(
@@ -439,7 +439,7 @@ struct OverlayControlPanel: View {
                 .fill(isLive ? StudioTheme.Tone.live : StudioTheme.Tone.idle.opacity(0.45))
                 .frame(width: 7, height: 7)
             Text(title)
-                .font(.system(size: 11, weight: .black, design: .rounded))
+                .font(StudioTheme.TypeScale.label.weight(.black))
         }
         .foregroundStyle(isLive ? StudioTheme.Tone.live : StudioTheme.textSecondary)
         .padding(.horizontal, 10)
@@ -465,9 +465,9 @@ struct OverlayControlPanel: View {
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 58)
                 .multilineTextAlignment(.center)
-                .font(.system(size: 14, weight: .medium, design: .monospaced))
+                .font(StudioTheme.TypeScale.mono.weight(.medium))
             Text(title)
-                .font(.system(size: 13, weight: .medium))
+                .font(StudioTheme.TypeScale.body.weight(.medium))
                 .foregroundStyle(StudioTheme.textSecondary)
         }
     }
@@ -481,7 +481,7 @@ struct OverlayControlPanel: View {
     ) -> some View {
         Button(action: action) {
             Label(title, systemImage: systemImage)
-                .font(.system(size: 13, weight: .bold))
+                .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(isDisabled ? .white.opacity(0.55) : .white)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 9)
