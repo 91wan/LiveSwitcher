@@ -605,7 +605,7 @@ struct LiveQuickRail: View {
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(isActive ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
             }
-            .frame(height: 30)
+            .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
             .padding(.horizontal, 8)
             .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
         }
