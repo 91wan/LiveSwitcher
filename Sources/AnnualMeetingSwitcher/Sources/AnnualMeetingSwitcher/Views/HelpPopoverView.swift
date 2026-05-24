@@ -10,8 +10,6 @@ struct HelpPopoverView: View {
                     .font(StudioTheme.TypeScale.heading.weight(.black))
 
                 Spacer()
-
-                StatusBadge("Help", kind: .idle)
             }
             .padding(.horizontal, 22)
             .padding(.vertical, 16)

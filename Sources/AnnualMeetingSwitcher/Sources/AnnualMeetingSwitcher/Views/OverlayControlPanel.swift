@@ -91,7 +91,9 @@ struct OverlayControlPanel: View {
 
             Spacer()
 
-            StatusBadge(activeOverlayCount == 0 ? "OFF" : "\(activeOverlayCount) LIVE", kind: hasActiveOverlay ? .live : .idle)
+            if hasActiveOverlay {
+                StatusBadge("\(activeOverlayCount) LIVE", kind: .live)
+            }
         }
     }
 
@@ -393,7 +395,13 @@ struct OverlayControlPanel: View {
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
-            StatusBadge(isLive ? "LIVE" : "OFF", kind: isLive ? .live : .idle)
+            if isLive {
+                StatusBadge("LIVE", kind: .live)
+            } else {
+                Text("OFF")
+                    .font(StudioTheme.caption().weight(.semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
         }
     }
 
