@@ -47,6 +47,14 @@ final class SetupAudioDockModelTests: XCTestCase {
         XCTAssertEqual(model.mutedChannelCount, 1)
     }
 
+    func testSetupAudioDockMuteButtonsUseMinimumHitTarget() throws {
+        let source = try String(contentsOf: sourceURL("Views/SetupAudioDock.swift"), encoding: .utf8)
+
+        XCTAssertGreaterThanOrEqual(SetupAudioDockLayoutMetrics.muteButtonSize, 32)
+        XCTAssertFalse(source.contains(".frame(width: 24, height: 20)"))
+        XCTAssertTrue(source.contains("SetupAudioDockLayoutMetrics.muteButtonSize"))
+    }
+
     func testContentViewMountsSetupAudioDockOutsideAudioPage() throws {
         let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
 

@@ -96,7 +96,10 @@ private struct SetupAudioDockChannel: View {
                 } label: {
                     Image(systemName: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
                         .font(StudioTheme.TypeScale.label)
-                        .frame(width: 24, height: 20)
+                        .frame(
+                            width: SetupAudioDockLayoutMetrics.muteButtonSize,
+                            height: SetupAudioDockLayoutMetrics.muteButtonSize
+                        )
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
