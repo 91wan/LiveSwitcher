@@ -106,8 +106,22 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertTrue(source.contains("Save Preset"))
         XCTAssertTrue(source.contains("New Preset"))
         XCTAssertTrue(source.contains("Delete Preset"))
+        XCTAssertTrue(source.contains("Import..."))
+        XCTAssertTrue(source.contains("Export..."))
+        XCTAssertTrue(source.contains("NSOpenPanel"))
+        XCTAssertTrue(source.contains("NSSavePanel"))
         XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.saveLowerThirdPresetFromDraft()"))
+        XCTAssertTrue(source.contains("viewModel.importLowerThirdPresets"))
+    }
+
+    func testAppExposesPasteSpeakersFromClipboardCommand() throws {
+        let source = try sourceText("App.swift")
+
+        XCTAssertTrue(source.contains("Paste Speakers from Clipboard"))
+        XCTAssertTrue(source.contains("NSPasteboard.general.string(forType: .string)"))
+        XCTAssertTrue(source.contains(".keyboardShortcut(\"v\", modifiers: [.command, .shift])"))
+        XCTAssertTrue(source.contains("viewModel.importLowerThirdSpeakersFromClipboardText"))
     }
 
     func testOverlayComposerExposesCountdownPresetShelf() throws {
