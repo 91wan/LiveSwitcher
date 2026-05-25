@@ -188,56 +188,9 @@ struct BGMPlaylistPanel: View {
     // MARK: - V24 BGM 播放进度条（可拖拽）
 
     private var bgmProgressBar: some View {
-        VStack(spacing: 4) {
-            // 可拖拽进度滑块
-            Slider(
-                value: Binding(
-                    get: { viewModel.bgmProgress },
-                    set: { newVal in
-                        viewModel.bgmProgress = newVal
-                        if let player = viewModel.bgmAudioPlayer {
-                            player.currentTime = player.duration * newVal
-                            viewModel.bgmCurrentTime = player.currentTime
-                        }
-                    }
-                ),
-                in: 0...1
-            )
-            .tint(StudioTheme.Action.primary)
-            .frame(height: 20)
-            .disabled(!bgmControlsState.canSeekToBeginning)
-            .accessibilityLabel("BGM progress")
-            .accessibilityValue("\(formatTime(viewModel.bgmCurrentTime)) of \(viewModel.bgmDuration.map { formatTime($0) } ?? "unknown duration")")
-
-            // 时间标签行
-            HStack {
-                Text(formatTime(viewModel.bgmCurrentTime))
-                    .font(StudioTheme.TypeScale.monoCaption)
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Spacer()
-                if let dur = viewModel.bgmDuration {
-                    Text(formatTime(dur))
-                        .font(StudioTheme.TypeScale.monoCaption)
-                        .foregroundStyle(StudioTheme.textSecondary)
-                } else {
-                    Text("--:--")
-                        .font(StudioTheme.TypeScale.monoCaption)
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-            }
+        BGMProgressBar(progressStore: viewModel.bgmProgressStore, canSeek: bgmControlsState.canSeekToBeginning) { progress in
+            viewModel.seekBGM(toProgress: progress)
         }
-        .padding(.horizontal, 4)
-        .padding(.vertical, 6)
-        .background(StudioTheme.Surface.raised)
-        .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
-    }
-
-    private func formatTime(_ seconds: Double) -> String {
-        guard seconds.isFinite && seconds >= 0 else { return "0:00" }
-        let s = Int(seconds)
-        let m = s / 60
-        let r = s % 60
-        return String(format: "%d:%02d", m, r)
     }
 
     // MARK: - 分类选择器
@@ -392,6 +345,57 @@ struct BGMPlaylistPanel: View {
             currentItem: viewModel.currentBGMItem,
             isPlaying: viewModel.isBGMPlaying
         )
+    }
+}
+
+private struct BGMProgressBar: View {
+    @ObservedObject var progressStore: BGMProgressStore
+    let canSeek: Bool
+    let onSeek: (Double) -> Void
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Slider(
+                value: Binding(
+                    get: { progressStore.progress },
+                    set: { onSeek($0) }
+                ),
+                in: 0...1
+            )
+            .tint(StudioTheme.Action.primary)
+            .frame(height: 20)
+            .disabled(!canSeek)
+            .accessibilityLabel("BGM progress")
+            .accessibilityValue("\(formatTime(progressStore.currentTime)) of \(progressStore.duration.map { formatTime($0) } ?? "unknown duration")")
+
+            HStack {
+                Text(formatTime(progressStore.currentTime))
+                    .font(StudioTheme.TypeScale.monoCaption)
+                    .foregroundStyle(StudioTheme.textSecondary)
+                Spacer()
+                if let duration = progressStore.duration {
+                    Text(formatTime(duration))
+                        .font(StudioTheme.TypeScale.monoCaption)
+                        .foregroundStyle(StudioTheme.textSecondary)
+                } else {
+                    Text("--:--")
+                        .font(StudioTheme.TypeScale.monoCaption)
+                        .foregroundStyle(StudioTheme.textSecondary)
+                }
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
+        .background(StudioTheme.Surface.raised)
+        .clipShape(.rect(cornerRadius: StudioTheme.radiusS, style: .continuous))
+    }
+
+    private func formatTime(_ seconds: Double) -> String {
+        guard seconds.isFinite && seconds >= 0 else { return "0:00" }
+        let seconds = Int(seconds)
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        return String(format: "%d:%02d", minutes, remainder)
     }
 }
 
