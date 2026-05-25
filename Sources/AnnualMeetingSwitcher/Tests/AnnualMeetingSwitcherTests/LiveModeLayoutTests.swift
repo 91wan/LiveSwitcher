@@ -91,28 +91,45 @@ final class LiveModeLayoutTests: XCTestCase {
     func testLiveLowerThirdPresetMenuSendsSelectedPresetDirectly() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("lowerThirdPresetMenu"))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
         XCTAssertTrue(source.contains("ForEach(viewModel.lowerThirdPresets)"))
+        XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.showLowerThirdPreset(preset)"))
-        XCTAssertTrue(source.contains("Choose lower third preset"))
     }
 
     func testLiveCountdownPresetMenuStartsSelectedPresetDirectly() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("countdownPresetMenu"))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.countdown"))
         XCTAssertTrue(source.contains("ForEach(viewModel.countdownPresets)"))
+        XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.startCountdownPreset(preset)"))
-        XCTAssertTrue(source.contains("Choose countdown preset"))
     }
 
     func testLiveTickerPresetMenuStartsSelectedPresetDirectly() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("tickerPresetMenu"))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.ticker"))
         XCTAssertTrue(source.contains("ForEach(viewModel.tickerPresets)"))
+        XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
-        XCTAssertTrue(source.contains("Choose ticker preset"))
+    }
+
+    func testLiveOverlayRailUsesCompactPresetRows() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("compactOverlayRow("))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.countdown"))
+        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.ticker"))
+        XCTAssertTrue(source.contains("overlayPresetMenu("))
+        XCTAssertFalse(source.contains("private var lowerThirdPresetMenu"))
+        XCTAssertFalse(source.contains("private var countdownPresetMenu"))
+        XCTAssertFalse(source.contains("private var tickerPresetMenu"))
+        XCTAssertFalse(source.contains("Choose lower third preset"))
+        XCTAssertTrue(source.contains("viewModel.showLowerThirdPreset(preset)"))
+        XCTAssertTrue(source.contains("viewModel.startCountdownPreset(preset)"))
+        XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
     }
 
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
