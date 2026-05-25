@@ -13,12 +13,23 @@ struct ProgramItem: Identifiable, Equatable {
     var subtitle: String
     /// 媒体文件 URL（可选）
     var sourceURL: URL?
+    var scheduledStartAt: Date?
+    var scheduledDuration: TimeInterval?
 
-    init(id: UUID = UUID(), title: String, subtitle: String = "", sourceURL: URL? = nil) {
+    init(
+        id: UUID = UUID(),
+        title: String,
+        subtitle: String = "",
+        sourceURL: URL? = nil,
+        scheduledStartAt: Date? = nil,
+        scheduledDuration: TimeInterval? = nil
+    ) {
         self.id = id
         self.title = title
         self.subtitle = subtitle
         self.sourceURL = sourceURL
+        self.scheduledStartAt = scheduledStartAt
+        self.scheduledDuration = scheduledDuration
     }
 }
 
@@ -77,9 +88,20 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 节目状态
 
     @Published var currentProgramItem: ProgramItem? {
-        didSet { applyAudioRouting() }
+        didSet {
+            if currentProgramItem?.id != oldValue?.id {
+                currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
+            }
+            applyAudioRouting()
+        }
     }
+    @Published var currentProgramSwitchedAt: Date?
     @Published var programItems: [ProgramItem] = []
+    @Published var showAgendaTimeline: Bool = false {
+        didSet {
+            userDefaults.set(showAgendaTimeline, forKey: UDKeys.showAgendaTimeline)
+        }
+    }
 
     // MARK: - 推流状态
 
@@ -170,6 +192,11 @@ final class SwitcherViewModel: ObservableObject {
             userDefaults.set(autoPlayNextVideoOnEnd, forKey: UDKeys.autoPlayNextVideoOnEnd)
         }
     }
+    @Published var autoAdvanceAtScheduledTime: Bool = false {
+        didSet {
+            userDefaults.set(autoAdvanceAtScheduledTime, forKey: UDKeys.autoAdvanceAtScheduledTime)
+        }
+    }
 
     /// BGM 进度（0.0 ~ 1.0），由定时器驱动
     @Published var bgmProgress: Double = 0.0
@@ -225,6 +252,7 @@ final class SwitcherViewModel: ObservableObject {
     private var systemVolumeObserver: SystemVolumeObserver?
     private var externalDisplayChangeObserver: NSObjectProtocol?
     private let supportEventLimit = 80
+    private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
@@ -245,6 +273,8 @@ final class SwitcherViewModel: ObservableObject {
 
     private enum UDKeys {
         static let pushList = "pushList_paths"
+        static let pushListScheduledStarts = "pushList_scheduled_starts"
+        static let pushListScheduledDurations = "pushList_scheduled_durations"
         static let bgmList = "bgmList_paths"
         static let bgmListCategories = "bgmList_categories"
         static let wallpapers = "backgroundWallpapers_paths"
@@ -252,6 +282,8 @@ final class SwitcherViewModel: ObservableObject {
         static let audioStrategy = "audioStrategy"
         static let speakerMode = "speakerMode"
         static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
+        static let autoAdvanceAtScheduledTime = "autoAdvanceAtScheduledTime"
+        static let showAgendaTimeline = "showAgendaTimeline"
         static let consoleMode = "consoleMode"
         static let themeOverride = "themeOverride"
         static let lowerThirdPresets = "overlay.presets.lowerThird.json"
@@ -516,12 +548,16 @@ final class SwitcherViewModel: ObservableObject {
 
     func saveData() {
         let persistentProgramItems = ProgramQueueStore.persistentProgramItems(from: programItems)
-        let pushPaths = persistentProgramItems.compactMap { $0.sourceURL?.path }
+        let pushPaths = persistentProgramItems.map { $0.sourceURL?.path ?? "" }
         let pushSubtitles = persistentProgramItems.map { $0.subtitle }
         let pushTitles = persistentProgramItems.map { $0.title }
+        let pushScheduledStarts = ProgramQueueStore.encodedScheduleStarts(for: persistentProgramItems)
+        let pushScheduledDurations = ProgramQueueStore.encodedScheduleDurations(for: persistentProgramItems)
         userDefaults.set(pushPaths, forKey: UDKeys.pushList)
         userDefaults.set(pushTitles, forKey: "pushList_titles")
         userDefaults.set(pushSubtitles, forKey: "pushList_subtitles")
+        userDefaults.set(pushScheduledStarts, forKey: UDKeys.pushListScheduledStarts)
+        userDefaults.set(pushScheduledDurations, forKey: UDKeys.pushListScheduledDurations)
 
         let bgmPaths = bgmItems.map { $0.url.path }
         let bgmCategories = bgmItems.map { $0.category.rawValue }
@@ -556,7 +592,16 @@ final class SwitcherViewModel: ObservableObject {
         if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
             let titles = userDefaults.stringArray(forKey: "pushList_titles") ?? []
             let subtitles = userDefaults.stringArray(forKey: "pushList_subtitles") ?? []
-            let missingCount = paths.filter { !FileManager.default.fileExists(atPath: $0) }.count
+            let scheduledStarts = userDefaults.stringArray(forKey: UDKeys.pushListScheduledStarts) ?? []
+            let scheduledDurations = userDefaults.stringArray(forKey: UDKeys.pushListScheduledDurations) ?? []
+            let missingCount = paths.enumerated().filter { index, path in
+                if path.isEmpty,
+                   index < subtitles.count,
+                   ProgramItem.isAgendaMarkerSubtitle(subtitles[index]) {
+                    return false
+                }
+                return !FileManager.default.fileExists(atPath: path)
+            }.count
             if missingCount > 0 {
                 recordSupportEvent(kind: .programItemFileMissing, detail: "count=\(missingCount)")
             }
@@ -564,7 +609,9 @@ final class SwitcherViewModel: ObservableObject {
                 contentsOf: ProgramQueueStore.restoredProgramItems(
                     paths: paths,
                     titles: titles,
-                    subtitles: subtitles
+                    subtitles: subtitles,
+                    scheduledStarts: scheduledStarts,
+                    scheduledDurations: scheduledDurations
                 )
             )
         }
@@ -623,6 +670,14 @@ final class SwitcherViewModel: ObservableObject {
             autoPlayNextVideoOnEnd = userDefaults.bool(forKey: UDKeys.autoPlayNextVideoOnEnd)
         }
 
+        if userDefaults.object(forKey: UDKeys.autoAdvanceAtScheduledTime) != nil {
+            autoAdvanceAtScheduledTime = userDefaults.bool(forKey: UDKeys.autoAdvanceAtScheduledTime)
+        }
+
+        if userDefaults.object(forKey: UDKeys.showAgendaTimeline) != nil {
+            showAgendaTimeline = userDefaults.bool(forKey: UDKeys.showAgendaTimeline)
+        }
+
         if let rawConsoleMode = userDefaults.string(forKey: UDKeys.consoleMode),
            let storedConsoleMode = ConsoleMode(rawValue: rawConsoleMode) {
             consoleMode = storedConsoleMode
@@ -668,7 +723,7 @@ final class SwitcherViewModel: ObservableObject {
 
     func switchToProgram(_ item: ProgramItem) {
         switch item.sourceKind {
-        case .unsupported:
+        case .agendaMarker, .unsupported:
             return
         case .media:
             guard let url = item.sourceURL else { return }
@@ -1008,7 +1063,7 @@ final class SwitcherViewModel: ObservableObject {
         case .activeDeck, .keynote, .pptx:
             deckStopHandler()
             return
-        case .html, .unsupported:
+        case .html, .agendaMarker, .unsupported:
             return
         case .media:
             break
@@ -1063,6 +1118,30 @@ final class SwitcherViewModel: ObservableObject {
         saveData()
     }
 
+    func addAgendaMarker(title: String = "Break") {
+        let start = programItems.last.flatMap { item -> Date? in
+            guard let scheduledStartAt = item.scheduledStartAt,
+                  let scheduledDuration = item.scheduledDuration else { return nil }
+            return scheduledStartAt.addingTimeInterval(scheduledDuration)
+        }
+        addProgramItem(ProgramItem.agendaMarker(title: title, scheduledStartAt: start))
+    }
+
+    func updateProgramItemSchedule(
+        id: UUID,
+        scheduledStartAt: Date?,
+        scheduledDuration: TimeInterval?
+    ) {
+        guard let index = programItems.firstIndex(where: { $0.id == id }) else { return }
+        programItems[index].scheduledStartAt = scheduledStartAt
+        programItems[index].scheduledDuration = scheduledDuration
+        if currentProgramItem?.id == id {
+            currentProgramItem = programItems[index]
+        }
+        agendaAutoAdvancePromptedItemIDs.remove(id)
+        saveData()
+    }
+
     func removeProgramItem(withID id: UUID) {
         programItems.removeAll { $0.id == id }
         if currentProgramItem?.id == id {
@@ -1076,6 +1155,26 @@ final class SwitcherViewModel: ObservableObject {
     func moveProgramItems(from source: IndexSet, to destination: Int) {
         programItems.move(fromOffsets: source, toOffset: destination)
         saveData()
+    }
+
+    func agendaAutoAdvancePrompt(now: Date = Date()) -> AgendaAutoAdvancePrompt? {
+        AgendaAutoAdvanceModel.prompt(
+            isEnabled: autoAdvanceAtScheduledTime,
+            programItems: programItems,
+            currentProgramItem: currentProgramItem,
+            now: now,
+            promptedItemIDs: agendaAutoAdvancePromptedItemIDs
+        )
+    }
+
+    func dismissAgendaAutoAdvancePrompt(_ prompt: AgendaAutoAdvancePrompt) {
+        agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
+    }
+
+    func confirmAgendaAutoAdvance(_ prompt: AgendaAutoAdvancePrompt) {
+        agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
+        guard let item = programItems.first(where: { $0.id == prompt.itemID }) else { return }
+        switchToProgramAfterReadinessConfirmation(item)
     }
 
     // MARK: - 壁纸库操作

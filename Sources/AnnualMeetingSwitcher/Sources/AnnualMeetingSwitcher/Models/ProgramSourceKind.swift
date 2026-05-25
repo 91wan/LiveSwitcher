@@ -6,6 +6,7 @@ enum ProgramSourceKind: Equatable {
     case keynote
     case pptx
     case activeDeck
+    case agendaMarker
     case unsupported
 
     private static let mediaExtensions: Set<String> = [
@@ -33,7 +34,7 @@ enum ProgramSourceKind: Equatable {
         switch self {
         case .media, .html, .keynote, .pptx:
             return true
-        case .activeDeck, .unsupported:
+        case .activeDeck, .agendaMarker, .unsupported:
             return false
         }
     }
@@ -55,6 +56,9 @@ extension ProgramItem {
     var sourceKind: ProgramSourceKind {
         if let sourceURL {
             return ProgramSourceKind(fileURL: sourceURL)
+        }
+        if isAgendaMarker {
+            return .agendaMarker
         }
         if subtitle.uppercased().contains("KEY") {
             return .activeDeck
@@ -90,6 +94,8 @@ extension ProgramItem {
             return "PPTX"
         case .activeDeck:
             return "DECK"
+        case .agendaMarker:
+            return "MARKER"
         case .unsupported:
             return subtitle.isEmpty ? "FILE" : subtitle.uppercased()
         }

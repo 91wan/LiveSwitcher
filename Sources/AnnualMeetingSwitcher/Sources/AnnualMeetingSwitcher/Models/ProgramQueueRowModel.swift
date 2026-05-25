@@ -30,7 +30,7 @@ struct ProgramQueueRowModel: Equatable {
             return .html
         case .keynote, .pptx, .activeDeck:
             return .presentation
-        case .unsupported:
+        case .agendaMarker, .unsupported:
             return .unsupported
         }
     }

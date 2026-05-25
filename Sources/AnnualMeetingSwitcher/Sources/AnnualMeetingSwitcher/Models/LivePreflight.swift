@@ -100,6 +100,10 @@ struct LivePreflightSnapshot: Equatable {
     var programItemCount: Int
     var currentProgramTitle: String?
     var currentProgramSource: String?
+    var currentProgramScheduledStartAt: Date? = nil
+    var currentProgramScheduledDuration: TimeInterval? = nil
+    var currentProgramSwitchedAt: Date? = nil
+    var scheduleNow: Date = Date()
     var bgmItemCount: Int
     var isBGMPlaying: Bool
     var isBGMAudioTakeoverActive: Bool
@@ -113,6 +117,32 @@ struct LivePreflightSnapshot: Equatable {
     var autoPlayNextVideoOnEnd: Bool
     var effectiveMediaVolume: Float
     var effectiveBGMVolume: Float
+
+    static func == (lhs: LivePreflightSnapshot, rhs: LivePreflightSnapshot) -> Bool {
+        lhs.appVersion == rhs.appVersion &&
+        lhs.hasExternalDisplay == rhs.hasExternalDisplay &&
+        lhs.isBroadcasting == rhs.isBroadcasting &&
+        lhs.broadcastSafetyNotice == rhs.broadcastSafetyNotice &&
+        lhs.programItemCount == rhs.programItemCount &&
+        lhs.currentProgramTitle == rhs.currentProgramTitle &&
+        lhs.currentProgramSource == rhs.currentProgramSource &&
+        lhs.currentProgramScheduledStartAt == rhs.currentProgramScheduledStartAt &&
+        lhs.currentProgramScheduledDuration == rhs.currentProgramScheduledDuration &&
+        lhs.currentProgramSwitchedAt == rhs.currentProgramSwitchedAt &&
+        lhs.bgmItemCount == rhs.bgmItemCount &&
+        lhs.isBGMPlaying == rhs.isBGMPlaying &&
+        lhs.isBGMAudioTakeoverActive == rhs.isBGMAudioTakeoverActive &&
+        lhs.isSpeakerMode == rhs.isSpeakerMode &&
+        lhs.isPanicMode == rhs.isPanicMode &&
+        lhs.isPageInterceptEnabled == rhs.isPageInterceptEnabled &&
+        lhs.activeOverlayCount == rhs.activeOverlayCount &&
+        lhs.activeOverlayKinds == rhs.activeOverlayKinds &&
+        lhs.countdownRemainingSeconds == rhs.countdownRemainingSeconds &&
+        lhs.wallpaperCount == rhs.wallpaperCount &&
+        lhs.autoPlayNextVideoOnEnd == rhs.autoPlayNextVideoOnEnd &&
+        lhs.effectiveMediaVolume == rhs.effectiveMediaVolume &&
+        lhs.effectiveBGMVolume == rhs.effectiveBGMVolume
+    }
 }
 
 struct LivePreflightCheck: Identifiable, Equatable {

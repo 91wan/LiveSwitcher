@@ -88,6 +88,8 @@ actor ThumbnailService {
             return "play.rectangle.fill"
         case .pptx:
             return "doc.richtext"
+        case .agendaMarker:
+            return "mappin.and.ellipse"
         case .unsupported:
             return "doc.fill"
         }
@@ -122,7 +124,7 @@ actor ThumbnailService {
             return await MainActor.run {
                 Self.renderFallbackPlaceholder(for: kind, sourceURL: sourceURL, size: targetSize)
             }
-        case .activeDeck, .unsupported:
+        case .activeDeck, .agendaMarker, .unsupported:
             return await MainActor.run {
                 Self.renderFallbackPlaceholder(for: kind, sourceURL: sourceURL, size: targetSize)
             }
@@ -305,6 +307,8 @@ private extension ProgramSourceKind {
             return "pptx"
         case .activeDeck:
             return "activeDeck"
+        case .agendaMarker:
+            return "agendaMarker"
         case .unsupported:
             return "unsupported"
         }
