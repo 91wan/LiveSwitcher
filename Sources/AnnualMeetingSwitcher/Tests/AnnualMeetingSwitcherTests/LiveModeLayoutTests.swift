@@ -48,8 +48,7 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("Switch to Setup"))
-        XCTAssertTrue(source.contains("viewModel.consoleMode = .setup"))
-        XCTAssertTrue(source.contains("viewModel.selectedMainTab = .preview"))
+        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
     }
 
     func testLiveSourceRailUsesAdaptiveEmptyWidthAndCompactEmptyCTA() throws {
@@ -84,10 +83,34 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("LiveBGMQuickPickerModel.make"))
-        XCTAssertTrue(source.contains("Choose BGM from library"))
+        XCTAssertTrue(source.contains("LiveBGMPlaylistModel.make"))
+        XCTAssertTrue(source.contains("Choose BGM category"))
         XCTAssertTrue(source.contains("BGMCategory.allCases"))
-        XCTAssertTrue(source.contains("viewModel.toggleBGM(item)"))
-        XCTAssertTrue(source.contains("Open BGM Library"))
+        XCTAssertTrue(source.contains("viewModel.toggleBGM(row.item)"))
+        XCTAssertTrue(source.contains("playlist.categoryButtonTitle"))
+        XCTAssertFalse(source.contains("Open BGM Library"))
+        XCTAssertFalse(source.contains("onOpenMixer()"))
+    }
+
+    func testLiveModeQuickRailIncludesSpeakerAndPPTModes() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("modesCard"))
+        XCTAssertTrue(source.contains("Toggle(isOn: isOn)"))
+        XCTAssertTrue(source.contains("isOn: $viewModel.isSpeakerMode"))
+        XCTAssertTrue(source.contains("isOn: $viewModel.isPageInterceptEnabled"))
+        XCTAssertTrue(source.range(of: "outputCard")!.lowerBound < source.range(of: "modesCard")!.lowerBound)
+        XCTAssertTrue(source.range(of: "modesCard")!.lowerBound < source.range(of: "cutBusCard")!.lowerBound)
+    }
+
+    func testLiveBGMCardShowsMiniPlaylistWithoutSetupNavigation() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("liveBGMCategory"))
+        XCTAssertTrue(source.contains("liveBGMPlaylistRows("))
+        XCTAssertTrue(source.contains("playlist.rows"))
+        XCTAssertTrue(source.contains("playlist.remainingCountText"))
+        XCTAssertFalse(source.contains("Label(\"Open BGM Library\""))
     }
 
     func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
