@@ -41,6 +41,26 @@ struct LiveSwitcherApp: App {
                 .disabled(viewModel.consoleMode == .live)
             }
 
+            CommandMenu("Setup") {
+                Button("Run Queue") {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .preview
+                }
+                .keyboardShortcut("1", modifiers: .command)
+
+                Button("Audio") {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .audioMixer
+                }
+                .keyboardShortcut("2", modifiers: .command)
+
+                Button("Overlays") {
+                    viewModel.consoleMode = .setup
+                    viewModel.selectedMainTab = .overlays
+                }
+                .keyboardShortcut("3", modifiers: .command)
+            }
+
             CommandMenu("现场控制") {
                 Button("打开现场安全台") {
                     openWindow(id: "safety-cockpit")

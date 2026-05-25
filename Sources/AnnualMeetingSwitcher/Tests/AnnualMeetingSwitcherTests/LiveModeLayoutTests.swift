@@ -6,6 +6,9 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.monitorHeightRatio, 0.50)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.audioStripHeight, 110)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.sourceRailWidth, 200)
+        XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.sourceRailWidthEmpty, 80)
+        XCTAssertLessThanOrEqual(LiveModeLayoutMetrics.sourceRailWidthEmpty, 120)
+        XCTAssertLessThan(LiveModeLayoutMetrics.sourceRailWidthEmpty, LiveModeLayoutMetrics.sourceRailWidth)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.quickRailWidth, 200)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.footerHeight, 26)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.transportButtonSize, 32)
@@ -47,6 +50,15 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("Switch to Setup"))
         XCTAssertTrue(source.contains("viewModel.consoleMode = .setup"))
         XCTAssertTrue(source.contains("viewModel.selectedMainTab = .preview"))
+    }
+
+    func testLiveSourceRailUsesAdaptiveEmptyWidthAndCompactEmptyCTA() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("LiveModeLayoutMetrics.sourceRailWidthEmpty"))
+        XCTAssertTrue(source.contains("viewModel.programItems.isEmpty ? LiveModeLayoutMetrics.sourceRailWidthEmpty : LiveModeLayoutMetrics.sourceRailWidth"))
+        XCTAssertTrue(source.contains(".animation(.easeInOut(duration: 0.2), value: viewModel.programItems.isEmpty)"))
+        XCTAssertFalse(source.contains("EmptyStateView(\n                        title: \"No sources\""))
     }
 
     func testProgramMonitorLiveModeHidesSetupUtilitiesAndHeightCap() throws {
