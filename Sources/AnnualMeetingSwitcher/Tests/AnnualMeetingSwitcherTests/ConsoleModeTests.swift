@@ -60,6 +60,7 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertFalse(source.contains("navigationTab("))
         XCTAssertTrue(source.contains("viewModel.consoleMode == .setup"))
         XCTAssertTrue(source.contains("activeContentTab"))
+        XCTAssertFalse(source.contains("Image(systemName: \"ellipsis\")"))
     }
 
     func testLiveModeRoutesDedicatedLayoutInsteadOfSetupRunDesk() throws {
@@ -93,7 +94,7 @@ final class ConsoleModeTests: XCTestCase {
 
         XCTAssertTrue(content.contains("tab.setupMenuShortcutLabel"))
         XCTAssertTrue(content.contains(".keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)"))
-        XCTAssertTrue(content.contains("ellipsis"))
+        XCTAssertFalse(content.contains("ellipsis"))
 
         XCTAssertTrue(app.contains("CommandMenu(\"Setup\")"))
         XCTAssertTrue(app.contains("viewModel.selectedMainTab = .preview"))

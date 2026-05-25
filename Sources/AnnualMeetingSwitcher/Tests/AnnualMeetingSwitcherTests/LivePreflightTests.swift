@@ -160,8 +160,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(panic.group, .controls)
         XCTAssertEqual(panic.status, .fail)
         XCTAssertEqual(panic.actionKind, .turnOffPanic)
-        XCTAssertEqual(panic.actionLabel, "Turn off panic")
-        XCTAssertTrue(panic.message.localizedStandardContains("Panic blackout is active"))
+        XCTAssertEqual(panic.actionLabel, "Turn off blackout")
+        XCTAssertTrue(panic.message.localizedStandardContains("Blackout is active"))
 
         let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
         XCTAssertTrue(attentionChecks.contains(panic))
@@ -411,11 +411,11 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertTrue(report.contains("Wallpapers: 1"))
         XCTAssertTrue(report.contains("Active overlays: 2"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
-        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("Blackout: on"))
         XCTAssertTrue(report.contains("BGM takeover: active"))
         XCTAssertTrue(report.contains("Auto-next video: on"))
         XCTAssertTrue(report.contains("- FAIL External Display"))
-        XCTAssertTrue(report.contains("- FAIL Panic Blackout"))
+        XCTAssertTrue(report.contains("- FAIL Blackout"))
     }
 
     func testDiagnosticsReportRedactsRawPathsAndMediaNames() {
@@ -452,7 +452,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.4.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
-        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("Blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
         XCTAssertTrue(report.contains("Active overlays: 1"))
         XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
@@ -621,7 +621,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.4.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
-        XCTAssertTrue(report.contains("Panic blackout: on"))
+        XCTAssertTrue(report.contains("Blackout: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
         XCTAssertTrue(report.contains("Active overlays: 1"))
         XCTAssertFalse(report.localizedStandardContains("Customer ticker text"))

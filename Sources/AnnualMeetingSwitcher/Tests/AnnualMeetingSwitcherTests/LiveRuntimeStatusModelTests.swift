@@ -37,7 +37,7 @@ final class LiveRuntimeStatusModelTests: XCTestCase {
             "FAIL · Fail 0",
             "FAIL · Fail 1",
             "WARN · Warn 0",
-            "+ 6 more",
+            "+ 6 issues",
             "STANDBY · Current: No program · 0 sources"
         ])
         XCTAssertEqual(model.chips[3].kind, .fail)
@@ -69,7 +69,7 @@ final class LiveRuntimeStatusModelTests: XCTestCase {
 
         XCTAssertEqual(model.chips.map(\.text), [
             "WARN · Warn 0",
-            "+ 3 more",
+            "+ 3 warnings",
             "STANDBY · Current: Opening · 1 sources"
         ])
         XCTAssertEqual(model.chips[1].kind, .warn)

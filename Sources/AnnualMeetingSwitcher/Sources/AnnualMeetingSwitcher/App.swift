@@ -89,7 +89,7 @@ struct LiveSwitcherApp: App {
                 }
                 .keyboardShortcut("m", modifiers: [.command, .option])
 
-                Button(viewModel.isPanicMode ? "关闭老板键" : "开启老板键") {
+                Button(viewModel.isPanicMode ? "Disable Blackout" : "Enable Blackout") {
                     viewModel.togglePanicMode()
                 }
                 .keyboardShortcut("b", modifiers: [.command, .option])

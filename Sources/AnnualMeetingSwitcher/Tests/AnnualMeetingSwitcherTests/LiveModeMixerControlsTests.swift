@@ -111,12 +111,36 @@ final class LiveModeMixerControlsTests: XCTestCase {
             effectiveBGMVolume: 0
         )
 
-        let model = LiveRuntimeStatusModel.make(snapshot: snapshot)
+        let checks = LivePreflightCheck.build(from: snapshot) + [
+            LivePreflightCheck(
+                id: "synthetic.fail",
+                group: .display,
+                status: .fail,
+                title: "Synthetic Issue",
+                message: "Extra blocking issue"
+            ),
+            LivePreflightCheck(
+                id: "synthetic.fail.2",
+                group: .display,
+                status: .fail,
+                title: "Synthetic Issue 2",
+                message: "Extra blocking issue"
+            ),
+            LivePreflightCheck(
+                id: "synthetic.warn",
+                group: .audio,
+                status: .warn,
+                title: "Synthetic Warning",
+                message: "Extra warning"
+            )
+        ]
+
+        let model = LiveRuntimeStatusModel.make(checks: checks, snapshot: snapshot)
 
         XCTAssertGreaterThanOrEqual(model.chips.count, 3)
         XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("External Display") })
         XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("Projection State") })
-        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("more") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("issues") })
         XCTAssertTrue(model.chips.contains { $0.text.contains("STANDBY") && $0.text.contains("0 sources") })
     }
 

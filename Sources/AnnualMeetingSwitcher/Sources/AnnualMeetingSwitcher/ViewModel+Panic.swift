@@ -1,13 +1,13 @@
 import SwiftUI
 import AVFoundation
 
-// MARK: - Tier1: Panic Button 状态扩展
+// MARK: - Tier1: Blackout State Extension
 
 extension SwitcherViewModel {
 
     // MARK: - 业务方法
 
-    /// 切换 Panic 模式（老板键）
+    /// Toggle emergency blackout mode.
     func togglePanicMode() {
         if isPanicMode {
             deactivatePanic()

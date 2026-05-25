@@ -9,12 +9,13 @@ final class HelpCopyModelTests: XCTestCase {
         XCTAssertFalse(text.contains("绿色按钮"))
     }
 
-    func testHelpCopyStatesLiveAndPanicRedRiskSemantics() {
+    func testHelpCopyStatesLiveAndBlackoutRedRiskSemantics() {
         let text = HelpCopyModel.allText
 
         XCTAssertTrue(text.localizedCaseInsensitiveContains("ON AIR"))
         XCTAssertTrue(text.contains("红色"))
-        XCTAssertTrue(text.localizedCaseInsensitiveContains("Panic"))
+        XCTAssertTrue(text.localizedCaseInsensitiveContains("Blackout"))
+        XCTAssertFalse(text.contains("老板键"))
     }
 
     func testHelpCopyMatchesCurrentRunDeskInformationArchitecture() {

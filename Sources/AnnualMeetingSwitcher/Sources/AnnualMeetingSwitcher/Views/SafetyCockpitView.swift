@@ -225,7 +225,7 @@ struct SafetyCockpitView: View {
             }
         case .turnOffPanic:
             if viewModel.performLivePreflightAction(action) {
-                showActionMessage("Panic turned off")
+                showActionMessage("Blackout turned off")
             }
         case .openPreview, .openAudioMixer, .openOverlays:
             guard let destination = action.mainConsoleDestination else { return }

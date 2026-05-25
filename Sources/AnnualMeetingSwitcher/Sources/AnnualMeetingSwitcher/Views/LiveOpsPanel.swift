@@ -17,7 +17,7 @@ struct LiveOpsPanel: View {
                 }
                 Spacer()
                 if viewModel.isPanicMode {
-                    StatusBadge("PANIC", kind: .fail)
+                    StatusBadge("BLACKOUT", kind: .fail)
                 }
             }
             .padding(.horizontal, 4)

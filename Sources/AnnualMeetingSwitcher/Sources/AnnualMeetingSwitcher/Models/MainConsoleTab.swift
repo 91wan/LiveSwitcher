@@ -105,7 +105,7 @@ private extension LivePreflightActionKind {
         case .clearOverlays:
             return "Overlays cleared"
         case .turnOffPanic:
-            return "Panic turned off"
+            return "Blackout turned off"
         case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
             return nil
         }

@@ -326,14 +326,20 @@ private struct OutputOverlayLayer: View, Equatable {
                     isVisible: displayState.isLowerThirdVisible
                 )
                 .transition(.opacity)
-                .zIndex(5)
+                .zIndex(OutputLayerZIndex.lowerThird)
             }
+
+            OutputCornerLogoLayer(
+                url: displayState.cornerLogoURL,
+                position: displayState.cornerLogoPosition
+            )
+            .zIndex(OutputLayerZIndex.cornerLogo)
 
             if displayState.isFadeToBlackActive {
                 Color.black
                     .ignoresSafeArea()
                     .transition(.opacity)
-                    .zIndex(8)
+                    .zIndex(OutputLayerZIndex.fadeToBlack)
                     .accessibilityLabel("Fade to black active")
             }
 
@@ -341,8 +347,26 @@ private struct OutputOverlayLayer: View, Equatable {
             if displayState.isPanicMode {
                 PanicLayer()
                     .transition(.opacity)
-                    .zIndex(10)
+                    .zIndex(OutputLayerZIndex.panic)
             }
+        }
+    }
+}
+
+private struct OutputCornerLogoLayer: View {
+    let url: URL?
+    let position: CornerLogoPosition
+
+    var body: some View {
+        if let url,
+           let image = NSImage(contentsOf: url) {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 80)
+                .padding(28)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: position.alignment)
+                .accessibilityLabel("Corner logo")
         }
     }
 }
