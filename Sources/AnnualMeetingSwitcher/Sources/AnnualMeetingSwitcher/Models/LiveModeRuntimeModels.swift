@@ -61,14 +61,10 @@ struct LiveCutBusModel: Equatable {
             return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "No next source")
         }
 
-        let nextIndex: Int?
-        if let currentID = currentProgramItem?.id,
-           let currentIndex = programItems.firstIndex(where: { $0.id == currentID }) {
-            let candidate = programItems.index(after: currentIndex)
-            nextIndex = candidate < programItems.endIndex ? candidate : nil
-        } else {
-            nextIndex = programItems.startIndex
-        }
+        let nextIndex = ProgramQueueStore.nextPlayableIndexAfterCurrent(
+            current: currentProgramItem,
+            in: programItems
+        )
 
         guard let nextIndex else {
             return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "No next source")
@@ -135,8 +131,26 @@ struct LiveRuntimeStatusModel: Equatable {
             overflowChip = []
         }
 
+        let scheduleChip: [LiveRuntimeStatusChip]
+        if let currentProgramTitle = snapshot.currentProgramTitle {
+            let scheduleStatus = AgendaScheduleStatusModel.make(
+                currentItem: ProgramItem(
+                    title: currentProgramTitle,
+                    scheduledStartAt: snapshot.currentProgramScheduledStartAt,
+                    scheduledDuration: snapshot.currentProgramScheduledDuration
+                ),
+                switchedAt: snapshot.currentProgramSwitchedAt,
+                now: snapshot.scheduleNow
+            )
+            scheduleChip = scheduleStatus.state == .none
+                ? []
+                : [LiveRuntimeStatusChip(text: scheduleStatus.text, kind: scheduleStatus.kind)]
+        } else {
+            scheduleChip = []
+        }
+
         return LiveRuntimeStatusModel(
-            chips: visibleFailChips + visibleWarnChips + overflowChip + [summary]
+            chips: visibleFailChips + visibleWarnChips + overflowChip + scheduleChip + [summary]
         )
     }
 }

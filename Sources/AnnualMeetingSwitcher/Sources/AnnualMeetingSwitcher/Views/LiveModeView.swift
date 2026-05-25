@@ -7,12 +7,23 @@ struct LiveModeView: View {
     var body: some View {
         GeometryReader { proxy in
             let verticalInsets: CGFloat = 14
+            let agendaPrompt = viewModel.agendaAutoAdvancePrompt()
+            let promptHeight: CGFloat = agendaPrompt == nil ? 0 : 46
             let mainHeight = max(
                 0,
-                proxy.size.height - verticalInsets - LiveModeLayoutMetrics.footerHeight - 8
+                proxy.size.height - verticalInsets - LiveModeLayoutMetrics.footerHeight - 8 - promptHeight
             )
 
             VStack(spacing: 8) {
+                if let prompt = agendaPrompt {
+                    AgendaAutoAdvancePromptBanner(
+                        prompt: prompt,
+                        onTake: { viewModel.confirmAgendaAutoAdvance(prompt) },
+                        onDismiss: { viewModel.dismissAgendaAutoAdvancePrompt(prompt) }
+                    )
+                    .frame(height: 38)
+                }
+
                 HStack(alignment: .top, spacing: 10) {
                     LiveSourceRail()
                         .frame(width: viewModel.programItems.isEmpty ? LiveModeLayoutMetrics.sourceRailWidthEmpty : LiveModeLayoutMetrics.sourceRailWidth)
@@ -44,6 +55,43 @@ struct LiveModeView: View {
             .padding(.top, 8)
             .padding(.bottom, 6)
         }
+    }
+}
+
+private struct AgendaAutoAdvancePromptBanner: View {
+    let prompt: AgendaAutoAdvancePrompt
+    let onTake: () -> Void
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "clock.badge.exclamationmark")
+                .font(StudioTheme.TypeScale.body.weight(.bold))
+                .foregroundStyle(StudioTheme.Tone.warn)
+            Text(prompt.message)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 0)
+            Button("Take") {
+                onTake()
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.small)
+            .tint(StudioTheme.Action.primary)
+            .focusable(false)
+            Button("Dismiss") {
+                onDismiss()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .focusable(false)
+        }
+        .padding(.horizontal, 12)
+        .background(StudioTheme.Tone.warn.opacity(0.11), in: Capsule(style: .continuous))
+        .overlay(Capsule(style: .continuous).stroke(StudioTheme.Tone.warn.opacity(0.24), lineWidth: 1))
+        .accessibilityLabel("Agenda prompt. \(prompt.message)")
     }
 }
 
@@ -130,15 +178,10 @@ struct LiveSourceRail: View {
     }
 
     private var nextProgramItem: ProgramItem? {
-        guard !viewModel.programItems.isEmpty else { return nil }
-        guard let currentID = viewModel.currentProgramItem?.id,
-              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
-        else {
-            return viewModel.programItems.first
-        }
-        let nextIndex = viewModel.programItems.index(after: currentIndex)
-        guard nextIndex < viewModel.programItems.endIndex else { return nil }
-        return viewModel.programItems[nextIndex]
+        ProgramQueueStore.nextPlayableAfterCurrent(
+            current: viewModel.currentProgramItem,
+            in: viewModel.programItems
+        )
     }
 }
 

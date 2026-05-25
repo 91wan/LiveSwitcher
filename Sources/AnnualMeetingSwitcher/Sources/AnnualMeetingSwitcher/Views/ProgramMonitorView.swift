@@ -382,15 +382,10 @@ struct ProgramMonitorView: View {
     }
 
     private var nextProgramItem: ProgramItem? {
-        guard !viewModel.programItems.isEmpty else { return nil }
-        guard let currentID = viewModel.currentProgramItem?.id,
-              let currentIndex = viewModel.programItems.firstIndex(where: { $0.id == currentID })
-        else {
-            return viewModel.programItems.first
-        }
-        let nextIndex = viewModel.programItems.index(after: currentIndex)
-        guard nextIndex < viewModel.programItems.endIndex else { return nil }
-        return viewModel.programItems[nextIndex]
+        ProgramQueueStore.nextPlayableAfterCurrent(
+            current: viewModel.currentProgramItem,
+            in: viewModel.programItems
+        )
     }
 }
 

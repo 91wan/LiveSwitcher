@@ -79,6 +79,8 @@ private extension ProgramSourceKind {
             return "pptx"
         case .activeDeck:
             return "activeDeck"
+        case .agendaMarker:
+            return "agendaMarker"
         case .unsupported:
             return "unsupported"
         }

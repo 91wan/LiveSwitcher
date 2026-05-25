@@ -12,10 +12,28 @@ struct LeftPanel: View {
             headerRow
             autoPlayOptionRow
             presentationReadinessSummaryRow
+            agendaControlRow
 
             dropZone
 
-            sourceList
+            if viewModel.showAgendaTimeline {
+                AgendaTimelineView(
+                    items: viewModel.programItems,
+                    currentItemID: viewModel.currentProgramItem?.id,
+                    isBroadcasting: viewModel.isBroadcasting,
+                    onSelect: { item in viewModel.switchToProgramAfterReadinessConfirmation(item) },
+                    onUpdateSchedule: { item, start, duration in
+                        viewModel.updateProgramItemSchedule(
+                            id: item.id,
+                            scheduledStartAt: start,
+                            scheduledDuration: duration
+                        )
+                    },
+                    onDelete: { item in viewModel.removeProgramItem(withID: item.id) }
+                )
+            } else {
+                sourceList
+            }
 
             Spacer(minLength: 0)
 
@@ -26,6 +44,54 @@ struct LeftPanel: View {
         .studioCard(cornerRadius: 28)
         // ── 键盘快捷键 1-9 绑定 ──
         .background(ShortcutKeyHandler(viewModel: viewModel))
+    }
+
+    private var agendaControlRow: some View {
+        HStack(spacing: 7) {
+            HStack(spacing: 5) {
+                Image(systemName: "calendar")
+                    .font(StudioTheme.TypeScale.label.weight(.bold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .accessibilityHidden(true)
+                Text("Timeline")
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.78)
+                    .frame(width: 48, alignment: .leading)
+                Toggle("", isOn: $viewModel.showAgendaTimeline)
+                    .labelsHidden()
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+            }
+            .help("Show Run Queue as an agenda timeline with optional schedule times.")
+
+            Spacer(minLength: 0)
+
+            Toggle(isOn: $viewModel.autoAdvanceAtScheduledTime) {
+                Image(systemName: "clock.badge.checkmark")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            .labelsHidden()
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .help("Prompt when the next scheduled item reaches its start time. This never cuts automatically.")
+
+            Button {
+                viewModel.addAgendaMarker()
+            } label: {
+                Label("Marker", systemImage: "mappin.and.ellipse")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .lineLimit(1)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .focusable(false)
+            .help("Add a non-playable agenda marker such as a break or transition.")
+        }
+        .padding(.horizontal, 2)
+        .padding(.vertical, 2)
     }
 
     private var autoPlayOptionRow: some View {
@@ -188,6 +254,10 @@ struct LeftPanel: View {
     @ViewBuilder
     private var sourceList: some View {
         let currentIndex = viewModel.programItems.firstIndex { $0.id == viewModel.currentProgramItem?.id }
+        let nextPlayableIndex = ProgramQueueStore.nextPlayableIndexAfterCurrent(
+            current: viewModel.currentProgramItem,
+            in: viewModel.programItems
+        )
 
         if viewModel.programItems.isEmpty {
             EmptyView()
@@ -197,7 +267,7 @@ struct LeftPanel: View {
                     SignalSourceRow(
                         item: item,
                         queuePosition: index + 1,
-                        queueRole: queueRole(for: index, currentIndex: currentIndex),
+                        queueRole: queueRole(for: index, currentIndex: currentIndex, nextPlayableIndex: nextPlayableIndex),
                         isSelected: viewModel.currentProgramItem?.id == item.id,
                         isBroadcasting: viewModel.isBroadcasting,
                         isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
@@ -207,6 +277,13 @@ struct LeftPanel: View {
                         onEndHTML: { viewModel.endHTMLPresentation() },
                         onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
                         onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
+                        onUpdateSchedule: { start, duration in
+                            viewModel.updateProgramItemSchedule(
+                                id: item.id,
+                                scheduledStartAt: start,
+                                scheduledDuration: duration
+                            )
+                        },
                         onDelete: { viewModel.removeProgramItem(withID: item.id) }
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -247,14 +324,11 @@ struct LeftPanel: View {
             .accessibilityLabel("Run queue footer. \(viewModel.programItems.count) programs. Current \(currentTitle).")
     }
 
-    private func queueRole(for index: Int, currentIndex: Int?) -> QueueRole {
+    private func queueRole(for index: Int, currentIndex: Int?, nextPlayableIndex: Int?) -> QueueRole {
         if currentIndex == index {
             return .current
         }
-        if let currentIndex {
-            return index == currentIndex + 1 ? .next : .queued
-        }
-        return index == 0 ? .next : .queued
+        return index == nextPlayableIndex ? .next : .queued
     }
     // MARK: - 文件选择
 

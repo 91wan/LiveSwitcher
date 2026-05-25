@@ -245,7 +245,7 @@ enum PresentationReadinessProbe {
         case .activeDeck:
             return appReadiness(bundleID: keynoteBundleIdentifier, environment: environment)
 
-        case .media, .html, .unsupported:
+        case .media, .html, .agendaMarker, .unsupported:
             return .notPresentation
         }
     }
@@ -318,6 +318,8 @@ private extension ProgramSourceKind {
             return "pptx"
         case .activeDeck:
             return "activeDeck"
+        case .agendaMarker:
+            return "agendaMarker"
         case .unsupported:
             return "unsupported"
         }

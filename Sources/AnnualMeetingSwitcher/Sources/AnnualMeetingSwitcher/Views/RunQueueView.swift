@@ -15,9 +15,11 @@ struct SignalSourceRow: View {
     let onEndHTML: () -> Void
     let onJumpToBeginning: () -> Void
     var onSkipToEnd: (() -> Void)? = nil
+    var onUpdateSchedule: (Date?, TimeInterval?) -> Void = { _, _ in }
     let onDelete: () -> Void
 
     @State private var isHovered = false
+    @State private var isSchedulePopoverPresented = false
     private let rowContentIndent: CGFloat = 94
 
     private var rowModel: ProgramQueueRowModel {
@@ -59,6 +61,8 @@ struct SignalSourceRow: View {
 
                 Spacer(minLength: 0)
 
+                scheduleButton
+
                 PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
             }
 
@@ -94,6 +98,38 @@ struct SignalSourceRow: View {
                 isHovered = hovering
             }
         }
+    }
+
+    private var scheduleButton: some View {
+        Button {
+            isSchedulePopoverPresented = true
+        } label: {
+            Label(scheduledTimeText, systemImage: item.scheduledTimeText == nil ? "clock" : "clock.fill")
+                .labelStyle(.titleAndIcon)
+                .font(StudioTheme.TypeScale.label.weight(.semibold))
+                .foregroundStyle(item.scheduledTimeText == nil ? StudioTheme.textTertiary : StudioTheme.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 7)
+                .frame(height: 24)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(StudioTheme.Surface.raised.opacity(0.8))
+                )
+        }
+        .buttonStyle(.plain)
+        .focusable(false)
+        .help("Set agenda start and duration")
+        .popover(isPresented: $isSchedulePopoverPresented, arrowEdge: .trailing) {
+            AgendaScheduleEditorPopover(item: item) { start, duration in
+                onUpdateSchedule(start, duration)
+                isSchedulePopoverPresented = false
+            }
+        }
+    }
+
+    private var scheduledTimeText: String {
+        item.scheduledTimeText ?? "Set time"
     }
 
     private var selectedControlRail: some View {
@@ -348,6 +384,8 @@ struct SignalSourceRow: View {
             return StudioTheme.Tone.ready
         case .media:
             return item.isVideoMedia ? StudioTheme.Action.primary : StudioTheme.Action.primary
+        case .agendaMarker:
+            return StudioTheme.Tone.warn
         case .unsupported:
             return StudioTheme.textSecondary
         }
@@ -377,9 +415,62 @@ struct SignalSourceRow: View {
             return "globe"
         case .media:
             return item.isVideoMedia ? "film" : "music.note"
+        case .agendaMarker:
+            return "mappin.and.ellipse"
         case .unsupported:
             return "doc.fill"
         }
+    }
+}
+
+struct AgendaScheduleEditorPopover: View {
+    let item: ProgramItem
+    let onApply: (Date?, TimeInterval?) -> Void
+
+    @State private var scheduledStart: Date
+    @State private var durationMinutes: Int
+
+    init(item: ProgramItem, onApply: @escaping (Date?, TimeInterval?) -> Void) {
+        self.item = item
+        self.onApply = onApply
+        _scheduledStart = State(initialValue: item.scheduledStartAt ?? Date())
+        _durationMinutes = State(initialValue: max(1, Int(((item.scheduledDuration ?? AgendaTimelineModel.defaultDuration) / 60).rounded())))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Agenda time")
+                .font(StudioTheme.sectionTitle())
+                .foregroundStyle(StudioTheme.textPrimary)
+
+            DatePicker(
+                "Start",
+                selection: $scheduledStart,
+                displayedComponents: [.hourAndMinute]
+            )
+            .datePickerStyle(.compact)
+
+            Stepper("Duration \(durationMinutes) min", value: $durationMinutes, in: 1...999)
+                .font(StudioTheme.body())
+
+            HStack {
+                Button("Clear") {
+                    onApply(nil, nil)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Spacer()
+
+                Button("Apply") {
+                    onApply(scheduledStart, TimeInterval(durationMinutes * 60))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+        }
+        .padding(14)
+        .frame(width: 260)
     }
 }
 

@@ -24,6 +24,9 @@ extension SwitcherViewModel {
             programItemCount: programItems.count,
             currentProgramTitle: currentProgramItem?.title,
             currentProgramSource: currentSource,
+            currentProgramScheduledStartAt: currentProgramItem?.scheduledStartAt,
+            currentProgramScheduledDuration: currentProgramItem?.scheduledDuration,
+            currentProgramSwitchedAt: currentProgramSwitchedAt,
             bgmItemCount: bgmItems.count,
             isBGMPlaying: isBGMPlaying,
             isBGMAudioTakeoverActive: isBGMAudioTakeoverActive,
@@ -117,6 +120,8 @@ private extension ProgramSourceKind {
             return "PPTX"
         case .activeDeck:
             return "Active Keynote Deck"
+        case .agendaMarker:
+            return "Agenda Marker"
         case .unsupported:
             return "Unsupported"
         }
