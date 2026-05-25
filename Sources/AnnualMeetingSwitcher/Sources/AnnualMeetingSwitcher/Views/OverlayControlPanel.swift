@@ -1,4 +1,6 @@
+import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 // MARK: - 叠层控制面板
 
@@ -185,41 +187,65 @@ struct OverlayControlPanel: View {
 
     private var lowerThirdPresetShelf: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text("Lower Third Presets")
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                Spacer()
-
-                Button {
-                    viewModel.clearLowerThirdPresetDraft()
-                } label: {
-                    Label("New Preset", systemImage: "plus")
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Lower Third Presets")
+                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Spacer()
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
 
-                Button {
-                    _ = viewModel.saveLowerThirdPresetFromDraft()
-                } label: {
-                    Label("Save Preset", systemImage: "tray.and.arrow.down.fill")
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .tint(StudioTheme.Action.primary)
-                .disabled(composerState.trimmedLowerThirdName.isEmpty)
-
-                Button {
-                    if let selectedID = composerState.selectedLowerThirdPresetID {
-                        viewModel.deleteLowerThirdPreset(id: selectedID)
+                HStack(spacing: 8) {
+                    Button {
+                        viewModel.clearLowerThirdPresetDraft()
+                    } label: {
+                        Label("New Preset", systemImage: "plus")
                     }
-                } label: {
-                    Label("Delete Preset", systemImage: "trash")
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button {
+                        _ = viewModel.saveLowerThirdPresetFromDraft()
+                    } label: {
+                        Label("Save Preset", systemImage: "tray.and.arrow.down.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    .tint(StudioTheme.Action.primary)
+                    .disabled(composerState.trimmedLowerThirdName.isEmpty)
+
+                    Button {
+                        if let selectedID = composerState.selectedLowerThirdPresetID {
+                            viewModel.deleteLowerThirdPreset(id: selectedID)
+                        }
+                    } label: {
+                        Label("Delete Preset", systemImage: "trash")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(composerState.selectedLowerThirdPresetID == nil)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .disabled(composerState.selectedLowerThirdPresetID == nil)
+
+                HStack(spacing: 8) {
+                    Button {
+                        importLowerThirdPresetsFromFile()
+                    } label: {
+                        Label("Import...", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button {
+                        exportLowerThirdPresets()
+                    } label: {
+                        Label("Export...", systemImage: "square.and.arrow.up")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(viewModel.lowerThirdPresets.isEmpty)
+
+                    Spacer(minLength: 0)
+                }
             }
 
             if viewModel.lowerThirdPresets.isEmpty {
@@ -284,6 +310,90 @@ struct OverlayControlPanel: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
+    }
+
+    private func importLowerThirdPresetsFromFile() {
+        let panel = NSOpenPanel()
+        panel.title = "Import Lower Third Speakers"
+        panel.prompt = "Import"
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.commaSeparatedText, .tabSeparatedText, .plainText]
+
+        guard panel.runModal() == .OK,
+              let url = panel.url,
+              let data = try? Data(contentsOf: url),
+              let presets = try? SpeakerImportService.parse(data: data) else {
+            NSSound.beep()
+            return
+        }
+
+        confirmAndImportSpeakerPresets(presets, sourceLabel: url.lastPathComponent)
+    }
+
+    private func exportLowerThirdPresets() {
+        let panel = NSSavePanel()
+        panel.title = "Export Lower Third Speakers"
+        panel.prompt = "Export"
+        panel.nameFieldStringValue = "lower-third-speakers.csv"
+        panel.allowedContentTypes = [.commaSeparatedText]
+
+        guard panel.runModal() == .OK,
+              let url = panel.url else {
+            return
+        }
+
+        do {
+            try viewModel.exportLowerThirdPresetsCSV().write(to: url, atomically: true, encoding: .utf8)
+        } catch {
+            NSSound.beep()
+        }
+    }
+
+    private func confirmAndImportSpeakerPresets(_ presets: [LowerThirdPreset], sourceLabel: String) {
+        let preview = presets.prefix(5).map { preset in
+            preset.subtitle.isEmpty ? preset.name : "\(preset.name) - \(preset.subtitle)"
+        }.joined(separator: "\n")
+
+        let previewAlert = NSAlert()
+        previewAlert.messageText = "Import \(presets.count) lower third speakers?"
+        previewAlert.informativeText = [sourceLabel, preview].filter { !$0.isEmpty }.joined(separator: "\n\n")
+        previewAlert.addButton(withTitle: "Import")
+        previewAlert.addButton(withTitle: "Cancel")
+        guard previewAlert.runModal() == .alertFirstButtonReturn else {
+            return
+        }
+
+        let policy = duplicatePolicy(for: presets)
+        viewModel.importLowerThirdPresets(presets, duplicatePolicy: policy)
+    }
+
+    private func duplicatePolicy(for presets: [LowerThirdPreset]) -> SpeakerImportDuplicatePolicy {
+        let existingNames = Set(viewModel.lowerThirdPresets.map {
+            $0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        })
+        let hasConflicts = presets.contains {
+            existingNames.contains($0.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
+        }
+        guard hasConflicts else {
+            return .skipExisting
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Matching speaker names already exist"
+        alert.informativeText = "Choose how to handle imported lower-third speakers with the same trimmed name."
+        alert.addButton(withTitle: "Skip Existing")
+        alert.addButton(withTitle: "Overwrite")
+        alert.addButton(withTitle: "Import All")
+
+        switch alert.runModal() {
+        case .alertSecondButtonReturn:
+            return .overwriteExisting
+        case .alertThirdButtonReturn:
+            return .importAll
+        default:
+            return .skipExisting
+        }
     }
 
     private var countdownEditor: some View {

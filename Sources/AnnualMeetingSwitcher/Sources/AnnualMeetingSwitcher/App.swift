@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // NOTE: Entry point is in main.swift (SPM executable target).
@@ -25,6 +26,20 @@ struct LiveSwitcherApp: App {
                         .disabled(viewModel.themeOverride == option)
                     }
                 }
+            }
+
+            CommandGroup(after: .pasteboard) {
+                Button("Paste Speakers from Clipboard") {
+                    if let text = NSPasteboard.general.string(forType: .string),
+                       viewModel.importLowerThirdSpeakersFromClipboardText(text) != nil {
+                        viewModel.consoleMode = .setup
+                        viewModel.selectedMainTab = .overlays
+                        viewModel.overlayComposerState.selectedKind = .lowerThird
+                    } else {
+                        NSSound.beep()
+                    }
+                }
+                .keyboardShortcut("v", modifiers: [.command, .shift])
             }
 
             CommandMenu("Mode") {
