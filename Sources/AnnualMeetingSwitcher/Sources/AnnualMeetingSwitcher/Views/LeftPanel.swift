@@ -11,6 +11,7 @@ struct LeftPanel: View {
         VStack(spacing: 10) {
             headerRow
             autoPlayOptionRow
+            presentationReadinessSummaryRow
 
             dropZone
 
@@ -50,6 +51,35 @@ struct LeftPanel: View {
         .padding(.horizontal, 2)
         .padding(.vertical, 2)
         .help("仅当前节目播毕且下一条也是视频时自动播放；不会自动打开 HTML、PPT 或 Keynote。")
+    }
+
+    @ViewBuilder
+    private var presentationReadinessSummaryRow: some View {
+        let summary = PresentationReadinessSummary.make(items: viewModel.programItems)
+        if summary.hasPresentationItems {
+            HStack(spacing: 7) {
+                Image(systemName: "rectangle.on.rectangle.angled")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .foregroundStyle(StudioTheme.color(for: summary.statusKind))
+                Text("Deck readiness")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                StatusBadge(summary.displayText, kind: summary.statusKind)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                    .fill(StudioTheme.Surface.raised.opacity(0.72))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                    .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+            )
+            .help("PPTX / Keynote readiness before switching.")
+        }
     }
 
     // MARK: - 标题行
@@ -172,7 +202,7 @@ struct LeftPanel: View {
                         isBroadcasting: viewModel.isBroadcasting,
                         isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
                         avCoordinator: viewModel.avCoordinator,
-                        onSelect: { viewModel.switchToProgram(item) },
+                        onSelect: { viewModel.switchToProgramAfterReadinessConfirmation(item) },
                         onTogglePause: { viewModel.togglePause(for: item) },
                         onEndHTML: { viewModel.endHTMLPresentation() },
                         onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
