@@ -58,6 +58,8 @@ struct SignalSourceRow: View {
                 .layoutPriority(1)
 
                 Spacer(minLength: 0)
+
+                PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
             }
 
             HStack(spacing: 6) {

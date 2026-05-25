@@ -705,6 +705,24 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
+    func switchToProgramAfterReadinessConfirmation(_ item: ProgramItem) {
+        let readiness = PresentationReadinessProbe.probe(item: item)
+        guard readiness.severity == .blocked else {
+            switchToProgram(item)
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Presentation is not ready"
+        alert.informativeText = "\(readiness.operatorMessage)\n\nContinue anyway?"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Continue")
+        alert.addButton(withTitle: "Cancel")
+
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        switchToProgram(item)
+    }
+
     private func isLikelyValidDeckDocument(url: URL) -> Bool {
         guard FileManager.default.fileExists(atPath: url.path) else { return false }
 

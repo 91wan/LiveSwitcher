@@ -100,7 +100,7 @@ struct LiveSourceRail: View {
                                 queuePosition: index + 1,
                                 isSelected: item.id == viewModel.currentProgramItem?.id,
                                 isBroadcasting: viewModel.isBroadcasting,
-                                action: { viewModel.switchToProgram(at: index) }
+                                action: { viewModel.switchToProgramAfterReadinessConfirmation(item) }
                             )
                         }
                     }
@@ -181,6 +181,8 @@ private struct LiveSourceRailRow: View {
                             .font(StudioTheme.TypeScale.label.weight(.bold))
                             .foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
+                        Spacer(minLength: 0)
+                        PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
                     }
                     Text(item.title)
                         .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
