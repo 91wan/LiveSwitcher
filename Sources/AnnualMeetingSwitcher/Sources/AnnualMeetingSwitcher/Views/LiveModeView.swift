@@ -117,8 +117,7 @@ struct LiveSourceRail: View {
                     Spacer(minLength: 0)
                     Button {
                         withAnimation(.easeInOut(duration: 0.16)) {
-                            viewModel.consoleMode = .setup
-                            viewModel.selectedMainTab = .preview
+                            viewModel.navigateToSetup(.preview)
                         }
                     } label: {
                         VStack(spacing: 5) {
@@ -439,11 +438,13 @@ private struct LiveAudioMeter: View {
 
 struct LiveQuickRail: View {
     @EnvironmentObject private var viewModel: SwitcherViewModel
+    @State private var liveBGMCategory: BGMCategory = .warmUp
     let onOpenMixer: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             outputCard
+            modesCard
             cutBusCard
             overlayCard
             wallpaperCard
@@ -486,6 +487,53 @@ struct LiveQuickRail: View {
             .disabled(!model.isEnabled)
             .help(model.helpText)
         }
+    }
+
+    private var modesCard: some View {
+        let isModeActive = viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled
+        return quickCard(title: "Modes", status: isModeActive ? "ACTIVE" : "", kind: isModeActive ? .warn : .idle) {
+            modeToggleRow(
+                title: "Speaker",
+                subtitle: "Duck BGM",
+                systemImage: "mic.fill",
+                isOn: $viewModel.isSpeakerMode
+            )
+            modeToggleRow(
+                title: "PPT",
+                subtitle: "Page keys",
+                systemImage: "hand.raised.slash.fill",
+                isOn: $viewModel.isPageInterceptEnabled
+            )
+        }
+    }
+
+    private func modeToggleRow(
+        title: String,
+        subtitle: String,
+        systemImage: String,
+        isOn: Binding<Bool>
+    ) -> some View {
+        Toggle(isOn: isOn) {
+            HStack(spacing: 7) {
+                Image(systemName: systemImage)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(isOn.wrappedValue ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
+                    .frame(width: 18)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(subtitle)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+        }
+        .toggleStyle(.switch)
+        .controlSize(.small)
+        .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+        .help(isOn.wrappedValue ? "\(title) mode is active" : "Enable \(title) mode")
     }
 
     private var cutBusCard: some View {
@@ -723,8 +771,7 @@ struct LiveQuickRail: View {
 
     private func openOverlaySetup(_ kind: OverlayComposerKind) {
         withAnimation(.easeInOut(duration: 0.16)) {
-            viewModel.consoleMode = .setup
-            viewModel.selectedMainTab = .overlays
+            viewModel.navigateToSetup(.overlays)
             viewModel.overlayComposerState.selectedKind = kind
         }
     }
@@ -764,8 +811,7 @@ struct LiveQuickRail: View {
             if picker.isEmpty {
                 Button {
                     withAnimation(.easeInOut(duration: 0.16)) {
-                        viewModel.consoleMode = .setup
-                        viewModel.selectedMainTab = .preview
+                        viewModel.navigateToSetup(.preview)
                     }
                 } label: {
                     Label("Add wallpaper", systemImage: "photo.badge.plus")
@@ -808,6 +854,12 @@ struct LiveQuickRail: View {
             currentItem: viewModel.currentBGMItem,
             isPlaying: viewModel.isBGMPlaying
         )
+        let playlist = LiveBGMPlaylistModel.make(
+            items: viewModel.bgmItems,
+            currentItem: viewModel.currentBGMItem,
+            selectedCategory: liveBGMCategory,
+            isPlaying: viewModel.isBGMPlaying
+        )
 
         return quickCard(title: "BGM", status: controls.displayStatusText, kind: controls.displayStatusKind) {
             Text(picker.currentTitle)
@@ -831,47 +883,110 @@ struct LiveQuickRail: View {
                     viewModel.playNextBGM()
                 }
                 Spacer()
-                bgmLibraryMenu(picker: picker)
+                bgmCategoryMenu(picker: picker, title: playlist.categoryButtonTitle)
             }
+
+            liveBGMPlaylistRows(playlist)
+        }
+        .onAppear {
+            syncLiveBGMCategoryToCurrent()
+        }
+        .onChange(of: viewModel.currentBGMItem?.id) { _, _ in
+            syncLiveBGMCategoryToCurrent()
         }
     }
 
-    private func bgmLibraryMenu(picker: LiveBGMQuickPickerModel) -> some View {
+    private func bgmCategoryMenu(picker: LiveBGMQuickPickerModel, title: String) -> some View {
         Menu {
             if picker.isLibraryEmpty {
                 Text("No BGM in library")
             } else {
                 ForEach(BGMCategory.allCases, id: \.self) { category in
-                    if let section = picker.section(for: category), !section.isEmpty {
-                        Menu(section.title) {
-                            ForEach(section.tracks) { item in
-                                Button {
-                                    viewModel.toggleBGM(item)
-                                } label: {
-                                    Label(
-                                        item.title,
-                                        systemImage: item.id == viewModel.currentBGMItem?.id ? "checkmark" : "music.note"
-                                    )
-                                }
-                            }
+                    if let section = picker.section(for: category) {
+                        Button {
+                            liveBGMCategory = category
+                        } label: {
+                            Label(section.title, systemImage: liveBGMCategory == category ? "checkmark" : "music.note.list")
                         }
+                        .disabled(section.isEmpty)
                     }
                 }
-                Divider()
-            }
-
-            Button {
-                onOpenMixer()
-            } label: {
-                Label("Open BGM Library", systemImage: "music.note.list")
             }
         } label: {
-            Image(systemName: "music.note.list")
-                .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
+            Text(title)
+                .font(StudioTheme.TypeScale.label.weight(.black))
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
+        .frame(width: 78, height: LiveModeLayoutMetrics.transportButtonSize)
         .buttonStyle(.bordered)
         .controlSize(.small)
-        .accessibilityLabel("Choose BGM from library")
+        .accessibilityLabel("Choose BGM category")
+    }
+
+    @ViewBuilder
+    private func liveBGMPlaylistRows(_ playlist: LiveBGMPlaylistModel) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text(playlist.displayCategory.rawValue)
+                    .font(StudioTheme.statusLabel())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                if let remaining = playlist.remainingCountText {
+                    Text(remaining)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            if playlist.rows.isEmpty {
+                Text(playlist.emptyMessage)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 26)
+            } else {
+                VStack(spacing: 3) {
+                    ForEach(playlist.rows) { row in
+                        Button {
+                            viewModel.toggleBGM(row.item)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: row.systemImage)
+                                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                                    .foregroundStyle(row.isCurrent ? StudioTheme.Action.primary : StudioTheme.textTertiary)
+                                    .frame(width: 16)
+                                    .accessibilityHidden(true)
+                                Text(row.title)
+                                    .font(StudioTheme.caption().weight(row.isCurrent ? .black : .semibold))
+                                    .foregroundStyle(StudioTheme.textPrimary)
+                                    .lineLimit(1)
+                                    .truncationMode(.tail)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, 6)
+                            .frame(height: 24)
+                            .background(
+                                row.isCurrent ? StudioTheme.Action.primary.opacity(0.10) : StudioTheme.Surface.raised.opacity(0.58),
+                                in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .help(row.title)
+                        .accessibilityLabel(row.accessibilityLabel)
+                    }
+                }
+            }
+        }
+    }
+
+    private func syncLiveBGMCategoryToCurrent() {
+        if let current = viewModel.currentBGMItem {
+            liveBGMCategory = current.category
+        }
     }
 
     private func quickCard<Content: View>(

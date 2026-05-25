@@ -30,7 +30,7 @@ struct ContentView: View {
                 retainedTab(.preview) {
                     if viewModel.consoleMode == .live {
                         LiveModeView {
-                            viewModel.selectedMainTab = .audioMixer
+                            viewModel.navigateToSetup(.audioMixer)
                         }
                     } else {
                         runDesk()
@@ -54,7 +54,7 @@ struct ContentView: View {
             if SetupAudioDockModel.shouldShow(consoleMode: viewModel.consoleMode, selectedTab: viewModel.selectedMainTab) {
                 SetupAudioDock {
                     withAnimation(.easeInOut(duration: 0.16)) {
-                        viewModel.selectedMainTab = .audioMixer
+                        viewModel.navigateToSetup(.audioMixer)
                     }
                 }
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -114,9 +114,9 @@ struct ContentView: View {
             MainToolbar(
                 embedded: true,
                 consoleMode: viewModel.consoleMode,
-                onOpenPreview: { viewModel.selectedMainTab = .preview },
-                onOpenAudioMixer: { viewModel.selectedMainTab = .audioMixer },
-                onOpenOverlays: { viewModel.selectedMainTab = .overlays }
+                onOpenPreview: { viewModel.navigateToSetup(.preview) },
+                onOpenAudioMixer: { viewModel.navigateToSetup(.audioMixer) },
+                onOpenOverlays: { viewModel.navigateToSetup(.overlays) }
             )
                 .layoutPriority(2)
         }
@@ -161,7 +161,7 @@ struct ContentView: View {
                 isSelected: false
             ) {
                 withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .setup
+                    viewModel.navigateToSetup(viewModel.selectedMainTab)
                 }
             }
         }
@@ -172,8 +172,7 @@ struct ContentView: View {
             ForEach(MainConsoleTab.allCases, id: \.self) { tab in
                 Button {
                     withAnimation(.easeInOut(duration: 0.16)) {
-                        viewModel.consoleMode = .setup
-                        viewModel.selectedMainTab = tab
+                        viewModel.navigateToSetup(tab)
                     }
                 } label: {
                     Label(tab.setupMenuShortcutLabel, systemImage: tab.systemImage)
