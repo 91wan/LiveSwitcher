@@ -213,10 +213,20 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
-    /// BGM 进度（0.0 ~ 1.0），由定时器驱动
-    @Published var bgmProgress: Double = 0.0
-    @Published var bgmCurrentTime: Double = 0.0
-    @Published var bgmDuration: Double? = nil
+    /// BGM 进度由独立 store 发布，避免播放计时器高频刷新整个导播台。
+    let bgmProgressStore = BGMProgressStore()
+    var bgmProgress: Double {
+        get { bgmProgressStore.progress }
+        set { bgmProgressStore.progress = BGMProgressStore.clampedProgress(newValue) }
+    }
+    var bgmCurrentTime: Double {
+        get { bgmProgressStore.currentTime }
+        set { bgmProgressStore.currentTime = max(0, newValue) }
+    }
+    var bgmDuration: Double? {
+        get { bgmProgressStore.duration }
+        set { bgmProgressStore.duration = (newValue ?? 0) > 0 ? newValue : nil }
+    }
     @Published var bgmRealtimeLevelDB: Float? = nil
 
     /// BGM 播放器
@@ -1308,8 +1318,22 @@ final class SwitcherViewModel: ObservableObject {
     func seekBGMToBeginning() {
         bgmAudioPlayer?.currentTime = 0
         bgmFallbackPlayer.seek(to: .zero)
-        bgmProgress = 0
-        bgmCurrentTime = 0
+        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? 0)
+    }
+
+    func seekBGM(toProgress progress: Double) {
+        let clampedProgress = BGMProgressStore.clampedProgress(progress)
+        guard let player = bgmAudioPlayer else {
+            bgmProgress = clampedProgress
+            return
+        }
+        let duration = player.duration
+        guard duration > 0 else {
+            bgmProgressStore.update(currentTime: 0, duration: 0)
+            return
+        }
+        player.currentTime = duration * clampedProgress
+        bgmProgressStore.update(currentTime: player.currentTime, duration: duration)
     }
 
     func toggleBGM(_ item: BGMItem) {
@@ -1416,7 +1440,7 @@ final class SwitcherViewModel: ObservableObject {
 
     private func startBGMTimer() {
         stopBGMTimer()
-        bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+        bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateBGMProgress()
             }
@@ -1435,10 +1459,7 @@ final class SwitcherViewModel: ObservableObject {
 
     private func updateBGMProgress() {
         if let player = bgmAudioPlayer {
-            bgmCurrentTime = player.currentTime
-            let dur = player.duration
-            bgmDuration = dur > 0 ? dur : nil
-            bgmProgress = dur > 0 ? player.currentTime / dur : 0
+            bgmProgressStore.update(currentTime: player.currentTime, duration: player.duration)
             updateBGMRealtimeMeter(from: player)
         } else {
             resetBGMRealtimeMeter()
