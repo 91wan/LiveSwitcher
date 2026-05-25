@@ -115,7 +115,8 @@ final class LiveModeMixerControlsTests: XCTestCase {
 
         XCTAssertGreaterThanOrEqual(model.chips.count, 3)
         XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("External Display") })
-        XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("Current Program") })
+        XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("Projection State") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("more") })
         XCTAssertTrue(model.chips.contains { $0.text.contains("STANDBY") && $0.text.contains("0 sources") })
     }
 

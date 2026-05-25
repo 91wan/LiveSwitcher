@@ -144,8 +144,10 @@ final class LiveModeLayoutTests: XCTestCase {
         let overlays = try sourceText("Views/SettingsView.swift")
 
         XCTAssertTrue(audio.contains("Mixer faders, routing strategy, and BGM library"))
+        XCTAssertTrue(audio.contains("Categorize, list, add, remove, and reorder BGM tracks here."))
         XCTAssertTrue(overlays.contains("Compose on the left, preview on the right."))
         XCTAssertFalse(audio.contains("routing strategy 和 BGM library 分区管理"))
+        XCTAssertFalse(audio.contains("分类、曲目列表、添加、删除和排序集中在音频页管理"))
         XCTAssertFalse(overlays.contains("当前 live 状态"))
     }
 

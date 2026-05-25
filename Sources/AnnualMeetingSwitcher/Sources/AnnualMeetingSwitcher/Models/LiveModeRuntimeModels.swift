@@ -100,14 +100,21 @@ struct LiveRuntimeStatusModel: Equatable {
 
     static func make(snapshot: LivePreflightSnapshot) -> LiveRuntimeStatusModel {
         let checks = LivePreflightCheck.build(from: snapshot)
+        return make(checks: checks, snapshot: snapshot)
+    }
+
+    static func make(checks: [LivePreflightCheck], snapshot: LivePreflightSnapshot) -> LiveRuntimeStatusModel {
         let failChips = checks
             .filter { $0.status == .fail }
-            .prefix(3)
             .map { LiveRuntimeStatusChip(text: "FAIL · \($0.title)", kind: .fail) }
         let warnChips = checks
             .filter { $0.status == .warn }
-            .prefix(3)
             .map { LiveRuntimeStatusChip(text: "WARN · \($0.title)", kind: .warn) }
+        let visibleFailChips = Array(failChips.prefix(2))
+        let visibleWarnChips = Array(warnChips.prefix(1))
+        let hiddenFailCount = failChips.count - visibleFailChips.count
+        let hiddenWarnCount = warnChips.count - visibleWarnChips.count
+        let overflowCount = hiddenFailCount + hiddenWarnCount
 
         let output = snapshot.isBroadcasting ? "ON AIR" : "STANDBY"
         let current = snapshot.currentProgramTitle ?? "No program"
@@ -116,8 +123,20 @@ struct LiveRuntimeStatusModel: Equatable {
             kind: snapshot.isBroadcasting ? .live : .ready
         )
 
+        let overflowChip: [LiveRuntimeStatusChip]
+        if overflowCount > 0 {
+            overflowChip = [
+                LiveRuntimeStatusChip(
+                    text: "+ \(overflowCount) more",
+                    kind: hiddenFailCount > 0 ? .fail : .warn
+                )
+            ]
+        } else {
+            overflowChip = []
+        }
+
         return LiveRuntimeStatusModel(
-            chips: Array(failChips) + Array(warnChips) + [summary]
+            chips: visibleFailChips + visibleWarnChips + overflowChip + [summary]
         )
     }
 }

@@ -310,7 +310,7 @@ private struct BGMLibraryCard: View {
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
             }
-            Text("分类、曲目列表、添加、删除和排序集中在音频页管理。")
+            Text("Categorize, list, add, remove, and reorder BGM tracks here.")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textSecondary)
             BGMPlaylistPanel()
