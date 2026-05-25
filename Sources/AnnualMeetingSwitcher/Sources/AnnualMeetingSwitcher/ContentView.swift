@@ -188,9 +188,6 @@ struct ContentView: View {
                     .accessibilityHidden(true)
                 Text("\(ConsoleMode.setup.displayTitle): \(viewModel.selectedMainTab.setupMenuTitle)")
                     .font(StudioTheme.TypeScale.heading.weight(.bold))
-                Image(systemName: "ellipsis")
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .accessibilityHidden(true)
                 Image(systemName: "chevron.down")
                     .font(StudioTheme.TypeScale.label.weight(.black))
                     .accessibilityHidden(true)
@@ -258,7 +255,7 @@ final class KeyMonitorView: NSView {
     }
 
     private func handleKey(event: NSEvent, vm: SwitcherViewModel) -> NSEvent? {
-        // MARK: - Tier1: ⌘⌥B → 老板键（在 modifiers guard 之前处理）
+        // MARK: - Tier1: ⌘⌥B -> Blackout (handled before modifiers guard)
         // B = keyCode 11（QWERTY 键盘上 B 键）
         if event.modifierFlags.contains([.command, .option]) &&
            !event.modifierFlags.contains(.control) &&

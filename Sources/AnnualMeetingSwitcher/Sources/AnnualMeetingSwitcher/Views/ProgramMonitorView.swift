@@ -239,6 +239,7 @@ struct ProgramMonitorView: View {
             transitionControlCard
             if !isLiveMode {
                 wallpaperTrayCard
+                CornerLogoCard()
             }
         }
         .padding(.horizontal, 12)

@@ -176,14 +176,14 @@ struct AudioMixerView: View {
     }
 
     private var mediaFaderSubtitle: String {
-        if viewModel.isPanicMode { return "Muted by Panic" }
+        if viewModel.isPanicMode { return "Muted by Blackout" }
         if viewModel.isBGMAudioTakeoverActive { return "Muted by BGM takeover" }
         if viewModel.isSpeakerMode { return "Ducked by Speaker mode" }
         return "Program/media channel"
     }
 
     private var bgmFaderSubtitle: String {
-        if viewModel.isPanicMode { return "Muted by Panic" }
+        if viewModel.isPanicMode { return "Muted by Blackout" }
         if viewModel.isSpeakerMode { return "Ducked by Speaker mode" }
         return "Background music channel"
     }

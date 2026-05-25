@@ -436,9 +436,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "controls.panic",
                 group: .controls,
                 status: .fail,
-                title: "Panic Blackout",
-                message: "Panic blackout is active. Output is blacked out and audio is muted.",
-                actionLabel: "Turn off panic",
+                title: "Blackout",
+                message: "Blackout is active. Output is blacked out and audio is muted.",
+                actionLabel: "Turn off blackout",
                 actionKind: .turnOffPanic
             )
         }
@@ -447,8 +447,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "controls.panic",
             group: .controls,
             status: .pass,
-            title: "Panic Blackout",
-            message: "Panic blackout is off."
+            title: "Blackout",
+            message: "Blackout is off."
         )
     }
 

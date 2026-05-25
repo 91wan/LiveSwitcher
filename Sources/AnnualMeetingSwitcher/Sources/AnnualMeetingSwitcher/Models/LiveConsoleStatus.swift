@@ -92,7 +92,7 @@ struct LiveStatusBarModel: Equatable {
 
     private static func audioItem(snapshot: LivePreflightSnapshot) -> Item {
         if snapshot.isPanicMode {
-            return Item(title: "Audio", value: "Muted by Panic", status: .fail)
+            return Item(title: "Audio", value: "Muted by Blackout", status: .fail)
         }
         if snapshot.isBGMAudioTakeoverActive {
             return Item(title: "Audio", value: "BGM Takeover", status: .warn)

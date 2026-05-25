@@ -169,6 +169,21 @@ final class SwitcherViewModel: ObservableObject {
             }
         }
     }
+    @Published var cornerLogoURL: URL? {
+        didSet {
+            if let url = cornerLogoURL {
+                cornerLogoImage = NSImage(contentsOf: url)
+            } else {
+                cornerLogoImage = nil
+            }
+        }
+    }
+    @Published var cornerLogoImage: NSImage?
+    @Published var cornerLogoPosition: CornerLogoPosition = .topRight {
+        didSet {
+            userDefaults.set(cornerLogoPosition.rawValue, forKey: UDKeys.cornerLogoPosition)
+        }
+    }
 
     // MARK: - BGM 列表
 
@@ -279,6 +294,8 @@ final class SwitcherViewModel: ObservableObject {
         static let bgmListCategories = "bgmList_categories"
         static let wallpapers = "backgroundWallpapers_paths"
         static let activeWallpaper = "activeWallpaper_path"
+        static let cornerLogo = "cornerLogo_path"
+        static let cornerLogoPosition = "cornerLogo_position"
         static let audioStrategy = "audioStrategy"
         static let speakerMode = "speakerMode"
         static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
@@ -573,6 +590,12 @@ final class SwitcherViewModel: ObservableObject {
         } else {
             userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
         }
+        if let cornerLogoURL {
+            userDefaults.set(cornerLogoURL.path, forKey: UDKeys.cornerLogo)
+        } else {
+            userDefaults.removeObject(forKey: UDKeys.cornerLogo)
+        }
+        userDefaults.set(cornerLogoPosition.rawValue, forKey: UDKeys.cornerLogoPosition)
 
         if let lowerThirdPresetData = try? JSONEncoder().encode(lowerThirdPresets) {
             userDefaults.set(lowerThirdPresetData, forKey: UDKeys.lowerThirdPresets)
@@ -655,6 +678,15 @@ final class SwitcherViewModel: ObservableObject {
                     activeWallpaperURL = backgroundWallpapers.first
                 }
             }
+        }
+
+        if let rawPosition = userDefaults.string(forKey: UDKeys.cornerLogoPosition),
+           let position = CornerLogoPosition(rawValue: rawPosition) {
+            cornerLogoPosition = position
+        }
+        if let logoPath = userDefaults.string(forKey: UDKeys.cornerLogo) {
+            let logoURL = URL(fileURLWithPath: logoPath)
+            cornerLogoURL = WallpaperImagePolicy.isSupported(url: logoURL) ? logoURL : nil
         }
 
         if let storedAudioStrategy = userDefaults.string(forKey: UDKeys.audioStrategy),
@@ -1202,6 +1234,19 @@ final class SwitcherViewModel: ObservableObject {
         saveData()
     }
 
+    @discardableResult
+    func setCornerLogo(url: URL) -> Bool {
+        guard WallpaperImagePolicy.isSupported(url: url) else { return false }
+        cornerLogoURL = url
+        saveData()
+        return true
+    }
+
+    func removeCornerLogo() {
+        cornerLogoURL = nil
+        saveData()
+    }
+
     private func isSupportedWallpaperImage(_ url: URL) -> Bool {
         WallpaperImagePolicy.isSupported(url: url)
     }
@@ -1688,7 +1733,7 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Tier1: Panic State（老板键状态变量）
+    // MARK: - Tier1: Blackout State
     @Published var isPanicMode: Bool       = false
     @Published var isFadeToBlackActive: Bool = false
 

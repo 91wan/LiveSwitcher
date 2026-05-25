@@ -12,7 +12,7 @@ enum HelpCopyModel {
             "主讲人模式：右侧 Live Ops 的 Modes 卡片集中控制；开启后进入 warning/review 状态，媒体声道和 BGM 压至 7% 突出人声",
             "PPT翻页笔：右侧 Live Ops 的 Modes 卡片集中控制；开启后进入 warning/review 状态，翻页笔方向键控制 WPS/PPT 翻页（需辅助功能权限，开启失败时 App 会自动引导设置）",
             "投射副屏：右侧 Live Ops 的 Output 卡片控制；ON AIR 为红色 live 状态，无外接屏时不会投射，副屏断开会显示 Display Lost",
-            "Panic / 老板键：顶部【老板键】紧急切黑副屏并静音，激活时为 critical red，再点恢复"
+            "Blackout：顶部【Blackout】紧急切黑副屏并静音，激活时为 critical red，再点恢复"
         ]),
         HelpCopySection(title: "视频与音频操作", items: [
             "添加素材：左侧 Run Queue 顶部【Add Source】菜单导入 Video / Audio、HTML、PPTX、Keynote，也支持拖拽入列",
@@ -29,7 +29,7 @@ enum HelpCopyModel {
         ]),
         HelpCopySection(title: "键盘快捷键", items: [
             "⌘⌥M：切换主讲人模式，压低媒体声道和 BGM，突出现场人声",
-            "⌘⌥B：Panic / 老板键，一键切黑副屏并静音",
+            "⌘⌥B：Blackout，一键切黑副屏并静音",
             "⌘⌥P：切换 PPT 模式，接管翻页笔/方向键",
             "数字键 1-9：快速切换对应播放列表编号的信号源",
             "空格键：暂停/继续当前媒体播放",

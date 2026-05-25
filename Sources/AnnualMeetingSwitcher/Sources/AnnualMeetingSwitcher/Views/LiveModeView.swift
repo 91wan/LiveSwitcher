@@ -703,16 +703,11 @@ struct LiveQuickRail: View {
             Image(systemName: systemImage)
                 .font(StudioTheme.TypeScale.caption.weight(.black))
                 .accessibilityHidden(true)
-            Text(model.title)
-                .font(StudioTheme.TypeScale.caption.weight(.black))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-                .frame(width: 70, alignment: .leading)
             Text(model.presetLabel)
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(model.isPlaceholder ? StudioTheme.textTertiary : StudioTheme.textSecondary)
                 .lineLimit(1)
-                .truncationMode(.middle)
+                .truncationMode(.tail)
             Spacer(minLength: 2)
             if showsMenuIndicator {
                 Image(systemName: "chevron.down")
@@ -723,6 +718,7 @@ struct LiveQuickRail: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+        .help(model.title)
     }
 
     private func openOverlaySetup(_ kind: OverlayComposerKind) {

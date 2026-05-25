@@ -123,7 +123,7 @@ struct LiveRuntimeStatusModel: Equatable {
         if overflowCount > 0 {
             overflowChip = [
                 LiveRuntimeStatusChip(
-                    text: "+ \(overflowCount) more",
+                    text: overflowText(hiddenFailCount: hiddenFailCount, hiddenWarnCount: hiddenWarnCount),
                     kind: hiddenFailCount > 0 ? .fail : .warn
                 )
             ]
@@ -152,5 +152,13 @@ struct LiveRuntimeStatusModel: Equatable {
         return LiveRuntimeStatusModel(
             chips: visibleFailChips + visibleWarnChips + overflowChip + scheduleChip + [summary]
         )
+    }
+
+    private static func overflowText(hiddenFailCount: Int, hiddenWarnCount: Int) -> String {
+        let overflowCount = hiddenFailCount + hiddenWarnCount
+        if hiddenFailCount > 0 {
+            return "+ \(overflowCount) issues"
+        }
+        return "+ \(overflowCount) warnings"
     }
 }

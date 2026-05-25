@@ -13,7 +13,7 @@ final class PreflightActionRoutingModelTests: XCTestCase {
         XCTAssertFalse(panic.shouldDismissPopover)
         XCTAssertTrue(panic.shouldMutateState)
         XCTAssertNil(panic.destinationTab)
-        XCTAssertEqual(panic.successMessage, "Panic turned off")
+        XCTAssertEqual(panic.successMessage, "Blackout turned off")
     }
 
     func testNavigationActionsDismissAndRouteToTabs() {

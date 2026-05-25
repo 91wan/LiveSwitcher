@@ -83,7 +83,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.audio.value, "Muted by Panic")
+        XCTAssertEqual(model.audio.value, "Muted by Blackout")
         XCTAssertEqual(model.audio.status, .fail)
         XCTAssertTrue(model.isCritical)
     }

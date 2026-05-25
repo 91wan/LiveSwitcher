@@ -18,7 +18,7 @@ struct AudioMixerPageModel: Equatable {
 
     var routingImpactText: String {
         if isPanicMode {
-            return "Panic is active: media and BGM effective outputs are muted."
+            return "Blackout is active: media and BGM effective outputs are muted."
         }
         if isSpeakerMode {
             return "Speaker mode is active: media and BGM are ducked to the speaker-safe level."
@@ -30,7 +30,7 @@ struct AudioMixerPageModel: Equatable {
     }
 
     var routingStatusText: String {
-        if isPanicMode { return "PANIC MUTED" }
+        if isPanicMode { return "BLACKOUT MUTED" }
         if isBGMAudioTakeoverActive { return "BGM TAKEOVER" }
         if isSpeakerMode { return "SPEAKER" }
         return strategy.displayTitle

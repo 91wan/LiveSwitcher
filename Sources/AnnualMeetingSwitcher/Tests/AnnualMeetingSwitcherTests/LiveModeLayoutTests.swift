@@ -144,6 +144,14 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
     }
 
+    func testOverlayRailUsesIconOnlyTypeLabelAndTailTruncatedPresetName() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains(".truncationMode(.tail)"))
+        XCTAssertFalse(source.contains(".frame(width: 70, alignment: .leading)"))
+        XCTAssertTrue(source.contains(".help(model.title)"))
+    }
+
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
