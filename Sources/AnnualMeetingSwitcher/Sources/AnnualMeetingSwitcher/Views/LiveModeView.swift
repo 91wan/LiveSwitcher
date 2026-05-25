@@ -481,191 +481,212 @@ struct LiveQuickRail: View {
 
     private var overlayCard: some View {
         quickCard(title: "Overlays", status: overlayStatusText, kind: overlayStatusKind) {
-            lowerThirdPresetMenu
-
-            overlayButton(
-                title: "Lower Third",
-                isActive: viewModel.isLowerThirdVisible,
-                canStart: !viewModel.overlayComposerState.trimmedLowerThirdName.isEmpty,
-                disabledHint: "Prepare a lower-third name in Setup.",
-                start: {
-                    viewModel.showLowerThird(
-                        name: viewModel.overlayComposerState.lowerThirdNameDraft,
-                        title: viewModel.overlayComposerState.lowerThirdTitleDraft
-                    )
-                },
-                stop: { viewModel.dismissLowerThird() }
-            )
-
-            countdownPresetMenu
-
-            overlayButton(
-                title: "Countdown",
-                isActive: viewModel.isCountdownActive,
-                canStart: OverlayUIState.countdownDisabledReason(
-                    minutes: viewModel.overlayComposerState.countdownMinutesDraft,
-                    seconds: viewModel.overlayComposerState.countdownSecondsDraft,
-                    isLive: false
-                ) == nil,
-                disabledHint: "Prepare a valid countdown in Setup.",
-                start: {
-                    viewModel.startCountdown(
-                        minutes: viewModel.overlayComposerState.countdownMinutesDraft,
-                        seconds: viewModel.overlayComposerState.countdownSecondsDraft,
-                        title: viewModel.overlayComposerState.countdownTitleDraft
-                    )
-                },
-                stop: { viewModel.stopCountdown() }
-            )
-
-            tickerPresetMenu
-
-            overlayButton(
-                title: "Ticker",
-                isActive: viewModel.isTickerActive,
-                canStart: !viewModel.overlayComposerState.trimmedTickerText.isEmpty,
-                disabledHint: "Prepare ticker text in Setup.",
-                start: { viewModel.startTicker(text: viewModel.overlayComposerState.tickerTextDraft) },
-                stop: { viewModel.stopTicker() }
-            )
-        }
-    }
-
-    @ViewBuilder
-    private var tickerPresetMenu: some View {
-        if viewModel.tickerPresets.isEmpty {
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .overlays
-                    viewModel.overlayComposerState.selectedKind = .ticker
-                }
-            } label: {
-                Label("Choose ticker preset", systemImage: "text.badge.star")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("Create ticker presets in Setup Overlays.")
-            .accessibilityLabel("Choose ticker preset")
-            .accessibilityHint("No ticker presets are saved. Opens Setup Overlays.")
-        } else {
-            Menu {
-                ForEach(viewModel.tickerPresets) { preset in
-                    Button {
-                        viewModel.startTickerPreset(preset)
-                    } label: {
-                        Label(
-                            "\(preset.text) · \(OverlaySpeedSelection.label(at: preset.speedIndex))",
-                            systemImage: preset.id == viewModel.overlayComposerState.selectedTickerPresetID ? "checkmark" : "text.badge.star"
-                        )
-                    }
-                }
-            } label: {
-                Label("Choose ticker preset", systemImage: "text.badge.star")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-            }
-            .menuStyle(.button)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .accessibilityLabel("Choose ticker preset")
-            .accessibilityHint("Start a saved ticker preset live.")
-        }
-    }
-
-    @ViewBuilder
-    private var lowerThirdPresetMenu: some View {
-        if viewModel.lowerThirdPresets.isEmpty {
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .overlays
-                    viewModel.overlayComposerState.selectedKind = .lowerThird
-                }
-            } label: {
-                Label("Choose lower third preset", systemImage: "person.badge.plus")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("Create lower third presets in Setup Overlays.")
-            .accessibilityLabel("Choose lower third preset")
-            .accessibilityHint("No lower third presets are saved. Opens Setup Overlays.")
-        } else {
-            Menu {
+            compactOverlayRow(
+                model: LiveOverlayRailRowModel.lowerThird(
+                    presets: viewModel.lowerThirdPresets,
+                    selectedID: viewModel.overlayComposerState.selectedLowerThirdPresetID,
+                    isLive: viewModel.isLowerThirdVisible
+                ),
+                systemImage: OverlayComposerKind.lowerThird.systemImage,
+                setupKind: .lowerThird
+            ) {
                 ForEach(viewModel.lowerThirdPresets) { preset in
                     Button {
+                        viewModel.loadLowerThirdPreset(preset)
                         viewModel.showLowerThirdPreset(preset)
                     } label: {
                         Label(
                             preset.name,
-                            systemImage: preset.id == viewModel.overlayComposerState.selectedLowerThirdPresetID ? "checkmark" : "person.text.rectangle"
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedLowerThirdPresetID ? "checkmark" : OverlayComposerKind.lowerThird.systemImage
                         )
                     }
                 }
-            } label: {
-                Label("Choose lower third preset", systemImage: "person.text.rectangle")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-            }
-            .menuStyle(.button)
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .accessibilityLabel("Choose lower third preset")
-            .accessibilityHint("Send a saved lower third preset live.")
-        }
-    }
-
-    @ViewBuilder
-    private var countdownPresetMenu: some View {
-        if viewModel.countdownPresets.isEmpty {
-            Button {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .overlays
-                    viewModel.overlayComposerState.selectedKind = .countdown
+            } onToggle: {
+                if viewModel.isLowerThirdVisible {
+                    viewModel.dismissLowerThird()
+                } else if let preset = selectedLowerThirdPreset {
+                    viewModel.showLowerThirdPreset(preset)
                 }
-            } label: {
-                Label("Choose countdown preset", systemImage: "timer")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .help("Create countdown presets in Setup Overlays.")
-            .accessibilityLabel("Choose countdown preset")
-            .accessibilityHint("No countdown presets are saved. Opens Setup Overlays.")
-        } else {
-            Menu {
+
+            compactOverlayRow(
+                model: LiveOverlayRailRowModel.countdown(
+                    presets: viewModel.countdownPresets,
+                    selectedID: viewModel.overlayComposerState.selectedCountdownPresetID,
+                    isLive: viewModel.isCountdownActive
+                ),
+                systemImage: OverlayComposerKind.countdown.systemImage,
+                setupKind: .countdown
+            ) {
                 ForEach(viewModel.countdownPresets) { preset in
                     Button {
+                        viewModel.loadCountdownPreset(preset)
                         viewModel.startCountdownPreset(preset)
                     } label: {
                         Label(
                             "\(preset.title) · \(formattedTime(preset.totalSeconds))",
-                            systemImage: preset.id == viewModel.overlayComposerState.selectedCountdownPresetID ? "checkmark" : "timer"
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedCountdownPresetID ? "checkmark" : OverlayComposerKind.countdown.systemImage
                         )
                     }
                 }
+            } onToggle: {
+                if viewModel.isCountdownActive {
+                    viewModel.stopCountdown()
+                } else if let preset = selectedCountdownPreset {
+                    viewModel.startCountdownPreset(preset)
+                }
+            }
+
+            compactOverlayRow(
+                model: LiveOverlayRailRowModel.ticker(
+                    presets: viewModel.tickerPresets,
+                    selectedID: viewModel.overlayComposerState.selectedTickerPresetID,
+                    isLive: viewModel.isTickerActive
+                ),
+                systemImage: OverlayComposerKind.ticker.systemImage,
+                setupKind: .ticker
+            ) {
+                ForEach(viewModel.tickerPresets) { preset in
+                    Button {
+                        viewModel.loadTickerPreset(preset)
+                        viewModel.startTickerPreset(preset)
+                    } label: {
+                        Label(
+                            "\(preset.text) · \(OverlaySpeedSelection.label(at: preset.speedIndex))",
+                            systemImage: preset.id == viewModel.overlayComposerState.selectedTickerPresetID ? "checkmark" : OverlayComposerKind.ticker.systemImage
+                        )
+                    }
+                }
+            } onToggle: {
+                if viewModel.isTickerActive {
+                    viewModel.stopTicker()
+                } else if let preset = selectedTickerPreset {
+                    viewModel.startTickerPreset(preset)
+                }
+            }
+        }
+    }
+
+    private func compactOverlayRow<MenuContent: View>(
+        model: LiveOverlayRailRowModel,
+        systemImage: String,
+        setupKind: OverlayComposerKind,
+        @ViewBuilder menuContent: () -> MenuContent,
+        onToggle: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 6) {
+            overlayPresetMenu(
+                model: model,
+                systemImage: systemImage,
+                setupKind: setupKind,
+                menuContent: menuContent
+            )
+            .frame(maxWidth: .infinity)
+
+            Button(action: onToggle) {
+                Text(model.toggleText)
+                    .font(StudioTheme.statusLabel())
+                    .foregroundStyle(model.isLive ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
+                    .frame(width: 48, height: 34)
+                    .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(!model.canToggle)
+            .opacity(model.canToggle ? 1 : 0.48)
+            .help(model.canToggle ? (model.isLive ? "Stop \(model.title)" : "Send \(model.title) live") : model.disabledHint)
+            .accessibilityLabel(model.isLive ? "Stop \(model.title)" : "Send \(model.title) live")
+            .accessibilityHint(model.canToggle ? model.presetLabel : model.disabledHint)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(model.accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private func overlayPresetMenu<MenuContent: View>(
+        model: LiveOverlayRailRowModel,
+        systemImage: String,
+        setupKind: OverlayComposerKind,
+        @ViewBuilder menuContent: () -> MenuContent
+    ) -> some View {
+        if model.presetLabel == "+ New preset" {
+            Button {
+                openOverlaySetup(setupKind)
             } label: {
-                Label("Choose countdown preset", systemImage: "timer")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+                overlayPresetLabel(model: model, systemImage: systemImage, showsMenuIndicator: false)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Create \(model.title.lowercased()) presets in Setup Overlays.")
+            .accessibilityLabel("\(model.title) presets")
+            .accessibilityHint("No presets are saved. Opens Setup Overlays.")
+        } else {
+            Menu {
+                menuContent()
+            } label: {
+                overlayPresetLabel(model: model, systemImage: systemImage, showsMenuIndicator: true)
             }
             .menuStyle(.button)
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .accessibilityLabel("Choose countdown preset")
-            .accessibilityHint("Start a saved countdown preset live.")
+            .accessibilityLabel("\(model.title) presets")
+            .accessibilityHint("Choose a saved preset.")
+        }
+    }
+
+    private func overlayPresetLabel(
+        model: LiveOverlayRailRowModel,
+        systemImage: String,
+        showsMenuIndicator: Bool
+    ) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .accessibilityHidden(true)
+            Text(model.title)
+                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1)
+                .frame(width: 70, alignment: .leading)
+            Text(model.presetLabel)
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
+                .foregroundStyle(model.isPlaceholder ? StudioTheme.textTertiary : StudioTheme.textSecondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer(minLength: 2)
+            if showsMenuIndicator {
+                Image(systemName: "chevron.down")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .accessibilityHidden(true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 34)
+    }
+
+    private func openOverlaySetup(_ kind: OverlayComposerKind) {
+        withAnimation(.easeInOut(duration: 0.16)) {
+            viewModel.consoleMode = .setup
+            viewModel.selectedMainTab = .overlays
+            viewModel.overlayComposerState.selectedKind = kind
+        }
+    }
+
+    private var selectedLowerThirdPreset: LowerThirdPreset? {
+        viewModel.lowerThirdPresets.first {
+            $0.id == viewModel.overlayComposerState.selectedLowerThirdPresetID
+        }
+    }
+
+    private var selectedCountdownPreset: CountdownPreset? {
+        viewModel.countdownPresets.first {
+            $0.id == viewModel.overlayComposerState.selectedCountdownPresetID
+        }
+    }
+
+    private var selectedTickerPreset: TickerPreset? {
+        viewModel.tickerPresets.first {
+            $0.id == viewModel.overlayComposerState.selectedTickerPresetID
         }
     }
 
@@ -820,34 +841,6 @@ struct LiveQuickRail: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(kind == .warn || kind == .fail || kind == .live ? StudioTheme.color(for: kind).opacity(0.28) : StudioTheme.borderSubtle, lineWidth: 1)
         )
-    }
-
-    private func overlayButton(
-        title: String,
-        isActive: Bool,
-        canStart: Bool,
-        disabledHint: String,
-        start: @escaping () -> Void,
-        stop: @escaping () -> Void
-    ) -> some View {
-        Button(action: isActive ? stop : start) {
-            HStack {
-                Text(title)
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .lineLimit(1)
-                Spacer()
-                Text(isActive ? "LIVE" : "OFF")
-                    .font(StudioTheme.statusLabel())
-                    .foregroundStyle(isActive ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
-            }
-            .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-            .padding(.horizontal, 8)
-            .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(!isActive && !canStart)
-        .opacity(!isActive && !canStart ? 0.48 : 1)
-        .help(!isActive && !canStart ? disabledHint : (isActive ? "Stop \(title)" : "Send \(title) live"))
     }
 
     private func transportButton(_ systemName: String, enabled: Bool, hint: String?, action: @escaping () -> Void) -> some View {
