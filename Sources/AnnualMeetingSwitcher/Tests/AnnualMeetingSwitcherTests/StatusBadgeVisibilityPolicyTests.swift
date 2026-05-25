@@ -27,6 +27,13 @@ final class StatusBadgeVisibilityPolicyTests: XCTestCase {
         XCTAssertTrue(liveMode.contains("StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind)"))
     }
 
+    func testLiveQuickCardRequiresNonEmptyStatusBeforeRenderingBadge() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("if !status.isEmpty && StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind)"))
+        XCTAssertFalse(source.contains("status: viewModel.isFadeToBlackActive ? \"FTB\" : \"READY\""))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

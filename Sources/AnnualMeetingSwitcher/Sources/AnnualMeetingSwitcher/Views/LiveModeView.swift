@@ -446,7 +446,7 @@ struct LiveQuickRail: View {
             currentProgramItem: viewModel.currentProgramItem
         )
 
-        return quickCard(title: "Cut Bus", status: viewModel.isFadeToBlackActive ? "FTB" : "READY", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
+        return quickCard(title: "Cut Bus", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
                 Button {
                     withAnimation(.easeInOut(duration: 0.18)) {
@@ -829,7 +829,7 @@ struct LiveQuickRail: View {
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
-                if StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind) {
+                if !status.isEmpty && StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind) {
                     StatusBadge(status, kind: kind)
                 }
             }
