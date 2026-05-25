@@ -24,10 +24,16 @@ final class ConsoleModeTests: XCTestCase {
 
     func testSetupTabsExposeCompactNavigationMetadata() {
         XCTAssertEqual(MainConsoleTab.preview.setupMenuTitle, "Run Queue")
+        XCTAssertEqual(MainConsoleTab.preview.setupMenuShortcutLabel, "Run Queue  ⌘1")
+        XCTAssertEqual(MainConsoleTab.preview.setupShortcutKey, "1")
         XCTAssertEqual(MainConsoleTab.preview.systemImage, "play.square.stack.fill")
         XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuTitle, "Audio")
+        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuShortcutLabel, "Audio  ⌘2")
+        XCTAssertEqual(MainConsoleTab.audioMixer.setupShortcutKey, "2")
         XCTAssertEqual(MainConsoleTab.audioMixer.systemImage, "slider.horizontal.3")
         XCTAssertEqual(MainConsoleTab.overlays.setupMenuTitle, "Overlays")
+        XCTAssertEqual(MainConsoleTab.overlays.setupMenuShortcutLabel, "Overlays  ⌘3")
+        XCTAssertEqual(MainConsoleTab.overlays.setupShortcutKey, "3")
         XCTAssertEqual(MainConsoleTab.overlays.systemImage, "rectangle.3.group.bubble.left.fill")
     }
 
@@ -79,6 +85,23 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(app.contains("viewModel.consoleMode = .live"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"s\", modifiers: [.command, .shift])"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"l\", modifiers: [.command, .shift])"))
+    }
+
+    func testSetupMenuExposesDiscoverableTabShortcuts() throws {
+        let content = try sourceText("ContentView.swift")
+        let app = try sourceText("App.swift")
+
+        XCTAssertTrue(content.contains("tab.setupMenuShortcutLabel"))
+        XCTAssertTrue(content.contains(".keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)"))
+        XCTAssertTrue(content.contains("ellipsis"))
+
+        XCTAssertTrue(app.contains("CommandMenu(\"Setup\")"))
+        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .preview"))
+        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .audioMixer"))
+        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .overlays"))
+        XCTAssertTrue(app.contains(".keyboardShortcut(\"1\", modifiers: .command)"))
+        XCTAssertTrue(app.contains(".keyboardShortcut(\"2\", modifiers: .command)"))
+        XCTAssertTrue(app.contains(".keyboardShortcut(\"3\", modifiers: .command)"))
     }
 
     func testMainConsoleUsesAutoPresentedWindowGroup() throws {

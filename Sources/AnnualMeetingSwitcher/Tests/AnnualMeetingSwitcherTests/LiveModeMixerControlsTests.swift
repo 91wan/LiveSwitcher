@@ -277,6 +277,16 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertFalse(source.contains("viewModel.togglePanicMode()"))
     }
 
+    func testCutBusMakesTakeNextPrimaryAndFTBSecondary() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("Label(\"Take Next\", systemImage: \"arrow.right.to.line.compact\")"))
+        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
+        XCTAssertTrue(source.contains(".tint(StudioTheme.Action.primary)"))
+        XCTAssertTrue(source.contains("Label(viewModel.isFadeToBlackActive ? \"Restore\" : \"FTB\""))
+        XCTAssertTrue(source.contains("LiveModeLayoutMetrics.ftbButtonWidth"))
+    }
+
     func testLiveModeMuteButtonsUseTransportHitTargetHeight() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 

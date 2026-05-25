@@ -27,6 +27,21 @@ enum MainConsoleTab: Int, CaseIterable, Equatable {
         }
     }
 
+    var setupShortcutKey: String {
+        switch self {
+        case .preview:
+            return "1"
+        case .audioMixer:
+            return "2"
+        case .overlays:
+            return "3"
+        }
+    }
+
+    var setupMenuShortcutLabel: String {
+        "\(setupMenuTitle)  ⌘\(setupShortcutKey)"
+    }
+
     var systemImage: String {
         switch self {
         case .preview:

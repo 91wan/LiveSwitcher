@@ -15,7 +15,8 @@ struct LiveModeView: View {
             VStack(spacing: 8) {
                 HStack(alignment: .top, spacing: 10) {
                     LiveSourceRail()
-                        .frame(width: LiveModeLayoutMetrics.sourceRailWidth)
+                        .frame(width: viewModel.programItems.isEmpty ? LiveModeLayoutMetrics.sourceRailWidthEmpty : LiveModeLayoutMetrics.sourceRailWidth)
+                        .animation(.easeInOut(duration: 0.2), value: viewModel.programItems.isEmpty)
                         .layoutPriority(1)
 
                     VStack(spacing: 10) {
@@ -64,28 +65,30 @@ struct LiveSourceRail: View {
             }
 
             if viewModel.programItems.isEmpty {
-                VStack(spacing: 10) {
-                    EmptyStateView(
-                        title: "No sources",
-                        message: "Prepare the run queue in Setup mode.",
-                        systemImage: "rectangle.stack"
-                    )
+                VStack(spacing: 8) {
+                    Spacer(minLength: 0)
                     Button {
                         withAnimation(.easeInOut(duration: 0.16)) {
                             viewModel.consoleMode = .setup
                             viewModel.selectedMainTab = .preview
                         }
                     } label: {
-                        Label("Switch to Setup", systemImage: "gearshape.fill")
-                            .font(StudioTheme.TypeScale.caption.weight(.black))
+                        VStack(spacing: 5) {
+                            Image(systemName: "gearshape.fill")
+                                .font(StudioTheme.TypeScale.title.weight(.black))
+                            Text("Setup")
+                                .font(StudioTheme.TypeScale.caption.weight(.black))
+                                .lineLimit(1)
+                        }
                             .frame(maxWidth: .infinity)
-                            .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+                            .frame(height: 78)
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(StudioTheme.Action.primary)
                     .focusable(false)
                     .accessibilityLabel("Switch to Setup")
                     .accessibilityHint("Open Setup Run Queue to add sources.")
+                    Spacer(minLength: 0)
                 }
             } else {
                 ScrollView {
@@ -449,33 +452,46 @@ struct LiveQuickRail: View {
         return quickCard(title: "Cut Bus", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
                 Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        viewModel.toggleFadeToBlack()
-                    }
-                } label: {
-                    Label(viewModel.isFadeToBlackActive ? "Restore from FTB" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
-                        .font(StudioTheme.TypeScale.caption.weight(.black))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 40)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(viewModel.isFadeToBlackActive ? StudioTheme.Tone.live : StudioTheme.Action.danger)
-                .accessibilityLabel(viewModel.isFadeToBlackActive ? "Restore from FTB" : "Fade to black")
-
-                Button {
                     if let index = model.nextIndex {
                         viewModel.switchToProgram(at: index)
                     }
                 } label: {
                     Label("Take Next", systemImage: "arrow.right.to.line.compact")
                         .font(StudioTheme.TypeScale.caption.weight(.black))
-                        .labelStyle(.iconOnly)
-                        .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: 40)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(StudioTheme.Action.primary)
                 .disabled(!model.canTakeNext)
                 .help(model.canTakeNext ? "Take next source: \(model.nextTitle)" : "No next source")
+
+                ftbButton
             }
+        }
+    }
+
+    @ViewBuilder
+    private var ftbButton: some View {
+        let button = Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                viewModel.toggleFadeToBlack()
+            }
+        } label: {
+            Label(viewModel.isFadeToBlackActive ? "Restore" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
+                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .frame(width: LiveModeLayoutMetrics.ftbButtonWidth, height: 40)
+        }
+        .accessibilityLabel(viewModel.isFadeToBlackActive ? "Restore from FTB" : "Fade to black")
+
+        if viewModel.isFadeToBlackActive {
+            button
+                .buttonStyle(.borderedProminent)
+                .tint(StudioTheme.Action.danger)
+        } else {
+            button
+                .buttonStyle(.bordered)
+                .tint(StudioTheme.Action.danger)
         }
     }
 
@@ -587,7 +603,7 @@ struct LiveQuickRail: View {
                 Text(model.toggleText)
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(model.isLive ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
-                    .frame(width: 48, height: 34)
+                    .frame(width: 48, height: LiveModeLayoutMetrics.quickActionButtonHeight)
                     .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
             }
             .buttonStyle(.plain)
@@ -661,7 +677,7 @@ struct LiveQuickRail: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 34)
+        .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
     }
 
     private func openOverlaySetup(_ kind: OverlayComposerKind) {

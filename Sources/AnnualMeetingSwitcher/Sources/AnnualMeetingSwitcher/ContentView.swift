@@ -176,8 +176,9 @@ struct ContentView: View {
                         viewModel.selectedMainTab = tab
                     }
                 } label: {
-                    Label(tab.setupMenuTitle, systemImage: tab.systemImage)
+                    Label(tab.setupMenuShortcutLabel, systemImage: tab.systemImage)
                 }
+                .keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)
                 .disabled(tab == viewModel.selectedMainTab)
             }
         } label: {
@@ -187,6 +188,9 @@ struct ContentView: View {
                     .accessibilityHidden(true)
                 Text("\(ConsoleMode.setup.displayTitle): \(viewModel.selectedMainTab.setupMenuTitle)")
                     .font(StudioTheme.TypeScale.heading.weight(.bold))
+                Image(systemName: "ellipsis")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .accessibilityHidden(true)
                 Image(systemName: "chevron.down")
                     .font(StudioTheme.TypeScale.label.weight(.black))
                     .accessibilityHidden(true)
