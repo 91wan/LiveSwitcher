@@ -323,30 +323,27 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.016, accuracy: 0.0001)
     }
 
-    func testSpeakerModeDoesNotRaiseMediaAudioDuringBGMTakeover() throws {
+    func testLiveSpeakerModeToggleDucksMediaAndBGMThroughRouting() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
         viewModel.masterVolume = 0.8
         viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.5
         viewModel.audioStrategy = .mixed
         let videoURL = try makeTempFileURL(ext: "mp4")
-        let bgmURL = try makeTempFileURL(ext: "mp3")
-        defer {
-            try? FileManager.default.removeItem(at: videoURL)
-            try? FileManager.default.removeItem(at: bgmURL)
-        }
+        defer { try? FileManager.default.removeItem(at: videoURL) }
 
         viewModel.switchToProgram(ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL))
-        viewModel.toggleBGM(BGMItem(title: "暖场音乐", url: bgmURL, category: .warmUp))
         viewModel.toggleSpeakerMode()
 
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
         XCTAssertTrue(viewModel.isSpeakerMode)
-        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
-        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.056, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.056, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.056, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.056, accuracy: 0.0001)
     }
 
-    func testBGMPlaybackTemporarilyTakesOverMediaAudioWithoutChangingStrategy() throws {
+    func testBGMPlaybackDoesNotImplicitlyTakeOverMediaAudioWithoutChangingStrategy() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
         viewModel.masterVolume = 0.8
@@ -370,11 +367,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.toggleBGM(bgmItem)
 
         XCTAssertTrue(viewModel.isBGMPlaying)
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
         XCTAssertEqual(viewModel.audioStrategy, .mixed)
-        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
-        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
     }
 
@@ -408,7 +405,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0, accuracy: 0.0001)
     }
 
-    func testBGMPlaybackTakeoverDoesNotMutateFollowSourceStrategy() throws {
+    func testBGMPlaybackDoesNotOverrideFollowSourceStrategy() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
         viewModel.masterVolume = 0.8
@@ -431,10 +428,44 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         viewModel.toggleBGM(bgmItem)
 
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
         XCTAssertEqual(viewModel.audioStrategy, .followSource)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+    }
+
+    func testChangingAudioStrategyWhileBGMIsPlayingUpdatesEffectiveVolumesAndPlayers() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.25
+        viewModel.audioStrategy = .mixed
+
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let bgmURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: bgmURL)
+        }
+
+        viewModel.switchToProgram(ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.toggleBGM(BGMItem(title: "暖场音乐", url: bgmURL, category: .warmUp))
+
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
+
+        viewModel.audioStrategy = .followProgram
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0, accuracy: 0.0001)
+
+        viewModel.audioStrategy = .bgmOnly
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
     }
 
     func testSwitchingBGMItemsCancelsStaleFadeTargets() throws {
@@ -464,8 +495,28 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         XCTAssertEqual(viewModel.currentBGMItem, secondBGM)
         XCTAssertTrue(viewModel.isBGMPlaying)
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
+    }
+
+    func testExplicitBGMTakeoverStillMutesMediaWhenOperatorEnablesIt() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.25
+        viewModel.audioStrategy = .mixed
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.isBGMAudioTakeoverActive = true
+        viewModel.applyAudioRouting()
+
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
         XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
     }
@@ -481,16 +532,85 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
 
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0, accuracy: 0.0001)
+    }
+
+    func testPanicRestoreResumesOnlyIfMediaWasPlayingBefore() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePanicMode()
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePanicMode()
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testPanicRestoreDoesNotAutoPlayPausedMedia() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.avCoordinator.pause()
+
+        viewModel.togglePanicMode()
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testPanicRestoreDoesNotResumeIfProgramChangedDuringPanic() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempFileURL(ext: "mp4")
+        let secondURL = try makeTempFileURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: firstURL)
+        let second = ProgramItem(title: "Awards", subtitle: "MP4", sourceURL: secondURL)
+
+        viewModel.switchToProgram(first)
+        viewModel.togglePanicMode()
+        viewModel.switchToProgram(second)
+        viewModel.avCoordinator.pause()
+
+        viewModel.togglePanicMode()
+
+        XCTAssertEqual(viewModel.currentProgramItem?.id, second.id)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testFadeToBlackDoesNotPauseMedia() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.toggleFadeToBlack()
+
+        XCTAssertTrue(viewModel.isFadeToBlackActive)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
     }
 
     func testPanicModeOffRestoresCurrentRoutingInsteadOfOldSnapshot() throws {
@@ -538,7 +658,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.toggleBGM(BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp))
         viewModel.togglePanicMode()
 
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
         XCTAssertTrue(viewModel.isPanicMode)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
@@ -546,10 +666,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertFalse(viewModel.isPanicMode)
-        XCTAssertTrue(viewModel.isBGMAudioTakeoverActive)
-        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
-        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
     }
 
     func testAudioStrategyPersistsAcrossViewModelInstances() {

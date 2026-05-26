@@ -219,6 +219,16 @@ final class LiveModeMixerControlsTests: XCTestCase {
         )
     }
 
+    func testLiveAudioStripShowsStrategyTogetherWithActiveLimiter() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("audioStrategy.displayTitle"))
+        XCTAssertTrue(source.contains("· 主持人"))
+        XCTAssertTrue(source.contains("· BGM 接管"))
+        XCTAssertTrue(source.contains("· 紧急切黑"))
+        XCTAssertFalse(source.contains("private var audioStatusText: String {\n        viewModel.audioStrategy.displayTitle\n    }"))
+    }
+
     @MainActor
     func testFadeToBlackDoesNotTogglePanicOrMuteAudio() {
         let suite = "FadeToBlack-\(UUID().uuidString)"

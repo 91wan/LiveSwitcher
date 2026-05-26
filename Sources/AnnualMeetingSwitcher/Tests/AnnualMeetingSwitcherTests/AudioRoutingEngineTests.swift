@@ -71,6 +71,20 @@ final class AudioRoutingEngineTests: XCTestCase {
         XCTAssertEqual(output.bgm, 0.48, accuracy: 0.0001)
     }
 
+    func testFollowSourceWithMediaSourceKeepsBGMMutedUnlessTakeoverIsExplicit() {
+        let output = AudioRoutingEngine.output(for: input(audioStrategy: .followSource))
+
+        XCTAssertEqual(output.media, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(output.bgm, 0, accuracy: 0.0001)
+    }
+
+    func testBGMOnlyMutesMediaAndKeepsBGM() {
+        let output = AudioRoutingEngine.output(for: input(audioStrategy: .bgmOnly))
+
+        XCTAssertEqual(output.media, 0, accuracy: 0.0001)
+        XCTAssertEqual(output.bgm, 0.48, accuracy: 0.0001)
+    }
+
     func testSpeakerModeDucksWithoutRaisingLowerFader() {
         let loudOutput = AudioRoutingEngine.output(for: input(isSpeakerMode: true))
         XCTAssertEqual(loudOutput.media, 0.056, accuracy: 0.0001)

@@ -337,7 +337,12 @@ struct LiveAudioStrip: View {
     }
 
     private var audioStatusText: String {
-        viewModel.audioStrategy.displayTitle
+        let strategy = viewModel.audioStrategy.displayTitle
+        if viewModel.isPanicMode { return "\(strategy) · 紧急切黑" }
+        if viewModel.isBGMAudioTakeoverActive { return "\(strategy) · BGM 接管" }
+        if viewModel.isSpeakerMode { return "\(strategy) · 主持人" }
+        if viewModel.isPageInterceptEnabled { return "\(strategy) · PPT" }
+        return strategy
     }
 
     private var audioStatusKind: StudioTheme.StatusKind {
@@ -499,7 +504,7 @@ struct LiveQuickRail: View {
                 title: "主持人",
                 subtitle: "压低 BGM",
                 systemImage: "mic.fill",
-                isOn: $viewModel.isSpeakerMode
+                isOn: speakerModeBinding
             )
             modeToggleRow(
                 title: "PPT",
@@ -537,6 +542,16 @@ struct LiveQuickRail: View {
         .controlSize(.small)
         .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
         .help(isOn.wrappedValue ? "\(title)模式已开启" : "开启\(title)模式")
+    }
+
+    private var speakerModeBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.isSpeakerMode },
+            set: { newValue in
+                guard newValue != viewModel.isSpeakerMode else { return }
+                viewModel.toggleSpeakerMode()
+            }
+        )
     }
 
     private var cutBusCard: some View {

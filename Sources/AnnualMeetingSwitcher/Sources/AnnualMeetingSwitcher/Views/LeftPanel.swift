@@ -341,14 +341,14 @@ struct LeftPanel: View {
             panel.allowedContentTypes = types
 
             guard panel.runModal() == .OK else { return }
-            for url in panel.urls {
-                let item = ProgramItem(
+            let items = panel.urls.map { url in
+                ProgramItem(
                     title: url.deletingPathExtension().lastPathComponent,
                     subtitle: url.pathExtension.uppercased(),
                     sourceURL: url
                 )
-                viewModel.addProgramItem(item)
             }
+            viewModel.addProgramItems(items)
         }
     }
 
@@ -362,14 +362,14 @@ struct LeftPanel: View {
             panel.allowedContentTypes = [UTType.html]
 
             guard panel.runModal() == .OK else { return }
-            for url in panel.urls {
-                let item = ProgramItem(
+            let items = panel.urls.map { url in
+                ProgramItem(
                     title: url.deletingPathExtension().lastPathComponent,
                     subtitle: "HTML",
                     sourceURL: url
                 )
-                viewModel.addProgramItem(item)
             }
+            viewModel.addProgramItems(items)
         }
     }
 
@@ -384,15 +384,15 @@ struct LeftPanel: View {
             panel.allowedContentTypes = [pptxType]
 
             guard panel.runModal() == .OK else { return }
-            for url in panel.urls {
+            let items = panel.urls.map { url in
                 // V21 Fix #5: 只添加到列表，点击"播放"时才唤醒 WPS
-                let item = ProgramItem(
+                ProgramItem(
                     title: url.deletingPathExtension().lastPathComponent,
                     subtitle: "PPTX",
                     sourceURL: url
                 )
-                viewModel.addProgramItem(item)
             }
+            viewModel.addProgramItems(items)
         }
     }
 
@@ -411,16 +411,16 @@ struct LeftPanel: View {
             }
 
             guard panel.runModal() == .OK else { return }
-            for url in panel.urls {
+            let items = panel.urls.compactMap { url -> ProgramItem? in
                 let ext = url.pathExtension.lowercased()
-                guard ext == "key" || ext == "keynote" else { continue }
-                let item = ProgramItem(
+                guard ext == "key" || ext == "keynote" else { return nil }
+                return ProgramItem(
                     title: url.deletingPathExtension().lastPathComponent,
                     subtitle: "KEY",
                     sourceURL: url
                 )
-                viewModel.addProgramItem(item)
             }
+            viewModel.addProgramItems(items)
         }
     }
 

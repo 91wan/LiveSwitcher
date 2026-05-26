@@ -16,24 +16,36 @@ struct AudioMixerPageModel: Equatable {
         ["调音台", "音频策略", "BGM 库"]
     }
 
+    var selectedStrategyText: String {
+        strategy.displayTitle
+    }
+
+    var activeLimiterText: String {
+        if isPanicMode { return "紧急切黑" }
+        if isBGMAudioTakeoverActive { return "BGM 接管" }
+        if isSpeakerMode { return "主持人" }
+        return "无"
+    }
+
+    var effectiveRoutingSummary: String {
+        activeLimiterText == "无" ? "\(selectedStrategyText) · 无限制器" : "\(selectedStrategyText) · \(activeLimiterText)"
+    }
+
     var routingImpactText: String {
         if isPanicMode {
-            return "紧急切黑已开启：媒体和 BGM 实际输出静音。"
+            return "当前策略：\(selectedStrategyText)；限制器：紧急切黑。媒体和 BGM 实际输出静音。"
         }
         if isSpeakerMode {
-            return "主持人模式已开启：媒体和 BGM 已压低到人声优先电平。"
+            return "当前策略：\(selectedStrategyText)；限制器：主持人。媒体和 BGM 已压低到人声优先电平。"
         }
         if isBGMAudioTakeoverActive {
-            return "BGM 接管已开启：BGM 播放时媒体声道静音。"
+            return "当前策略：\(selectedStrategyText)；限制器：BGM 接管。媒体声道被临时静音。"
         }
         return "没有应急路由；实际输出跟随当前策略和推子。"
     }
 
     var routingStatusText: String {
-        if isPanicMode { return "切黑静音" }
-        if isBGMAudioTakeoverActive { return "BGM 接管" }
-        if isSpeakerMode { return "主持人" }
-        return strategy.displayTitle
+        activeLimiterText == "无" ? selectedStrategyText : effectiveRoutingSummary
     }
 
     var routingStatusKind: StudioTheme.StatusKind {

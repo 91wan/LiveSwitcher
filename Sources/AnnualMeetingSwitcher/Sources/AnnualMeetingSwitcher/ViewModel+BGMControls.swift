@@ -58,10 +58,9 @@ extension SwitcherViewModel {
         // 单曲循环（numberOfLoops == -1）不会触发 delegate
         guard let current = currentBGMItem else {
             isBGMPlaying = false
-            isBGMAudioTakeoverActive = false
+            clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
-            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
-            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+            recordBGMPlaybackState(isPlaying: false, reason: "finished")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
@@ -70,10 +69,9 @@ extension SwitcherViewModel {
         let items = bgmItems.filter { $0.category == current.category }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
             isBGMPlaying = false
-            isBGMAudioTakeoverActive = false
+            clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
-            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
-            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+            recordBGMPlaybackState(isPlaying: false, reason: "missingCurrent")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
@@ -86,10 +84,9 @@ extension SwitcherViewModel {
         // 顺序播放：到最后一首时停止
         if bgmPlayMode == .sequential && index == items.count - 1 {
             isBGMPlaying = false
-            isBGMAudioTakeoverActive = false
+            clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
-            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
-            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+            recordBGMPlaybackState(isPlaying: false, reason: "finished")
             applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
             stopBGMTimer()
             return
@@ -110,7 +107,7 @@ extension SwitcherViewModel {
         bgmFallbackPlayer.pause()
         bgmFallbackPlayer.replaceCurrentItem(with: nil)
         isBGMPlaying = false
-        isBGMAudioTakeoverActive = false
+        clearBGMTakeoverIfNeeded()
         bgmProgress = 0
         bgmCurrentTime = 0
         bgmDuration = nil
@@ -127,10 +124,6 @@ extension SwitcherViewModel {
         let nextIndex = (index + 1) % items.count
         let nextItem = items[nextIndex]
 
-        bgmAudioPlayer?.stop()
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
         toggleBGM(nextItem)
     }
 
@@ -142,10 +135,6 @@ extension SwitcherViewModel {
         let prevIndex = (index - 1 + items.count) % items.count
         let prevItem = items[prevIndex]
 
-        bgmAudioPlayer?.stop()
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
         toggleBGM(prevItem)
     }
 }

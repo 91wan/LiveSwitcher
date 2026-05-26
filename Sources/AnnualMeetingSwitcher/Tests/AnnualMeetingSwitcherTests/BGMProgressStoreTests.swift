@@ -46,6 +46,7 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertFalse(source.contains("@Published var bgmProgress: Double"))
         XCTAssertFalse(source.contains("@Published var bgmCurrentTime: Double"))
         XCTAssertFalse(source.contains("@Published var bgmDuration: Double?"))
+        XCTAssertFalse(source.contains("@Published var bgmRealtimeLevelDB"))
         XCTAssertFalse(source.contains("withTimeInterval: 1.0 / 30.0"))
         XCTAssertTrue(source.contains("let bgmProgressStore = BGMProgressStore()"))
         XCTAssertTrue(source.contains("withTimeInterval: BGMProgressStore.updateInterval"))
@@ -57,6 +58,16 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertTrue(source.contains("BGMProgressBar(progressStore: viewModel.bgmProgressStore"))
         XCTAssertTrue(source.contains("@ObservedObject var progressStore: BGMProgressStore"))
         XCTAssertFalse(source.contains("get: { viewModel.bgmProgress }"))
+    }
+
+    func testBGMSwitchingUsesOwnedFadeTransitionInsteadOfImmediateHardStop() throws {
+        let viewModel = try sourceText("ViewModel.swift")
+        let controls = try sourceText("ViewModel+BGMControls.swift")
+
+        XCTAssertTrue(viewModel.contains("bgmTransitionTasks"))
+        XCTAssertTrue(viewModel.contains("bgmTransitionTasks.values.forEach"))
+        XCTAssertTrue(viewModel.contains("releaseBGMPlayerAfterFade"))
+        XCTAssertFalse(controls.contains("bgmAudioPlayer?.stop()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

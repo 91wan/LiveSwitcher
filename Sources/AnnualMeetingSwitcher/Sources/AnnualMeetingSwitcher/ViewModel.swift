@@ -162,20 +162,12 @@ final class SwitcherViewModel: ObservableObject {
     @Published var backgroundImage: NSImage?
     @Published var activeWallpaperURL: URL? {
         didSet {
-            if let url = activeWallpaperURL {
-                backgroundImage = NSImage(contentsOf: url)
-            } else {
-                backgroundImage = nil
-            }
+            loadBackgroundImage(from: activeWallpaperURL)
         }
     }
     @Published var cornerLogoURL: URL? {
         didSet {
-            if let url = cornerLogoURL {
-                cornerLogoImage = NSImage(contentsOf: url)
-            } else {
-                cornerLogoImage = nil
-            }
+            loadCornerLogoImage(from: cornerLogoURL)
         }
     }
     @Published var cornerLogoImage: NSImage?
@@ -190,7 +182,9 @@ final class SwitcherViewModel: ObservableObject {
     @Published var bgmItems: [BGMItem] = []
     @Published var currentBGMItem: BGMItem?
     @Published var isBGMPlaying: Bool = false
-    @Published var isBGMAudioTakeoverActive: Bool = false
+    @Published var isBGMAudioTakeoverActive: Bool = false {
+        didSet { applyAudioRouting() }
+    }
     @Published var bgmPlayMode: BGMPlayMode = .loopAll
     @Published private(set) var supportEvents: [LiveSupportEvent] = []
 
@@ -227,11 +221,12 @@ final class SwitcherViewModel: ObservableObject {
         get { bgmProgressStore.duration }
         set { bgmProgressStore.duration = (newValue ?? 0) > 0 ? newValue : nil }
     }
-    @Published var bgmRealtimeLevelDB: Float? = nil
+    var bgmRealtimeLevelDB: Float? = nil
 
     /// BGM 播放器
     var bgmAudioPlayer: AVAudioPlayer?
     var bgmFallbackPlayer: AVPlayer = AVPlayer()
+    var panicPlaybackSnapshot: PanicPlaybackSnapshot?
 
     // MARK: - 引擎
 
@@ -274,6 +269,9 @@ final class SwitcherViewModel: ObservableObject {
     private var bgmProgressTimer: Timer?
     private var mediaVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    private var backgroundImageLoadTask: Task<Void, Never>?
+    private var cornerLogoImageLoadTask: Task<Void, Never>?
     private var systemVolumeObserver: SystemVolumeObserver?
     private var externalDisplayChangeObserver: NSObjectProtocol?
     private let supportEventLimit = 80
@@ -362,6 +360,9 @@ final class SwitcherViewModel: ObservableObject {
     deinit {
         mediaVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
+        bgmTransitionTasks.values.forEach { $0.cancel() }
+        backgroundImageLoadTask?.cancel()
+        cornerLogoImageLoadTask?.cancel()
         systemVolumeObserver?.stop()
         if let externalDisplayChangeObserver {
             NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
@@ -537,6 +538,40 @@ final class SwitcherViewModel: ObservableObject {
 
     private var currentProgramIsMediaSource: Bool {
         currentProgramItem?.sourceKind == .media
+    }
+
+    private func loadBackgroundImage(from url: URL?) {
+        backgroundImageLoadTask?.cancel()
+        guard let url else {
+            backgroundImage = nil
+            return
+        }
+        backgroundImage = NSImage(byReferencing: url)
+        backgroundImageLoadTask = Task { @MainActor [weak self] in
+            let data = await Self.imageData(from: url)
+            guard !Task.isCancelled, let self, self.activeWallpaperURL == url else { return }
+            self.backgroundImage = data.flatMap(NSImage.init(data:))
+        }
+    }
+
+    private func loadCornerLogoImage(from url: URL?) {
+        cornerLogoImageLoadTask?.cancel()
+        guard let url else {
+            cornerLogoImage = nil
+            return
+        }
+        cornerLogoImage = NSImage(byReferencing: url)
+        cornerLogoImageLoadTask = Task { @MainActor [weak self] in
+            let data = await Self.imageData(from: url)
+            guard !Task.isCancelled, let self, self.cornerLogoURL == url else { return }
+            self.cornerLogoImage = data.flatMap(NSImage.init(data:))
+        }
+    }
+
+    nonisolated private static func imageData(from url: URL) async -> Data? {
+        await Task.detached(priority: .utility) {
+            try? Data(contentsOf: url)
+        }.value
     }
 
     private func programItemSupportsSeeking(_ item: ProgramItem) -> Bool {
@@ -1156,7 +1191,12 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func addProgramItem(_ item: ProgramItem) {
-        programItems.append(item)
+        addProgramItems([item])
+    }
+
+    func addProgramItems(_ items: [ProgramItem]) {
+        guard !items.isEmpty else { return }
+        programItems.append(contentsOf: items)
         saveData()
     }
 
@@ -1265,20 +1305,32 @@ final class SwitcherViewModel: ObservableObject {
 
     @discardableResult
     func addBGMItem(_ item: BGMItem) -> Bool {
-        guard BGMDuplicatePolicy.decision(for: item.url, existingItems: bgmItems) != .duplicateURL else {
-            recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
-            return false
+        addBGMItems([item]) == 1
+    }
+
+    @discardableResult
+    func addBGMItems(_ items: [BGMItem]) -> Int {
+        guard !items.isEmpty else { return 0 }
+        var importedCount = 0
+        for item in items {
+            guard BGMDuplicatePolicy.decision(for: item.url, existingItems: bgmItems) != .duplicateURL else {
+                recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
+                continue
+            }
+            bgmItems.append(item)
+            importedCount += 1
         }
-        bgmItems.append(item)
-        saveData()
-        return true
+        if importedCount > 0 {
+            saveData()
+        }
+        return importedCount
     }
 
     func removeBGMItem(_ item: BGMItem) {
         bgmItems.removeAll { $0.id == item.id }
         if currentBGMItem?.id == item.id {
             stopBGMTimer()
-            isBGMAudioTakeoverActive = false
+            clearBGMTakeoverIfNeeded()
             fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: liveAudioFadeDuration)
             bgmAudioPlayer?.stop()
             bgmAudioPlayer?.delegate = nil
@@ -1293,6 +1345,7 @@ final class SwitcherViewModel: ObservableObject {
             bgmCurrentTime = 0
             bgmDuration = nil
             resetBGMRealtimeMeter()
+            recordBGMPlaybackState(isPlaying: false, reason: "removed")
         }
         saveData()
     }
@@ -1342,10 +1395,9 @@ final class SwitcherViewModel: ObservableObject {
                 // BGM 停止时只解除临时接管，不改变用户选择的混音策略。
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = false
-                isBGMAudioTakeoverActive = false
                 resetBGMRealtimeMeter()
-                LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
-                recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+                clearBGMTakeoverIfNeeded()
+                recordBGMPlaybackState(isPlaying: false, reason: "operator")
                 fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
                 bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
@@ -1368,12 +1420,9 @@ final class SwitcherViewModel: ObservableObject {
                 }
                 stopBGMTimer()
             } else {
-                // BGM 恢复播放时临时接管现场音频：媒体淡出，BGM 淡入。
+                // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = true
-                isBGMAudioTakeoverActive = true
-                LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
-                recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=true")
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.isMeteringEnabled = true
                 bgmAudioPlayer?.play()
@@ -1381,6 +1430,7 @@ final class SwitcherViewModel: ObservableObject {
                 bgmFallbackPlayer.play()
                 applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
                 startBGMTimer()
+                recordBGMPlaybackState(isPlaying: true, reason: "operator")
             }
         } else {
             stopBGMTimer()
@@ -1390,13 +1440,7 @@ final class SwitcherViewModel: ObservableObject {
             bgmFallbackVolumeFadeTask?.cancel()
             if let oldPlayer = bgmAudioPlayer {
                 oldPlayer.setVolume(0, fadeDuration: fadeDur)
-                let capturedOld = oldPlayer
-                Task { @MainActor in
-                    if fadeDur > 0 {
-                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
-                    }
-                    capturedOld.stop()
-                }
+                releaseBGMPlayerAfterFade(oldPlayer, duration: fadeDur)
             }
             bgmAudioPlayer?.delegate = nil
             bgmAudioPlayer = nil
@@ -1406,9 +1450,6 @@ final class SwitcherViewModel: ObservableObject {
 
             currentBGMItem = item
             isBGMPlaying = true
-            isBGMAudioTakeoverActive = true
-            LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: true)
-            recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=true")
             let targetVolume = effectiveBGMOutputVolume()
 
             if let player = try? AVAudioPlayer(contentsOf: item.url) {
@@ -1433,7 +1474,19 @@ final class SwitcherViewModel: ObservableObject {
             bgmCurrentTime = 0
             applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
             startBGMTimer()
+            recordBGMPlaybackState(isPlaying: true, reason: "selected")
         }
+    }
+
+    func clearBGMTakeoverIfNeeded() {
+        guard isBGMAudioTakeoverActive else { return }
+        isBGMAudioTakeoverActive = false
+        LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+        recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+    }
+
+    func recordBGMPlaybackState(isPlaying: Bool, reason: String) {
+        recordSupportEvent(kind: .bgmPlaybackChanged, detail: "isPlaying=\(isPlaying),reason=\(reason)")
     }
 
     // MARK: - BGM Progress Timer
@@ -1450,6 +1503,19 @@ final class SwitcherViewModel: ObservableObject {
     func stopBGMTimer() {
         bgmProgressTimer?.invalidate()
         bgmProgressTimer = nil
+    }
+
+    private func releaseBGMPlayerAfterFade(_ player: AVAudioPlayer, duration: Double) {
+        let taskID = UUID()
+        bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
+            defer { self?.bgmTransitionTasks[taskID] = nil }
+            if duration > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            }
+            guard !Task.isCancelled else { return }
+            player.delegate = nil
+            player.stop()
+        }
     }
 
     func cancelBGMFallbackFade() {

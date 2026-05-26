@@ -16,7 +16,11 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         )
 
         XCTAssertEqual(model.sectionTitles, ["调音台", "音频策略", "BGM 库"])
-        XCTAssertEqual(model.routingImpactText, "BGM 接管已开启：BGM 播放时媒体声道静音。")
+        XCTAssertEqual(model.selectedStrategyText, AudioStrategy.followProgram.displayTitle)
+        XCTAssertEqual(model.activeLimiterText, "BGM 接管")
+        XCTAssertTrue(model.routingStatusText.contains(AudioStrategy.followProgram.displayTitle))
+        XCTAssertTrue(model.routingStatusText.contains("BGM 接管"))
+        XCTAssertEqual(model.routingImpactText, "当前策略：音频跟随；限制器：BGM 接管。媒体声道被临时静音。")
         XCTAssertEqual(model.routingStatusKind, .warn)
     }
 
@@ -34,6 +38,9 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         )
 
         XCTAssertEqual(model.routingStatusText, AudioStrategy.mixed.displayTitle)
+        XCTAssertEqual(model.selectedStrategyText, AudioStrategy.mixed.displayTitle)
+        XCTAssertEqual(model.activeLimiterText, "无")
+        XCTAssertEqual(model.effectiveRoutingSummary, "混合 · 无限制器")
         XCTAssertEqual(model.routingStatusKind, .idle)
         XCTAssertEqual(model.channelLimitText, "无强制静音")
         XCTAssertEqual(model.routingImpactText, "没有应急路由；实际输出跟随当前策略和推子。")
