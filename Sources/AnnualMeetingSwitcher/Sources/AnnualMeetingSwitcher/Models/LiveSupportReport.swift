@@ -7,6 +7,7 @@ enum LiveSupportEventKind: String, Equatable {
     case speakerModeChanged = "speaker.mode.changed"
     case panicModeChanged = "panic.mode.changed"
     case fadeToBlackChanged = "fade-to-black.changed"
+    case bgmPlaybackChanged = "bgm.playback.changed"
     case bgmTakeoverChanged = "bgm.takeover.changed"
     case bgmPlaybackFailed = "bgm.playback.failed"
     case bgmImportSkippedDuplicate = "bgm.import.duplicate"

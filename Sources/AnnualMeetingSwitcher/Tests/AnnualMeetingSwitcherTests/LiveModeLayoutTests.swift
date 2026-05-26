@@ -117,7 +117,8 @@ final class LiveModeLayoutTests: XCTestCase {
 
         XCTAssertTrue(source.contains("modesCard"))
         XCTAssertTrue(source.contains("Toggle(isOn: isOn)"))
-        XCTAssertTrue(source.contains("isOn: $viewModel.isSpeakerMode"))
+        XCTAssertFalse(source.contains("isOn: $viewModel.isSpeakerMode"))
+        XCTAssertTrue(source.contains("speakerModeBinding"))
         XCTAssertTrue(source.contains("isOn: $viewModel.isPageInterceptEnabled"))
         XCTAssertTrue(source.range(of: "outputCard")!.lowerBound < source.range(of: "modesCard")!.lowerBound)
         XCTAssertTrue(source.range(of: "modesCard")!.lowerBound < source.range(of: "cutBusCard")!.lowerBound)

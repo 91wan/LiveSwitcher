@@ -316,9 +316,11 @@ struct BGMPlaylistPanel: View {
             panel.canChooseDirectories = false
             panel.allowedContentTypes = [.audio, .mp3, .wav]
             guard panel.runModal() == .OK else { return }
+            var existingItems = viewModel.bgmItems
+            var importedItems: [BGMItem] = []
             for url in panel.urls {
                 let title = url.deletingPathExtension().lastPathComponent
-                guard BGMDuplicatePolicy.decision(for: url, existingItems: viewModel.bgmItems) != .duplicateURL else {
+                guard BGMDuplicatePolicy.decision(for: url, existingItems: existingItems) != .duplicateURL else {
                     viewModel.recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
                     continue
                 }
@@ -327,8 +329,10 @@ struct BGMPlaylistPanel: View {
                     url: url,
                     category: categorySelection.selectedCategory
                 )
-                viewModel.addBGMItem(bgm)
+                importedItems.append(bgm)
+                existingItems.append(bgm)
             }
+            viewModel.addBGMItems(importedItems)
         }
     }
 
