@@ -53,7 +53,7 @@ struct LeftPanel: View {
                     .font(StudioTheme.TypeScale.label.weight(.bold))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .accessibilityHidden(true)
-                Text("Timeline")
+                Text("时间线")
                     .font(StudioTheme.TypeScale.label.weight(.semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -64,7 +64,7 @@ struct LeftPanel: View {
                     .toggleStyle(.switch)
                     .controlSize(.mini)
             }
-            .help("Show Run Queue as an agenda timeline with optional schedule times.")
+            .help("将节目单显示为议程时间线，可选显示计划时间。")
 
             Spacer(minLength: 0)
 
@@ -76,19 +76,19 @@ struct LeftPanel: View {
             .labelsHidden()
             .toggleStyle(.switch)
             .controlSize(.small)
-            .help("Prompt when the next scheduled item reaches its start time. This never cuts automatically.")
+            .help("下一项到达计划开始时间时提示；不会自动切换。")
 
             Button {
                 viewModel.addAgendaMarker()
             } label: {
-                Label("Marker", systemImage: "mappin.and.ellipse")
+                Label("标记", systemImage: "mappin.and.ellipse")
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .lineLimit(1)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .focusable(false)
-            .help("Add a non-playable agenda marker such as a break or transition.")
+            .help("添加茶歇、转场等不可播放的议程标记。")
         }
         .padding(.horizontal, 2)
         .padding(.vertical, 2)
@@ -105,7 +105,7 @@ struct LeftPanel: View {
                 Image(systemName: model.systemImage)
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.color(for: model.statusKind))
-                Text("Auto-next video")
+                Text("视频播毕自动下一条")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -127,7 +127,7 @@ struct LeftPanel: View {
                 Image(systemName: "rectangle.on.rectangle.angled")
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.color(for: summary.statusKind))
-                Text("Deck readiness")
+                Text("演示就绪")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -144,7 +144,7 @@ struct LeftPanel: View {
                 RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                     .stroke(StudioTheme.borderSubtle, lineWidth: 1)
             )
-            .help("PPTX / Keynote readiness before switching.")
+            .help("切换前检查 PPTX / Keynote 就绪状态。")
         }
     }
 
@@ -155,7 +155,7 @@ struct LeftPanel: View {
 
         return HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Run Queue")
+                Text("节目单")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text("\(programCount) 个节目")
@@ -179,7 +179,7 @@ struct LeftPanel: View {
             .buttonStyle(.plain)
             .focusable(false)
             .help("刷新 / 重新扫描 Keynote")
-            .accessibilityLabel("Refresh Keynote sources")
+            .accessibilityLabel("刷新 Keynote 信号源")
         }
     }
 
@@ -188,7 +188,7 @@ struct LeftPanel: View {
     private var dropZone: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                addSourceButton(title: "Video / Audio", systemName: "film.fill") {
+                addSourceButton(title: "视频 / 音频", systemName: "film.fill") {
                     openFilePicker(types: [.movie, .audio])
                 }
                 addSourceButton(title: "HTML", systemName: "globe.asia.australia.fill") {
@@ -205,13 +205,13 @@ struct LeftPanel: View {
                 }
             }
 
-            Text("Drag files here")
+            Text("拖入文件")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: .center)
 
-            Text("Or use one of the buttons above")
+            Text("或使用上方按钮添加")
                 .font(StudioTheme.TypeScale.label.weight(.medium))
                 .foregroundStyle(StudioTheme.textTertiary.opacity(0.82))
                 .lineLimit(1)
@@ -287,7 +287,7 @@ struct LeftPanel: View {
                         onDelete: { viewModel.removeProgramItem(withID: item.id) }
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityHint("Drag to reorder.")
+                    .accessibilityHint("拖拽调整顺序。")
                     .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
@@ -321,7 +321,7 @@ struct LeftPanel: View {
             .truncationMode(.middle)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 4)
-            .accessibilityLabel("Run queue footer. \(viewModel.programItems.count) programs. Current \(currentTitle).")
+            .accessibilityLabel("节目单底部。\(viewModel.programItems.count) 个节目。当前 \(currentTitle)。")
     }
 
     private func queueRole(for index: Int, currentIndex: Int?, nextPlayableIndex: Int?) -> QueueRole {

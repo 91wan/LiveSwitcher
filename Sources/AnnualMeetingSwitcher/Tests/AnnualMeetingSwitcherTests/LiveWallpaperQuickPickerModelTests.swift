@@ -9,9 +9,9 @@ final class LiveWallpaperQuickPickerModelTests: XCTestCase {
         )
 
         XCTAssertTrue(model.isEmpty)
-        XCTAssertEqual(model.statusText, "NO WALLPAPER")
+        XCTAssertEqual(model.statusText, "无壁纸")
         XCTAssertEqual(model.statusKind, .warn)
-        XCTAssertEqual(model.displayTitle, "No standby wallpaper")
+        XCTAssertEqual(model.displayTitle, "没有待机壁纸")
         XCTAssertTrue(model.items.isEmpty)
     }
 
@@ -43,7 +43,7 @@ final class LiveWallpaperQuickPickerModelTests: XCTestCase {
 
         XCTAssertEqual(model.statusText, "1")
         XCTAssertEqual(model.statusKind, .ready)
-        XCTAssertEqual(model.displayTitle, "No wallpaper selected")
+        XCTAssertEqual(model.displayTitle, "未选择壁纸")
         XCTAssertEqual(model.items.map(\.isActive), [false])
     }
 
@@ -56,7 +56,7 @@ final class LiveWallpaperQuickPickerModelTests: XCTestCase {
             activeWallpaperURL: stale
         )
 
-        XCTAssertEqual(model.displayTitle, "No wallpaper selected")
+        XCTAssertEqual(model.displayTitle, "未选择壁纸")
         XCTAssertEqual(model.items.map(\.isActive), [false])
     }
 }

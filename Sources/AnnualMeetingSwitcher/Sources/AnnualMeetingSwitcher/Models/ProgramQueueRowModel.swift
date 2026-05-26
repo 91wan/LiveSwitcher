@@ -42,9 +42,9 @@ struct ProgramQueueRowModel: Equatable {
     var queueBadgeText: String {
         switch queueRole {
         case .current:
-            return isBroadcasting ? "ON AIR" : "PREVIEW"
+            return isBroadcasting ? "直播" : "预览"
         case .next:
-            return "NEXT"
+            return "下一项"
         case .queued:
             return "\(queuePosition)"
         }
@@ -55,14 +55,14 @@ struct ProgramQueueRowModel: Equatable {
         case .current:
             return queueBadgeText
         case .next:
-            return "NEXT"
+            return "下一项"
         case .queued:
             return nil
         }
     }
 
     var controlRailLabel: String {
-        isBroadcasting ? "ON AIR 主控" : "PREVIEW 主控"
+        isBroadcasting ? "直播主控" : "预览主控"
     }
 
     var primarySystemName: String {
@@ -81,11 +81,11 @@ struct ProgramQueueRowModel: Equatable {
     var primaryAccessibilityLabel: String {
         switch controlStyle {
         case .media:
-            return isPlaying ? "Pause current media" : "Play current media"
+            return isPlaying ? "暂停当前媒体" : "播放当前媒体"
         case .html:
-            return "End current HTML presentation"
+            return "结束当前 HTML 展示"
         case .presentation:
-            return "Stop current presentation"
+            return "停止当前演示"
         case .unsupported, .none:
             return ""
         }

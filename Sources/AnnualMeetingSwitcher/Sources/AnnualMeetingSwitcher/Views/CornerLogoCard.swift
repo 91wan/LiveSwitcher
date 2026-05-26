@@ -5,7 +5,7 @@ private enum CornerLogoImportService {
     @MainActor
     static func presentPicker(viewModel: SwitcherViewModel) {
         let panel = NSOpenPanel()
-        panel.title = "Import corner logo"
+        panel.title = "导入角标 Logo"
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [.image, .png, .jpeg, .gif]
@@ -22,16 +22,16 @@ struct CornerLogoCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Corner Logo")
+                    Text("角标 Logo")
                         .font(StudioTheme.sectionTitle())
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Persistent brand mark on output")
+                    Text("输出画面的常驻品牌标识")
                         .font(StudioTheme.caption())
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer()
                 if viewModel.cornerLogoURL == nil {
-                    StatusBadge("OFF", kind: .idle)
+                    StatusBadge("关闭", kind: .idle)
                 } else {
                     StatusBadge(viewModel.cornerLogoPosition.shortLabel, kind: .ready)
                 }
@@ -40,7 +40,7 @@ struct CornerLogoCard: View {
             HStack(spacing: 10) {
                 logoPreview
                 VStack(alignment: .leading, spacing: 8) {
-                    Picker("Position", selection: $viewModel.cornerLogoPosition) {
+                    Picker("位置", selection: $viewModel.cornerLogoPosition) {
                         ForEach(CornerLogoPosition.allCases, id: \.self) { position in
                             Text(position.shortLabel)
                                 .tag(position)
@@ -48,19 +48,19 @@ struct CornerLogoCard: View {
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
-                    .help("Choose logo corner")
+                    .help("选择 Logo 显示角落")
 
                     HStack(spacing: 8) {
                         Button {
                             CornerLogoImportService.presentPicker(viewModel: viewModel)
                         } label: {
-                            Label("Import logo...", systemImage: "photo.badge.plus")
+                            Label("导入 Logo...", systemImage: "photo.badge.plus")
                                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                         }
                         .buttonStyle(.bordered)
                         .controlSize(.small)
 
-                        Button("Remove") {
+                        Button("移除") {
                             viewModel.removeCornerLogo()
                         }
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
@@ -101,13 +101,13 @@ struct CornerLogoCard: View {
                     Image(systemName: "building.2.crop.circle")
                         .font(StudioTheme.TypeScale.body.weight(.semibold))
                         .foregroundStyle(StudioTheme.textTertiary)
-                    Text("No logo")
+                    Text("无 Logo")
                         .font(StudioTheme.TypeScale.label.weight(.semibold))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 .frame(width: 86, height: 54)
             }
         }
-        .accessibilityLabel(viewModel.cornerLogoURL == nil ? "No corner logo selected" : "Corner logo selected")
+        .accessibilityLabel(viewModel.cornerLogoURL == nil ? "未选择角标 Logo" : "已选择角标 Logo")
     }
 }

@@ -1754,7 +1754,7 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Tier1: Blackout State
+    // MARK: - Tier1: 紧急切黑 State
     @Published var isPanicMode: Bool       = false
     @Published var isFadeToBlackActive: Bool = false
 

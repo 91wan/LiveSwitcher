@@ -1,6 +1,6 @@
-"audio.strategy.followProgram" = "Follow Program";
-"audio.strategy.followSource" = "Follow Source";
-"audio.strategy.bgmOnly" = "BGM Only";
-"audio.strategy.mixed" = "Mixed";
-"console.mode.setup" = "Setup";
-"console.mode.live" = "Live";
+"audio.strategy.followProgram" = "音频跟随";
+"audio.strategy.followSource" = "跟随源";
+"audio.strategy.bgmOnly" = "仅 BGM";
+"audio.strategy.mixed" = "混合";
+"console.mode.setup" = "准备";
+"console.mode.live" = "现场";

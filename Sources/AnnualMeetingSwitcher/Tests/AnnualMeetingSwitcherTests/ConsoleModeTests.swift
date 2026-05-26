@@ -12,27 +12,29 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertEqual(ConsoleMode.live.systemImage, "play.fill")
     }
 
-    func testConsoleModeLocalizationResourcesExistForEnglishAndChinese() throws {
+    func testConsoleModeLocalizationResourcesKeepChineseConsoleCopyAcrossBundles() throws {
         let english = try sourceText("Resources/en.lproj/Localizable.strings")
         let chinese = try sourceText("Resources/zh-Hans.lproj/Localizable.strings")
 
-        XCTAssertTrue(english.contains("\"console.mode.setup\" = \"Setup\";"))
-        XCTAssertTrue(english.contains("\"console.mode.live\" = \"Live\";"))
+        XCTAssertTrue(english.contains("\"console.mode.setup\" = \"准备\";"))
+        XCTAssertTrue(english.contains("\"console.mode.live\" = \"现场\";"))
+        XCTAssertFalse(english.contains("\"console.mode.setup\" = \"Setup\";"))
+        XCTAssertFalse(english.contains("\"console.mode.live\" = \"Live\";"))
         XCTAssertTrue(chinese.contains("\"console.mode.setup\" = \"准备\";"))
         XCTAssertTrue(chinese.contains("\"console.mode.live\" = \"现场\";"))
     }
 
     func testSetupTabsExposeCompactNavigationMetadata() {
-        XCTAssertEqual(MainConsoleTab.preview.setupMenuTitle, "Run Queue")
-        XCTAssertEqual(MainConsoleTab.preview.setupMenuShortcutLabel, "Run Queue  ⌘1")
+        XCTAssertEqual(MainConsoleTab.preview.setupMenuTitle, "节目单")
+        XCTAssertEqual(MainConsoleTab.preview.setupMenuShortcutLabel, "节目单  ⌘1")
         XCTAssertEqual(MainConsoleTab.preview.setupShortcutKey, "1")
         XCTAssertEqual(MainConsoleTab.preview.systemImage, "play.square.stack.fill")
-        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuTitle, "Audio")
-        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuShortcutLabel, "Audio  ⌘2")
+        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuTitle, "音频")
+        XCTAssertEqual(MainConsoleTab.audioMixer.setupMenuShortcutLabel, "音频  ⌘2")
         XCTAssertEqual(MainConsoleTab.audioMixer.setupShortcutKey, "2")
         XCTAssertEqual(MainConsoleTab.audioMixer.systemImage, "slider.horizontal.3")
-        XCTAssertEqual(MainConsoleTab.overlays.setupMenuTitle, "Overlays")
-        XCTAssertEqual(MainConsoleTab.overlays.setupMenuShortcutLabel, "Overlays  ⌘3")
+        XCTAssertEqual(MainConsoleTab.overlays.setupMenuTitle, "叠层")
+        XCTAssertEqual(MainConsoleTab.overlays.setupMenuShortcutLabel, "叠层  ⌘3")
         XCTAssertEqual(MainConsoleTab.overlays.setupShortcutKey, "3")
         XCTAssertEqual(MainConsoleTab.overlays.systemImage, "rectangle.3.group.bubble.left.fill")
     }
@@ -81,7 +83,7 @@ final class ConsoleModeTests: XCTestCase {
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {
         let app = try sourceText("App.swift")
 
-        XCTAssertTrue(app.contains("CommandMenu(\"Mode\")"))
+        XCTAssertTrue(app.contains("CommandMenu(\"模式\")"))
         XCTAssertTrue(app.contains("viewModel.consoleMode = .setup"))
         XCTAssertTrue(app.contains("viewModel.consoleMode = .live"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"s\", modifiers: [.command, .shift])"))
@@ -96,10 +98,11 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(content.contains(".keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)"))
         XCTAssertFalse(content.contains("ellipsis"))
 
-        XCTAssertTrue(app.contains("CommandMenu(\"Setup\")"))
-        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .preview"))
-        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .audioMixer"))
-        XCTAssertTrue(app.contains("viewModel.selectedMainTab = .overlays"))
+        XCTAssertTrue(app.contains("CommandMenu(\"准备页面\")"))
+        XCTAssertTrue(app.contains("viewModel.navigateToSetup(.preview)"))
+        XCTAssertTrue(app.contains("viewModel.navigateToSetup(.audioMixer)"))
+        XCTAssertTrue(app.contains("viewModel.navigateToSetup(.overlays)"))
+        XCTAssertFalse(app.contains("viewModel.selectedMainTab = ."))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"1\", modifiers: .command)"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"2\", modifiers: .command)"))
         XCTAssertTrue(app.contains(".keyboardShortcut(\"3\", modifiers: .command)"))
@@ -109,7 +112,7 @@ final class ConsoleModeTests: XCTestCase {
         let app = try sourceText("App.swift")
 
         XCTAssertTrue(app.contains("WindowGroup(\"LiveSwitcher\", id: \"main-console\")"))
-        XCTAssertTrue(app.contains("Window(\"Live Safety Cockpit\", id: \"safety-cockpit\")"))
+        XCTAssertTrue(app.contains("Window(\"现场安全台\", id: \"safety-cockpit\")"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

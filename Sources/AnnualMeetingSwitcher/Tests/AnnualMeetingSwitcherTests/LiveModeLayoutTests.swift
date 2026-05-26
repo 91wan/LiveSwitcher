@@ -13,6 +13,9 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.footerHeight, 26)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.transportButtonSize, 32)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.quickActionButtonHeight, 34)
+        XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.contentTopPadding, 14)
+        XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.contentBottomPadding, 6)
+        XCTAssertGreaterThanOrEqual(ConsoleChromeLayoutMetrics.navigationBarMinHeight, 76)
     }
 
     func testLiveModeViewDefinesDedicatedStageFourRegions() throws {
@@ -24,6 +27,23 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("struct LiveAudioStrip"))
         XCTAssertTrue(source.contains("struct LiveQuickRail"))
         XCTAssertTrue(source.contains("struct LiveRuntimeStatusBar"))
+    }
+
+    func testLiveModePreservesBreathingRoomBelowChrome() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(source.contains(".padding(.top, LiveModeLayoutMetrics.contentTopPadding)"))
+        XCTAssertFalse(source.contains(".padding(.top, 8)"))
+        XCTAssertTrue(content.contains("ConsoleChromeLayoutMetrics.navigationBarMinHeight"))
+        XCTAssertFalse(content.contains(".frame(minHeight: 64)"))
+    }
+
+    func testLiveQuickRailScrollsInsteadOfClippingDenseControls() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("ScrollView(.vertical, showsIndicators: false)"))
+        XCTAssertFalse(source.contains(".scrollClipDisabled()"))
     }
 
     func testContentViewRoutesLiveModeToDedicatedLayout() throws {
@@ -47,7 +67,7 @@ final class LiveModeLayoutTests: XCTestCase {
     func testLiveSourcesEmptyStateOffersSetupCTA() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("Switch to Setup"))
+        XCTAssertTrue(source.contains("切到准备模式"))
         XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
     }
 
@@ -84,7 +104,7 @@ final class LiveModeLayoutTests: XCTestCase {
 
         XCTAssertTrue(source.contains("LiveBGMQuickPickerModel.make"))
         XCTAssertTrue(source.contains("LiveBGMPlaylistModel.make"))
-        XCTAssertTrue(source.contains("Choose BGM category"))
+        XCTAssertTrue(source.contains("选择 BGM 分类"))
         XCTAssertTrue(source.contains("BGMCategory.allCases"))
         XCTAssertTrue(source.contains("viewModel.toggleBGM(row.item)"))
         XCTAssertTrue(source.contains("playlist.categoryButtonTitle"))
@@ -117,7 +137,7 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("LiveWallpaperQuickPickerModel.make"))
-        XCTAssertTrue(source.contains("Choose standby wallpaper"))
+        XCTAssertTrue(source.contains("选择待机壁纸"))
         XCTAssertTrue(source.contains("viewModel.setActiveWallpaper(url: item.url)"))
         XCTAssertTrue(source.contains("ForEach(picker.items)"))
         XCTAssertFalse(source.contains("Next wallpaper"))
@@ -182,15 +202,15 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains(".frame(height: 30)"))
     }
 
-    func testAudioAndOverlaySubtitlesUseEnglishCopy() throws {
+    func testAudioAndOverlaySubtitlesUseChineseCopy() throws {
         let audio = try sourceText("Views/AudioMixerView.swift")
         let overlays = try sourceText("Views/SettingsView.swift")
 
-        XCTAssertTrue(audio.contains("Mixer faders, routing strategy, and BGM library"))
-        XCTAssertTrue(audio.contains("Categorize, list, add, remove, and reorder BGM tracks here."))
-        XCTAssertTrue(overlays.contains("Compose on the left, preview on the right."))
+        XCTAssertTrue(audio.contains("调音推子、音频策略、BGM 库三块独立管理"))
+        XCTAssertTrue(audio.contains("分类、曲目列表、添加、删除和排序集中在音频页管理"))
+        XCTAssertTrue(overlays.contains("左侧编辑，右侧实时预览"))
         XCTAssertFalse(audio.contains("routing strategy 和 BGM library 分区管理"))
-        XCTAssertFalse(audio.contains("分类、曲目列表、添加、删除和排序集中在音频页管理"))
+        XCTAssertFalse(audio.contains("Categorize, list, add, remove, and reorder BGM tracks here."))
         XCTAssertFalse(overlays.contains("当前 live 状态"))
     }
 

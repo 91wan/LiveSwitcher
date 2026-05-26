@@ -29,11 +29,10 @@ struct LiveSwitcherApp: App {
             }
 
             CommandGroup(after: .pasteboard) {
-                Button("Paste Speakers from Clipboard") {
+                Button("从剪贴板粘贴主持人") {
                     if let text = NSPasteboard.general.string(forType: .string),
                        viewModel.importLowerThirdSpeakersFromClipboardText(text) != nil {
-                        viewModel.consoleMode = .setup
-                        viewModel.selectedMainTab = .overlays
+                        viewModel.navigateToSetup(.overlays)
                         viewModel.overlayComposerState.selectedKind = .lowerThird
                     } else {
                         NSSound.beep()
@@ -42,36 +41,33 @@ struct LiveSwitcherApp: App {
                 .keyboardShortcut("v", modifiers: [.command, .shift])
             }
 
-            CommandMenu("Mode") {
-                Button("Setup") {
+            CommandMenu("模式") {
+                Button("准备") {
                     viewModel.consoleMode = .setup
                 }
                 .keyboardShortcut("s", modifiers: [.command, .shift])
                 .disabled(viewModel.consoleMode == .setup)
 
-                Button("Live") {
+                Button("现场") {
                     viewModel.consoleMode = .live
                 }
                 .keyboardShortcut("l", modifiers: [.command, .shift])
                 .disabled(viewModel.consoleMode == .live)
             }
 
-            CommandMenu("Setup") {
-                Button("Run Queue") {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .preview
+            CommandMenu("准备页面") {
+                Button("节目单") {
+                    viewModel.navigateToSetup(.preview)
                 }
                 .keyboardShortcut("1", modifiers: .command)
 
-                Button("Audio") {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .audioMixer
+                Button("音频") {
+                    viewModel.navigateToSetup(.audioMixer)
                 }
                 .keyboardShortcut("2", modifiers: .command)
 
-                Button("Overlays") {
-                    viewModel.consoleMode = .setup
-                    viewModel.selectedMainTab = .overlays
+                Button("叠层") {
+                    viewModel.navigateToSetup(.overlays)
                 }
                 .keyboardShortcut("3", modifiers: .command)
             }
@@ -89,7 +85,7 @@ struct LiveSwitcherApp: App {
                 }
                 .keyboardShortcut("m", modifiers: [.command, .option])
 
-                Button(viewModel.isPanicMode ? "Disable Blackout" : "Enable Blackout") {
+                Button(viewModel.isPanicMode ? "关闭紧急切黑" : "开启紧急切黑") {
                     viewModel.togglePanicMode()
                 }
                 .keyboardShortcut("b", modifiers: [.command, .option])
@@ -102,7 +98,7 @@ struct LiveSwitcherApp: App {
         }
         .windowResizability(.contentMinSize)
 
-        Window("Live Safety Cockpit", id: "safety-cockpit") {
+        Window("现场安全台", id: "safety-cockpit") {
             SafetyCockpitView()
                 .environmentObject(viewModel)
         }

@@ -18,10 +18,10 @@ struct SetupAudioDock: View {
 
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Audio")
+                Text("音频")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text(model.mutedChannelCount == 0 ? "Setup dock" : "\(model.mutedChannelCount) muted")
+                Text(model.mutedChannelCount == 0 ? "准备底栏" : "\(model.mutedChannelCount) 路静音")
                     .font(StudioTheme.caption())
                     .foregroundStyle(model.mutedChannelCount == 0 ? StudioTheme.textSecondary : StudioTheme.Tone.warn)
             }
@@ -57,13 +57,13 @@ struct SetupAudioDock: View {
             Button {
                 onOpenMixer()
             } label: {
-                Label("Mixer", systemImage: "slider.horizontal.3")
+                Label("调音台", systemImage: "slider.horizontal.3")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Open full Audio Mixer")
-            .accessibilityLabel("Open full Audio Mixer")
+            .help("打开完整音频页")
+            .accessibilityLabel("打开完整音频页")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -86,7 +86,7 @@ private struct SetupAudioDockChannel: View {
                 Text(title)
                     .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("User \(userText) · Out \(effectiveText)")
+                Text("用户 \(userText) · 输出 \(effectiveText)")
                     .font(StudioTheme.TypeScale.label.weight(.semibold))
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -103,15 +103,15 @@ private struct SetupAudioDockChannel: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help(isMuted ? "Unmute \(title)" : "Mute \(title)")
-                .accessibilityLabel(isMuted ? "Unmute \(title)" : "Mute \(title)")
+                .help(isMuted ? "取消 \(title) 静音" : "\(title) 静音")
+                .accessibilityLabel(isMuted ? "取消 \(title) 静音" : "\(title) 静音")
             }
 
             Slider(value: $value, in: 0...1)
                 .tint(isMuted ? StudioTheme.Tone.muted : tint)
                 .controlSize(.mini)
-                .accessibilityLabel("\(title) setup dock volume")
-                .accessibilityValue("User \(userText), output \(effectiveText)")
+                .accessibilityLabel("\(title) 准备底栏音量")
+                .accessibilityValue("用户 \(userText)，输出 \(effectiveText)")
         }
         .frame(maxWidth: .infinity)
     }

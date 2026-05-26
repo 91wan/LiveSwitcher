@@ -25,8 +25,8 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     func testWallpaperEmptyStateKeepsInlineImportAction() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
-        XCTAssertTrue(source.contains("No standby wallpaper"))
-        XCTAssertTrue(source.contains("Import wallpaper"))
+        XCTAssertTrue(source.contains("没有待机壁纸"))
+        XCTAssertTrue(source.contains("导入壁纸"))
         XCTAssertTrue(source.contains("WallpaperImportService.presentPicker"))
         XCTAssertTrue(source.contains(" 张"))
     }
@@ -47,7 +47,8 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertFalse(source.contains("private var bgmMiniCard"))
         XCTAssertFalse(source.contains("BGM progress"))
         XCTAssertFalse(source.contains("Open audio mixer page"))
-        XCTAssertTrue(source.contains("Switch to Live"))
+        XCTAssertFalse(source.contains("Switch to Live"))
+        XCTAssertTrue(source.contains("进入现场"))
         XCTAssertTrue(source.contains("onSwitchToLive"))
     }
 
@@ -58,7 +59,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertEqual(source.components(separatedBy: "addSourceButton(title:").count - 1, 4)
         XCTAssertTrue(source.contains(".focusable(false)"))
         XCTAssertFalse(source.contains("EmptyStateView("))
-        XCTAssertTrue(source.contains("Or use one of the buttons above"))
+        XCTAssertTrue(source.contains("或使用上方按钮添加"))
         XCTAssertTrue(source.contains("queueFooter"))
     }
 
@@ -88,7 +89,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         let track = BGMItem(title: "Opening", url: URL(fileURLWithPath: "/tmp/opening.mp3"), category: .warmUp)
         let state = BGMControlsState.make(items: [track], currentItem: nil)
 
-        XCTAssertEqual(state.displayStatusText, "IDLE")
+        XCTAssertEqual(state.displayStatusText, "待选")
         XCTAssertEqual(state.displayStatusKind, .idle)
     }
 

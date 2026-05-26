@@ -51,7 +51,7 @@ final class AudioMixerLocalizationTests: XCTestCase {
         XCTAssertFalse(strategy.contains("return \"混合\""))
     }
 
-    func testAudioStrategyLocalizationResourcesExistForEnglishAndChinese() throws {
+    func testAudioStrategyLocalizationResourcesKeepChineseConsoleCopyAcrossBundles() throws {
         let english = try String(contentsOf: sourceURL("Resources/en.lproj/Localizable.strings"), encoding: .utf8)
         let chinese = try String(contentsOf: sourceURL("Resources/zh-Hans.lproj/Localizable.strings"), encoding: .utf8)
 
@@ -65,10 +65,14 @@ final class AudioMixerLocalizationTests: XCTestCase {
             XCTAssertTrue(chinese.contains("\"\(key)\""))
         }
 
-        XCTAssertTrue(english.contains("\"Follow Program\""))
-        XCTAssertTrue(english.contains("\"Follow Source\""))
-        XCTAssertTrue(english.contains("\"BGM Only\""))
-        XCTAssertTrue(english.contains("\"Mixed\""))
+        XCTAssertFalse(english.contains("\"Follow Program\""))
+        XCTAssertFalse(english.contains("\"Follow Source\""))
+        XCTAssertFalse(english.contains("\"BGM Only\""))
+        XCTAssertFalse(english.contains("\"Mixed\""))
+        XCTAssertTrue(english.contains("\"音频跟随\""))
+        XCTAssertTrue(english.contains("\"跟随源\""))
+        XCTAssertTrue(english.contains("\"仅 BGM\""))
+        XCTAssertTrue(english.contains("\"混合\""))
         XCTAssertTrue(chinese.contains("\"音频跟随\""))
         XCTAssertTrue(chinese.contains("\"跟随源\""))
         XCTAssertTrue(chinese.contains("\"仅 BGM\""))

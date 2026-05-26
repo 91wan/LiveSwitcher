@@ -8,16 +8,16 @@ struct LiveOpsPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Live Ops")
+                    Text("现场控制")
                         .font(StudioTheme.title())
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Setup output")
+                    Text("准备阶段")
                         .font(StudioTheme.caption())
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
                 Spacer()
                 if viewModel.isPanicMode {
-                    StatusBadge("BLACKOUT", kind: .fail)
+                    StatusBadge("紧急切黑", kind: .fail)
                 }
             }
             .padding(.horizontal, 4)
@@ -39,7 +39,7 @@ struct LiveOpsPanel: View {
             safetyNotice: viewModel.broadcastSafetyNotice
         )
 
-        return opsCard(title: "Output", status: model.statusText, kind: model.statusKind) {
+        return opsCard(title: "输出", status: model.statusText, kind: model.statusKind) {
             Button(action: { viewModel.handleSafeBroadcastToggle() }) {
                 HStack(spacing: 8) {
                     Image(systemName: viewModel.isBroadcasting ? "stop.fill" : "antenna.radiowaves.left.and.right")
@@ -78,14 +78,14 @@ struct LiveOpsPanel: View {
     }
 
     private var switchToLiveCard: some View {
-        opsCard(title: "Mode", status: viewModel.consoleMode == .live ? "LIVE" : "SETUP", kind: viewModel.consoleMode == .live ? .live : .idle) {
-            Text("Setup keeps audio and BGM controls in the dock. Switch to Live for source switching, overlays, wallpaper, and live quick controls.")
+        opsCard(title: "模式", status: viewModel.consoleMode == .live ? "现场" : "准备", kind: viewModel.consoleMode == .live ? .live : .idle) {
+            Text("准备阶段保留音频和 BGM 底栏控制；切到现场模式后可快速切换信号源、叠层、待机壁纸和现场控制。")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(4)
 
             Button(action: onSwitchToLive) {
-                Label("Switch to Live", systemImage: "play.fill")
+                Label("进入现场", systemImage: "play.fill")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
                     .frame(maxWidth: .infinity)
                     .frame(height: LiveOpsLayoutMetrics.secondaryButtonHeight)
@@ -94,8 +94,8 @@ struct LiveOpsPanel: View {
             .controlSize(.small)
             .tint(StudioTheme.Action.primary)
             .focusable(false)
-            .help("Switch the console from setup to live operating mode.")
-            .accessibilityLabel("Switch to Live mode")
+            .help("将控制台从准备阶段切到现场操作模式。")
+            .accessibilityLabel("进入现场模式")
         }
     }
 
@@ -146,6 +146,6 @@ struct LiveOpsPanel: View {
             .lineLimit(1)
             .truncationMode(.tail)
             .padding(.horizontal, 4)
-            .accessibilityLabel("LiveSwitcher version \(AppConfiguration.appVersion). \(HostSystemSummary.shortVersionString).")
+            .accessibilityLabel("LiveSwitcher 版本 \(AppConfiguration.appVersion)。\(HostSystemSummary.shortVersionString)。")
     }
 }

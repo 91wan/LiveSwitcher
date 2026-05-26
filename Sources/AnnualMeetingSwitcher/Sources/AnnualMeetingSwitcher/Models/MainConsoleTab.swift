@@ -8,22 +8,22 @@ enum MainConsoleTab: Int, CaseIterable, Equatable {
     var chromeTitle: String {
         switch self {
         case .preview:
-            return "LiveSwitcher · Run"
+            return "LiveSwitcher · 导播台"
         case .audioMixer:
-            return "LiveSwitcher · Audio"
+            return "LiveSwitcher · 音频"
         case .overlays:
-            return "LiveSwitcher · Overlays"
+            return "LiveSwitcher · 叠层"
         }
     }
 
     var setupMenuTitle: String {
         switch self {
         case .preview:
-            return "Run Queue"
+            return "节目单"
         case .audioMixer:
-            return "Audio"
+            return "音频"
         case .overlays:
-            return "Overlays"
+            return "叠层"
         }
     }
 
@@ -103,9 +103,9 @@ private extension LivePreflightActionKind {
     var successMessage: String? {
         switch self {
         case .clearOverlays:
-            return "Overlays cleared"
+            return "叠层已清空"
         case .turnOffPanic:
-            return "Blackout turned off"
+            return "紧急切黑已关闭"
         case .openPreview, .openAudioMixer, .openOverlays, .needsHardware, .manualReview:
             return nil
         }

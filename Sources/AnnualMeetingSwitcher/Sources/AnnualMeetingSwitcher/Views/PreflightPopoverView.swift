@@ -50,13 +50,13 @@ struct PreflightPopoverView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $preflightListMode) {
-                    Text("Needs attention").tag(PreflightReviewMode.needsAttention)
-                    Text("All checks").tag(PreflightReviewMode.allChecks)
+                    Text("需处理").tag(PreflightReviewMode.needsAttention)
+                    Text("全部检查").tag(PreflightReviewMode.allChecks)
                 }
                 .pickerStyle(.segmented)
 
                 if preflightListMode == .needsAttention {
-                    Text("Shows only fail and warn rows, so the operator sees what must be handled first.")
+                    Text("只显示故障和警告项，先处理现场风险。")
                         .font(StudioTheme.TypeScale.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -70,7 +70,7 @@ struct PreflightPopoverView: View {
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(StudioTheme.Tone.ready.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
-                    .accessibilityLabel("Preflight action result: \(preflightActionMessage)")
+                    .accessibilityLabel("现场检查操作结果：\(preflightActionMessage)")
             }
 
             if let supportMessage {
@@ -81,7 +81,7 @@ struct PreflightPopoverView: View {
                     .padding(.vertical, 7)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(StudioTheme.Action.primary.opacity(0.09), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
-                    .accessibilityLabel("Support report result: \(supportMessage)")
+                    .accessibilityLabel("支持报告结果：\(supportMessage)")
             }
 
             if review.isEmpty {
@@ -105,9 +105,9 @@ struct PreflightPopoverView: View {
 
     private var preflightHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
-            Text("Live Preflight / 现场检查")
+            Text("现场检查")
                 .font(StudioTheme.TypeScale.numeric)
-            Text("Reads the current runtime state. Use the summary first, then review fail/warn rows before a show.")
+            Text("读取当前运行状态。先看汇总，再处理故障和警告项。")
                 .font(StudioTheme.TypeScale.caption)
                 .foregroundStyle(.secondary)
         }
@@ -118,14 +118,14 @@ struct PreflightPopoverView: View {
             Divider()
             HStack(spacing: 8) {
                 Button(action: onOpenSafetyCockpit) {
-                    Label("Open Cockpit", systemImage: "gauge.with.dots.needle.bottom.100percent")
+                    Label("打开安全台", systemImage: "gauge.with.dots.needle.bottom.100percent")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
 
                 Button(action: copyPreflightReport) {
-                    Label(copiedReport ? "Copied" : "Copy Report", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
+                    Label(copiedReport ? "已复制" : "复制检查", systemImage: copiedReport ? "checkmark" : "doc.on.doc")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
@@ -134,14 +134,14 @@ struct PreflightPopoverView: View {
                 Spacer(minLength: 0)
 
                 Button(action: copySupportReport) {
-                    Label("Copy Support", systemImage: "stethoscope")
+                    Label("复制支持报告", systemImage: "stethoscope")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
 
                 Button(action: saveSupportReport) {
-                    Label("Save Support...", systemImage: "square.and.arrow.down")
+                    Label("保存支持报告...", systemImage: "square.and.arrow.down")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
@@ -150,7 +150,7 @@ struct PreflightPopoverView: View {
         }
         .padding(.top, 4)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Preflight footer actions")
+        .accessibilityLabel("现场检查底部操作")
     }
 
     private var preflightReview: PreflightReviewModel {
@@ -196,7 +196,7 @@ struct PreflightPopoverView: View {
             kind: .supportReportCopied,
             detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
         )
-        showSupportMessage("Support report copied")
+        showSupportMessage("支持报告已复制")
     }
 
     private func saveSupportReport() {
@@ -204,7 +204,7 @@ struct PreflightPopoverView: View {
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = "LiveSwitcher-Support-v\(AppConfiguration.appVersion).txt"
-        panel.title = "Save Support Report"
+        panel.title = "保存支持报告"
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
@@ -215,9 +215,9 @@ struct PreflightPopoverView: View {
                 kind: .supportReportSaved,
                 detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
             )
-            showSupportMessage("Support report saved")
+            showSupportMessage("支持报告已保存")
         } catch {
-            showSupportMessage("Support report save failed")
+            showSupportMessage("支持报告保存失败")
         }
     }
 
@@ -257,7 +257,7 @@ private struct PreflightEmptyAttentionView: View {
                 .stroke(StudioTheme.Tone.ready.opacity(0.18), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("No preflight rows need attention")
+        .accessibilityLabel("没有需要处理的现场检查项")
     }
 }
 
@@ -292,9 +292,9 @@ private struct PreflightSummaryCard: View {
             Spacer(minLength: 0)
 
             HStack(spacing: 6) {
-                countPill("P", summary.passCount, StudioTheme.Tone.ready)
-                countPill("W", summary.warnCount, StudioTheme.Tone.warn)
-                countPill("F", summary.failCount, StudioTheme.Tone.fail)
+                countPill("过", summary.passCount, StudioTheme.Tone.ready)
+                countPill("警", summary.warnCount, StudioTheme.Tone.warn)
+                countPill("错", summary.failCount, StudioTheme.Tone.fail)
             }
         }
         .padding(13)
@@ -307,7 +307,7 @@ private struct PreflightSummaryCard: View {
                 .stroke(statusColor.opacity(0.22), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Preflight summary: \(summary.status.displayTitle). \(summary.message). \(summary.passCount) pass, \(summary.warnCount) warn, \(summary.failCount) fail.")
+        .accessibilityLabel("现场检查汇总：\(summary.status.displayTitle)。\(summary.message)。\(summary.passCount) 个通过，\(summary.warnCount) 个警告，\(summary.failCount) 个故障。")
     }
 
     private func countPill(_ label: String, _ count: Int, _ color: Color) -> some View {
@@ -469,19 +469,19 @@ private struct PreflightRowView: View {
     private func preflightActionHelp(for action: LivePreflightActionKind) -> String {
         switch action {
         case .clearOverlays:
-            return "Clear countdown, ticker, and lower-third overlays."
+            return "清除倒计时、游动字幕和人名条。"
         case .turnOffPanic:
-            return "Turn off active panic blackout."
+            return "关闭当前紧急切黑。"
         case .openPreview:
-            return "Open the Run Desk page."
+            return "打开导播台页面。"
         case .openAudioMixer:
-            return "Open the Audio Mixer page."
+            return "打开音频页面。"
         case .openOverlays:
-            return "Open the Overlays page."
+            return "打开叠层字幕页面。"
         case .needsHardware:
-            return "Requires external display hardware. This action is not automatic."
+            return "需要外接显示器硬件，无法自动完成。"
         case .manualReview:
-            return "Manual operator review only. This action does not change app state."
+            return "仅提示人工复核，不改变应用状态。"
         }
     }
 }

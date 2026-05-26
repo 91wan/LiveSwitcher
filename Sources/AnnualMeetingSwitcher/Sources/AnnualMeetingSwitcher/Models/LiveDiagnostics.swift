@@ -49,7 +49,7 @@ enum LiveDiagnosticsReport {
             "Wallpapers: \(preflight.wallpaperCount)",
             "Active overlays: \(overlayRuntimeSummary(preflight))",
             "Speaker mode: \(preflight.isSpeakerMode ? "on" : "off")",
-            "Blackout: \(preflight.isPanicMode ? "on" : "off")",
+            "紧急切黑: \(preflight.isPanicMode ? "on" : "off")",
             "PPT mode: \(preflight.isPageInterceptEnabled ? "on" : "off")",
             "BGM playback: \(preflight.isBGMPlaying ? "playing" : "stopped")",
             "BGM takeover: \(preflight.isBGMAudioTakeoverActive ? "active" : "inactive")",

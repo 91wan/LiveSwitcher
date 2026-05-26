@@ -21,11 +21,11 @@ struct OverlayLivePreviewModel: Equatable {
     var accessibilityLabel: String {
         guard !layers.isEmpty else { return emptyMessage }
         let layerSummary = layers.map { layer in
-            let state = layer.isDraft ? "draft" : "live"
+            let state = layer.isDraft ? "草稿" : "上屏"
             return "\(state) \(layer.kind.accessibilityName): \(layer.primaryText)"
         }
         .joined(separator: ". ")
-        return "Overlay preview. \(layerSummary)."
+        return "叠层预览。\(layerSummary)。"
     }
 
     static func make(
@@ -75,7 +75,7 @@ struct OverlayLivePreviewModel: Equatable {
             layers.append(draftLayer)
         }
 
-        return OverlayLivePreviewModel(layers: layers, emptyMessage: "No live overlays")
+        return OverlayLivePreviewModel(layers: layers, emptyMessage: "没有上屏叠层")
     }
 
     private static func draftLayer(

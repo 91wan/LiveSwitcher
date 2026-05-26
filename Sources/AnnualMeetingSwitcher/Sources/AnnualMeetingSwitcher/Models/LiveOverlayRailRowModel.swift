@@ -9,7 +9,7 @@ struct LiveOverlayRailRowModel: Equatable {
     var disabledHint: String
 
     var toggleText: String {
-        isLive ? "LIVE" : "OFF"
+        isLive ? "上屏" : "关闭"
     }
 
     var accessibilityLabel: String {
@@ -23,12 +23,12 @@ struct LiveOverlayRailRowModel: Equatable {
     ) -> LiveOverlayRailRowModel {
         let selected = presets.first { $0.id == selectedID }
         return LiveOverlayRailRowModel(
-            title: "Lower Third",
+            title: "人名条",
             presetLabel: selected?.name ?? placeholderLabel(hasPresets: !presets.isEmpty),
             isPlaceholder: selected == nil,
             isLive: isLive,
             canToggle: selected != nil || isLive,
-            disabledHint: "Choose a lower third preset first."
+            disabledHint: "请先选择人名条预设。"
         )
     }
 
@@ -39,12 +39,12 @@ struct LiveOverlayRailRowModel: Equatable {
     ) -> LiveOverlayRailRowModel {
         let selected = presets.first { $0.id == selectedID }
         return LiveOverlayRailRowModel(
-            title: "Countdown",
+            title: "倒计时",
             presetLabel: selected.map { "\($0.title) \(formattedTime($0.totalSeconds))" } ?? placeholderLabel(hasPresets: !presets.isEmpty),
             isPlaceholder: selected == nil,
             isLive: isLive,
             canToggle: selected != nil || isLive,
-            disabledHint: "Choose a countdown preset first."
+            disabledHint: "请先选择倒计时预设。"
         )
     }
 
@@ -55,17 +55,17 @@ struct LiveOverlayRailRowModel: Equatable {
     ) -> LiveOverlayRailRowModel {
         let selected = presets.first { $0.id == selectedID }
         return LiveOverlayRailRowModel(
-            title: "Ticker",
+            title: "游动字幕",
             presetLabel: selected.map { truncated($0.text) } ?? placeholderLabel(hasPresets: !presets.isEmpty),
             isPlaceholder: selected == nil,
             isLive: isLive,
             canToggle: selected != nil || isLive,
-            disabledHint: "Choose a ticker preset first."
+            disabledHint: "请先选择游动字幕预设。"
         )
     }
 
     private static func placeholderLabel(hasPresets: Bool) -> String {
-        hasPresets ? "Choose preset..." : "+ New preset"
+        hasPresets ? "选择预设..." : "+ 新建预设"
     }
 
     private static func formattedTime(_ seconds: Int) -> String {

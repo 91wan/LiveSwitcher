@@ -54,10 +54,10 @@ struct AudioMixerView: View {
 
     private var pageHeader: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Audio / 音频")
+            Text("音频")
                 .font(StudioTheme.titleLarge())
                 .foregroundStyle(StudioTheme.textPrimary)
-            Text("Mixer faders, routing strategy, and BGM library - every fader shows user value and effective output.")
+            Text("调音推子、音频策略、BGM 库三块独立管理；每条推子同时显示用户值与实际输出。")
                 .font(StudioTheme.body())
                 .foregroundStyle(StudioTheme.textSecondary)
         }
@@ -65,13 +65,13 @@ struct AudioMixerView: View {
 
     private var audioSummaryRow: some View {
         HStack(spacing: 12) {
-            MetricRow(title: "Master", value: percent(pageModel.masterVolume), subtitle: "User fader", kind: .idle)
+            MetricRow(title: "Master", value: percent(pageModel.masterVolume), subtitle: "用户推子", kind: .idle)
             Divider().frame(height: 32)
-            MetricRow(title: "Media effective", value: percent(pageModel.mediaEffectiveVolume), subtitle: "Actual output", kind: pageModel.mediaEffectiveVolume == 0 ? .muted : .ready)
+            MetricRow(title: "媒体实际", value: percent(pageModel.mediaEffectiveVolume), subtitle: "实际输出", kind: pageModel.mediaEffectiveVolume == 0 ? .muted : .ready)
             Divider().frame(height: 32)
-            MetricRow(title: "BGM effective", value: percent(pageModel.bgmEffectiveVolume), subtitle: "Actual output", kind: pageModel.bgmEffectiveVolume == 0 ? .muted : .ready)
+            MetricRow(title: "BGM 实际", value: percent(pageModel.bgmEffectiveVolume), subtitle: "实际输出", kind: pageModel.bgmEffectiveVolume == 0 ? .muted : .ready)
             Divider().frame(height: 32)
-            MetricRow(title: "Routing", value: pageModel.routingStatusText, subtitle: pageModel.channelLimitText, kind: pageModel.routingStatusKind)
+            MetricRow(title: "策略", value: pageModel.routingStatusText, subtitle: pageModel.channelLimitText, kind: pageModel.routingStatusKind)
         }
         .padding(14)
         .background(StudioTheme.Surface.base, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
@@ -80,19 +80,19 @@ struct AudioMixerView: View {
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Audio summary. Master \(percent(pageModel.masterVolume)). Media effective \(percent(pageModel.mediaEffectiveVolume)). BGM effective \(percent(pageModel.bgmEffectiveVolume)). Routing \(pageModel.routingStatusText).")
+        .accessibilityLabel("音频汇总。Master \(percent(pageModel.masterVolume))。媒体实际 \(percent(pageModel.mediaEffectiveVolume))。BGM 实际 \(percent(pageModel.bgmEffectiveVolume))。策略 \(pageModel.routingStatusText)。")
     }
 
     private var mixerSection: some View {
         StudioSectionCard(
-            title: "Mixer",
+            title: "调音台",
             subtitle: "用户推子与实际输出",
-            status: ("3 FADERS", .idle)
+            status: ("3 路推子", .idle)
         ) {
             VStack(spacing: 10) {
                 MixerFaderCard(
                     title: "Master",
-                    subtitle: "Global output",
+                    subtitle: "总输出",
                     value: $viewModel.masterVolume,
                     userValue: viewModel.masterVolume,
                     effectiveValue: viewModel.masterVolume,
@@ -146,7 +146,7 @@ struct AudioMixerView: View {
                     .foregroundStyle(StudioTheme.textSecondary)
                 Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
                     .tint(model.controlTone.sliderTint)
-                    .accessibilityLabel("Program transition duration")
+                    .accessibilityLabel("节目转场时长")
                     .accessibilityValue(model.currentValueText)
                 Text("0.5s-3.0s")
                     .font(StudioTheme.caption())
@@ -176,16 +176,16 @@ struct AudioMixerView: View {
     }
 
     private var mediaFaderSubtitle: String {
-        if viewModel.isPanicMode { return "Muted by Blackout" }
-        if viewModel.isBGMAudioTakeoverActive { return "Muted by BGM takeover" }
-        if viewModel.isSpeakerMode { return "Ducked by Speaker mode" }
-        return "Program/media channel"
+        if viewModel.isPanicMode { return "紧急切黑静音" }
+        if viewModel.isBGMAudioTakeoverActive { return "BGM 接管静音" }
+        if viewModel.isSpeakerMode { return "主持人模式压低" }
+        return "节目 / 媒体声道"
     }
 
     private var bgmFaderSubtitle: String {
-        if viewModel.isPanicMode { return "Muted by Blackout" }
-        if viewModel.isSpeakerMode { return "Ducked by Speaker mode" }
-        return "Background music channel"
+        if viewModel.isPanicMode { return "紧急切黑静音" }
+        if viewModel.isSpeakerMode { return "主持人模式压低" }
+        return "背景音乐声道"
     }
 
     private func percent(_ value: Double) -> String {
@@ -216,15 +216,15 @@ private struct MixerFaderCard: View {
                 }
                 Spacer()
                 HStack(spacing: 10) {
-                    valuePair(label: "User", value: userValue, tint: sliderTint)
-                    valuePair(label: "Effective", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.Tone.muted : sliderTint)
+                    valuePair(label: "用户", value: userValue, tint: sliderTint)
+                    valuePair(label: "实际", value: effectiveValue, tint: effectiveValue == 0 ? StudioTheme.Tone.muted : sliderTint)
                 }
             }
 
             Slider(value: $value, in: 0...1)
                 .tint(sliderTint)
-                .accessibilityLabel("\(title) volume")
-                .accessibilityValue("User \(percent(userValue)), effective \(percent(effectiveValue))")
+                .accessibilityLabel("\(title) 音量")
+                .accessibilityValue("用户值 \(percent(userValue))，实际输出 \(percent(effectiveValue))")
         }
         .padding(12)
         .background(accentColor.opacity(0.055), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
@@ -271,7 +271,7 @@ private struct RoutingStrategyCard: View {
 
     var body: some View {
         StudioSectionCard(
-            title: "Routing Strategy",
+            title: "音频策略",
             subtitle: "输出策略与现场限制",
             status: (statusText, statusKind)
         ) {
@@ -284,7 +284,7 @@ private struct RoutingStrategyCard: View {
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
-                .accessibilityLabel("Audio routing strategy")
+                .accessibilityLabel("音频策略")
 
                 Text(strategySummary)
                     .font(StudioTheme.body())
@@ -305,12 +305,12 @@ private struct BGMLibraryCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text("BGM Library")
+                Text("BGM 库")
                     .font(StudioTheme.title())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
             }
-            Text("Categorize, list, add, remove, and reorder BGM tracks here.")
+            Text("分类、曲目列表、添加、删除和排序集中在音频页管理。")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textSecondary)
             BGMPlaylistPanel()

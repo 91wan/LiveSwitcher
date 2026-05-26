@@ -121,9 +121,9 @@ struct ContentView: View {
                 .layoutPriority(2)
         }
         .padding(.horizontal, 18)
-        .padding(.top, 12)
-        .padding(.bottom, 10)
-        .frame(minHeight: 64)
+        .padding(.top, ConsoleChromeLayoutMetrics.navigationBarTopPadding)
+        .padding(.bottom, ConsoleChromeLayoutMetrics.navigationBarBottomPadding)
+        .frame(minHeight: ConsoleChromeLayoutMetrics.navigationBarMinHeight)
         .background(StudioTheme.Surface.base.opacity(0.55))
         .overlay(Divider(), alignment: .bottom)
     }
@@ -199,9 +199,9 @@ struct ContentView: View {
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .focusable(false)
-        .accessibilityLabel("Setup mode")
+        .accessibilityLabel("准备模式")
         .accessibilityValue(viewModel.selectedMainTab.setupMenuTitle)
-        .accessibilityHint("Choose setup section")
+        .accessibilityHint("选择准备页面")
     }
 }
 
@@ -254,7 +254,7 @@ final class KeyMonitorView: NSView {
     }
 
     private func handleKey(event: NSEvent, vm: SwitcherViewModel) -> NSEvent? {
-        // MARK: - Tier1: ⌘⌥B -> Blackout (handled before modifiers guard)
+        // MARK: - Tier1: ⌘⌥B -> 紧急切黑 (handled before modifiers guard)
         // B = keyCode 11（QWERTY 键盘上 B 键）
         if event.modifierFlags.contains([.command, .option]) &&
            !event.modifierFlags.contains(.control) &&

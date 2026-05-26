@@ -37,7 +37,7 @@ struct SafetyCockpitView: View {
                 .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text("Live Safety Cockpit / 现场安全台")
+                Text("现场安全台")
                     .font(StudioTheme.titleLarge())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(cockpit.summary.message)
@@ -49,17 +49,17 @@ struct SafetyCockpitView: View {
 
             VStack(alignment: .trailing, spacing: 8) {
                 HStack(spacing: 7) {
-                    CountPill("PASS \(cockpit.summary.passCount)", kind: .ready)
-                    CountPill("WARN \(cockpit.summary.warnCount)", kind: .warn)
-                    CountPill("FAIL \(cockpit.summary.failCount)", kind: .fail)
+                    CountPill("通过 \(cockpit.summary.passCount)", kind: .ready)
+                    CountPill("警告 \(cockpit.summary.warnCount)", kind: .warn)
+                    CountPill("故障 \(cockpit.summary.failCount)", kind: .fail)
                 }
 
                 HStack(spacing: 8) {
-                    SecondaryActionButton("Copy Support", systemImage: "doc.on.doc") {
+                    SecondaryActionButton("复制支持报告", systemImage: "doc.on.doc") {
                         copySupportReport()
                     }
 
-                    Button("Save Support...") {
+                    Button("保存支持报告...") {
                         saveSupportReport()
                     }
                     .buttonStyle(.bordered)
@@ -88,7 +88,7 @@ struct SafetyCockpitView: View {
     private var urgentSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Needs Attention First")
+                Text("先处理风险")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
@@ -118,10 +118,10 @@ struct SafetyCockpitView: View {
                 .foregroundStyle(StudioTheme.Tone.ready)
                 .font(StudioTheme.TypeScale.numeric)
             VStack(alignment: .leading, spacing: 3) {
-                Text("No blocking rows")
+                Text("没有阻塞项")
                     .font(StudioTheme.body())
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("All current runtime checks are passing.")
+                Text("当前运行检查全部通过。")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
             }
@@ -142,17 +142,17 @@ struct SafetyCockpitView: View {
     private var eventsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Recent Sanitized Events")
+                Text("最近脱敏事件")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                Text("\(cockpit.recentEvents.count) shown")
+                Text("显示 \(cockpit.recentEvents.count) 条")
                     .font(StudioTheme.statusLabel())
                     .foregroundStyle(StudioTheme.textSecondary)
             }
 
             if cockpit.recentEvents.isEmpty {
-                Text("No recent support events recorded.")
+                Text("暂无最近支持事件。")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
                     .padding(12)
@@ -221,11 +221,11 @@ struct SafetyCockpitView: View {
         switch action {
         case .clearOverlays:
             if viewModel.performLivePreflightAction(action) {
-                showActionMessage("Overlays cleared")
+                showActionMessage("叠层已清空")
             }
         case .turnOffPanic:
             if viewModel.performLivePreflightAction(action) {
-                showActionMessage("Blackout turned off")
+                showActionMessage("紧急切黑已关闭")
             }
         case .openPreview, .openAudioMixer, .openOverlays:
             guard let destination = action.mainConsoleDestination else { return }
@@ -246,7 +246,7 @@ struct SafetyCockpitView: View {
             kind: .supportReportCopied,
             detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
         )
-        showSupportMessage("Support report copied")
+        showSupportMessage("支持报告已复制")
     }
 
     private func saveSupportReport() {
@@ -254,7 +254,7 @@ struct SafetyCockpitView: View {
         panel.allowedContentTypes = [.plainText]
         panel.canCreateDirectories = true
         panel.nameFieldStringValue = "LiveSwitcher-Support-v\(AppConfiguration.appVersion).txt"
-        panel.title = "Save Support Report"
+        panel.title = "保存支持报告"
 
         guard panel.runModal() == .OK, let url = panel.url else { return }
 
@@ -265,9 +265,9 @@ struct SafetyCockpitView: View {
                 kind: .supportReportSaved,
                 detail: "status=\(viewModel.livePreflightSummary.status.rawValue)"
             )
-            showSupportMessage("Support report saved")
+            showSupportMessage("支持报告已保存")
         } catch {
-            showSupportMessage("Support report save failed")
+            showSupportMessage("支持报告保存失败")
         }
     }
 
@@ -284,11 +284,11 @@ struct SafetyCockpitView: View {
     private func navigationMessage(for destination: MainConsoleTab) -> String {
         switch destination {
         case .preview:
-            return "Opened Preview / Switch"
+            return "已打开节目单"
         case .audioMixer:
-            return "Opened Audio Mixer"
+            return "已打开音频页"
         case .overlays:
-            return "Opened Overlays / Captions"
+            return "已打开叠层字幕页"
         }
     }
 
@@ -422,15 +422,15 @@ private struct SafetyCheckRow: View {
     private func help(for action: LivePreflightActionKind) -> String {
         switch action {
         case .clearOverlays:
-            return "Clear countdown, ticker, and lower-third overlays."
+            return "清除倒计时、游动字幕和人名条。"
         case .turnOffPanic:
-            return "Turn off active panic blackout."
+            return "关闭当前紧急切黑。"
         case .openPreview, .openAudioMixer, .openOverlays:
-            return "Open the matching page in the main console. This does not mutate show state."
+            return "打开主控制台对应页面，不改变上屏状态。"
         case .needsHardware:
-            return "Requires external display hardware. This action is not automatic."
+            return "需要外接显示器硬件，无法自动完成。"
         case .manualReview:
-            return "Manual operator review only. This action does not change app state."
+            return "仅提示人工复核，不改变应用状态。"
         }
     }
 }

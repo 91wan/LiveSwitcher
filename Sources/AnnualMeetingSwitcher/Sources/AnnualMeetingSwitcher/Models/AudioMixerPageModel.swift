@@ -13,26 +13,26 @@ struct AudioMixerPageModel: Equatable {
     let isBGMAudioTakeoverActive: Bool
 
     var sectionTitles: [String] {
-        ["Mixer", "Routing Strategy", "BGM Library"]
+        ["调音台", "音频策略", "BGM 库"]
     }
 
     var routingImpactText: String {
         if isPanicMode {
-            return "Blackout is active: media and BGM effective outputs are muted."
+            return "紧急切黑已开启：媒体和 BGM 实际输出静音。"
         }
         if isSpeakerMode {
-            return "Speaker mode is active: media and BGM are ducked to the speaker-safe level."
+            return "主持人模式已开启：媒体和 BGM 已压低到人声优先电平。"
         }
         if isBGMAudioTakeoverActive {
-            return "BGM takeover is active: media is muted while BGM plays."
+            return "BGM 接管已开启：BGM 播放时媒体声道静音。"
         }
-        return "No emergency routing is active; effective output follows the selected strategy and faders."
+        return "没有应急路由；实际输出跟随当前策略和推子。"
     }
 
     var routingStatusText: String {
-        if isPanicMode { return "BLACKOUT MUTED" }
-        if isBGMAudioTakeoverActive { return "BGM TAKEOVER" }
-        if isSpeakerMode { return "SPEAKER" }
+        if isPanicMode { return "切黑静音" }
+        if isBGMAudioTakeoverActive { return "BGM 接管" }
+        if isSpeakerMode { return "主持人" }
         return strategy.displayTitle
     }
 
@@ -43,10 +43,10 @@ struct AudioMixerPageModel: Equatable {
     }
 
     var channelLimitText: String {
-        if isPanicMode { return "Muted: media, BGM" }
-        if isBGMAudioTakeoverActive { return "Muted: media" }
-        if isSpeakerMode { return "Ducked: media, BGM" }
-        return "No forced mute"
+        if isPanicMode { return "静音：媒体、BGM" }
+        if isBGMAudioTakeoverActive { return "静音：媒体" }
+        if isSpeakerMode { return "压低：媒体、BGM" }
+        return "无强制静音"
     }
 }
 

@@ -18,7 +18,7 @@ struct LiveBGMPlaylistModel: Equatable {
     let emptyMessage: String
 
     var remainingCountText: String? {
-        remainingCount > 0 ? "+\(remainingCount) more" : nil
+        remainingCount > 0 ? "+\(remainingCount) 首" : nil
     }
 
     static func make(
@@ -44,13 +44,13 @@ struct LiveBGMPlaylistModel: Equatable {
             let stateText: String
             if isCurrent && isPlaying {
                 systemImage = "pause.fill"
-                stateText = "playing"
+                stateText = "播放中"
             } else if isCurrent {
                 systemImage = "checkmark"
-                stateText = "cued"
+                stateText = "已选"
             } else {
                 systemImage = "music.note"
-                stateText = "available"
+                stateText = "可播放"
             }
 
             return Row(
@@ -59,7 +59,7 @@ struct LiveBGMPlaylistModel: Equatable {
                 title: item.title,
                 isCurrent: isCurrent,
                 systemImage: systemImage,
-                accessibilityLabel: "\(item.title), \(isCurrent ? "current BGM" : "BGM track"), \(stateText)"
+                accessibilityLabel: "\(item.title)，\(isCurrent ? "当前 BGM" : "BGM 曲目")，\(stateText)"
             )
         }
 
@@ -69,7 +69,7 @@ struct LiveBGMPlaylistModel: Equatable {
             visibleRowLimit: visibleRowLimit,
             remainingCount: max(categoryItems.count - visibleRowLimit, 0),
             categoryButtonTitle: "切换分类",
-            emptyMessage: "No tracks in \(displayCategory.rawValue)"
+            emptyMessage: "\(displayCategory.rawValue) 没有曲目"
         )
     }
 }

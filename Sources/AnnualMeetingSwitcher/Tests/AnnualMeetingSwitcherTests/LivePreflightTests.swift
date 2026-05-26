@@ -71,9 +71,9 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(display.group, .display)
         XCTAssertEqual(display.status, .fail)
         XCTAssertEqual(display.actionKind, .needsHardware)
-        XCTAssertEqual(display.actionLabel, "Needs hardware")
-        XCTAssertTrue(display.message.localizedStandardContains("Needs hardware"))
-        XCTAssertTrue(display.message.localizedStandardContains("Do not project"))
+        XCTAssertEqual(display.actionLabel, "需要硬件")
+        XCTAssertTrue(display.message.localizedStandardContains("需要硬件"))
+        XCTAssertTrue(display.message.localizedStandardContains("请勿投射"))
 
         let beforeSnapshot = viewModel.livePreflightSnapshot
         XCTAssertFalse(viewModel.performLivePreflightAction(.needsHardware))
@@ -88,7 +88,7 @@ final class LivePreflightTests: XCTestCase {
         let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: snapshot))
 
         XCTAssertEqual(summary.status, .fail)
-        XCTAssertEqual(summary.title, "Not ready")
+        XCTAssertEqual(summary.title, "未就绪")
         XCTAssertEqual(summary.failCount, 1)
         XCTAssertGreaterThan(summary.warnCount, 0)
     }
@@ -100,7 +100,7 @@ final class LivePreflightTests: XCTestCase {
         let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: snapshot))
 
         XCTAssertEqual(summary.status, .warn)
-        XCTAssertEqual(summary.title, "Needs review")
+        XCTAssertEqual(summary.title, "需复核")
         XCTAssertEqual(summary.failCount, 0)
         XCTAssertGreaterThan(summary.warnCount, 0)
     }
@@ -109,7 +109,7 @@ final class LivePreflightTests: XCTestCase {
         let summary = LivePreflightSummary.make(from: LivePreflightCheck.build(from: readySnapshot()))
 
         XCTAssertEqual(summary.status, .pass)
-        XCTAssertEqual(summary.title, "Ready")
+        XCTAssertEqual(summary.title, "就绪")
         XCTAssertEqual(summary.failCount, 0)
         XCTAssertEqual(summary.warnCount, 0)
         XCTAssertGreaterThan(summary.passCount, 0)
@@ -147,7 +147,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(display.group, .display)
         XCTAssertEqual(display.status, .pass)
-        XCTAssertTrue(display.message.localizedStandardContains("External display detected"))
+        XCTAssertTrue(display.message.localizedStandardContains("已检测到外接显示器"))
     }
 
     func testPanicModeActiveIsClearlyReportedAsEmergencyState() {
@@ -160,8 +160,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(panic.group, .controls)
         XCTAssertEqual(panic.status, .fail)
         XCTAssertEqual(panic.actionKind, .turnOffPanic)
-        XCTAssertEqual(panic.actionLabel, "Turn off blackout")
-        XCTAssertTrue(panic.message.localizedStandardContains("Blackout is active"))
+        XCTAssertEqual(panic.actionLabel, "关闭紧急切黑")
+        XCTAssertTrue(panic.message.localizedStandardContains("紧急切黑已开启"))
 
         let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
         XCTAssertTrue(attentionChecks.contains(panic))
@@ -179,7 +179,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(speaker.group, .audio)
         XCTAssertEqual(speaker.status, .warn)
-        XCTAssertTrue(speaker.message.localizedStandardContains("Media and BGM ducking is active"))
+        XCTAssertTrue(speaker.message.localizedStandardContains("媒体和 BGM 压低已开启"))
     }
 
     func testBGMTakeoverReportsMediaAudioMutedByTakeover() {
@@ -196,8 +196,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(takeover.group, .audio)
         XCTAssertEqual(takeover.status, .warn)
         XCTAssertEqual(takeover.actionKind, .openAudioMixer)
-        XCTAssertEqual(takeover.actionLabel, "Open audio mixer")
-        XCTAssertTrue(takeover.message.localizedStandardContains("Media audio is muted by BGM takeover"))
+        XCTAssertEqual(takeover.actionLabel, "打开音频页")
+        XCTAssertTrue(takeover.message.localizedStandardContains("媒体声道被 BGM 接管静音"))
     }
 
     func testNoBGMItemsWarnsAudioReadiness() {
@@ -210,8 +210,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(bgm.group, .audio)
         XCTAssertEqual(bgm.status, .warn)
         XCTAssertEqual(bgm.actionKind, .openAudioMixer)
-        XCTAssertEqual(bgm.actionLabel, "Open audio mixer")
-        XCTAssertTrue(bgm.message.localizedStandardContains("No BGM tracks loaded"))
+        XCTAssertEqual(bgm.actionLabel, "打开音频页")
+        XCTAssertTrue(bgm.message.localizedStandardContains("未载入 BGM 曲目"))
     }
 
     func testNoWallpaperWarnsPlaybackFallbackReadiness() {
@@ -224,8 +224,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(wallpaper.group, .playback)
         XCTAssertEqual(wallpaper.status, .warn)
         XCTAssertEqual(wallpaper.actionKind, .openPreview)
-        XCTAssertEqual(wallpaper.actionLabel, "Open preview")
-        XCTAssertTrue(wallpaper.message.localizedStandardContains("No wallpaper fallback"))
+        XCTAssertEqual(wallpaper.actionLabel, "打开节目单")
+        XCTAssertTrue(wallpaper.message.localizedStandardContains("尚未载入待机壁纸"))
     }
 
     func testActiveOverlaysReportOverlayCount() {
@@ -245,12 +245,12 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(overlays.group, .overlays)
         XCTAssertEqual(overlays.status, .warn)
         XCTAssertEqual(overlays.actionKind, .clearOverlays)
-        XCTAssertEqual(overlays.actionLabel, "Clear overlays")
-        XCTAssertTrue(overlays.message.localizedStandardContains("3 overlays active"))
-        XCTAssertTrue(overlays.message.localizedStandardContains("countdown"))
-        XCTAssertTrue(overlays.message.localizedStandardContains("ticker"))
-        XCTAssertTrue(overlays.message.localizedStandardContains("lower third"))
-        XCTAssertTrue(overlays.message.localizedStandardContains("30s remaining"))
+        XCTAssertEqual(overlays.actionLabel, "清空叠层")
+        XCTAssertTrue(overlays.message.localizedStandardContains("3 个叠层正在上屏"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("倒计时"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("游动字幕"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("人名条"))
+        XCTAssertTrue(overlays.message.localizedStandardContains("剩余 30s"))
 
         let attentionChecks = LivePreflightCheck.attentionChecks(from: checks)
         XCTAssertTrue(attentionChecks.contains(overlays))
@@ -276,10 +276,10 @@ final class LivePreflightTests: XCTestCase {
         )
 
         for report in [preflightReport, diagnosticsReport, supportReport] {
-            XCTAssertTrue(report.localizedStandardContains("countdown"))
-            XCTAssertTrue(report.localizedStandardContains("ticker"))
-            XCTAssertTrue(report.localizedStandardContains("lower third"))
-            XCTAssertTrue(report.localizedStandardContains("45s remaining"))
+            XCTAssertTrue(report.localizedStandardContains("倒计时"))
+            XCTAssertTrue(report.localizedStandardContains("游动字幕"))
+            XCTAssertTrue(report.localizedStandardContains("人名条"))
+            XCTAssertTrue(report.localizedStandardContains("剩余 45s"))
             XCTAssertFalse(report.localizedStandardContains("Private Show Title"))
             XCTAssertFalse(report.localizedStandardContains("Customer ticker text"))
             XCTAssertFalse(report.localizedStandardContains("Private Host"))
@@ -297,7 +297,7 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(autoNext.group, .playback)
         XCTAssertEqual(autoNext.status, .warn)
         XCTAssertEqual(autoNext.actionKind, .openPreview)
-        XCTAssertEqual(autoNext.actionLabel, "Open preview")
+        XCTAssertEqual(autoNext.actionLabel, "打开节目单")
     }
 
     func testPPTModeUsesManualReviewActionWithoutMutatingState() {
@@ -310,7 +310,7 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(ppt.group, .controls)
         XCTAssertEqual(ppt.status, .warn)
         XCTAssertEqual(ppt.actionKind, .manualReview)
-        XCTAssertEqual(ppt.actionLabel, "Manual review")
+        XCTAssertEqual(ppt.actionLabel, "人工复核")
 
         let beforeSnapshot = viewModel.livePreflightSnapshot
         XCTAssertFalse(viewModel.performLivePreflightAction(.manualReview))
@@ -326,7 +326,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertEqual(ppt.status, .warn)
         XCTAssertEqual(ppt.actionKind, .manualReview)
-        XCTAssertTrue(ppt.message.localizedStandardContains("not a page-controlled source"))
+        XCTAssertTrue(ppt.message.localizedStandardContains("当前节目不是可翻页信号源"))
     }
 
     func testPPTModePassesWhenEnabledForPageableProgram() {
@@ -351,7 +351,7 @@ final class LivePreflightTests: XCTestCase {
 
             XCTAssertEqual(ppt.status, .warn, source)
             XCTAssertEqual(ppt.actionKind, .manualReview)
-            XCTAssertTrue(ppt.message.localizedStandardContains("presentation source is loaded"))
+            XCTAssertTrue(ppt.message.localizedStandardContains("当前载入演示信号源"))
         }
     }
 
@@ -376,8 +376,8 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.4.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
-        XCTAssertTrue(report.contains("Action: Needs hardware"))
-        XCTAssertTrue(report.contains("Action: Clear overlays"))
+        XCTAssertTrue(report.contains("Action: 需要硬件"))
+        XCTAssertTrue(report.contains("Action: 清空叠层"))
         XCTAssertFalse(report.localizedStandardContains("/Users/" + "liuchangxi"))
         XCTAssertFalse(report.localizedStandardContains("Ditu" + "LiveSwitcher"))
         XCTAssertFalse(report.localizedStandardContains("com." + "didu"))
@@ -411,11 +411,11 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertTrue(report.contains("Wallpapers: 1"))
         XCTAssertTrue(report.contains("Active overlays: 2"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
-        XCTAssertTrue(report.contains("Blackout: on"))
+        XCTAssertTrue(report.contains("紧急切黑: on"))
         XCTAssertTrue(report.contains("BGM takeover: active"))
         XCTAssertTrue(report.contains("Auto-next video: on"))
-        XCTAssertTrue(report.contains("- FAIL External Display"))
-        XCTAssertTrue(report.contains("- FAIL Blackout"))
+        XCTAssertTrue(report.contains("- FAIL 外接显示器"))
+        XCTAssertTrue(report.contains("- FAIL 紧急切黑"))
     }
 
     func testDiagnosticsReportRedactsRawPathsAndMediaNames() {
@@ -452,7 +452,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.4.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
-        XCTAssertTrue(report.contains("Blackout: on"))
+        XCTAssertTrue(report.contains("紧急切黑: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
         XCTAssertTrue(report.contains("Active overlays: 1"))
         XCTAssertEqual(viewModel.livePreflightSnapshot, beforeSnapshot)
@@ -621,7 +621,7 @@ final class LivePreflightTests: XCTestCase {
 
         XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.4.0"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
-        XCTAssertTrue(report.contains("Blackout: on"))
+        XCTAssertTrue(report.contains("紧急切黑: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
         XCTAssertTrue(report.contains("Active overlays: 1"))
         XCTAssertFalse(report.localizedStandardContains("Customer ticker text"))
@@ -667,7 +667,7 @@ final class LivePreflightTests: XCTestCase {
         )
         let displaySection = cockpit.sections.first { $0.group == .display }
 
-        XCTAssertEqual(cockpit.summary.title, "Not ready")
+        XCTAssertEqual(cockpit.summary.title, "未就绪")
         XCTAssertNotNil(displaySection)
         XCTAssertTrue(displaySection?.checks.contains { check in
             check.id == "display.external" &&

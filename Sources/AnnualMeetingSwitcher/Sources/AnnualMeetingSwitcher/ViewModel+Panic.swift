@@ -1,7 +1,7 @@
 import SwiftUI
 import AVFoundation
 
-// MARK: - Tier1: Blackout State Extension
+// MARK: - Tier1: 紧急切黑 State Extension
 
 extension SwitcherViewModel {
 

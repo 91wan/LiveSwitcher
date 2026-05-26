@@ -16,15 +16,15 @@ final class Round3PolishTests: XCTestCase {
 
         XCTAssertFalse(leftPanel.contains("line.3.horizontal"))
         XCTAssertFalse(bgmPanel.contains("line.3.horizontal"))
-        XCTAssertTrue(leftPanel.contains(".accessibilityHint(\"Drag to reorder.\""))
-        XCTAssertTrue(bgmPanel.contains(".accessibilityHint(\"Drag to reorder.\""))
+        XCTAssertTrue(leftPanel.contains(".accessibilityHint(\"拖拽调整顺序。\""))
+        XCTAssertTrue(bgmPanel.contains(".accessibilityHint(\"拖拽调整顺序。\""))
     }
 
     func testOverlayComposerStatusSeparatesEmptyDraftReadyAndLive() {
-        XCTAssertEqual(OverlayComposerStatus.text(isLive: true, hasDraftInput: false, disabledReason: "请输入姓名"), "LIVE")
-        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: false, disabledReason: "请输入姓名"), "EMPTY")
-        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: true, disabledReason: "秒数需为 0-59"), "DRAFT")
-        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: true, disabledReason: nil), "READY")
+        XCTAssertEqual(OverlayComposerStatus.text(isLive: true, hasDraftInput: false, disabledReason: "请输入姓名"), "上屏")
+        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: false, disabledReason: "请输入姓名"), "空")
+        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: true, disabledReason: "秒数需为 0-59"), "草稿")
+        XCTAssertEqual(OverlayComposerStatus.text(isLive: false, hasDraftInput: true, disabledReason: nil), "就绪")
     }
 
     func testHostSystemSummaryOmitsBuildNumber() {

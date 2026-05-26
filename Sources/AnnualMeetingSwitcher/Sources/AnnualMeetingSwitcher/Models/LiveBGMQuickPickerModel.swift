@@ -27,7 +27,7 @@ struct LiveBGMQuickPickerModel: Equatable {
 
     static func make(items: [BGMItem], currentItem: BGMItem?) -> LiveBGMQuickPickerModel {
         LiveBGMQuickPickerModel(
-            currentTitle: currentItem?.title ?? "No BGM selected",
+            currentTitle: currentItem?.title ?? "未选择 BGM",
             sections: BGMCategory.allCases.map { category in
                 Section(
                     category: category,

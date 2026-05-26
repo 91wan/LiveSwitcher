@@ -22,14 +22,14 @@ struct BGMControlsState: Equatable {
         let canSkip = currentItem != nil && categoryItems.count >= 2
         let displayStatus: (text: String, kind: StudioTheme.StatusKind)
         if isPlaying {
-            // BGM PLAYING is safe active audio, not ON AIR critical projection state.
-            displayStatus = ("PLAYING", .ready)
+            // BGM playback is safe active audio, not critical projection state.
+            displayStatus = ("播放中", .ready)
         } else if !hasLibraryItems {
-            displayStatus = ("EMPTY", .warn)
+            displayStatus = ("空", .warn)
         } else if currentItem != nil {
-            displayStatus = ("CUED", .idle)
+            displayStatus = ("已选", .idle)
         } else {
-            displayStatus = ("IDLE", .idle)
+            displayStatus = ("待选", .idle)
         }
 
         return BGMControlsState(
@@ -39,9 +39,9 @@ struct BGMControlsState: Equatable {
             canSkipNext: canSkip,
             displayStatusText: displayStatus.text,
             displayStatusKind: displayStatus.kind,
-            playDisabledReason: hasLibraryItems ? nil : "Add music before starting BGM.",
-            skipDisabledReason: canSkip ? nil : "At least two tracks in the current category are required.",
-            seekDisabledReason: currentItem == nil ? "Select or start a BGM track first." : nil
+            playDisabledReason: hasLibraryItems ? nil : "请先添加 BGM。",
+            skipDisabledReason: canSkip ? nil : "当前分类至少需要两首曲目。",
+            seekDisabledReason: currentItem == nil ? "请先选择或播放一首 BGM。" : nil
         )
     }
 }

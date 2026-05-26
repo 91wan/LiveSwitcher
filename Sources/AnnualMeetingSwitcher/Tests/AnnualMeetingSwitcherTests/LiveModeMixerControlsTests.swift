@@ -54,7 +54,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         let noNext = LiveCutBusModel.make(programItems: [current], currentProgramItem: current)
         XCTAssertFalse(noNext.canTakeNext)
         XCTAssertNil(noNext.nextIndex)
-        XCTAssertEqual(noNext.nextTitle, "No next source")
+        XCTAssertEqual(noNext.nextTitle, "没有下一项")
 
         let hasNext = LiveCutBusModel.make(programItems: [current, next], currentProgramItem: current)
         XCTAssertTrue(hasNext.canTakeNext)
@@ -74,7 +74,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
 
         let fail = LiveRuntimeStatusModel.make(snapshot: snapshot)
         XCTAssertEqual(fail.kind, .fail)
-        XCTAssertTrue(fail.text.contains("External Display"))
+        XCTAssertTrue(fail.text.contains("外接显示器"))
 
         snapshot = LivePreflightSnapshot.fixture(
             hasExternalDisplay: true,
@@ -86,7 +86,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         )
         let warn = LiveRuntimeStatusModel.make(snapshot: snapshot)
         XCTAssertEqual(warn.kind, .warn)
-        XCTAssertTrue(warn.text.contains("Projection State"))
+        XCTAssertTrue(warn.text.contains("投射状态"))
 
         snapshot = LivePreflightSnapshot.fixture(
             hasExternalDisplay: true,
@@ -98,7 +98,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         )
         let ready = LiveRuntimeStatusModel.make(snapshot: snapshot)
         XCTAssertEqual(ready.kind, .live)
-        XCTAssertTrue(ready.text.contains("Current: Opening"))
+        XCTAssertTrue(ready.text.contains("当前: Opening"))
     }
 
     func testRuntimeStatusModelExposesExceptionChipsAndSummaryTogether() {
@@ -138,10 +138,10 @@ final class LiveModeMixerControlsTests: XCTestCase {
         let model = LiveRuntimeStatusModel.make(checks: checks, snapshot: snapshot)
 
         XCTAssertGreaterThanOrEqual(model.chips.count, 3)
-        XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("External Display") })
-        XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("Projection State") })
-        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("issues") })
-        XCTAssertTrue(model.chips.contains { $0.text.contains("STANDBY") && $0.text.contains("0 sources") })
+        XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("外接显示器") })
+        XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("投射状态") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("问题") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("待机") && $0.text.contains("0 个信号源") })
     }
 
     @MainActor
@@ -255,8 +255,8 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("isMediaAudioMuted"))
         XCTAssertTrue(source.contains("isBGMAudioMuted"))
         XCTAssertTrue(source.contains("viewModel.isPanicMode || viewModel.isMasterAudioMuted"))
-        XCTAssertTrue(source.contains("Cut Bus"))
-        XCTAssertTrue(source.contains("Take Next"))
+        XCTAssertTrue(source.contains("切换"))
+        XCTAssertTrue(source.contains("下一项"))
     }
 
     func testBGMPlayerEnablesRealtimeMetering() throws {
@@ -290,24 +290,24 @@ final class LiveModeMixerControlsTests: XCTestCase {
 
         XCTAssertTrue(source.contains("meter.isEstimated"))
         XCTAssertTrue(source.contains("exclamationmark.triangle.fill"))
-        XCTAssertTrue(source.contains("Estimated meter"))
+        XCTAssertTrue(source.contains("估算电平"))
     }
 
     func testCutBusUsesFadeToBlackInsteadOfPanic() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("viewModel.toggleFadeToBlack()"))
-        XCTAssertTrue(source.contains("Restore from FTB"))
+        XCTAssertTrue(source.contains("从 FTB 恢复"))
         XCTAssertFalse(source.contains("viewModel.togglePanicMode()"))
     }
 
     func testCutBusMakesTakeNextPrimaryAndFTBSecondary() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("Label(\"Take Next\", systemImage: \"arrow.right.to.line.compact\")"))
+        XCTAssertTrue(source.contains("Label(\"下一项\", systemImage: \"arrow.right.to.line.compact\")"))
         XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
         XCTAssertTrue(source.contains(".tint(StudioTheme.Action.primary)"))
-        XCTAssertTrue(source.contains("Label(viewModel.isFadeToBlackActive ? \"Restore\" : \"FTB\""))
+        XCTAssertTrue(source.contains("Label(viewModel.isFadeToBlackActive ? \"恢复\" : \"FTB\""))
         XCTAssertTrue(source.contains("LiveModeLayoutMetrics.ftbButtonWidth"))
     }
 

@@ -108,8 +108,8 @@ struct BGMPlaylistPanel: View {
             .disabled(!controls.canSeekToBeginning)
             .opacity(controls.canSeekToBeginning ? 1 : 0.42)
             .help("跳回开头")
-            .accessibilityLabel("BGM seek to beginning")
-            .accessibilityHint(controls.seekDisabledReason ?? "Seek current BGM track to the beginning.")
+            .accessibilityLabel("BGM 跳回开头")
+            .accessibilityHint(controls.seekDisabledReason ?? "将当前 BGM 跳回开头。")
 
             // 上一首
             Button(action: { viewModel.playPreviousBGM() }) {
@@ -124,8 +124,8 @@ struct BGMPlaylistPanel: View {
             .disabled(!controls.canSkipPrevious)
             .opacity(controls.canSkipPrevious ? 1 : 0.42)
             .help("上一首")
-            .accessibilityLabel("Previous BGM track")
-            .accessibilityHint(controls.skipDisabledReason ?? "Play the previous BGM track in the current category.")
+            .accessibilityLabel("上一首 BGM")
+            .accessibilityHint(controls.skipDisabledReason ?? "播放当前分类的上一首 BGM。")
 
             // 播放 / 暂停
             Button(action: {
@@ -143,8 +143,8 @@ struct BGMPlaylistPanel: View {
             .disabled(!controls.canPlay)
             .opacity(controls.canPlay ? 1 : 0.42)
             .help(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
-            .accessibilityLabel(viewModel.isBGMPlaying ? "Pause BGM" : "Play BGM")
-            .accessibilityHint(controls.playDisabledReason ?? "Toggle BGM playback.")
+            .accessibilityLabel(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
+            .accessibilityHint(controls.playDisabledReason ?? "切换 BGM 播放状态。")
 
             // 下一首
             Button(action: { viewModel.playNextBGM() }) {
@@ -159,8 +159,8 @@ struct BGMPlaylistPanel: View {
             .disabled(!controls.canSkipNext)
             .opacity(controls.canSkipNext ? 1 : 0.42)
             .help("下一首")
-            .accessibilityLabel("Next BGM track")
-            .accessibilityHint(controls.skipDisabledReason ?? "Play the next BGM track in the current category.")
+            .accessibilityLabel("下一首 BGM")
+            .accessibilityHint(controls.skipDisabledReason ?? "播放当前分类的下一首 BGM。")
 
             // 循环模式
             Button(action: { viewModel.toggleLoopMode() }) {
@@ -173,7 +173,7 @@ struct BGMPlaylistPanel: View {
             }
             .buttonStyle(.plain)
             .help(viewModel.bgmPlayMode.rawValue)
-            .accessibilityLabel("BGM loop mode")
+            .accessibilityLabel("BGM 循环模式")
             .accessibilityValue(viewModel.bgmPlayMode.rawValue)
 
             Spacer()
@@ -209,7 +209,7 @@ struct BGMPlaylistPanel: View {
             .pickerStyle(.menu)
             .labelsHidden()
             .font(StudioTheme.TypeScale.heading)
-            .accessibilityLabel("BGM category")
+            .accessibilityLabel("BGM 分类")
             .accessibilityValue(categorySelection.selectedCategory.rawValue)
         }
         .padding(.horizontal, 10)
@@ -240,7 +240,7 @@ struct BGMPlaylistPanel: View {
                 List {
                     ForEach(filteredBGM) { bgm in
                         BGMItemRow(bgm: bgm, viewModel: viewModel)
-                            .accessibilityHint("Drag to reorder.")
+                            .accessibilityHint("拖拽调整顺序。")
                         .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -284,7 +284,7 @@ struct BGMPlaylistPanel: View {
                 .fill(StudioTheme.Action.primary)
         )
         .buttonStyle(.plain)
-        .accessibilityLabel("Add music files")
+        .accessibilityLabel("添加音乐文件")
     }
 
     // MARK: - 状态指示行
@@ -365,8 +365,8 @@ private struct BGMProgressBar: View {
             .tint(StudioTheme.Action.primary)
             .frame(height: 20)
             .disabled(!canSeek)
-            .accessibilityLabel("BGM progress")
-            .accessibilityValue("\(formatTime(progressStore.currentTime)) of \(progressStore.duration.map { formatTime($0) } ?? "unknown duration")")
+            .accessibilityLabel("BGM 进度")
+            .accessibilityValue("\(formatTime(progressStore.currentTime)) / \(progressStore.duration.map { formatTime($0) } ?? "未知时长")")
 
             HStack {
                 Text(formatTime(progressStore.currentTime))
@@ -458,7 +458,7 @@ struct BGMItemRow: View {
                 }
                 .buttonStyle(.plain)
                 .help(isPlaying ? "暂停" : "播放")
-                .accessibilityLabel(isPlaying ? "Pause \(bgm.title)" : "Play \(bgm.title)")
+                .accessibilityLabel(isPlaying ? "暂停 \(bgm.title)" : "播放 \(bgm.title)")
 
                 Button(action: { viewModel.removeBGMItem(bgm) }) {
                     Image(systemName: "trash")
@@ -467,7 +467,7 @@ struct BGMItemRow: View {
                 }
                 .buttonStyle(.plain)
                 .help("删除")
-                .accessibilityLabel("Delete \(bgm.title)")
+                .accessibilityLabel("删除 \(bgm.title)")
             }
         }
         .padding(.horizontal, 8)
@@ -477,7 +477,7 @@ struct BGMItemRow: View {
         .onHover { isHovered = $0 }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(bgm.title), \(bgm.category.rawValue)")
-        .accessibilityValue(isPlaying ? "Playing" : (isCurrentTrack ? "Current" : "Queued"))
+        .accessibilityValue(isPlaying ? "播放中" : (isCurrentTrack ? "当前曲目" : "待播"))
     }
 }
 

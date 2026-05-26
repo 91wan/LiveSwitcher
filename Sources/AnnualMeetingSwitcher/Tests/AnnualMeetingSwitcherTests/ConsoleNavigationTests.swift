@@ -35,6 +35,15 @@ final class ConsoleNavigationTests: XCTestCase {
         XCTAssertFalse(source.contains("viewModel.consoleMode = .setup\n            viewModel.selectedMainTab = .overlays"))
     }
 
+    func testAppCommandsUseSetupNavigationHelperForTabSwitches() throws {
+        let source = try sourceText("App.swift")
+
+        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
+        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.audioMixer)"))
+        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.overlays)"))
+        XCTAssertFalse(source.contains("viewModel.selectedMainTab = ."))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

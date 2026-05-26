@@ -6,7 +6,7 @@ struct LiveModeView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let verticalInsets: CGFloat = 14
+            let verticalInsets = LiveModeLayoutMetrics.contentTopPadding + LiveModeLayoutMetrics.contentBottomPadding
             let agendaPrompt = viewModel.agendaAutoAdvancePrompt()
             let promptHeight: CGFloat = agendaPrompt == nil ? 0 : 46
             let mainHeight = max(
@@ -52,8 +52,8 @@ struct LiveModeView: View {
                     .layoutPriority(2)
             }
             .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 6)
+            .padding(.top, LiveModeLayoutMetrics.contentTopPadding)
+            .padding(.bottom, LiveModeLayoutMetrics.contentBottomPadding)
         }
     }
 }
@@ -74,14 +74,14 @@ private struct AgendaAutoAdvancePromptBanner: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 0)
-            Button("Take") {
+            Button("切换") {
                 onTake()
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
             .tint(StudioTheme.Action.primary)
             .focusable(false)
-            Button("Dismiss") {
+            Button("忽略") {
                 onDismiss()
             }
             .buttonStyle(.bordered)
@@ -91,7 +91,7 @@ private struct AgendaAutoAdvancePromptBanner: View {
         .padding(.horizontal, 12)
         .background(StudioTheme.Tone.warn.opacity(0.11), in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.Tone.warn.opacity(0.24), lineWidth: 1))
-        .accessibilityLabel("Agenda prompt. \(prompt.message)")
+        .accessibilityLabel("议程提示。\(prompt.message)")
     }
 }
 
@@ -103,7 +103,7 @@ struct LiveSourceRail: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Sources")
+                Text("信号源")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
@@ -123,7 +123,7 @@ struct LiveSourceRail: View {
                         VStack(spacing: 5) {
                             Image(systemName: "gearshape.fill")
                                 .font(StudioTheme.TypeScale.title.weight(.black))
-                            Text("Setup")
+                            Text("准备")
                                 .font(StudioTheme.TypeScale.caption.weight(.black))
                                 .lineLimit(1)
                         }
@@ -133,8 +133,8 @@ struct LiveSourceRail: View {
                     .buttonStyle(.borderedProminent)
                     .tint(StudioTheme.Action.primary)
                     .focusable(false)
-                    .accessibilityLabel("Switch to Setup")
-                    .accessibilityHint("Open Setup Run Queue to add sources.")
+                    .accessibilityLabel("切到准备模式")
+                    .accessibilityHint("打开节目单添加信号源。")
                     Spacer(minLength: 0)
                 }
             } else {
@@ -163,7 +163,7 @@ struct LiveSourceRail: View {
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Live source rail")
+        .accessibilityLabel("现场信号源列表")
     }
 
     private func role(for item: ProgramItem) -> QueueRole {
@@ -242,7 +242,7 @@ private struct LiveSourceRailRow: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(rowModel.queueBadgeText), \(item.title), \(item.displaySourceLabel)")
+            .accessibilityLabel("\(rowModel.queueBadgeText)，\(item.title)，\(item.displaySourceLabel)")
     }
 
     private var statusColor: Color {
@@ -265,7 +265,7 @@ struct LiveProgramStack: View {
     var body: some View {
         ProgramMonitorView(isLiveMode: true)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .accessibilityLabel("Live program monitor")
+            .accessibilityLabel("现场主输出监看")
     }
 }
 
@@ -277,7 +277,7 @@ struct LiveAudioStrip: View {
         HStack(spacing: 10) {
             LiveAudioFader(
                 title: "Master",
-                subtitle: "Global",
+                subtitle: "总线",
                 value: $viewModel.masterVolume,
                 isMuted: $viewModel.isMasterAudioMuted,
                 meter: LiveAudioMeterModel.make(
@@ -289,7 +289,7 @@ struct LiveAudioStrip: View {
             )
             LiveAudioFader(
                 title: "Media",
-                subtitle: "Program",
+                subtitle: "节目",
                 value: $viewModel.mediaVolume,
                 isMuted: $viewModel.isMediaAudioMuted,
                 meter: LiveAudioMeterModel.make(
@@ -301,7 +301,7 @@ struct LiveAudioStrip: View {
             )
             LiveAudioFader(
                 title: "BGM",
-                subtitle: "Music",
+                subtitle: "音乐",
                 value: $viewModel.bgmVolume,
                 isMuted: $viewModel.isBGMAudioMuted,
                 meter: LiveAudioMeterModel.make(
@@ -317,7 +317,7 @@ struct LiveAudioStrip: View {
                     StatusBadge(audioStatusText, kind: audioStatusKind)
                 }
                 Button(action: onOpenMixer) {
-                    Label("Mixer", systemImage: "slider.horizontal.3")
+                    Label("调音台", systemImage: "slider.horizontal.3")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(height: 32)
                 }
@@ -333,7 +333,7 @@ struct LiveAudioStrip: View {
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Live audio strip")
+        .accessibilityLabel("现场音频控制条")
     }
 
     private var audioStatusText: String {
@@ -372,8 +372,8 @@ private struct LiveAudioFader: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .font(StudioTheme.caption().weight(.black))
                             .foregroundStyle(StudioTheme.Tone.warn)
-                            .help("Estimated meter")
-                            .accessibilityLabel("Estimated meter")
+                            .help("估算电平")
+                            .accessibilityLabel("估算电平")
                     }
                     Text(meter.decibelText)
                         .font(StudioTheme.TypeScale.heading.weight(.black))
@@ -384,22 +384,22 @@ private struct LiveAudioFader: View {
             Slider(value: $value, in: 0...1)
                 .tint(tint)
                 .controlSize(.small)
-                .accessibilityLabel("\(title) volume")
-                .accessibilityValue("User \(percent(value)), meter \(meter.decibelText)")
+                .accessibilityLabel("\(title) 音量")
+                .accessibilityValue("用户值 \(percent(value))，电平 \(meter.decibelText)")
 
             HStack(spacing: 8) {
                 LiveAudioMeter(model: meter, tint: tint)
                 Button {
                     isMuted.toggle()
                 } label: {
-                    Label(isMuted ? "Unmute" : "Mute", systemImage: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    Label(isMuted ? "取消静音" : "静音", systemImage: isMuted ? "speaker.wave.2.fill" : "speaker.slash.fill")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .labelStyle(.iconOnly)
                         .frame(width: LiveModeLayoutMetrics.transportButtonSize, height: LiveModeLayoutMetrics.transportButtonSize)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help(isMuted ? "Unmute \(title)" : "Mute \(title)")
+                .help(isMuted ? "取消 \(title) 静音" : "\(title) 静音")
             }
         }
         .frame(maxWidth: .infinity)
@@ -431,8 +431,8 @@ private struct LiveAudioMeter: View {
             }
         }
         .frame(height: 8)
-        .accessibilityLabel("Audio meter")
-        .accessibilityValue(model.isEstimated ? "Estimated meter, \(model.decibelText)" : model.decibelText)
+        .accessibilityLabel("音频电平")
+        .accessibilityValue(model.isEstimated ? "估算电平，\(model.decibelText)" : model.decibelText)
     }
 }
 
@@ -442,18 +442,21 @@ struct LiveQuickRail: View {
     let onOpenMixer: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            outputCard
-            modesCard
-            cutBusCard
-            overlayCard
-            wallpaperCard
-            bgmCard
-            Spacer(minLength: 0)
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 8) {
+                outputCard
+                modesCard
+                cutBusCard
+                overlayCard
+                wallpaperCard
+                bgmCard
+            }
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.bottom, 8)
         }
         .frame(maxHeight: .infinity, alignment: .top)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Live quick rail")
+        .accessibilityLabel("现场快速控制")
     }
 
     private var outputCard: some View {
@@ -463,7 +466,7 @@ struct LiveQuickRail: View {
             safetyNotice: viewModel.broadcastSafetyNotice
         )
 
-        return quickCard(title: "Output", status: model.statusText, kind: model.statusKind) {
+        return quickCard(title: "输出", status: model.statusText, kind: model.statusKind) {
             Button(action: { viewModel.handleSafeBroadcastToggle() }) {
                 HStack(spacing: 8) {
                     Image(systemName: model.screenSystemImage)
@@ -491,16 +494,16 @@ struct LiveQuickRail: View {
 
     private var modesCard: some View {
         let isModeActive = viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled
-        return quickCard(title: "Modes", status: isModeActive ? "ACTIVE" : "", kind: isModeActive ? .warn : .idle) {
+        return quickCard(title: "模式", status: isModeActive ? "激活" : "", kind: isModeActive ? .warn : .idle) {
             modeToggleRow(
-                title: "Speaker",
-                subtitle: "Duck BGM",
+                title: "主持人",
+                subtitle: "压低 BGM",
                 systemImage: "mic.fill",
                 isOn: $viewModel.isSpeakerMode
             )
             modeToggleRow(
                 title: "PPT",
-                subtitle: "Page keys",
+                subtitle: "接管翻页",
                 systemImage: "hand.raised.slash.fill",
                 isOn: $viewModel.isPageInterceptEnabled
             )
@@ -533,7 +536,7 @@ struct LiveQuickRail: View {
         .toggleStyle(.switch)
         .controlSize(.small)
         .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-        .help(isOn.wrappedValue ? "\(title) mode is active" : "Enable \(title) mode")
+        .help(isOn.wrappedValue ? "\(title)模式已开启" : "开启\(title)模式")
     }
 
     private var cutBusCard: some View {
@@ -542,14 +545,14 @@ struct LiveQuickRail: View {
             currentProgramItem: viewModel.currentProgramItem
         )
 
-        return quickCard(title: "Cut Bus", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
+        return quickCard(title: "切换", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
                 Button {
                     if let index = model.nextIndex {
                         viewModel.switchToProgram(at: index)
                     }
                 } label: {
-                    Label("Take Next", systemImage: "arrow.right.to.line.compact")
+                    Label("下一项", systemImage: "arrow.right.to.line.compact")
                         .font(StudioTheme.TypeScale.caption.weight(.black))
                         .frame(maxWidth: .infinity)
                         .frame(height: 40)
@@ -557,7 +560,7 @@ struct LiveQuickRail: View {
                 .buttonStyle(.borderedProminent)
                 .tint(StudioTheme.Action.primary)
                 .disabled(!model.canTakeNext)
-                .help(model.canTakeNext ? "Take next source: \(model.nextTitle)" : "No next source")
+                .help(model.canTakeNext ? "切换到下一项：\(model.nextTitle)" : "没有下一项")
 
                 ftbButton
             }
@@ -571,11 +574,11 @@ struct LiveQuickRail: View {
                 viewModel.toggleFadeToBlack()
             }
         } label: {
-            Label(viewModel.isFadeToBlackActive ? "Restore" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
+            Label(viewModel.isFadeToBlackActive ? "恢复" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
                 .font(StudioTheme.TypeScale.caption.weight(.black))
                 .frame(width: LiveModeLayoutMetrics.ftbButtonWidth, height: 40)
         }
-        .accessibilityLabel(viewModel.isFadeToBlackActive ? "Restore from FTB" : "Fade to black")
+        .accessibilityLabel(viewModel.isFadeToBlackActive ? "从 FTB 恢复" : "FTB 切黑")
 
         if viewModel.isFadeToBlackActive {
             button
@@ -589,7 +592,7 @@ struct LiveQuickRail: View {
     }
 
     private var overlayCard: some View {
-        quickCard(title: "Overlays", status: overlayStatusText, kind: overlayStatusKind) {
+        quickCard(title: "叠层", status: overlayStatusText, kind: overlayStatusKind) {
             compactOverlayRow(
                 model: LiveOverlayRailRowModel.lowerThird(
                     presets: viewModel.lowerThirdPresets,
@@ -702,8 +705,8 @@ struct LiveQuickRail: View {
             .buttonStyle(.plain)
             .disabled(!model.canToggle)
             .opacity(model.canToggle ? 1 : 0.48)
-            .help(model.canToggle ? (model.isLive ? "Stop \(model.title)" : "Send \(model.title) live") : model.disabledHint)
-            .accessibilityLabel(model.isLive ? "Stop \(model.title)" : "Send \(model.title) live")
+            .help(model.canToggle ? (model.isLive ? "停止\(model.title)" : "\(model.title)上屏") : model.disabledHint)
+            .accessibilityLabel(model.isLive ? "停止\(model.title)" : "\(model.title)上屏")
             .accessibilityHint(model.canToggle ? model.presetLabel : model.disabledHint)
         }
         .accessibilityElement(children: .contain)
@@ -717,7 +720,7 @@ struct LiveQuickRail: View {
         setupKind: OverlayComposerKind,
         @ViewBuilder menuContent: () -> MenuContent
     ) -> some View {
-        if model.presetLabel == "+ New preset" {
+        if model.presetLabel == "+ 新建预设" {
             Button {
                 openOverlaySetup(setupKind)
             } label: {
@@ -725,9 +728,9 @@ struct LiveQuickRail: View {
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("Create \(model.title.lowercased()) presets in Setup Overlays.")
-            .accessibilityLabel("\(model.title) presets")
-            .accessibilityHint("No presets are saved. Opens Setup Overlays.")
+            .help("到叠层字幕页面新建\(model.title)预设。")
+            .accessibilityLabel("\(model.title)预设")
+            .accessibilityHint("还没有保存预设。打开叠层字幕页面。")
         } else {
             Menu {
                 menuContent()
@@ -737,8 +740,8 @@ struct LiveQuickRail: View {
             .menuStyle(.button)
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .accessibilityLabel("\(model.title) presets")
-            .accessibilityHint("Choose a saved preset.")
+            .accessibilityLabel("\(model.title)预设")
+            .accessibilityHint("选择一个已保存预设。")
         }
     }
 
@@ -800,7 +803,7 @@ struct LiveQuickRail: View {
             activeWallpaperURL: viewModel.activeWallpaperURL
         )
 
-        return quickCard(title: "Wallpaper", status: picker.statusText, kind: picker.statusKind) {
+        return quickCard(title: "待机", status: picker.statusText, kind: picker.statusKind) {
             Text(picker.displayTitle)
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
@@ -814,14 +817,14 @@ struct LiveQuickRail: View {
                         viewModel.navigateToSetup(.preview)
                     }
                 } label: {
-                    Label("Add wallpaper", systemImage: "photo.badge.plus")
+                    Label("添加壁纸", systemImage: "photo.badge.plus")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help("Open Setup Run Queue to import standby wallpaper.")
+                .help("打开准备模式节目单导入待机壁纸。")
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -833,13 +836,13 @@ struct LiveQuickRail: View {
                             }
                             .buttonStyle(.plain)
                             .help(item.title)
-                            .accessibilityLabel("Choose standby wallpaper")
-                            .accessibilityValue(item.isActive ? "\(item.title), active" : item.title)
+                            .accessibilityLabel("选择待机壁纸")
+                            .accessibilityValue(item.isActive ? "\(item.title)，当前启用" : item.title)
                         }
                     }
                     .padding(.vertical, 1)
                 }
-                .accessibilityLabel("Choose standby wallpaper")
+                .accessibilityLabel("选择待机壁纸")
             }
         }
     }
@@ -899,7 +902,7 @@ struct LiveQuickRail: View {
     private func bgmCategoryMenu(picker: LiveBGMQuickPickerModel, title: String) -> some View {
         Menu {
             if picker.isLibraryEmpty {
-                Text("No BGM in library")
+                Text("BGM 库为空")
             } else {
                 ForEach(BGMCategory.allCases, id: \.self) { category in
                     if let section = picker.section(for: category) {
@@ -921,7 +924,7 @@ struct LiveQuickRail: View {
         .frame(width: 78, height: LiveModeLayoutMetrics.transportButtonSize)
         .buttonStyle(.bordered)
         .controlSize(.small)
-        .accessibilityLabel("Choose BGM category")
+        .accessibilityLabel("选择 BGM 分类")
     }
 
     @ViewBuilder
@@ -1037,7 +1040,7 @@ struct LiveQuickRail: View {
 
     private var overlayStatusText: String {
         let activeCount = [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].filter { $0 }.count
-        return activeCount == 0 ? "OFF" : "\(activeCount) LIVE"
+        return activeCount == 0 ? "关闭" : "\(activeCount) 上屏"
     }
 
     private var overlayStatusKind: StudioTheme.StatusKind {
@@ -1115,7 +1118,7 @@ struct LiveRuntimeStatusBar: View {
         .frame(maxHeight: .infinity)
         .background(StudioTheme.Surface.base.opacity(0.62), in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
-        .accessibilityLabel("Live runtime status. \(statusText)")
+        .accessibilityLabel("现场运行状态。\(statusText)")
     }
 
     private func statusChip(_ chip: LiveRuntimeStatusChip) -> some View {

@@ -13,7 +13,7 @@ struct PresentationReadinessDot: View {
                         .stroke(StudioTheme.Surface.base.opacity(0.75), lineWidth: 1)
                 )
                 .help(result.operatorMessage)
-                .accessibilityLabel("Presentation readiness")
+                .accessibilityLabel("演示就绪状态")
                 .accessibilityValue(result.dotLabel ?? "")
         }
     }

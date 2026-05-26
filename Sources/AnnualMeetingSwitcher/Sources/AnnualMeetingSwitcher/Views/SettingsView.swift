@@ -9,10 +9,10 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Overlays / 叠层字幕")
+                    Text("叠层字幕")
                         .font(StudioTheme.titleLarge())
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Compose on the left, preview on the right. Empty input shows the reason so nothing accidentally goes live.")
+                    Text("左侧编辑，右侧实时预览。输入为空时显示禁用原因，防止误上屏。")
                         .font(StudioTheme.body())
                         .foregroundStyle(StudioTheme.textSecondary)
                 }

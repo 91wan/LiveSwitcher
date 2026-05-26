@@ -6,7 +6,7 @@ final class LiveBGMQuickPickerModelTests: XCTestCase {
         let model = LiveBGMQuickPickerModel.make(items: [], currentItem: nil)
 
         XCTAssertTrue(model.isLibraryEmpty)
-        XCTAssertEqual(model.currentTitle, "No BGM selected")
+        XCTAssertEqual(model.currentTitle, "未选择 BGM")
         XCTAssertTrue(model.nonEmptySections.isEmpty)
     }
 
