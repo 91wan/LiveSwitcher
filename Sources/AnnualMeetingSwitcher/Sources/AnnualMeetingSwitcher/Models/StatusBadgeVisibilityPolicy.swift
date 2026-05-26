@@ -12,7 +12,7 @@ struct StatusBadgeVisibilityPolicy {
         }
     }
 
-    private static let activeReadyTexts: Set<String> = ["PLAYING"]
+    private static let activeReadyTexts: Set<String> = ["PLAYING", "播放中"]
 
     private static func normalized(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()

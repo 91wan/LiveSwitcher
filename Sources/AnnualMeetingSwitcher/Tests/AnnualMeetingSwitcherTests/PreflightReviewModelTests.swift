@@ -13,7 +13,7 @@ final class PreflightReviewModelTests: XCTestCase {
         let model = PreflightReviewModel.make(checks: checks, mode: .needsAttention)
 
         XCTAssertEqual(model.checks.map(\.id), ["controls.fail", "audio.warn", "playback.warn"])
-        XCTAssertEqual(model.rowCountText, "3 rows")
+        XCTAssertEqual(model.rowCountText, "3 项")
         XCTAssertEqual(model.sections.map(\.group), [.audio, .playback, .controls])
         XCTAssertEqual(model.sections.flatMap(\.checks).map(\.id), ["audio.warn", "playback.warn", "controls.fail"])
     }
@@ -28,7 +28,7 @@ final class PreflightReviewModelTests: XCTestCase {
         let model = PreflightReviewModel.make(checks: checks, mode: .allChecks)
 
         XCTAssertEqual(model.checks.map(\.id), ["display.fail", "audio.warn", "playback.pass"])
-        XCTAssertEqual(model.rowCountText, "3 rows")
+        XCTAssertEqual(model.rowCountText, "3 项")
         XCTAssertFalse(model.isEmpty)
     }
 
@@ -39,9 +39,9 @@ final class PreflightReviewModelTests: XCTestCase {
         )
 
         XCTAssertTrue(model.isEmpty)
-        XCTAssertEqual(model.emptyTitle, "No rows need attention")
-        XCTAssertEqual(model.emptyMessage, "Switch to All checks if you want to audit every passing row.")
-        XCTAssertEqual(model.rowCountText, "0 rows")
+        XCTAssertEqual(model.emptyTitle, "没有需要处理的项目")
+        XCTAssertEqual(model.emptyMessage, "如需查看通过项，请切换到全部检查。")
+        XCTAssertEqual(model.rowCountText, "0 项")
     }
 
     func testLiveSafetyCockpitUsesSharedAttentionReview() {
@@ -58,7 +58,7 @@ final class PreflightReviewModelTests: XCTestCase {
         )
 
         XCTAssertEqual(cockpit.attentionReview.checks.map(\.id), ["controls.fail", "audio.warn"])
-        XCTAssertEqual(cockpit.attentionReview.rowCountText, "2 rows")
+        XCTAssertEqual(cockpit.attentionReview.rowCountText, "2 项")
     }
 
     func testPopoverAndCockpitSourceUseSharedReviewModel() throws {

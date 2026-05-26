@@ -30,8 +30,8 @@ final class HelpPreflightSplitTests: XCTestCase {
         XCTAssertTrue(preflight.contains("struct PreflightPopoverView"))
         XCTAssertTrue(preflight.contains("PreflightReviewMode"))
         XCTAssertTrue(preflight.contains("PreflightReviewModel.make"))
-        XCTAssertTrue(preflight.contains("Copy Support"))
-        XCTAssertTrue(preflight.contains("Save Support"))
+        XCTAssertTrue(preflight.contains("复制支持报告"))
+        XCTAssertTrue(preflight.contains("保存支持报告"))
         XCTAssertFalse(preflight.contains("HelpCopyModel.sections"))
     }
 

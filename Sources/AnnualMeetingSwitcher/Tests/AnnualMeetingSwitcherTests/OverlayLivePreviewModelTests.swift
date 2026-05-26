@@ -16,7 +16,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         )
 
         XCTAssertTrue(model.layers.isEmpty)
-        XCTAssertEqual(model.emptyMessage, "No live overlays")
+        XCTAssertEqual(model.emptyMessage, "没有上屏叠层")
         XCTAssertFalse(model.accessibilityLabel.contains("Welcome"))
     }
 
@@ -38,6 +38,8 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertEqual(model.layers.first(where: { $0.kind == .countdown })?.primaryText, "01:30")
         XCTAssertEqual(model.layers.first(where: { $0.kind == .lowerThird })?.primaryText, "Host")
         XCTAssertTrue(model.layers.allSatisfy { !$0.isDraft && $0.opacity == 1 })
+        XCTAssertTrue(model.accessibilityLabel.contains("叠层预览"))
+        XCTAssertTrue(model.accessibilityLabel.contains("上屏"))
     }
 
     func testSelectedDraftCanRenderDimmedWithoutLookingLive() {
@@ -103,11 +105,11 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         let source = try sourceText("Views/OverlayControlPanel.swift")
 
         XCTAssertTrue(source.contains("lowerThirdPresetShelf"))
-        XCTAssertTrue(source.contains("Save Preset"))
-        XCTAssertTrue(source.contains("New Preset"))
-        XCTAssertTrue(source.contains("Delete Preset"))
-        XCTAssertTrue(source.contains("Import..."))
-        XCTAssertTrue(source.contains("Export..."))
+        XCTAssertTrue(source.contains("保存预设"))
+        XCTAssertTrue(source.contains("新建预设"))
+        XCTAssertTrue(source.contains("删除预设"))
+        XCTAssertTrue(source.contains("导入..."))
+        XCTAssertTrue(source.contains("导出..."))
         XCTAssertTrue(source.contains("NSOpenPanel"))
         XCTAssertTrue(source.contains("NSSavePanel"))
         XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
@@ -118,7 +120,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
     func testAppExposesPasteSpeakersFromClipboardCommand() throws {
         let source = try sourceText("App.swift")
 
-        XCTAssertTrue(source.contains("Paste Speakers from Clipboard"))
+        XCTAssertTrue(source.contains("从剪贴板粘贴主持人"))
         XCTAssertTrue(source.contains("NSPasteboard.general.string(forType: .string)"))
         XCTAssertTrue(source.contains(".keyboardShortcut(\"v\", modifiers: [.command, .shift])"))
         XCTAssertTrue(source.contains("viewModel.importLowerThirdSpeakersFromClipboardText"))
@@ -128,9 +130,9 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         let source = try sourceText("Views/OverlayControlPanel.swift")
 
         XCTAssertTrue(source.contains("countdownPresetShelf"))
-        XCTAssertTrue(source.contains("Save Countdown Preset"))
-        XCTAssertTrue(source.contains("New Countdown Preset"))
-        XCTAssertTrue(source.contains("Delete Countdown Preset"))
+        XCTAssertTrue(source.contains("保存倒计时预设"))
+        XCTAssertTrue(source.contains("新建倒计时预设"))
+        XCTAssertTrue(source.contains("删除倒计时预设"))
         XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.saveCountdownPresetFromDraft()"))
     }
@@ -139,9 +141,9 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         let source = try sourceText("Views/OverlayControlPanel.swift")
 
         XCTAssertTrue(source.contains("tickerPresetShelf"))
-        XCTAssertTrue(source.contains("Save Ticker Preset"))
-        XCTAssertTrue(source.contains("New Ticker Preset"))
-        XCTAssertTrue(source.contains("Delete Ticker Preset"))
+        XCTAssertTrue(source.contains("保存游动字幕预设"))
+        XCTAssertTrue(source.contains("新建游动字幕预设"))
+        XCTAssertTrue(source.contains("删除游动字幕预设"))
         XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.saveTickerPresetFromDraft()"))
     }

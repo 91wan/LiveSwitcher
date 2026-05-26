@@ -5,7 +5,7 @@ final class AudioTransitionControlModelTests: XCTestCase {
     func testTransitionCardTextDescribesProgramTransitionNotBGMFade() {
         let model = ProgramTransitionControlModel(crossfadeDuration: 1.2)
 
-        XCTAssertEqual(model.title, "Program transition")
+        XCTAssertEqual(model.title, "节目转场")
         XCTAssertFalse(model.title.localizedCaseInsensitiveContains("BGM fade"))
         XCTAssertFalse(model.subtitle.localizedCaseInsensitiveContains("BGM fade"))
         XCTAssertTrue(model.subtitle.contains("节目画面"))

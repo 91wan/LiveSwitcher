@@ -9,9 +9,9 @@ enum OverlayComposerKind: String, CaseIterable, Equatable, Identifiable {
 
     var title: String {
         switch self {
-        case .lowerThird: return "Lower Third"
-        case .countdown: return "Countdown"
-        case .ticker: return "Ticker"
+        case .lowerThird: return "人名条"
+        case .countdown: return "倒计时"
+        case .ticker: return "游动字幕"
         }
     }
 
@@ -37,7 +37,7 @@ struct OverlayComposerState: Equatable {
     var countdownMinutesDraft = 10
     var countdownSecondsDraft = 0
     var countdownTitleDraft = "活动即将开始"
-    var tickerTextDraft = "Welcome · The program will begin shortly"
+    var tickerTextDraft = "欢迎莅临，活动即将开始"
     var tickerSpeedIndex = 1
     var lowerThirdNameDraft = ""
     var lowerThirdTitleDraft = ""

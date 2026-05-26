@@ -29,9 +29,9 @@ final class RunDeskInformationHierarchyTests: XCTestCase {
         let tabs = try String(contentsOf: sourceURL("Models/MainConsoleTab.swift"), encoding: .utf8)
 
         XCTAssertTrue(content.contains("setupModeMenuButton"))
-        XCTAssertTrue(tabs.contains("Run Queue"))
-        XCTAssertTrue(tabs.contains("Audio"))
-        XCTAssertTrue(tabs.contains("Overlays"))
+        XCTAssertTrue(tabs.contains("节目单"))
+        XCTAssertTrue(tabs.contains("音频"))
+        XCTAssertTrue(tabs.contains("叠层"))
         XCTAssertFalse(content.contains("预览 / 切换"))
     }
 

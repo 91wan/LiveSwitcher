@@ -100,7 +100,7 @@ struct OverlayLivePreviewCanvas: View {
     }
 
     private var draftBadge: some View {
-        Text("DRAFT")
+        Text("草稿")
             .font(StudioTheme.TypeScale.label.weight(.black))
             .foregroundStyle(StudioTheme.monitorText.opacity(0.9))
             .padding(.horizontal, 6)

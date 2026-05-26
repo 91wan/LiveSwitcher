@@ -53,33 +53,33 @@ struct LiveStatusBarModel: Equatable {
     static func make(snapshot: LivePreflightSnapshot, nextProgramTitle: String?) -> LiveStatusBarModel {
         let projection: Item
         if snapshot.isBroadcasting && !snapshot.hasExternalDisplay {
-            projection = Item(title: "Output", value: "Display Lost", status: .fail)
+            projection = Item(title: "输出", value: "副屏丢失", status: .fail)
         } else if snapshot.isBroadcasting {
-            projection = Item(title: "Output", value: "ON AIR", status: .live)
+            projection = Item(title: "输出", value: "直播", status: .live)
         } else if snapshot.hasExternalDisplay {
-            projection = Item(title: "Output", value: "Standby", status: .idle)
+            projection = Item(title: "输出", value: "待机", status: .idle)
         } else {
-            projection = Item(title: "Output", value: "No Display", status: .warn)
+            projection = Item(title: "输出", value: "无副屏", status: .warn)
         }
 
         let currentTitle = snapshot.currentProgramTitle?.isEmpty == false
             ? snapshot.currentProgramTitle!
-            : "No Program"
+            : "无节目"
         let currentValue = snapshot.currentProgramSource.map { "\(currentTitle) · \($0)" } ?? currentTitle
-        let nextValue = nextProgramTitle?.isEmpty == false ? nextProgramTitle! : "None"
+        let nextValue = nextProgramTitle?.isEmpty == false ? nextProgramTitle! : "无"
         let audio = audioItem(snapshot: snapshot)
 
         return LiveStatusBarModel(
             projection: projection,
             current: Item(
-                title: "Current",
+                title: "当前",
                 value: truncatedDisplay(currentValue),
-                status: snapshot.currentProgramTitle == nil ? .warn : (snapshot.isBroadcasting ? .live : .idle),
+                status: snapshot.currentProgramTitle == nil ? .idle : (snapshot.isBroadcasting ? .live : .idle),
                 accessibilityValue: currentValue,
                 layoutRole: .primary
             ),
             next: Item(
-                title: "Next",
+                title: "下一项",
                 value: truncatedDisplay(nextValue),
                 status: nextProgramTitle == nil ? .idle : .ready,
                 accessibilityValue: nextValue,
@@ -92,15 +92,15 @@ struct LiveStatusBarModel: Equatable {
 
     private static func audioItem(snapshot: LivePreflightSnapshot) -> Item {
         if snapshot.isPanicMode {
-            return Item(title: "Audio", value: "Muted by Blackout", status: .fail)
+            return Item(title: "音频", value: "紧急切黑静音", status: .fail)
         }
         if snapshot.isBGMAudioTakeoverActive {
-            return Item(title: "Audio", value: "BGM Takeover", status: .warn)
+            return Item(title: "音频", value: "BGM 接管", status: .warn)
         }
         if snapshot.isSpeakerMode {
-            return Item(title: "Audio", value: "Speaker", status: .warn)
+            return Item(title: "音频", value: "主持人", status: .warn)
         }
-        return Item(title: "Audio", value: "Normal", status: .ready)
+        return Item(title: "音频", value: "正常", status: .ready)
     }
 
     private static func truncatedDisplay(_ value: String, maxLength: Int = 24) -> String {
@@ -119,22 +119,22 @@ struct PreflightButtonModel: Equatable {
     static func make(summary: LivePreflightSummary) -> PreflightButtonModel {
         switch summary.status {
         case .pass:
-            return PreflightButtonModel(title: "Preflight", value: "Ready", status: .ready)
+            return PreflightButtonModel(title: "检查", value: "就绪", status: .ready)
         case .warn:
-            return PreflightButtonModel(title: "Preflight", value: countText(failCount: 0, warnCount: summary.warnCount), status: .warn)
+            return PreflightButtonModel(title: "检查", value: countText(failCount: 0, warnCount: summary.warnCount), status: .warn)
         case .fail:
-            return PreflightButtonModel(title: "Preflight", value: countText(failCount: summary.failCount, warnCount: summary.warnCount), status: .fail)
+            return PreflightButtonModel(title: "检查", value: countText(failCount: summary.failCount, warnCount: summary.warnCount), status: .fail)
         }
     }
 
     private static func countText(failCount: Int, warnCount: Int) -> String {
         var parts: [String] = []
         if failCount > 0 {
-            parts.append("\(failCount) Fail")
+            parts.append("\(failCount) 错")
         }
         if warnCount > 0 {
-            parts.append("\(warnCount) Warn")
+            parts.append("\(warnCount) 警告")
         }
-        return parts.isEmpty ? "Review" : parts.joined(separator: " · ")
+        return parts.isEmpty ? "复核" : parts.joined(separator: " · ")
     }
 }

@@ -58,7 +58,7 @@ struct LiveCutBusModel: Equatable {
 
     static func make(programItems: [ProgramItem], currentProgramItem: ProgramItem?) -> LiveCutBusModel {
         guard !programItems.isEmpty else {
-            return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "No next source")
+            return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "没有下一项")
         }
 
         let nextIndex = ProgramQueueStore.nextPlayableIndexAfterCurrent(
@@ -67,7 +67,7 @@ struct LiveCutBusModel: Equatable {
         )
 
         guard let nextIndex else {
-            return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "No next source")
+            return LiveCutBusModel(canTakeNext: false, nextIndex: nil, nextTitle: "没有下一项")
         }
 
         return LiveCutBusModel(
@@ -102,20 +102,20 @@ struct LiveRuntimeStatusModel: Equatable {
     static func make(checks: [LivePreflightCheck], snapshot: LivePreflightSnapshot) -> LiveRuntimeStatusModel {
         let failChips = checks
             .filter { $0.status == .fail }
-            .map { LiveRuntimeStatusChip(text: "FAIL · \($0.title)", kind: .fail) }
+            .map { LiveRuntimeStatusChip(text: "故障 · \($0.title)", kind: .fail) }
         let warnChips = checks
             .filter { $0.status == .warn }
-            .map { LiveRuntimeStatusChip(text: "WARN · \($0.title)", kind: .warn) }
+            .map { LiveRuntimeStatusChip(text: "警告 · \($0.title)", kind: .warn) }
         let visibleFailChips = Array(failChips.prefix(2))
         let visibleWarnChips = Array(warnChips.prefix(1))
         let hiddenFailCount = failChips.count - visibleFailChips.count
         let hiddenWarnCount = warnChips.count - visibleWarnChips.count
         let overflowCount = hiddenFailCount + hiddenWarnCount
 
-        let output = snapshot.isBroadcasting ? "ON AIR" : "STANDBY"
-        let current = snapshot.currentProgramTitle ?? "No program"
+        let output = snapshot.isBroadcasting ? "直播" : "待机"
+        let current = snapshot.currentProgramTitle ?? "无节目"
         let summary = LiveRuntimeStatusChip(
-            text: "\(output) · Current: \(current) · \(snapshot.programItemCount) sources",
+            text: "\(output) · 当前: \(current) · \(snapshot.programItemCount) 个信号源",
             kind: snapshot.isBroadcasting ? .live : .ready
         )
 
@@ -157,8 +157,8 @@ struct LiveRuntimeStatusModel: Equatable {
     private static func overflowText(hiddenFailCount: Int, hiddenWarnCount: Int) -> String {
         let overflowCount = hiddenFailCount + hiddenWarnCount
         if hiddenFailCount > 0 {
-            return "+ \(overflowCount) issues"
+            return "+ \(overflowCount) 个问题"
         }
-        return "+ \(overflowCount) warnings"
+        return "+ \(overflowCount) 个警告"
     }
 }

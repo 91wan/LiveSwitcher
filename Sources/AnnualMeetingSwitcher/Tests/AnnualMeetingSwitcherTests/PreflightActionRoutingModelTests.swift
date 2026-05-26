@@ -9,11 +9,11 @@ final class PreflightActionRoutingModelTests: XCTestCase {
         XCTAssertFalse(clear.shouldDismissPopover)
         XCTAssertTrue(clear.shouldMutateState)
         XCTAssertNil(clear.destinationTab)
-        XCTAssertEqual(clear.successMessage, "Overlays cleared")
+        XCTAssertEqual(clear.successMessage, "叠层已清空")
         XCTAssertFalse(panic.shouldDismissPopover)
         XCTAssertTrue(panic.shouldMutateState)
         XCTAssertNil(panic.destinationTab)
-        XCTAssertEqual(panic.successMessage, "Blackout turned off")
+        XCTAssertEqual(panic.successMessage, "紧急切黑已关闭")
     }
 
     func testNavigationActionsDismissAndRouteToTabs() {

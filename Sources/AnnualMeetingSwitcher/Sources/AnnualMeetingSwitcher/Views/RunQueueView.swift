@@ -119,7 +119,7 @@ struct SignalSourceRow: View {
         }
         .buttonStyle(.plain)
         .focusable(false)
-        .help("Set agenda start and duration")
+        .help("设置议程开始时间和时长")
         .popover(isPresented: $isSchedulePopoverPresented, arrowEdge: .trailing) {
             AgendaScheduleEditorPopover(item: item) { start, duration in
                 onUpdateSchedule(start, duration)
@@ -129,7 +129,7 @@ struct SignalSourceRow: View {
     }
 
     private var scheduledTimeText: String {
-        item.scheduledTimeText ?? "Set time"
+        item.scheduledTimeText ?? "设时间"
     }
 
     private var selectedControlRail: some View {
@@ -153,7 +153,7 @@ struct SignalSourceRow: View {
 
                     controlButton(
                         systemName: "backward.end.fill",
-                        accessibilityLabel: "Jump current program to beginning",
+                        accessibilityLabel: "跳回当前节目开头",
                         tint: currentRowControlTint,
                         fill: currentRowControlTint.opacity(0.12),
                         action: onJumpToBeginning
@@ -163,12 +163,12 @@ struct SignalSourceRow: View {
                     if let onSkipToEnd {
                         controlButton(
                             systemName: "forward.end.fill",
-                            accessibilityLabel: "Skip current program to end",
+                            accessibilityLabel: "跳到当前节目结尾",
                             tint: currentRowControlTint,
                             fill: currentRowControlTint.opacity(0.12),
                             action: onSkipToEnd
                         )
-                        .help("Skip to end（跳至结束）")
+                        .help("跳至结束")
                     }
                 case .html:
                     controlButton(
@@ -197,7 +197,7 @@ struct SignalSourceRow: View {
 
             controlButton(
                 systemName: "trash",
-                accessibilityLabel: "Delete \(item.title)",
+                accessibilityLabel: "删除 \(item.title)",
                 tint: StudioTheme.Action.danger,
                 fill: StudioTheme.Action.danger.opacity(isHovered ? 0.12 : 0.04),
                 action: onDelete
@@ -244,7 +244,7 @@ struct SignalSourceRow: View {
             )
         case .next:
             badge(
-                text: rowModel.stateBadgeText ?? "NEXT",
+                text: rowModel.stateBadgeText ?? "下一项",
                 foreground: StudioTheme.Tone.warn,
                 background: StudioTheme.Tone.warn.opacity(0.14)
             )
@@ -439,22 +439,22 @@ struct AgendaScheduleEditorPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Agenda time")
+            Text("议程时间")
                 .font(StudioTheme.sectionTitle())
                 .foregroundStyle(StudioTheme.textPrimary)
 
             DatePicker(
-                "Start",
+                "开始",
                 selection: $scheduledStart,
                 displayedComponents: [.hourAndMinute]
             )
             .datePickerStyle(.compact)
 
-            Stepper("Duration \(durationMinutes) min", value: $durationMinutes, in: 1...999)
+            Stepper("时长 \(durationMinutes) 分钟", value: $durationMinutes, in: 1...999)
                 .font(StudioTheme.body())
 
             HStack {
-                Button("Clear") {
+                Button("清除") {
                     onApply(nil, nil)
                 }
                 .buttonStyle(.bordered)
@@ -462,7 +462,7 @@ struct AgendaScheduleEditorPopover: View {
 
                 Spacer()
 
-                Button("Apply") {
+                Button("应用") {
                     onApply(scheduledStart, TimeInterval(durationMinutes * 60))
                 }
                 .buttonStyle(.borderedProminent)
@@ -508,8 +508,8 @@ struct ProgressSliderRow: View {
                 }
             }
             .tint(StudioTheme.Action.primary)
-            .accessibilityLabel("Current program progress")
-            .accessibilityValue("\(formatTime(avCoordinator.currentTime)) of \(avCoordinator.duration.map { formatTime($0) } ?? "unknown duration")")
+            .accessibilityLabel("当前节目进度")
+            .accessibilityValue("\(formatTime(avCoordinator.currentTime)) / \(avCoordinator.duration.map { formatTime($0) } ?? "未知时长")")
 
             Text(avCoordinator.duration.map { formatTime($0) } ?? "--:--")
                 .font(StudioTheme.TypeScale.monoCaption.weight(.medium))

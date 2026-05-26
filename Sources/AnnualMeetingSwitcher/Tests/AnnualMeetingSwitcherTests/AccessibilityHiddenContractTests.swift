@@ -31,8 +31,8 @@ final class AccessibilityHiddenContractTests: XCTestCase {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
 
         XCTAssertTrue(liveOps.contains(".accessibilityLabel(model.title)"))
-        XCTAssertTrue(liveOps.contains(".accessibilityLabel(\"Switch to Live mode\")"))
-        XCTAssertTrue(leftPanel.contains(".accessibilityLabel(\"Refresh Keynote sources\")"))
+        XCTAssertTrue(liveOps.contains(".accessibilityLabel(\"进入现场模式\")"))
+        XCTAssertTrue(leftPanel.contains(".accessibilityLabel(\"刷新 Keynote 信号源\")"))
     }
 
     private func assertSymbolHidden(_ symbolName: String, in source: String, file: StaticString = #filePath, line: UInt = #line) {

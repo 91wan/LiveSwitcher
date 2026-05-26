@@ -13,7 +13,7 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.categoryButtonTitle, "切换分类")
         XCTAssertEqual(model.displayCategory, .warmUp)
         XCTAssertEqual(model.rows, [])
-        XCTAssertEqual(model.emptyMessage, "No tracks in 暖场音乐")
+        XCTAssertEqual(model.emptyMessage, "暖场音乐 没有曲目")
     }
 
     func testSelectedCategoryRowsAreLimitedForLiveMiniPlaylist() {
@@ -32,7 +32,7 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.displayCategory, .warmUp)
         XCTAssertEqual(model.rows.map(\.title), ["Warm 1", "Warm 2", "Warm 3"])
         XCTAssertEqual(model.visibleRowLimit, 3)
-        XCTAssertEqual(model.remainingCountText, "+3 more")
+        XCTAssertEqual(model.remainingCountText, "+3 首")
     }
 
     func testFallsBackToFirstNonEmptyCategoryWhenSelectedCategoryHasNoTracks() {
@@ -65,7 +65,7 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.rows.first?.title, "Award")
         XCTAssertTrue(model.rows.first?.isCurrent ?? false)
         XCTAssertEqual(model.rows.first?.systemImage, "pause.fill")
-        XCTAssertEqual(model.rows.first?.accessibilityLabel, "Award, current BGM, playing")
+        XCTAssertEqual(model.rows.first?.accessibilityLabel, "Award，当前 BGM，播放中")
     }
 
     func testCurrentItemPausedUsesCuedRowState() {
@@ -79,6 +79,6 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.rows.first?.systemImage, "checkmark")
-        XCTAssertEqual(model.rows.first?.accessibilityLabel, "Award, current BGM, cued")
+        XCTAssertEqual(model.rows.first?.accessibilityLabel, "Award，当前 BGM，已选")
     }
 }

@@ -43,7 +43,7 @@ struct AgendaTimelineView: View {
                 )
             }
         }
-        .accessibilityLabel("Agenda timeline")
+        .accessibilityLabel("议程时间线")
     }
 }
 
@@ -88,7 +88,7 @@ private struct AgendaTimelineRow: View {
                             .font(StudioTheme.TypeScale.caption.weight(.bold))
                             .foregroundStyle(StudioTheme.textPrimary)
                             .lineLimit(1)
-                        Text(entry.item.isAgendaMarker ? "Marker · \(entry.durationMinutes) min" : "\(entry.item.displaySourceLabel) · \(entry.durationMinutes) min")
+                        Text(entry.item.isAgendaMarker ? "标记 · \(entry.durationMinutes) 分钟" : "\(entry.item.displaySourceLabel) · \(entry.durationMinutes) 分钟")
                             .font(StudioTheme.TypeScale.label.weight(.semibold))
                             .foregroundStyle(StudioTheme.textSecondary)
                             .lineLimit(1)
@@ -98,7 +98,7 @@ private struct AgendaTimelineRow: View {
                     Spacer(minLength: 0)
 
                     if isCurrent {
-                        StatusBadge(isBroadcasting ? "ON AIR" : "CURRENT", kind: isBroadcasting ? .live : .ready)
+                        StatusBadge(isBroadcasting ? "直播" : "当前", kind: isBroadcasting ? .live : .ready)
                     }
                 }
                 .contentShape(Rectangle())
@@ -116,7 +116,7 @@ private struct AgendaTimelineRow: View {
             }
             .buttonStyle(.plain)
             .focusable(false)
-            .help("Edit agenda time")
+            .help("编辑议程时间")
             .popover(isPresented: $isSchedulePopoverPresented, arrowEdge: .trailing) {
                 AgendaScheduleEditorPopover(item: entry.item) { start, duration in
                     onUpdateSchedule(start, duration)
@@ -132,7 +132,7 @@ private struct AgendaTimelineRow: View {
             }
             .buttonStyle(.plain)
             .focusable(false)
-            .help("Delete agenda item")
+            .help("删除议程项")
         }
         .padding(8)
         .background(

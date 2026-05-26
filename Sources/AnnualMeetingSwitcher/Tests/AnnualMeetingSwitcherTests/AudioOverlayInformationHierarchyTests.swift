@@ -15,8 +15,8 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
             isBGMAudioTakeoverActive: true
         )
 
-        XCTAssertEqual(model.sectionTitles, ["Mixer", "Routing Strategy", "BGM Library"])
-        XCTAssertEqual(model.routingImpactText, "BGM takeover is active: media is muted while BGM plays.")
+        XCTAssertEqual(model.sectionTitles, ["调音台", "音频策略", "BGM 库"])
+        XCTAssertEqual(model.routingImpactText, "BGM 接管已开启：BGM 播放时媒体声道静音。")
         XCTAssertEqual(model.routingStatusKind, .warn)
     }
 
@@ -35,8 +35,8 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
 
         XCTAssertEqual(model.routingStatusText, AudioStrategy.mixed.displayTitle)
         XCTAssertEqual(model.routingStatusKind, .idle)
-        XCTAssertEqual(model.channelLimitText, "No forced mute")
-        XCTAssertEqual(model.routingImpactText, "No emergency routing is active; effective output follows the selected strategy and faders.")
+        XCTAssertEqual(model.channelLimitText, "无强制静音")
+        XCTAssertEqual(model.routingImpactText, "没有应急路由；实际输出跟随当前策略和推子。")
     }
 
     func testInlineWarningBannerIconMatchesStatusKind() {
@@ -66,7 +66,7 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         state.select(.lowerThird)
 
         XCTAssertEqual(state.selectedKind, .lowerThird)
-        XCTAssertEqual(state.visibleComposerTitles, ["Lower Third"])
+        XCTAssertEqual(state.visibleComposerTitles, ["人名条"])
         XCTAssertEqual(state.lowerThirdNameDraft, "Guest A")
         XCTAssertEqual(state.lowerThirdTitleDraft, "Keynote")
         XCTAssertEqual(state.tickerTextDraft, "Welcome ticker")

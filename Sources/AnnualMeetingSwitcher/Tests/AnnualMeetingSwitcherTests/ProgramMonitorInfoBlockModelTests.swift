@@ -5,10 +5,10 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
     func testNextNilDoesNotDisplayNextBadge() {
         let model = ProgramMonitorInfoBlockModel.next(item: nil)
 
-        XCTAssertEqual(model.value, "None")
-        XCTAssertEqual(model.badgeText, "EMPTY")
+        XCTAssertEqual(model.value, "无")
+        XCTAssertEqual(model.badgeText, "空")
         XCTAssertEqual(model.status, .idle)
-        XCTAssertEqual(model.accessibilityLabel, "Next: None, Queue empty, EMPTY")
+        XCTAssertEqual(model.accessibilityLabel, "下一项: 无, 队列为空, 空")
     }
 
     func testNextExistsDisplaysNextBadge() {
@@ -16,9 +16,9 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
         let model = ProgramMonitorInfoBlockModel.next(item: item)
 
         XCTAssertEqual(model.value, "Awards")
-        XCTAssertEqual(model.badgeText, "NEXT")
+        XCTAssertEqual(model.badgeText, "下一项")
         XCTAssertEqual(model.status, .ready)
-        XCTAssertEqual(model.accessibilityLabel, "Next: Awards, MP4, NEXT")
+        XCTAssertEqual(model.accessibilityLabel, "下一项: Awards, MP4, 下一项")
     }
 
     func testCurrentNilDisplaysEmpty() {
@@ -29,10 +29,10 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
             isHTMLLoaded: false
         )
 
-        XCTAssertEqual(model.value, "No Program")
-        XCTAssertEqual(model.badgeText, "EMPTY")
+        XCTAssertEqual(model.value, "无节目")
+        XCTAssertEqual(model.badgeText, "空")
         XCTAssertEqual(model.status, .idle)
-        XCTAssertEqual(model.accessibilityLabel, "Current: No Program, Standby, EMPTY")
+        XCTAssertEqual(model.accessibilityLabel, "当前: 无节目, 待机, 空")
     }
 
     func testCurrentPreviewAndOnAirStates() {
@@ -51,12 +51,12 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
             isHTMLLoaded: false
         )
 
-        XCTAssertEqual(preview.badgeText, "PREVIEW")
+        XCTAssertEqual(preview.badgeText, "预览")
         XCTAssertEqual(preview.status, .idle)
-        XCTAssertEqual(preview.accessibilityLabel, "Current: Opening, MP4, PREVIEW")
-        XCTAssertEqual(onAir.badgeText, "ON AIR")
+        XCTAssertEqual(preview.accessibilityLabel, "当前: Opening, MP4, 预览")
+        XCTAssertEqual(onAir.badgeText, "直播")
         XCTAssertEqual(onAir.status, .live)
-        XCTAssertEqual(onAir.accessibilityLabel, "Current: Opening, MP4, ON AIR")
+        XCTAssertEqual(onAir.accessibilityLabel, "当前: Opening, MP4, 直播")
     }
 
     func testMonitorStandbyIsIdleNotWarning() {
@@ -70,11 +70,11 @@ final class ProgramMonitorInfoBlockModelTests: XCTestCase {
             currentItem: ProgramItem(title: "Opening", subtitle: "MP4")
         )
 
-        XCTAssertEqual(standby.label, "STANDBY")
+        XCTAssertEqual(standby.label, "待机")
         XCTAssertEqual(standby.kind, .idle)
-        XCTAssertEqual(preview.label, "PREVIEW")
+        XCTAssertEqual(preview.label, "预览")
         XCTAssertEqual(preview.kind, .idle)
-        XCTAssertEqual(onAir.label, "ON AIR")
+        XCTAssertEqual(onAir.label, "直播")
         XCTAssertEqual(onAir.kind, .live)
     }
 

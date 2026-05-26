@@ -22,24 +22,24 @@ struct PreflightReviewModel: Equatable {
     }
 
     var rowCountText: String {
-        "\(checks.count) rows"
+        "\(checks.count) 项"
     }
 
     var emptyTitle: String {
         switch mode {
         case .needsAttention:
-            return "No rows need attention"
+            return "没有需要处理的项目"
         case .allChecks:
-            return "No preflight checks"
+            return "没有检查项"
         }
     }
 
     var emptyMessage: String {
         switch mode {
         case .needsAttention:
-            return "Switch to All checks if you want to audit every passing row."
+            return "如需查看通过项，请切换到全部检查。"
         case .allChecks:
-            return "No checks are available for the current runtime snapshot."
+            return "当前运行快照没有可用检查项。"
         }
     }
 

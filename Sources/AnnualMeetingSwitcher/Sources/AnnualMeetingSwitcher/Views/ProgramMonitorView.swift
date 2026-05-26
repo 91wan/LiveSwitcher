@@ -11,10 +11,10 @@ struct ProgramMonitorView: View {
         VStack(alignment: .leading, spacing: isLiveMode ? 0 : 12) {
             if !isLiveMode {
                 HStack(alignment: .firstTextBaseline) {
-                    Text("Program")
+                    Text("主输出")
                         .font(StudioTheme.title())
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text("Monitor")
+                    Text("监看")
                         .font(StudioTheme.caption())
                         .foregroundStyle(StudioTheme.textTertiary)
                     Spacer()
@@ -77,7 +77,7 @@ struct ProgramMonitorView: View {
         }
         .animation(.easeInOut(duration: 0.16), value: monitorChromeVisibility)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(viewModel.isBroadcasting ? "Program monitor on air" : "Program monitor standby")
+        .accessibilityLabel(viewModel.isBroadcasting ? "主输出正在直播" : "主输出待机")
     }
 
     private var livePreviewMaxHeight: CGFloat {
@@ -89,7 +89,7 @@ struct ProgramMonitorView: View {
             Circle()
                 .fill(StudioTheme.Tone.live)
                 .frame(width: 8, height: 8)
-            Text("ON AIR")
+            Text("直播")
                 .font(StudioTheme.TypeScale.caption.weight(.black))
                 .foregroundStyle(StudioTheme.monitorText)
         }
@@ -97,7 +97,7 @@ struct ProgramMonitorView: View {
         .padding(.vertical, 7)
         .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderCritical.opacity(0.75), lineWidth: 1))
-        .accessibilityLabel("Program monitor on air")
+        .accessibilityLabel("主输出正在直播")
     }
 
     private var monitorTopChrome: some View {
@@ -219,7 +219,7 @@ struct ProgramMonitorView: View {
         )
         let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
 
-        return "Program status. Current \(current.accessibilityLabel). Next \(next.accessibilityLabel)."
+        return "主输出状态。当前 \(current.accessibilityLabel)。下一项 \(next.accessibilityLabel)。"
     }
 
     private var monitorChromeVisibility: MonitorChromeVisibility {
@@ -259,10 +259,10 @@ struct ProgramMonitorView: View {
 
         return HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Transition")
+                Text("转场")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
-                Text("Program")
+                Text("节目")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
             }
@@ -273,8 +273,8 @@ struct ProgramMonitorView: View {
                 step: 0.05
             )
             .tint(model.controlTone.sliderTint)
-            .accessibilityLabel("Transition duration")
-            .accessibilityValue(String(format: "%.1f seconds", viewModel.crossfadeDuration))
+            .accessibilityLabel("转场时长")
+            .accessibilityValue(String(format: "%.1f 秒", viewModel.crossfadeDuration))
 
             Text(model.statusText)
                 .font(StudioTheme.TypeScale.numeric.weight(.bold))
@@ -299,7 +299,7 @@ struct ProgramMonitorView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Standby Wallpaper")
+                    Text("待机壁纸")
                         .font(StudioTheme.sectionTitle())
                         .foregroundStyle(StudioTheme.textPrimary)
                 }
@@ -310,11 +310,11 @@ struct ProgramMonitorView: View {
             }
 
             if viewModel.backgroundWallpapers.isEmpty {
-                InlineWarningBanner(title: "No standby wallpaper", message: "Import a neutral image for fallback.", kind: .warn)
+                InlineWarningBanner(title: "没有待机壁纸", message: "导入一张中性图片作为备用画面。", kind: .warn)
                 Button {
                     WallpaperImportService.presentPicker(viewModel: viewModel)
                 } label: {
-                    Label("Import wallpaper...", systemImage: "photo.badge.plus")
+                    Label("导入壁纸...", systemImage: "photo.badge.plus")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
@@ -359,7 +359,7 @@ struct ProgramMonitorView: View {
                 Text("待机中")
                     .font(StudioTheme.TypeScale.display.weight(.bold))
                     .foregroundStyle(StudioTheme.monitorText)
-                Text("NO SIGNAL LOADED")
+                Text("未载入信号")
                     .font(StudioTheme.TypeScale.body.weight(.black))
                     .foregroundStyle(StudioTheme.monitorText.opacity(0.7))
             }

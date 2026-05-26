@@ -9,9 +9,9 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertFalse(state.canSkipPrevious)
         XCTAssertFalse(state.canPlay)
         XCTAssertFalse(state.canSkipNext)
-        XCTAssertEqual(state.displayStatusText, "EMPTY")
+        XCTAssertEqual(state.displayStatusText, "空")
         XCTAssertEqual(state.displayStatusKind, .warn)
-        XCTAssertEqual(state.playDisabledReason, "Add music before starting BGM.")
+        XCTAssertEqual(state.playDisabledReason, "请先添加 BGM。")
     }
 
     func testSingleTrackWithoutCurrentCanStartPlaybackButCannotSeekOrSkip() {
@@ -23,7 +23,7 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertFalse(state.canSkipPrevious)
         XCTAssertTrue(state.canPlay)
         XCTAssertFalse(state.canSkipNext)
-        XCTAssertEqual(state.displayStatusText, "IDLE")
+        XCTAssertEqual(state.displayStatusText, "待选")
         XCTAssertEqual(state.displayStatusKind, .idle)
     }
 
@@ -36,7 +36,7 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertTrue(state.canPlay)
         XCTAssertFalse(state.canSkipPrevious)
         XCTAssertFalse(state.canSkipNext)
-        XCTAssertEqual(state.displayStatusText, "CUED")
+        XCTAssertEqual(state.displayStatusText, "已选")
         XCTAssertEqual(state.displayStatusKind, .idle)
     }
 
@@ -45,7 +45,7 @@ final class BGMControlsStateTests: XCTestCase {
 
         let state = BGMControlsState.make(items: [track], currentItem: track, isPlaying: true)
 
-        XCTAssertEqual(state.displayStatusText, "PLAYING")
+        XCTAssertEqual(state.displayStatusText, "播放中")
         XCTAssertEqual(state.displayStatusKind, .ready)
     }
 

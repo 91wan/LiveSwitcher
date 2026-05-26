@@ -38,7 +38,7 @@ struct ProgramTransitionControlModel: Equatable {
     }
 
     var title: String {
-        "Program transition"
+        "节目转场"
     }
 
     var subtitle: String {

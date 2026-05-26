@@ -10,15 +10,15 @@ enum LivePreflightGroup: String, CaseIterable {
     var displayTitle: String {
         switch self {
         case .display:
-            return "Display / 显示"
+            return "显示"
         case .audio:
-            return "Audio / 音频"
+            return "音频"
         case .playback:
-            return "Playback / 播放"
+            return "播放"
         case .overlays:
-            return "Overlays / 叠层"
+            return "叠层"
         case .controls:
-            return "Controls / 控制"
+            return "控制"
         }
     }
 }
@@ -31,11 +31,11 @@ enum LivePreflightStatus: String {
     var displayTitle: String {
         switch self {
         case .pass:
-            return "Pass"
+            return "通过"
         case .warn:
-            return "Warn"
+            return "警告"
         case .fail:
-            return "Fail"
+            return "故障"
         }
     }
 }
@@ -83,11 +83,11 @@ enum LiveOverlayKind: String, Equatable, CaseIterable {
     var displayTitle: String {
         switch self {
         case .countdown:
-            return "countdown"
+            return "倒计时"
         case .ticker:
-            return "ticker"
+            return "游动字幕"
         case .lowerThird:
-            return "lower third"
+            return "人名条"
         }
     }
 }
@@ -199,8 +199,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "display.external",
                 group: .display,
                 status: .pass,
-                title: "External Display",
-                message: "External display detected. Projection can be armed."
+                title: "外接显示器",
+                message: "已检测到外接显示器，可以准备投射。"
             )
         }
 
@@ -208,9 +208,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "display.external",
             group: .display,
             status: .fail,
-            title: "External Display",
-            message: "Needs hardware: no external display detected. Do not project.",
-            actionLabel: "Needs hardware",
+            title: "外接显示器",
+            message: "需要硬件：未检测到外接显示器，请勿投射。",
+            actionLabel: "需要硬件",
             actionKind: .needsHardware
         )
     }
@@ -221,9 +221,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "display.broadcast",
                 group: .display,
                 status: .fail,
-                title: "Projection State",
-                message: "Projection reports active without an external display. Stop projection before the show.",
-                actionLabel: "Needs hardware",
+                title: "投射状态",
+                message: "投射状态为开启，但未检测到外接显示器。开场前请停止投射。",
+                actionLabel: "需要硬件",
                 actionKind: .needsHardware
             )
         }
@@ -233,8 +233,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "display.broadcast",
                 group: .display,
                 status: .pass,
-                title: "Projection State",
-                message: "Projection is currently active on an external display."
+                title: "投射状态",
+                message: "当前正在外接屏投射。"
             )
         }
 
@@ -243,9 +243,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "display.broadcast",
                 group: .display,
                 status: .warn,
-                title: "Projection State",
-                message: "Projection is off. Last notice: \(notice)",
-                actionLabel: "Open preview",
+                title: "投射状态",
+                message: "投射未开启。最近提示：\(notice)",
+                actionLabel: "打开节目单",
                 actionKind: .openPreview
             )
         }
@@ -254,9 +254,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "display.broadcast",
             group: .display,
             status: .warn,
-            title: "Projection State",
-            message: "Projection is off. Confirm the external display before going live.",
-            actionLabel: "Open preview",
+            title: "投射状态",
+            message: "投射未开启。直播前请确认外接屏。",
+            actionLabel: "打开节目单",
             actionKind: .openPreview
         )
     }
@@ -267,9 +267,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "audio.bgm-library",
                 group: .audio,
                 status: .warn,
-                title: "BGM Library",
-                message: "No BGM tracks loaded. Add walk-in or fallback music before a live run.",
-                actionLabel: "Open audio mixer",
+                title: "BGM 库",
+                message: "未载入 BGM 曲目。直播前请添加暖场或备用音乐。",
+                actionLabel: "打开音频页",
                 actionKind: .openAudioMixer
             )
         }
@@ -278,8 +278,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "audio.bgm-library",
             group: .audio,
             status: .pass,
-            title: "BGM Library",
-            message: "\(snapshot.bgmItemCount) BGM track(s) loaded."
+            title: "BGM 库",
+            message: "已载入 \(snapshot.bgmItemCount) 首 BGM。"
         )
     }
 
@@ -289,8 +289,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "audio.speaker",
                 group: .audio,
                 status: .warn,
-                title: "Speaker Mode",
-                message: "Media and BGM ducking is active. Confirm this is intentional before playback."
+                title: "主持人模式",
+                message: "媒体和 BGM 压低已开启。播放前请确认这是预期状态。"
             )
         }
 
@@ -298,8 +298,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "audio.speaker",
             group: .audio,
             status: .pass,
-            title: "Speaker Mode",
-            message: "Speaker mode is off. Media and BGM use the current mixer levels."
+            title: "主持人模式",
+            message: "主持人模式关闭。媒体和 BGM 使用当前调音台电平。"
         )
     }
 
@@ -309,9 +309,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "audio.bgm-takeover",
                 group: .audio,
                 status: .warn,
-                title: "BGM Takeover",
-                message: "Media audio is muted by BGM takeover while BGM plays.",
-                actionLabel: "Open audio mixer",
+                title: "BGM 接管",
+                message: "BGM 播放时媒体声道被 BGM 接管静音。",
+                actionLabel: "打开音频页",
                 actionKind: .openAudioMixer
             )
         }
@@ -320,10 +320,10 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "audio.bgm-takeover",
             group: .audio,
             status: .pass,
-            title: "BGM Takeover",
+            title: "BGM 接管",
             message: snapshot.isBGMPlaying
-                ? "BGM is playing without takeover."
-                : "BGM takeover is inactive."
+                ? "BGM 正在播放，但未接管媒体声道。"
+                : "BGM 接管未开启。"
         )
     }
 
@@ -332,8 +332,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "audio.volumes",
             group: .audio,
             status: .pass,
-            title: "Effective Volumes",
-            message: "Media \(formatPercent(snapshot.effectiveMediaVolume)), BGM \(formatPercent(snapshot.effectiveBGMVolume))."
+            title: "实际音量",
+            message: "媒体 \(formatPercent(snapshot.effectiveMediaVolume))，BGM \(formatPercent(snapshot.effectiveBGMVolume))。"
         )
     }
 
@@ -343,8 +343,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "playback.current-program",
                 group: .playback,
                 status: .pass,
-                title: "Current Program",
-                message: "\(safeReportText(title)) is selected as \(source)."
+                title: "当前节目",
+                message: "\(safeReportText(title)) 已选为 \(source)。"
             )
         }
 
@@ -353,9 +353,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "playback.current-program",
                 group: .playback,
                 status: .warn,
-                title: "Current Program",
-                message: "\(snapshot.programItemCount) program item(s) queued, but no current program is selected.",
-                actionLabel: "Open preview",
+                title: "当前节目",
+                message: "队列中有 \(snapshot.programItemCount) 个节目，但尚未选择当前节目。",
+                actionLabel: "打开节目单",
                 actionKind: .openPreview
             )
         }
@@ -364,9 +364,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "playback.current-program",
             group: .playback,
             status: .warn,
-            title: "Current Program",
-            message: "No program items loaded.",
-            actionLabel: "Open preview",
+            title: "当前节目",
+            message: "尚未载入节目。",
+            actionLabel: "打开节目单",
             actionKind: .openPreview
         )
     }
@@ -377,9 +377,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "playback.wallpaper",
                 group: .playback,
                 status: .warn,
-                title: "Wallpaper Fallback",
-                message: "No wallpaper fallback is loaded. Add at least one neutral standby image.",
-                actionLabel: "Open preview",
+                title: "待机壁纸",
+                message: "尚未载入待机壁纸。请至少添加一张中性背景图。",
+                actionLabel: "打开节目单",
                 actionKind: .openPreview
             )
         }
@@ -388,8 +388,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "playback.wallpaper",
             group: .playback,
             status: .pass,
-            title: "Wallpaper Fallback",
-            message: "\(snapshot.wallpaperCount) wallpaper fallback image(s) available."
+            title: "待机壁纸",
+            message: "已有 \(snapshot.wallpaperCount) 张待机壁纸可用。"
         )
     }
 
@@ -398,11 +398,11 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "playback.auto-next",
             group: .playback,
             status: snapshot.autoPlayNextVideoOnEnd ? .warn : .pass,
-            title: "Auto-next Video",
+            title: "自动下一条视频",
             message: snapshot.autoPlayNextVideoOnEnd
-                ? "Auto-next video is enabled. Verify the next video order before the show."
-                : "Auto-next video is off. Video end will return to standby/fallback.",
-            actionLabel: snapshot.autoPlayNextVideoOnEnd ? "Open preview" : nil,
+                ? "自动下一条视频已开启。开场前请确认下一条视频顺序。"
+                : "自动下一条视频关闭。视频结束后会回到待机/备用画面。",
+            actionLabel: snapshot.autoPlayNextVideoOnEnd ? "打开节目单" : nil,
             actionKind: snapshot.autoPlayNextVideoOnEnd ? .openPreview : nil
         )
     }
@@ -414,9 +414,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "overlays.active",
                 group: .overlays,
                 status: .warn,
-                title: "Active Overlays",
-                message: "\(snapshot.activeOverlayCount) overlays active: \(overlaySummary). Clear overlays if the stage should start clean.",
-                actionLabel: "Clear overlays",
+                title: "已上屏叠层",
+                message: "\(snapshot.activeOverlayCount) 个叠层正在上屏：\(overlaySummary)。如果开场需要干净画面，请先清空叠层。",
+                actionLabel: "清空叠层",
                 actionKind: .clearOverlays
             )
         }
@@ -425,8 +425,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "overlays.active",
             group: .overlays,
             status: .pass,
-            title: "Active Overlays",
-            message: "No overlays are currently live."
+            title: "已上屏叠层",
+            message: "当前没有叠层上屏。"
         )
     }
 
@@ -436,9 +436,9 @@ struct LivePreflightCheck: Identifiable, Equatable {
                 id: "controls.panic",
                 group: .controls,
                 status: .fail,
-                title: "Blackout",
-                message: "Blackout is active. Output is blacked out and audio is muted.",
-                actionLabel: "Turn off blackout",
+                title: "紧急切黑",
+                message: "紧急切黑已开启。副屏黑屏，音频已静音。",
+                actionLabel: "关闭紧急切黑",
                 actionKind: .turnOffPanic
             )
         }
@@ -447,8 +447,8 @@ struct LivePreflightCheck: Identifiable, Equatable {
             id: "controls.panic",
             group: .controls,
             status: .pass,
-            title: "Blackout",
-            message: "Blackout is off."
+            title: "紧急切黑",
+            message: "紧急切黑已关闭。"
         )
     }
 
@@ -464,26 +464,26 @@ struct LivePreflightCheck: Identifiable, Equatable {
         if snapshot.isPageInterceptEnabled {
             if isPageableSource {
                 status = .pass
-                message = "PPT mode is on for a page-controlled source. Page-clicker keys are intercepted for presentation control."
+                message = "PPT 模式已针对可翻页信号源开启。翻页笔按键会用于演示控制。"
             } else {
                 status = .warn
-                message = "PPT mode is on, but the current program is not a page-controlled source. Disable it unless page-clicker takeover is needed."
+                message = "PPT 模式已开启，但当前节目不是可翻页信号源。除非需要接管翻页笔，否则请关闭。"
             }
         } else if isDeckSource {
             status = .warn
-            message = "A presentation source is loaded while PPT mode is off. Verify whether page-clicker takeover is needed before going live."
+            message = "当前载入演示信号源，但 PPT 模式关闭。直播前请确认是否需要接管翻页笔。"
         } else {
             status = .pass
-            message = "PPT mode is off. Enable it only when page-clicker takeover is needed."
+            message = "PPT 模式关闭。仅在需要接管翻页笔时开启。"
         }
 
         return LivePreflightCheck(
             id: "controls.ppt",
             group: .controls,
             status: status,
-            title: "PPT Mode",
+            title: "PPT 模式",
             message: message,
-            actionLabel: "Manual review",
+            actionLabel: "人工复核",
             actionKind: .manualReview
         )
     }
@@ -494,13 +494,13 @@ struct LivePreflightCheck: Identifiable, Equatable {
 
     static func overlaySummary(_ snapshot: LivePreflightSnapshot) -> String {
         let kinds = snapshot.activeOverlayKinds.map(\.displayTitle)
-        let kindText = kinds.isEmpty ? "unknown overlay" : kinds.joined(separator: ", ")
+        let kindText = kinds.isEmpty ? "未知叠层" : kinds.joined(separator: ", ")
         guard let remaining = snapshot.countdownRemainingSeconds,
               snapshot.activeOverlayKinds.contains(.countdown)
         else {
             return kindText
         }
-        return "\(kindText), \(remaining)s remaining"
+        return "\(kindText)，剩余 \(remaining)s"
     }
 
     static func safeReportText(_ text: String) -> String {
@@ -526,8 +526,8 @@ struct LivePreflightSummary: Equatable {
         if failCount > 0 {
             return LivePreflightSummary(
                 status: .fail,
-                title: "Not ready",
-                message: "\(failCount) blocking issue(s). Resolve fail rows before projection.",
+                title: "未就绪",
+                message: "\(failCount) 个阻塞项。投射前请先解决故障项。",
                 passCount: passCount,
                 warnCount: warnCount,
                 failCount: failCount
@@ -537,8 +537,8 @@ struct LivePreflightSummary: Equatable {
         if warnCount > 0 {
             return LivePreflightSummary(
                 status: .warn,
-                title: "Needs review",
-                message: "\(warnCount) warning(s). Confirm the intended show state before going live.",
+                title: "需复核",
+                message: "\(warnCount) 个警告。直播前请确认现场状态符合预期。",
                 passCount: passCount,
                 warnCount: warnCount,
                 failCount: failCount
@@ -547,8 +547,8 @@ struct LivePreflightSummary: Equatable {
 
         return LivePreflightSummary(
             status: .pass,
-            title: "Ready",
-            message: "All preflight checks are passing for the current runtime state.",
+            title: "就绪",
+            message: "当前运行状态的现场检查全部通过。",
             passCount: passCount,
             warnCount: warnCount,
             failCount: failCount

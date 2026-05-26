@@ -5,7 +5,7 @@ final class PreflightHeaderBadgeModelTests: XCTestCase {
     func testPassingPreflightDoesNotShowDefaultHeaderBadge() {
         let model = PreflightHeaderBadgeModel.make(summary: summary(.pass))
 
-        XCTAssertEqual(model.text, "Preflight")
+        XCTAssertEqual(model.text, "检查")
         XCTAssertEqual(model.kind, .ready)
         XCTAssertFalse(model.isVisible)
     }

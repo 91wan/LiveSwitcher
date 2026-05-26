@@ -24,9 +24,9 @@ struct LiveWallpaperQuickPickerModel: Equatable {
     ) -> LiveWallpaperQuickPickerModel {
         guard !wallpapers.isEmpty else {
             return LiveWallpaperQuickPickerModel(
-                statusText: "NO WALLPAPER",
+                statusText: "无壁纸",
                 statusKind: .warn,
-                displayTitle: "No standby wallpaper",
+                displayTitle: "没有待机壁纸",
                 items: []
             )
         }
@@ -46,7 +46,7 @@ struct LiveWallpaperQuickPickerModel: Equatable {
         return LiveWallpaperQuickPickerModel(
             statusText: "\(wallpapers.count)",
             statusKind: .ready,
-            displayTitle: validActiveURL?.lastPathComponent ?? "No wallpaper selected",
+            displayTitle: validActiveURL?.lastPathComponent ?? "未选择壁纸",
             items: items
         )
     }

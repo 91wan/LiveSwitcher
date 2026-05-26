@@ -19,28 +19,28 @@ struct ProgramMonitorInfoBlockModel: Equatable {
     ) -> ProgramMonitorInfoBlockModel {
         guard let item else {
             return ProgramMonitorInfoBlockModel(
-                title: "Current",
-                value: "No Program",
-                subtitle: "Standby",
-                badgeText: "EMPTY",
+                title: "当前",
+                value: "无节目",
+                subtitle: "待机",
+                badgeText: "空",
                 status: .idle
             )
         }
 
         let subtitle: String
         if isHTMLLoaded {
-            subtitle = "HTML is loaded"
+            subtitle = "HTML 已载入"
         } else if isPlaying {
-            subtitle = "Media playing"
+            subtitle = "媒体播放中"
         } else {
             subtitle = item.subtitle.uppercased()
         }
 
         return ProgramMonitorInfoBlockModel(
-            title: "Current",
+            title: "当前",
             value: item.title,
             subtitle: subtitle,
-            badgeText: isBroadcasting ? "ON AIR" : "PREVIEW",
+            badgeText: isBroadcasting ? "直播" : "预览",
             status: isBroadcasting ? .live : .idle
         )
     }
@@ -48,19 +48,19 @@ struct ProgramMonitorInfoBlockModel: Equatable {
     static func next(item: ProgramItem?) -> ProgramMonitorInfoBlockModel {
         guard let item else {
             return ProgramMonitorInfoBlockModel(
-                title: "Next",
-                value: "None",
-                subtitle: "Queue empty",
-                badgeText: "EMPTY",
+                title: "下一项",
+                value: "无",
+                subtitle: "队列为空",
+                badgeText: "空",
                 status: .idle
             )
         }
 
         return ProgramMonitorInfoBlockModel(
-            title: "Next",
+            title: "下一项",
             value: item.title,
             subtitle: item.subtitle.uppercased(),
-            badgeText: "NEXT",
+            badgeText: "下一项",
             status: .ready
         )
     }
@@ -72,12 +72,12 @@ struct ProgramMonitorStateModel: Equatable {
 
     static func make(isBroadcasting: Bool, currentItem: ProgramItem?) -> ProgramMonitorStateModel {
         if isBroadcasting {
-            return ProgramMonitorStateModel(label: "ON AIR", kind: .live)
+            return ProgramMonitorStateModel(label: "直播", kind: .live)
         }
         if currentItem != nil {
-            return ProgramMonitorStateModel(label: "PREVIEW", kind: .idle)
+            return ProgramMonitorStateModel(label: "预览", kind: .idle)
         }
-        return ProgramMonitorStateModel(label: "STANDBY", kind: .idle)
+        return ProgramMonitorStateModel(label: "待机", kind: .idle)
     }
 }
 

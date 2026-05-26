@@ -9,12 +9,12 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
             isLive: false
         )
 
-        XCTAssertEqual(model.title, "Lower Third")
-        XCTAssertEqual(model.presetLabel, "+ New preset")
+        XCTAssertEqual(model.title, "人名条")
+        XCTAssertEqual(model.presetLabel, "+ 新建预设")
         XCTAssertTrue(model.isPlaceholder)
         XCTAssertFalse(model.canToggle)
-        XCTAssertEqual(model.toggleText, "OFF")
-        XCTAssertEqual(model.disabledHint, "Choose a lower third preset first.")
+        XCTAssertEqual(model.toggleText, "关闭")
+        XCTAssertEqual(model.disabledHint, "请先选择人名条预设。")
     }
 
     func testSelectedLowerThirdShowsPresetNameAndEnablesToggle() throws {
@@ -33,8 +33,8 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         XCTAssertEqual(model.presetLabel, "王五")
         XCTAssertFalse(model.isPlaceholder)
         XCTAssertTrue(model.canToggle)
-        XCTAssertEqual(model.toggleText, "LIVE")
-        XCTAssertEqual(model.accessibilityLabel, "Lower Third, 王五, LIVE")
+        XCTAssertEqual(model.toggleText, "上屏")
+        XCTAssertEqual(model.accessibilityLabel, "人名条, 王五, 上屏")
     }
 
     func testCountdownLabelIncludesFormattedDuration() throws {
@@ -52,7 +52,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
 
         XCTAssertEqual(model.presetLabel, "Opening 10:25")
         XCTAssertTrue(model.canToggle)
-        XCTAssertEqual(model.toggleText, "OFF")
+        XCTAssertEqual(model.toggleText, "关闭")
     }
 
     func testTickerLabelTruncatesLongText() throws {
@@ -85,7 +85,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
             isLive: false
         )
 
-        XCTAssertEqual(model.presetLabel, "Choose preset...")
+        XCTAssertEqual(model.presetLabel, "选择预设...")
         XCTAssertTrue(model.isPlaceholder)
         XCTAssertFalse(model.canToggle)
     }

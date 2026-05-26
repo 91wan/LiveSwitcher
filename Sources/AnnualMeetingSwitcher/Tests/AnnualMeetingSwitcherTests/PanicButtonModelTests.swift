@@ -6,8 +6,8 @@ final class PanicButtonModelTests: XCTestCase {
         let model = PanicButtonModel.make(isActive: false, consoleMode: .setup)
 
         XCTAssertEqual(model.visualRole, .danger)
-        XCTAssertEqual(model.title, "Blackout")
-        XCTAssertEqual(model.subtitle, "Stage black")
+        XCTAssertEqual(model.title, "紧急切黑")
+        XCTAssertEqual(model.subtitle, "一键应急")
         XCTAssertFalse(model.help.contains("老板键"))
         XCTAssertGreaterThanOrEqual(model.height, ToolbarLayoutMetrics.actionHeight)
     }
@@ -20,13 +20,13 @@ final class PanicButtonModelTests: XCTestCase {
         XCTAssertGreaterThan(model.minWidth, ToolbarLayoutMetrics.panicMinWidth)
     }
 
-    func testActivePanicCopyStatesBlackoutIsOn() {
+    func testActivePanicCopyStatesEmergencyBlackoutIsOn() {
         let model = PanicButtonModel.make(isActive: true, consoleMode: .setup)
 
         XCTAssertEqual(model.visualRole, .danger)
         XCTAssertEqual(model.systemImage, "eye.slash.fill")
-        XCTAssertEqual(model.title, "Blackout: ON")
-        XCTAssertEqual(model.subtitle, "Output muted")
-        XCTAssertTrue(model.accessibilityHint.localizedStandardContains("Output is black"))
+        XCTAssertEqual(model.title, "紧急切黑: 开")
+        XCTAssertEqual(model.subtitle, "副屏黑屏 · 音频静音")
+        XCTAssertTrue(model.accessibilityHint.localizedStandardContains("副屏黑屏"))
     }
 }

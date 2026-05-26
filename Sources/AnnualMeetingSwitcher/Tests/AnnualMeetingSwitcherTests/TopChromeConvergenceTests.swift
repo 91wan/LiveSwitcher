@@ -3,9 +3,9 @@ import XCTest
 
 final class TopChromeConvergenceTests: XCTestCase {
     func testMainConsoleTabsProvideDynamicChromeTitles() {
-        XCTAssertEqual(MainConsoleTab.preview.chromeTitle, "LiveSwitcher · Run")
-        XCTAssertEqual(MainConsoleTab.audioMixer.chromeTitle, "LiveSwitcher · Audio")
-        XCTAssertEqual(MainConsoleTab.overlays.chromeTitle, "LiveSwitcher · Overlays")
+        XCTAssertEqual(MainConsoleTab.preview.chromeTitle, "LiveSwitcher · 导播台")
+        XCTAssertEqual(MainConsoleTab.audioMixer.chromeTitle, "LiveSwitcher · 音频")
+        XCTAssertEqual(MainConsoleTab.overlays.chromeTitle, "LiveSwitcher · 叠层")
     }
 
     func testContentViewNoLongerOwnsDuplicateLiveStatusStrip() throws {
@@ -44,8 +44,8 @@ final class TopChromeConvergenceTests: XCTestCase {
             failCount: 0
         )
 
-        XCTAssertEqual(PreflightButtonModel.make(summary: fail).value, "1 Fail · 2 Warn")
-        XCTAssertEqual(PreflightButtonModel.make(summary: warn).value, "2 Warn")
+        XCTAssertEqual(PreflightButtonModel.make(summary: fail).value, "1 错 · 2 警告")
+        XCTAssertEqual(PreflightButtonModel.make(summary: warn).value, "2 警告")
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

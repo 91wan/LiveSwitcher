@@ -5,7 +5,7 @@ final class BGMControlsStateSourceTests: XCTestCase {
         let source = try sourceText("Models/BGMControlsState.swift")
 
         XCTAssertTrue(source.contains("safe active audio"))
-        XCTAssertTrue(source.contains("not ON AIR critical"))
+        XCTAssertTrue(source.contains("not critical projection state"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

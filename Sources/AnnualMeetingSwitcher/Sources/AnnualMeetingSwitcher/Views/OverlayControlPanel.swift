@@ -83,10 +83,10 @@ struct OverlayControlPanel: View {
             .frame(width: 48, height: 48)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text("Overlay Composer")
+                Text("叠层编辑")
                     .font(StudioTheme.TypeScale.title)
                     .foregroundStyle(.primary)
-                Text("一次准备一种叠层；Preview 和 Active Stack 会显示当前上屏状态。")
+                Text("一次准备一种叠层；右侧预览和上屏列表会显示当前状态。")
                     .font(StudioTheme.TypeScale.body.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -94,13 +94,13 @@ struct OverlayControlPanel: View {
             Spacer()
 
             if hasActiveOverlay {
-                StatusBadge("\(activeOverlayCount) LIVE", kind: .live)
+                StatusBadge("\(activeOverlayCount) 上屏", kind: .live)
             }
         }
     }
 
     private var composerPicker: some View {
-        Picker("Overlay composer", selection: composerBinding(\.selectedKind)) {
+        Picker("叠层编辑", selection: composerBinding(\.selectedKind)) {
             ForEach(OverlayComposerKind.allCases) { kind in
                 Label(kind.pickerTitle, systemImage: kind.systemImage).tag(kind)
             }
@@ -109,7 +109,7 @@ struct OverlayControlPanel: View {
         .onChange(of: composerState.selectedKind) { _, newKind in
             viewModel.overlayComposerState.select(newKind)
         }
-        .accessibilityLabel("Overlay composer")
+        .accessibilityLabel("叠层编辑")
     }
 
     @ViewBuilder
@@ -147,7 +147,7 @@ struct OverlayControlPanel: View {
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "Send Live",
+                        title: "上屏",
                         systemImage: "arrow.up.to.line",
                         fill: StudioTheme.Action.primary,
                         isDisabled: OverlayUIState.lowerThirdDisabledReason(
@@ -164,7 +164,7 @@ struct OverlayControlPanel: View {
                     }
 
                     overlayActionButton(
-                        title: "Stop",
+                        title: "关闭",
                         systemImage: "arrow.down.to.line",
                         fill: StudioTheme.Action.secondary,
                         isDisabled: !viewModel.isLowerThirdVisible
@@ -189,7 +189,7 @@ struct OverlayControlPanel: View {
         VStack(alignment: .leading, spacing: 8) {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Lower Third Presets")
+                    Text("人名条预设")
                         .font(StudioTheme.TypeScale.caption.weight(.black))
                         .foregroundStyle(StudioTheme.textSecondary)
                     Spacer()
@@ -199,7 +199,7 @@ struct OverlayControlPanel: View {
                     Button {
                         viewModel.clearLowerThirdPresetDraft()
                     } label: {
-                        Label("New Preset", systemImage: "plus")
+                        Label("新建预设", systemImage: "plus")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -207,7 +207,7 @@ struct OverlayControlPanel: View {
                     Button {
                         _ = viewModel.saveLowerThirdPresetFromDraft()
                     } label: {
-                        Label("Save Preset", systemImage: "tray.and.arrow.down.fill")
+                        Label("保存预设", systemImage: "tray.and.arrow.down.fill")
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.small)
@@ -219,7 +219,7 @@ struct OverlayControlPanel: View {
                             viewModel.deleteLowerThirdPreset(id: selectedID)
                         }
                     } label: {
-                        Label("Delete Preset", systemImage: "trash")
+                        Label("删除预设", systemImage: "trash")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -230,7 +230,7 @@ struct OverlayControlPanel: View {
                     Button {
                         importLowerThirdPresetsFromFile()
                     } label: {
-                        Label("Import...", systemImage: "square.and.arrow.down")
+                        Label("导入...", systemImage: "square.and.arrow.down")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -238,7 +238,7 @@ struct OverlayControlPanel: View {
                     Button {
                         exportLowerThirdPresets()
                     } label: {
-                        Label("Export...", systemImage: "square.and.arrow.up")
+                        Label("导出...", systemImage: "square.and.arrow.up")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -249,7 +249,7 @@ struct OverlayControlPanel: View {
             }
 
             if viewModel.lowerThirdPresets.isEmpty {
-                Text("No saved lower thirds")
+                Text("暂无人名条预设")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -295,8 +295,8 @@ struct OverlayControlPanel: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .help("Load lower third preset")
-                            .accessibilityLabel("Load lower third preset")
+                            .help("载入人名条预设")
+                            .accessibilityLabel("载入人名条预设")
                             .accessibilityValue(preset.subtitle.isEmpty ? preset.name : "\(preset.name), \(preset.subtitle)")
                         }
                     }
@@ -314,8 +314,8 @@ struct OverlayControlPanel: View {
 
     private func importLowerThirdPresetsFromFile() {
         let panel = NSOpenPanel()
-        panel.title = "Import Lower Third Speakers"
-        panel.prompt = "Import"
+        panel.title = "导入人名条发言人"
+        panel.prompt = "导入"
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [.commaSeparatedText, .tabSeparatedText, .plainText]
@@ -333,8 +333,8 @@ struct OverlayControlPanel: View {
 
     private func exportLowerThirdPresets() {
         let panel = NSSavePanel()
-        panel.title = "Export Lower Third Speakers"
-        panel.prompt = "Export"
+        panel.title = "导出人名条发言人"
+        panel.prompt = "导出"
         panel.nameFieldStringValue = "lower-third-speakers.csv"
         panel.allowedContentTypes = [.commaSeparatedText]
 
@@ -356,10 +356,10 @@ struct OverlayControlPanel: View {
         }.joined(separator: "\n")
 
         let previewAlert = NSAlert()
-        previewAlert.messageText = "Import \(presets.count) lower third speakers?"
+        previewAlert.messageText = "导入 \(presets.count) 位人名条发言人？"
         previewAlert.informativeText = [sourceLabel, preview].filter { !$0.isEmpty }.joined(separator: "\n\n")
-        previewAlert.addButton(withTitle: "Import")
-        previewAlert.addButton(withTitle: "Cancel")
+        previewAlert.addButton(withTitle: "导入")
+        previewAlert.addButton(withTitle: "取消")
         guard previewAlert.runModal() == .alertFirstButtonReturn else {
             return
         }
@@ -380,11 +380,11 @@ struct OverlayControlPanel: View {
         }
 
         let alert = NSAlert()
-        alert.messageText = "Matching speaker names already exist"
-        alert.informativeText = "Choose how to handle imported lower-third speakers with the same trimmed name."
-        alert.addButton(withTitle: "Skip Existing")
-        alert.addButton(withTitle: "Overwrite")
-        alert.addButton(withTitle: "Import All")
+        alert.messageText = "已存在同名发言人"
+        alert.informativeText = "请选择如何处理导入文件中同名的人名条发言人。"
+        alert.addButton(withTitle: "跳过已有")
+        alert.addButton(withTitle: "覆盖")
+        alert.addButton(withTitle: "全部导入")
 
         switch alert.runModal() {
         case .alertSecondButtonReturn:
@@ -430,7 +430,7 @@ struct OverlayControlPanel: View {
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "Send Live",
+                        title: "上屏",
                         systemImage: "play.fill",
                         fill: StudioTheme.Action.primary,
                         isDisabled: OverlayUIState.countdownDisabledReason(
@@ -449,7 +449,7 @@ struct OverlayControlPanel: View {
                     }
 
                     overlayActionButton(
-                        title: "Stop",
+                        title: "关闭",
                         systemImage: "stop.fill",
                         fill: StudioTheme.Action.secondary,
                         isDisabled: !viewModel.isCountdownActive
@@ -480,7 +480,7 @@ struct OverlayControlPanel: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("Countdown Presets")
+                Text("倒计时预设")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textSecondary)
 
@@ -489,7 +489,7 @@ struct OverlayControlPanel: View {
                 Button {
                     viewModel.clearCountdownPresetDraft()
                 } label: {
-                    Label("New Countdown Preset", systemImage: "plus")
+                    Label("新建倒计时预设", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -497,7 +497,7 @@ struct OverlayControlPanel: View {
                 Button {
                     _ = viewModel.saveCountdownPresetFromDraft()
                 } label: {
-                    Label("Save Countdown Preset", systemImage: "tray.and.arrow.down.fill")
+                    Label("保存倒计时预设", systemImage: "tray.and.arrow.down.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
@@ -509,7 +509,7 @@ struct OverlayControlPanel: View {
                         viewModel.deleteCountdownPreset(id: selectedID)
                     }
                 } label: {
-                    Label("Delete Countdown Preset", systemImage: "trash")
+                    Label("删除倒计时预设", systemImage: "trash")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -517,7 +517,7 @@ struct OverlayControlPanel: View {
             }
 
             if viewModel.countdownPresets.isEmpty {
-                Text("No saved countdowns")
+                Text("暂无倒计时预设")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -561,8 +561,8 @@ struct OverlayControlPanel: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .help("Load countdown preset")
-                            .accessibilityLabel("Load countdown preset")
+                            .help("载入倒计时预设")
+                            .accessibilityLabel("载入倒计时预设")
                             .accessibilityValue("\(preset.title), \(formattedTime(preset.totalSeconds))")
                         }
                     }
@@ -619,7 +619,7 @@ struct OverlayControlPanel: View {
 
                 HStack(spacing: 10) {
                     overlayActionButton(
-                        title: "Send Live",
+                        title: "上屏",
                         systemImage: "play.fill",
                         fill: StudioTheme.Action.primary,
                         isDisabled: OverlayUIState.tickerDisabledReason(
@@ -633,7 +633,7 @@ struct OverlayControlPanel: View {
                     }
 
                     overlayActionButton(
-                        title: "Stop",
+                        title: "关闭",
                         systemImage: "stop.fill",
                         fill: StudioTheme.Action.secondary,
                         isDisabled: !viewModel.isTickerActive
@@ -662,7 +662,7 @@ struct OverlayControlPanel: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
-                Text("Ticker Presets")
+                Text("游动字幕预设")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
                     .foregroundStyle(StudioTheme.textSecondary)
 
@@ -671,7 +671,7 @@ struct OverlayControlPanel: View {
                 Button {
                     viewModel.clearTickerPresetDraft()
                 } label: {
-                    Label("New Ticker Preset", systemImage: "plus")
+                    Label("新建游动字幕预设", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -679,7 +679,7 @@ struct OverlayControlPanel: View {
                 Button {
                     _ = viewModel.saveTickerPresetFromDraft()
                 } label: {
-                    Label("Save Ticker Preset", systemImage: "tray.and.arrow.down.fill")
+                    Label("保存游动字幕预设", systemImage: "tray.and.arrow.down.fill")
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
@@ -691,7 +691,7 @@ struct OverlayControlPanel: View {
                         viewModel.deleteTickerPreset(id: selectedID)
                     }
                 } label: {
-                    Label("Delete Ticker Preset", systemImage: "trash")
+                    Label("删除游动字幕预设", systemImage: "trash")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -699,7 +699,7 @@ struct OverlayControlPanel: View {
             }
 
             if viewModel.tickerPresets.isEmpty {
-                Text("No saved tickers")
+                Text("暂无游动字幕预设")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textTertiary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -718,7 +718,7 @@ struct OverlayControlPanel: View {
                                         .font(StudioTheme.TypeScale.caption.weight(.black))
                                         .foregroundStyle(StudioTheme.textPrimary)
                                         .lineLimit(1)
-                                    Text("Speed: \(OverlaySpeedSelection.label(at: preset.speedIndex))")
+                                    Text("速度：\(OverlaySpeedSelection.label(at: preset.speedIndex))")
                                         .font(StudioTheme.caption())
                                         .foregroundStyle(StudioTheme.textTertiary)
                                         .lineLimit(1)
@@ -743,9 +743,9 @@ struct OverlayControlPanel: View {
                                 )
                             }
                             .buttonStyle(.plain)
-                            .help("Load ticker preset")
-                            .accessibilityLabel("Load ticker preset")
-                            .accessibilityValue("\(preset.text), speed \(OverlaySpeedSelection.label(at: preset.speedIndex))")
+                            .help("载入游动字幕预设")
+                            .accessibilityLabel("载入游动字幕预设")
+                            .accessibilityValue("\(preset.text)，速度 \(OverlaySpeedSelection.label(at: preset.speedIndex))")
                         }
                     }
                     .padding(.vertical, 1)
@@ -765,9 +765,9 @@ struct OverlayControlPanel: View {
         let isEmptyPreview = previewModel.layers.isEmpty
 
         return StudioSectionCard(
-            title: "Live Preview",
-            subtitle: "16:9 preview and active overlay stack",
-            status: (hasActiveOverlay ? "\(activeOverlayCount) LIVE" : "OFF", hasActiveOverlay ? .live : .idle)
+            title: "实时预览",
+            subtitle: "16:9 预览和当前上屏叠层",
+            status: (hasActiveOverlay ? "\(activeOverlayCount) 上屏" : "关闭", hasActiveOverlay ? .live : .idle)
         ) {
             VStack(alignment: .leading, spacing: 12) {
                 OverlayLivePreviewCanvas(model: previewModel)
@@ -782,7 +782,7 @@ struct OverlayControlPanel: View {
     private var activeStackCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Active Stack")
+                Text("上屏列表")
                     .font(StudioTheme.sectionTitle())
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
@@ -791,7 +791,7 @@ struct OverlayControlPanel: View {
                         viewModel.clearAllOverlays()
                     }
                 } label: {
-                    Label("Clear All", systemImage: "xmark.circle.fill")
+                    Label("全部清空", systemImage: "xmark.circle.fill")
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                 }
                 .buttonStyle(.bordered)
@@ -799,9 +799,9 @@ struct OverlayControlPanel: View {
                 .disabled(!hasActiveOverlay)
             }
 
-            activeOverlaySummaryRow(title: "Lower Third", isLive: viewModel.isLowerThirdVisible)
-            activeOverlaySummaryRow(title: "Countdown", isLive: viewModel.isCountdownActive)
-            activeOverlaySummaryRow(title: "Ticker", isLive: viewModel.isTickerActive)
+            activeOverlaySummaryRow(title: "人名条", isLive: viewModel.isLowerThirdVisible)
+            activeOverlaySummaryRow(title: "倒计时", isLive: viewModel.isCountdownActive)
+            activeOverlaySummaryRow(title: "游动字幕", isLive: viewModel.isTickerActive)
         }
         .padding(12)
         .background(StudioTheme.Surface.raised, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
@@ -828,9 +828,9 @@ struct OverlayControlPanel: View {
                 .foregroundStyle(StudioTheme.textSecondary)
             Spacer()
             if isLive {
-                StatusBadge("LIVE", kind: .live)
+                StatusBadge("上屏", kind: .live)
             } else {
-                Text("OFF")
+                Text("关闭")
                     .font(StudioTheme.caption().weight(.semibold))
                     .foregroundStyle(StudioTheme.textTertiary)
             }
@@ -933,7 +933,7 @@ struct OverlayControlPanel: View {
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .accessibilityLabel(title)
-        .accessibilityHint(isDisabled ? "This overlay action is currently unavailable." : "Run overlay action.")
+        .accessibilityHint(isDisabled ? "当前叠层操作不可用。" : "执行叠层操作。")
     }
 
     private func formattedTime(_ seconds: Int) -> String {

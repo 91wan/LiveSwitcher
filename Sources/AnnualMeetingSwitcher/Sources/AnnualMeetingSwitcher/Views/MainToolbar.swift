@@ -164,16 +164,16 @@ struct MainToolbar: View {
         .buttonStyle(.plain)
         .focusable(false)
         .help("现场检查：查看 fail/warn 项和安全操作")
-        .accessibilityLabel("Preflight")
+        .accessibilityLabel("现场检查")
         .accessibilityValue(preflightModel.value)
-        .accessibilityHint("Open live preflight checks")
+        .accessibilityHint("打开现场检查")
     }
 
     // MARK: - 使用说明按钮
 
     private var helpButton: some View {
         Button(action: { showHelp.toggle() }) {
-            Label("Help", systemImage: "questionmark.circle")
+            Label("帮助", systemImage: "questionmark.circle")
                 .font(StudioTheme.TypeScale.body.weight(.bold))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .frame(minWidth: ToolbarLayoutMetrics.helpMinWidth)
@@ -188,8 +188,8 @@ struct MainToolbar: View {
         .buttonStyle(.plain)
         .focusable(false)
         .help("使用说明")
-        .accessibilityLabel("Help")
-        .accessibilityHint("Open usage help")
+        .accessibilityLabel("帮助")
+        .accessibilityHint("打开使用说明")
     }
 
 }

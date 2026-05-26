@@ -42,14 +42,14 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: "Awards"
         )
 
-        XCTAssertEqual(model.projection.value, "ON AIR")
+        XCTAssertEqual(model.projection.value, "直播")
         XCTAssertEqual(model.projection.status, .live)
         XCTAssertEqual(model.current.value, "Opening Video · Media")
         XCTAssertEqual(model.current.status, .live)
         XCTAssertEqual(model.next.value, "Awards")
         XCTAssertEqual(model.next.status, .ready)
-        XCTAssertEqual(model.audio.value, "Normal")
-        XCTAssertEqual(model.items.map(\.title), ["Output", "Current", "Next", "Audio"])
+        XCTAssertEqual(model.audio.value, "正常")
+        XCTAssertEqual(model.items.map(\.title), ["输出", "当前", "下一项", "音频"])
         XCTAssertTrue(model.isCritical)
     }
 
@@ -59,7 +59,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.projection.value, "Display Lost")
+        XCTAssertEqual(model.projection.value, "副屏丢失")
         XCTAssertEqual(model.projection.status, .fail)
         XCTAssertTrue(model.isCritical)
     }
@@ -70,11 +70,11 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.projection.value, "No Display")
+        XCTAssertEqual(model.projection.value, "无副屏")
         XCTAssertEqual(model.projection.status, .warn)
-        XCTAssertEqual(model.current.value, "No Program")
-        XCTAssertEqual(model.current.status, .warn)
-        XCTAssertEqual(model.next.value, "None")
+        XCTAssertEqual(model.current.value, "无节目")
+        XCTAssertEqual(model.current.status, .idle)
+        XCTAssertEqual(model.next.value, "无")
     }
 
     func testStatusBarMarksPanicAsMutedAndCritical() {
@@ -83,7 +83,7 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(model.audio.value, "Muted by Blackout")
+        XCTAssertEqual(model.audio.value, "紧急切黑静音")
         XCTAssertEqual(model.audio.status, .fail)
         XCTAssertTrue(model.isCritical)
     }
@@ -98,9 +98,9 @@ final class LiveConsoleStatusTests: XCTestCase {
             nextProgramTitle: nil
         )
 
-        XCTAssertEqual(speakerModel.audio.value, "Speaker")
+        XCTAssertEqual(speakerModel.audio.value, "主持人")
         XCTAssertEqual(speakerModel.audio.status, .warn)
-        XCTAssertEqual(takeoverModel.audio.value, "BGM Takeover")
+        XCTAssertEqual(takeoverModel.audio.value, "BGM 接管")
         XCTAssertEqual(takeoverModel.audio.status, .warn)
     }
 
@@ -136,8 +136,8 @@ final class LiveConsoleStatusTests: XCTestCase {
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.pass)).status, .ready)
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).status, .warn)
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).status, .fail)
-        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).value, "1 Warn")
-        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).value, "1 Fail")
+        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).value, "1 警告")
+        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).value, "1 错")
     }
 
     private func summary(_ status: LivePreflightStatus) -> LivePreflightSummary {

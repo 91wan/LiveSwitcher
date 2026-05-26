@@ -34,11 +34,11 @@ final class LiveRuntimeStatusModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.chips.map(\.text), [
-            "FAIL · Fail 0",
-            "FAIL · Fail 1",
-            "WARN · Warn 0",
-            "+ 6 issues",
-            "STANDBY · Current: No program · 0 sources"
+            "故障 · Fail 0",
+            "故障 · Fail 1",
+            "警告 · Warn 0",
+            "+ 6 个问题",
+            "待机 · 当前: 无节目 · 0 个信号源"
         ])
         XCTAssertEqual(model.chips[3].kind, .fail)
         XCTAssertLessThanOrEqual(model.chips.count, 5)
@@ -68,9 +68,9 @@ final class LiveRuntimeStatusModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.chips.map(\.text), [
-            "WARN · Warn 0",
-            "+ 3 warnings",
-            "STANDBY · Current: Opening · 1 sources"
+            "警告 · Warn 0",
+            "+ 3 个警告",
+            "待机 · 当前: Opening · 1 个信号源"
         ])
         XCTAssertEqual(model.chips[1].kind, .warn)
     }

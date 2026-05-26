@@ -18,11 +18,11 @@ struct PanicButtonModel: Equatable {
 
     static func make(isActive: Bool, consoleMode: ConsoleMode) -> PanicButtonModel {
         let liveMode = consoleMode == .live
-        let title = isActive ? "Blackout: ON" : "Blackout"
-        let subtitle = isActive ? "Output muted" : "Stage black"
+        let title = isActive ? "紧急切黑: 开" : "紧急切黑"
+        let subtitle = isActive ? "副屏黑屏 · 音频静音" : "一键应急"
         let hint = isActive
-            ? "Blackout is active: output is black and all audio is muted. Click again to restore."
-            : "Emergency blackout: cut the output to black and mute all audio."
+            ? "紧急切黑已开启：副屏黑屏，所有音频静音。再次点击恢复。"
+            : "紧急切黑：将副屏切黑并静音所有音频。"
 
         return PanicButtonModel(
             systemImage: isActive ? "eye.slash.fill" : "bolt.fill",

@@ -23,16 +23,16 @@ struct ProjectionButtonModel: Equatable {
             return ProjectionButtonModel(
                 hasExternalDisplay: false,
                 isBroadcasting: true,
-                title: "Stop Projection",
-                subtitle: "Display lost · click to stop output",
-                statusText: "DISPLAY LOST",
+                title: "停止投射",
+                subtitle: "副屏丢失 · 点击停止输出",
+                statusText: "副屏丢失",
                 statusKind: .fail,
                 screenLabel: "副屏已断开",
                 screenSystemImage: "display.trianglebadge.exclamationmark",
                 isEnabled: true,
-                helpText: "Stop projection and reconnect the external display",
-                warningTitle: "Display Lost",
-                warningMessage: "Projection state is active but no external display is detected. Stop projection and reconnect hardware."
+                helpText: "停止投射并重新连接外接显示器",
+                warningTitle: "副屏丢失",
+                warningMessage: "投射状态仍为开启，但没有检测到外接显示器。请停止投射并重新连接硬件。"
             )
         }
 
@@ -40,15 +40,15 @@ struct ProjectionButtonModel: Equatable {
             return ProjectionButtonModel(
                 hasExternalDisplay: hasExternalDisplay,
                 isBroadcasting: true,
-                title: "Stop Projection",
-                subtitle: "ON AIR · click to stop output",
-                statusText: "ON AIR",
+                title: "停止投射",
+                subtitle: "直播中 · 点击停止输出",
+                statusText: "直播",
                 statusKind: .live,
                 screenLabel: "外接屏幕",
                 screenSystemImage: "display.2",
                 isEnabled: true,
-                helpText: "Stop external display projection",
-                warningTitle: safetyNotice == nil ? nil : "Projection warning",
+                helpText: "停止外接屏投射",
+                warningTitle: safetyNotice == nil ? nil : "投射警告",
                 warningMessage: safetyNotice
             )
         }
@@ -57,15 +57,15 @@ struct ProjectionButtonModel: Equatable {
             return ProjectionButtonModel(
                 hasExternalDisplay: true,
                 isBroadcasting: false,
-                title: "Start Projection",
-                subtitle: "Push to external display",
-                statusText: "STANDBY",
+                title: "开始投射",
+                subtitle: "输出到外接屏",
+                statusText: "待机",
                 statusKind: .idle,
                 screenLabel: "外接屏幕",
                 screenSystemImage: "display.2",
                 isEnabled: true,
-                helpText: "Start external display projection",
-                warningTitle: safetyNotice == nil ? nil : "Projection warning",
+                helpText: "开始外接屏投射",
+                warningTitle: safetyNotice == nil ? nil : "投射警告",
                 warningMessage: safetyNotice
             )
         }
@@ -73,16 +73,16 @@ struct ProjectionButtonModel: Equatable {
         return ProjectionButtonModel(
             hasExternalDisplay: false,
             isBroadcasting: false,
-            title: "External Display Required",
-            subtitle: "No external display detected",
-            statusText: "WARN",
+            title: "需要外接屏",
+            subtitle: "未检测到外接显示器",
+            statusText: "警告",
             statusKind: .warn,
             screenLabel: "未接副屏",
             screenSystemImage: "display",
             isEnabled: false,
-            helpText: "Connect an external display before starting projection",
-            warningTitle: safetyNotice == nil ? "External Display Required" : "Projection warning",
-            warningMessage: safetyNotice ?? "Connect a secondary display before going on air."
+            helpText: "连接外接显示器后才能开始投射",
+            warningTitle: safetyNotice == nil ? "需要外接屏" : "投射警告",
+            warningMessage: safetyNotice ?? "直播前请先连接副屏。"
         )
     }
 }
