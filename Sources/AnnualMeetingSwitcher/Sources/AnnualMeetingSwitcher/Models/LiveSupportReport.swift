@@ -24,6 +24,7 @@ enum LiveSupportEventKind: String, Equatable {
     case pageInterceptAutoReenabled = "page.intercept.auto-reenabled"
     case systemVolumeSynced = "system.volume.synced"
     case playbackReachedEnd = "playback.reached-end"
+    case mediaRestarted = "media.restarted"
     case programItemFileMissing = "program.file.missing"
     case bgmFileMissing = "bgm.file.missing"
     case wallpaperFileMissing = "wallpaper.file.missing"

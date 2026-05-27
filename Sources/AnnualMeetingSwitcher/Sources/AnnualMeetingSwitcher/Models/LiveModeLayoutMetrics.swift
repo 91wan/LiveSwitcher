@@ -3,7 +3,10 @@ import CoreGraphics
 enum LiveModeLayoutMetrics {
     static let sourceRailWidth: CGFloat = 220
     static let sourceRailWidthEmpty: CGFloat = 96
-    static let quickRailWidth: CGFloat = 220
+    static let quickRailWidth: CGFloat = 250
+    static let minimumProgramColumnWidth: CGFloat = 820
+    static let horizontalContentPadding: CGFloat = 20
+    static let mainColumnSpacing: CGFloat = 10
     static let audioStripHeight: CGFloat = 110
     static let footerHeight: CGFloat = 34
     static let contentTopPadding: CGFloat = 14

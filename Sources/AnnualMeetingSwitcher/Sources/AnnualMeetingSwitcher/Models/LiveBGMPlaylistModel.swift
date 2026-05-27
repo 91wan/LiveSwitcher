@@ -26,7 +26,7 @@ struct LiveBGMPlaylistModel: Equatable {
         currentItem: BGMItem?,
         selectedCategory: BGMCategory,
         isPlaying: Bool,
-        visibleRowLimit: Int = 3
+        visibleRowLimit: Int = 5
     ) -> LiveBGMPlaylistModel {
         let displayCategory: BGMCategory
         if items.isEmpty || items.contains(where: { $0.category == selectedCategory }) {
@@ -37,7 +37,16 @@ struct LiveBGMPlaylistModel: Equatable {
             } ?? selectedCategory
         }
         let categoryItems = items.filter { $0.category == displayCategory }
-        let visibleItems = Array(categoryItems.prefix(visibleRowLimit))
+        let cappedLimit = max(visibleRowLimit, 1)
+        var visibleItems = Array(categoryItems.prefix(cappedLimit))
+        if let currentItem,
+           currentItem.category == displayCategory,
+           !visibleItems.contains(where: { $0.id == currentItem.id }) {
+            if visibleItems.count >= cappedLimit {
+                visibleItems.removeLast()
+            }
+            visibleItems.insert(currentItem, at: 0)
+        }
         let rows = visibleItems.map { item in
             let isCurrent = item.id == currentItem?.id
             let systemImage: String
@@ -66,8 +75,8 @@ struct LiveBGMPlaylistModel: Equatable {
         return LiveBGMPlaylistModel(
             displayCategory: displayCategory,
             rows: rows,
-            visibleRowLimit: visibleRowLimit,
-            remainingCount: max(categoryItems.count - visibleRowLimit, 0),
+            visibleRowLimit: cappedLimit,
+            remainingCount: max(categoryItems.count - cappedLimit, 0),
             categoryButtonTitle: "切换分类",
             emptyMessage: "\(displayCategory.rawValue) 没有曲目"
         )

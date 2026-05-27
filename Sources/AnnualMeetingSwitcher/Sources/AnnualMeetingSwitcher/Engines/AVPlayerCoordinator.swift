@@ -34,6 +34,9 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 当前加载的视频 URL
     @Published var currentURL: URL?
 
+    /// Whether a media item is loaded into the player. Pause must keep this true so AppKit keeps the video layer mounted.
+    @Published private(set) var hasLoadedMedia: Bool = false
+
     /// Realtime media-channel power in dBFS when the current AVPlayerItem exposes readable audio.
     @Published var realtimeLevelDB: Float?
 
@@ -77,6 +80,7 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 加载并准备视频文件（不自动播放）
     func load(url: URL) {
         currentURL = url
+        hasLoadedMedia = true
         didPlayToEnd = false
         progress = 0.0
         currentTime = 0.0
@@ -92,6 +96,9 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 播放
     func play() {
+        if player.currentItem == nil, let currentURL {
+            load(url: currentURL)
+        }
         player.play()
         isPlaying = true
     }
@@ -107,6 +114,7 @@ final class AVPlayerCoordinator: ObservableObject {
         player.pause()
         player.replaceCurrentItem(with: nil)  // Bug3/4修复：清空player，监视器和大屏均回到壁纸
         currentURL = nil
+        hasLoadedMedia = false
         realtimeLevelDB = nil
         isPlaying = false
         progress = 0.0

@@ -16,7 +16,7 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.emptyMessage, "暖场音乐 没有曲目")
     }
 
-    func testSelectedCategoryRowsAreLimitedForLiveMiniPlaylist() {
+    func testSelectedCategoryRowsShowAtLeastFiveForLiveMiniPlaylist() {
         let tracks = (1...6).map {
             BGMItem(title: "Warm \($0)", url: URL(fileURLWithPath: "/tmp/warm-\($0).mp3"), category: .warmUp)
         }
@@ -30,9 +30,27 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.displayCategory, .warmUp)
-        XCTAssertEqual(model.rows.map(\.title), ["Warm 1", "Warm 2", "Warm 3"])
-        XCTAssertEqual(model.visibleRowLimit, 3)
-        XCTAssertEqual(model.remainingCountText, "+3 首")
+        XCTAssertEqual(model.rows.map(\.title), ["Warm 1", "Warm 2", "Warm 3", "Warm 4", "Warm 5"])
+        XCTAssertGreaterThanOrEqual(model.visibleRowLimit, 5)
+        XCTAssertEqual(model.remainingCountText, "+1 首")
+    }
+
+    func testCurrentItemOutsideVisibleRowsIsPinnedVisible() {
+        let tracks = (1...7).map {
+            BGMItem(title: "Warm \($0)", url: URL(fileURLWithPath: "/tmp/warm-\($0).mp3"), category: .warmUp)
+        }
+        let current = tracks[6]
+
+        let model = LiveBGMPlaylistModel.make(
+            items: tracks,
+            currentItem: current,
+            selectedCategory: .warmUp,
+            isPlaying: true
+        )
+
+        XCTAssertEqual(model.rows.first?.id, current.id)
+        XCTAssertEqual(model.rows.count, 5)
+        XCTAssertEqual(model.remainingCountText, "+2 首")
     }
 
     func testFallsBackToFirstNonEmptyCategoryWhenSelectedCategoryHasNoTracks() {

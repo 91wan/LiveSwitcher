@@ -1,0 +1,116 @@
+import XCTest
+import AppKit
+@testable import LiveSwitcher
+
+@MainActor
+final class AudioRoutingTransitionTests: XCTestCase {
+    private func makeViewModel() -> SwitcherViewModel {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
+        viewModel.keynotePresentationHandler = { _ in }
+        viewModel.pptxOpenHandler = { _ in }
+        viewModel.activeDeckPresentationHandler = {}
+        viewModel.invalidDeckHandler = { _ in }
+        viewModel.deckStopHandler = {}
+        return viewModel
+    }
+
+    private func makeTempURL(ext: String) throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        FileManager.default.createFile(atPath: url.path, contents: Data("stub".utf8))
+        return url
+    }
+
+    func testProgramChangeFromBGMToMediaUsesFadedRouting() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.25
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .programChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.25)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.25)
+    }
+
+    func testMediaPlaybackPauseAndResumeUseFadedRouting() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.0
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.toggleMainVideoPlayback()
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.0)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.0)
+
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+        viewModel.toggleMainVideoPlayback()
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
+    }
+
+    func testAudioStrategyChangeUsesFadedRouting() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.5
+
+        viewModel.audioStrategy = .followProgram
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .strategyChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.5)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.5)
+    }
+
+    func testFaderDragUsesShortRoutingTransition() {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 2.0
+
+        viewModel.masterVolume = 0.7
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .operatorFaderChanged)
+        XCTAssertLessThanOrEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration ?? 1, 0.08)
+        XCTAssertLessThanOrEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration ?? 1, 0.08)
+    }
+
+    func testFollowProgramVideoPauseCrossfadesBackToBGM() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.5
+        viewModel.audioStrategy = .followProgram
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
+    }
+
+    func testMixedKeepsBothChannelsAndOnlyChangesLevels() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.bgmVolume = 0.25
+        viewModel.audioStrategy = .mixed
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
+    }
+}

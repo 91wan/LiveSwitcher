@@ -339,9 +339,23 @@ struct ProgramMonitorView: View {
 
     @ViewBuilder
     private var mediaLayer: some View {
-        if viewModel.avCoordinator.isPlaying {
+        if VideoLayerVisibilityModel.shouldShowVideoLayer(
+            sourceKind: viewModel.currentProgramItem?.sourceKind,
+            hasLoadedMedia: viewModel.avCoordinator.hasLoadedMedia
+        ) {
             VideoPlayerView(coordinator: viewModel.avCoordinator)
                 .transition(.opacity)
+                .overlay(alignment: .bottomTrailing) {
+                    if !viewModel.avCoordinator.isPlaying {
+                        Text("暂停")
+                            .font(StudioTheme.TypeScale.caption.weight(.black))
+                            .foregroundStyle(StudioTheme.monitorText)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
+                            .padding(12)
+                    }
+                }
         } else if let item = viewModel.currentProgramItem {
             VStack(spacing: 8) {
                 Text(item.title)

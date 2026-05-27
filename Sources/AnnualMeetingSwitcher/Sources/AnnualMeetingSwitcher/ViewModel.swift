@@ -91,8 +91,10 @@ final class SwitcherViewModel: ObservableObject {
         didSet {
             if currentProgramItem?.id != oldValue?.id {
                 currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
+                applyAudioRoutingForRuntimeChange(reason: .programChanged)
+            } else {
+                applyAudioRoutingForRuntimeChange(reason: .programChanged)
             }
-            applyAudioRouting()
         }
     }
     @Published var currentProgramSwitchedAt: Date?
@@ -133,19 +135,19 @@ final class SwitcherViewModel: ObservableObject {
 
     /// Live mode mute controls are session-scoped operator actions and are not persisted.
     @Published var isMasterAudioMuted: Bool = false {
-        didSet { applyAudioRouting() }
+        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
     @Published var isMediaAudioMuted: Bool = false {
-        didSet { applyAudioRouting() }
+        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
     @Published var isBGMAudioMuted: Bool = false {
-        didSet { applyAudioRouting() }
+        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
 
     /// 音频输出策略。默认保持“混合”，与当前已存在的实际行为一致。
     @Published var audioStrategy: AudioStrategy = .mixed {
         didSet {
-            applyAudioRouting()
+            applyAudioRoutingForRuntimeChange(reason: .strategyChanged)
             userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         }
     }
@@ -183,7 +185,7 @@ final class SwitcherViewModel: ObservableObject {
     @Published var currentBGMItem: BGMItem?
     @Published var isBGMPlaying: Bool = false
     @Published var isBGMAudioTakeoverActive: Bool = false {
-        didSet { applyAudioRouting() }
+        didSet { applyAudioRoutingForRuntimeChange(reason: .strategyChanged) }
     }
     @Published var bgmPlayMode: BGMPlayMode = .loopAll
     @Published private(set) var supportEvents: [LiveSupportEvent] = []
@@ -227,6 +229,7 @@ final class SwitcherViewModel: ObservableObject {
     var bgmAudioPlayer: AVAudioPlayer?
     var bgmFallbackPlayer: AVPlayer = AVPlayer()
     var panicPlaybackSnapshot: PanicPlaybackSnapshot?
+    private(set) var lastAudioRoutingTransition: AudioRoutingTransition?
 
     // MARK: - 引擎
 
@@ -270,6 +273,7 @@ final class SwitcherViewModel: ObservableObject {
     private var mediaVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    var panicAudioPauseTask: Task<Void, Never>?
     private var backgroundImageLoadTask: Task<Void, Never>?
     private var cornerLogoImageLoadTask: Task<Void, Never>?
     private var systemVolumeObserver: SystemVolumeObserver?
@@ -361,6 +365,7 @@ final class SwitcherViewModel: ObservableObject {
         mediaVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
         bgmTransitionTasks.values.forEach { $0.cancel() }
+        panicAudioPauseTask?.cancel()
         backgroundImageLoadTask?.cancel()
         cornerLogoImageLoadTask?.cancel()
         systemVolumeObserver?.stop()
@@ -376,11 +381,11 @@ final class SwitcherViewModel: ObservableObject {
     // MARK: - 音量实际应用（Fix Issue #7/#8）
 
     func applyMasterVolume() {
-        applyAudioRouting()
+        applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
     }
 
     func applyBGMVolume() {
-        applyAudioRouting()
+        applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
     }
 
     func effectiveMediaOutputVolume() -> Float {
@@ -405,7 +410,7 @@ final class SwitcherViewModel: ObservableObject {
 
     private func liveMasterMeterRealtimeCandidate() -> LiveMasterMeterCandidate? {
         let effectiveMedia = effectiveMediaOutputVolume()
-        let effectiveBGM = effectiveBGMOutputVolume()
+        let effectiveBGM = (!isBGMPlaying && currentBGMItem != nil) ? 0 : effectiveBGMOutputVolume()
         guard !isPanicMode, !isMasterAudioMuted else {
             return nil
         }
@@ -473,6 +478,22 @@ final class SwitcherViewModel: ObservableObject {
             bgmFallbackVolumeFadeTask?.cancel()
             bgmFallbackPlayer.volume = effectiveBGM
         }
+    }
+
+    func applyAudioRoutingForRuntimeChange(reason: AudioRoutingRuntimeChangeReason) {
+        let transition = AudioRoutingTransitionPolicy.transition(
+            for: reason,
+            liveAudioFadeDuration: liveAudioFadeDuration
+        )
+        lastAudioRoutingTransition = transition
+        applyAudioRouting(
+            mediaFadeDuration: transition.mediaFadeDuration,
+            bgmFadeDuration: transition.bgmFadeDuration
+        )
+    }
+
+    func resetLastAudioRoutingTransitionForTesting() {
+        lastAudioRoutingTransition = nil
     }
 
     private func fadeMediaVolume(to targetVolume: Float, duration: Double) {
@@ -787,7 +808,7 @@ final class SwitcherViewModel: ObservableObject {
         avCoordinator.$isPlaying
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in
-                self?.applyAudioRouting()
+                self?.applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
             }
             .store(in: &cancellables)
 
@@ -1149,8 +1170,10 @@ final class SwitcherViewModel: ObservableObject {
         // 普通视频
         if avCoordinator.isPlaying {
             avCoordinator.pause()
+            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         } else {
             avCoordinator.play()
+            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         }
     }
 
@@ -1182,6 +1205,15 @@ final class SwitcherViewModel: ObservableObject {
         if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
             programSeekToStartHandler()
         }
+    }
+
+    func restartCurrentMediaFromBeginning() {
+        guard let item = currentProgramItem,
+              programItemSupportsSeeking(item) else { return }
+        programSeekToStartHandler()
+        avCoordinator.play()
+        applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
+        recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }
 
     func seekProgramItemToEnd(_ item: ProgramItem) {
@@ -1346,6 +1378,7 @@ final class SwitcherViewModel: ObservableObject {
             bgmDuration = nil
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "removed")
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
         }
         saveData()
     }
@@ -1419,16 +1452,20 @@ final class SwitcherViewModel: ObservableObject {
                     }
                 }
                 stopBGMTimer()
+                applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+                if fadeDur <= 0 {
+                    bgmAudioPlayer?.volume = 0
+                    bgmFallbackPlayer.volume = 0
+                }
             } else {
                 // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
-                let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = true
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.isMeteringEnabled = true
                 bgmAudioPlayer?.play()
                 bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
-                applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
+                applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
                 startBGMTimer()
                 recordBGMPlaybackState(isPlaying: true, reason: "operator")
             }
@@ -1472,7 +1509,7 @@ final class SwitcherViewModel: ObservableObject {
             }
             bgmProgress = 0
             bgmCurrentTime = 0
-            applyAudioRouting(mediaFadeDuration: fadeDur, bgmFadeDuration: fadeDur)
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             startBGMTimer()
             recordBGMPlaybackState(isPlaying: true, reason: "selected")
         }
@@ -1491,7 +1528,7 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - BGM Progress Timer
 
-    private func startBGMTimer() {
+    func startBGMTimer() {
         stopBGMTimer()
         bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
