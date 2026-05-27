@@ -458,9 +458,9 @@ struct LiveQuickRail: View {
                 outputCard
                 modesCard
                 cutBusCard
+                bgmCard
                 overlayCard
                 wallpaperCard
-                bgmCard
             }
             .frame(maxWidth: .infinity, alignment: .top)
             .padding(.bottom, 8)

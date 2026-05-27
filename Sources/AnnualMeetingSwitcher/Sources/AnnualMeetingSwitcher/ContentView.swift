@@ -89,11 +89,17 @@ struct ContentView: View {
         isActive: Bool,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        content()
-            .opacity(isActive ? 1 : 0)
-            .allowsHitTesting(isActive)
-            .accessibilityHidden(!isActive)
-            .zIndex(isActive ? 1 : 0)
+        Group {
+            if isActive {
+                content()
+            } else {
+                content()
+                    .hidden()
+            }
+        }
+        .allowsHitTesting(isActive)
+        .accessibilityHidden(!isActive)
+        .zIndex(isActive ? 1 : 0)
     }
 
     @ViewBuilder
@@ -234,7 +240,7 @@ struct ContentView: View {
             setupModeMenuButton
         } else {
             NavigationTabButton(
-                title: "← 准备",
+                title: "准备",
                 systemImage: "chevron.left",
                 isSelected: false
             ) {

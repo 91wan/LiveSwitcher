@@ -166,6 +166,22 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertFalse(content.contains("withAnimation(.easeInOut(duration: 0.16)) {\n                    viewModel.navigateToSetup(viewModel.selectedMainTab)"))
     }
 
+    func testLiveReturnToSetupButtonDoesNotDuplicateBackArrowCopy() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("title: \"准备\""))
+        XCTAssertTrue(content.contains("systemImage: \"chevron.left\""))
+        XCTAssertFalse(content.contains("title: \"← 准备\""))
+    }
+
+    func testInactiveRetainedConsoleLayerIsHiddenInsteadOfTransparentRendered() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("if isActive {"))
+        XCTAssertTrue(content.contains(".hidden()"))
+        XCTAssertFalse(content.contains(".opacity(isActive ? 1 : 0)"))
+    }
+
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {
         let app = try sourceText("App.swift")
 
