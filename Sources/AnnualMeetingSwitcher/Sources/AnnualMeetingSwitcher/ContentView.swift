@@ -194,6 +194,10 @@ struct ContentView: View {
                 .frame(width: 190, alignment: .leading)
 
             Spacer(minLength: 0)
+            panicChromeButton
+            Color.clear
+                .frame(width: ToolbarLayoutMetrics.panicToModeClusterSpacing, height: 1)
+                .accessibilityHidden(true)
             consoleModeCluster
                 .layoutPriority(1)
             Spacer(minLength: 16)
@@ -212,6 +216,25 @@ struct ContentView: View {
         .frame(minHeight: ConsoleChromeLayoutMetrics.navigationBarMinHeight)
         .background(StudioTheme.Surface.base.opacity(0.55))
         .overlay(Divider(), alignment: .bottom)
+    }
+
+    private var panicChromeButton: some View {
+        PanicChromeButton(
+            model: PanicButtonModel.make(
+                isActive: viewModel.isPanicMode,
+                consoleMode: viewModel.consoleMode
+            ),
+            isActive: viewModel.isPanicMode
+        ) {
+            togglePanic()
+        }
+    }
+
+    @MainActor
+    private func togglePanic() {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            viewModel.togglePanicMode()
+        }
     }
 
     private var chromeTitle: String {

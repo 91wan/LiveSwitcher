@@ -12,12 +12,12 @@ final class PanicButtonModelTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(model.height, ToolbarLayoutMetrics.actionHeight)
     }
 
-    func testLiveModePanicKeepsLargeEmergencyTarget() {
+    func testLiveModePanicUsesSharedChromeHeight() {
         let model = PanicButtonModel.make(isActive: false, consoleMode: .live)
 
         XCTAssertEqual(model.visualRole, .danger)
-        XCTAssertGreaterThanOrEqual(model.height, 56)
-        XCTAssertGreaterThan(model.minWidth, ToolbarLayoutMetrics.panicMinWidth)
+        XCTAssertEqual(model.height, ToolbarLayoutMetrics.actionHeight)
+        XCTAssertEqual(model.minWidth, ToolbarLayoutMetrics.panicMinWidth)
     }
 
     func testActivePanicCopyStatesEmergencyBlackoutIsOn() {

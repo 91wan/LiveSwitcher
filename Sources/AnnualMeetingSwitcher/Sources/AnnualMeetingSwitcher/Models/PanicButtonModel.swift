@@ -17,7 +17,6 @@ struct PanicButtonModel: Equatable {
     var accessibilityHint: String
 
     static func make(isActive: Bool, consoleMode: ConsoleMode) -> PanicButtonModel {
-        let liveMode = consoleMode == .live
         let title = isActive ? "紧急切黑: 开" : "紧急切黑"
         let subtitle = isActive ? "副屏黑屏 · 音频静音" : "一键应急"
         let hint = isActive
@@ -29,8 +28,8 @@ struct PanicButtonModel: Equatable {
             title: title,
             subtitle: subtitle,
             visualRole: .danger,
-            minWidth: ToolbarLayoutMetrics.panicMinWidth + (liveMode ? 32 : 0),
-            height: liveMode ? 58 : ToolbarLayoutMetrics.actionHeight,
+            minWidth: ToolbarLayoutMetrics.panicMinWidth,
+            height: ToolbarLayoutMetrics.actionHeight,
             help: hint,
             accessibilityLabel: title,
             accessibilityHint: hint

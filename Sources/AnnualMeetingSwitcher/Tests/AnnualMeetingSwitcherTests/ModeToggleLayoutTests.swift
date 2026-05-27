@@ -3,13 +3,17 @@ import XCTest
 
 final class ModeToggleLayoutTests: XCTestCase {
     func testLiveModesUseEqualWidthHorizontalCardsAndSpeakerBindingSideEffect() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let toolbar = try sourceText("Views/MainToolbar.swift")
 
-        XCTAssertTrue(source.contains("ModeToggleCard("))
-        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
-        XCTAssertFalse(source.contains("modeToggleRow("))
-        XCTAssertFalse(source.contains("isOn: $viewModel.isSpeakerMode"))
-        XCTAssertTrue(source.contains("speakerModeBinding"))
+        XCTAssertTrue(toolbar.contains("ToolbarModeButton("))
+        XCTAssertTrue(toolbar.contains(".frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)"))
+        XCTAssertTrue(toolbar.contains("viewModel.toggleSpeakerMode()"))
+        XCTAssertTrue(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
+        XCTAssertFalse(toolbar.contains("Toggle(isOn"))
+        XCTAssertFalse(liveMode.contains("modeToggleRow("))
+        XCTAssertFalse(liveMode.contains("ModeToggleCard("))
+        XCTAssertFalse(liveMode.contains("isOn: $viewModel.isSpeakerMode"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

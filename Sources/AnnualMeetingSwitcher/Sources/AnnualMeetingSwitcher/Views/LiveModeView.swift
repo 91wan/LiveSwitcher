@@ -456,11 +456,10 @@ struct LiveQuickRail: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 8) {
                 outputCard
-                modesCard
                 cutBusCard
                 bgmCard
-                overlayCard
                 wallpaperCard
+                overlayCard
             }
             .frame(maxWidth: .infinity, alignment: .top)
             .padding(.bottom, 8)
@@ -501,40 +500,6 @@ struct LiveQuickRail: View {
             .disabled(!model.isEnabled)
             .help(model.helpText)
         }
-    }
-
-    private var modesCard: some View {
-        @Bindable var viewModel = viewModel
-        let isModeActive = viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled
-        return quickCard(title: "模式", status: isModeActive ? "激活" : "", kind: isModeActive ? .warn : .idle) {
-            HStack(spacing: 8) {
-                ModeToggleCard(
-                    title: "主持人",
-                    subtitle: "压低 BGM",
-                    systemImage: "mic.fill",
-                    isOn: speakerModeBinding
-                )
-                .frame(maxWidth: .infinity)
-
-                ModeToggleCard(
-                    title: "PPT",
-                    subtitle: "接管翻页",
-                    systemImage: "hand.raised.slash.fill",
-                    isOn: $viewModel.isPageInterceptEnabled
-                )
-                .frame(maxWidth: .infinity)
-            }
-        }
-    }
-
-    private var speakerModeBinding: Binding<Bool> {
-        Binding(
-            get: { viewModel.isSpeakerMode },
-            set: { newValue in
-                guard newValue != viewModel.isSpeakerMode else { return }
-                viewModel.toggleSpeakerMode()
-            }
-        )
     }
 
     private var cutBusCard: some View {
@@ -1107,54 +1072,6 @@ private struct LiveWallpaperPickerThumb: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                 .stroke(item.isActive ? StudioTheme.Action.primary : StudioTheme.borderSubtle, lineWidth: item.isActive ? 2 : 1)
         )
-    }
-}
-
-private struct ModeToggleCard: View {
-    let title: String
-    let subtitle: String
-    let systemImage: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Image(systemName: systemImage)
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
-                    .frame(width: 16)
-                    .accessibilityHidden(true)
-                Text(title)
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.76)
-            }
-
-            Text(subtitle)
-                .font(StudioTheme.caption())
-                .foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-
-            Toggle(isOn: $isOn) {
-                EmptyView()
-            }
-            .toggleStyle(.switch)
-            .controlSize(.small)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-        .padding(8)
-        .frame(minHeight: 74, alignment: .top)
-        .background(StudioTheme.Surface.raised.opacity(0.62), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                .stroke(isOn ? StudioTheme.Tone.warn.opacity(0.32) : StudioTheme.borderSubtle, lineWidth: 1)
-        )
-        .help(isOn ? "\(title)模式已开启" : "开启\(title)模式")
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title)模式")
-        .accessibilityValue(isOn ? "开" : "关")
     }
 }
 

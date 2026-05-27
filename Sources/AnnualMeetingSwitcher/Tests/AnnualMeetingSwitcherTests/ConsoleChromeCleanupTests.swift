@@ -16,9 +16,10 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertFalse(source.contains("compactPreflightButton"))
         XCTAssertFalse(source.contains("frame(width: 112"))
         XCTAssertFalse(source.contains("ToolbarActionModel"))
-        XCTAssertFalse(source.contains("speaker"))
-        XCTAssertFalse(source.contains("ppt"))
-        XCTAssertTrue(source.contains("panicButton"))
+        XCTAssertFalse(source.contains("panicButton"))
+        XCTAssertFalse(source.contains("togglePanic"))
+        XCTAssertTrue(source.contains("toolbarModeButtons"))
+        XCTAssertFalse(source.contains("Toggle(isOn"))
         XCTAssertTrue(source.contains("preflightButton"))
         XCTAssertTrue(source.contains("helpButton"))
     }
@@ -32,6 +33,24 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertFalse(content.contains("title: \"← 准备\""))
         XCTAssertTrue(content.contains("systemImage: \"chevron.left\""))
         XCTAssertTrue(content.contains("accessibilityHint(\"返回准备模式\")"))
+    }
+
+    func testPanicIsPlacedBeforeConsoleModeClusterAndModesUseOldToolbarSlot() throws {
+        let content = try sourceText("ContentView.swift")
+        let toolbar = try sourceText("Views/MainToolbar.swift")
+
+        guard let panic = content.range(of: "panicChromeButton"),
+              let consoleModeCluster = content.range(of: "consoleModeCluster") else {
+            return XCTFail("Expected ContentView chrome to render panic before the setup/live mode cluster.")
+        }
+        XCTAssertLessThan(panic.lowerBound, consoleModeCluster.lowerBound)
+        XCTAssertTrue(content.contains("ToolbarLayoutMetrics.panicToModeClusterSpacing"))
+        XCTAssertTrue(content.contains("viewModel.togglePanicMode()"))
+        XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
+        XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
+        XCTAssertTrue(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
+        XCTAssertTrue(toolbar.contains("主持人"))
+        XCTAssertTrue(toolbar.contains("PPT"))
     }
 
     func testStaleToolbarActionModelWasRemoved() throws {
