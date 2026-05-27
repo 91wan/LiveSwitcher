@@ -79,6 +79,52 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
     }
 
+    func testDelayedPanicPauseDoesNotPauseNewMediaSelectedDuringPanic() async throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0.12
+        let firstURL = try makeTempURL(ext: "mp4")
+        let secondURL = try makeTempURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = ProgramItem(title: "First", subtitle: "MP4", sourceURL: firstURL)
+        let second = ProgramItem(title: "Second", subtitle: "MP4", sourceURL: secondURL)
+
+        viewModel.switchToProgram(first)
+        viewModel.togglePanicMode()
+        viewModel.switchToProgram(second)
+
+        try await Task.sleep(nanoseconds: 180_000_000)
+
+        XCTAssertEqual(viewModel.currentProgramItem?.id, second.id)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testDelayedPanicPauseDoesNotPauseNewBGMSelectedDuringPanic() async throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0.12
+        let firstURL = try makeTempURL(ext: "mp3")
+        let secondURL = try makeTempURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+
+        viewModel.currentBGMItem = first
+        viewModel.isBGMPlaying = true
+        viewModel.togglePanicMode()
+        viewModel.currentBGMItem = second
+        viewModel.isBGMPlaying = true
+
+        try await Task.sleep(nanoseconds: 180_000_000)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
     func testFadeToBlackDoesNotChangeMediaOrBGMPlayback() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0

@@ -41,6 +41,16 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertFalse(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .media, hasLoadedMedia: coordinator.hasLoadedMedia))
     }
 
+    func testPlayWithoutLoadedMediaDoesNotReportPlaying() {
+        let coordinator = AVPlayerCoordinator()
+
+        coordinator.play()
+
+        XCTAssertFalse(coordinator.isPlaying)
+        XCTAssertFalse(coordinator.hasLoadedMedia)
+        XCTAssertNil(coordinator.currentURL)
+    }
+
     func testNonMediaSourceHidesLoadedVideoLayer() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
