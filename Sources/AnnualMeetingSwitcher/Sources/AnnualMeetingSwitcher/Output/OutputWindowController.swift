@@ -244,8 +244,9 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 // MARK: - 推流输出内容视图
 
 /// 推流大屏展示的 SwiftUI 视图（内容层）
+@MainActor
 struct OutputView: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     var body: some View {
         let displayState = OutputDisplayState.make(from: viewModel)

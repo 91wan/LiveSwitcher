@@ -1,18 +1,9 @@
 import XCTest
 
 final class ObservableMigrationRFCTests: XCTestCase {
-    func testRFCRecordsCurrentObservationBaseline() throws {
-        let root = try repositoryRoot()
-        let viewModel = try String(
-            contentsOf: root.appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"),
-            encoding: .utf8
-        )
-        let sourceTree = try sourceTreeText(root: root)
-        let rfc = try observableMigrationRFC(root: root)
+    func testRFCRecordsPreMigrationObservationBaseline() throws {
+        let rfc = try observableMigrationRFC(root: repositoryRoot())
 
-        XCTAssertEqual(viewModel.components(separatedBy: "@Published").count - 1, 52)
-        XCTAssertEqual(sourceTree.matches(of: "@EnvironmentObject[^\n]*SwitcherViewModel").count
-            + sourceTree.matches(of: "@ObservedObject[^\n]*SwitcherViewModel").count, 25)
         XCTAssertTrue(rfc.contains("52 `@Published`"))
         XCTAssertTrue(rfc.contains("25 direct `SwitcherViewModel` observation declarations"))
         XCTAssertTrue(rfc.contains("7 preview or sample `.environmentObject(SwitcherViewModel())` injections"))
@@ -56,21 +47,6 @@ final class ObservableMigrationRFCTests: XCTestCase {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
-    private func sourceTreeText(root: URL) throws -> String {
-        let sourceRoot = root.appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
-        let enumerator = FileManager.default.enumerator(
-            at: sourceRoot,
-            includingPropertiesForKeys: nil
-        )
-        var combined = ""
-        while let url = enumerator?.nextObject() as? URL {
-            guard url.pathExtension == "swift" else { continue }
-            combined += try String(contentsOf: url, encoding: .utf8)
-            combined += "\n"
-        }
-        return combined
-    }
-
     private func repositoryRoot() throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
@@ -83,16 +59,5 @@ final class ObservableMigrationRFCTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate LiveSwitcher repository root.")
-    }
-}
-
-private extension String {
-    func matches(of pattern: String) -> [String] {
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
-        let range = NSRange(startIndex..., in: self)
-        return regex.matches(in: self, range: range).compactMap { result in
-            guard let matchRange = Range(result.range, in: self) else { return nil }
-            return String(self[matchRange])
-        }
     }
 }

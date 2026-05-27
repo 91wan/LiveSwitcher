@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 struct SafetyCockpitView: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     @Environment(\.openWindow) private var openWindow
     @State private var supportMessage: String?
     @State private var actionMessage: String?
@@ -217,6 +218,7 @@ struct SafetyCockpitView: View {
             .background(color.opacity(0.10), in: Capsule())
     }
 
+    @MainActor
     private func performAction(_ action: LivePreflightActionKind) {
         switch action {
         case .clearOverlays:
@@ -238,6 +240,7 @@ struct SafetyCockpitView: View {
         }
     }
 
+    @MainActor
     private func copySupportReport() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(viewModel.liveSupportReportText(), forType: .string)
@@ -249,6 +252,7 @@ struct SafetyCockpitView: View {
         showSupportMessage("支持报告已复制")
     }
 
+    @MainActor
     private func saveSupportReport() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
@@ -271,6 +275,7 @@ struct SafetyCockpitView: View {
         }
     }
 
+    @MainActor
     private func showActionMessage(_ message: String) {
         actionMessage = message
         Task { @MainActor in
@@ -292,6 +297,7 @@ struct SafetyCockpitView: View {
         }
     }
 
+    @MainActor
     private func showSupportMessage(_ message: String) {
         supportMessage = message
         Task { @MainActor in
@@ -303,9 +309,10 @@ struct SafetyCockpitView: View {
     }
 }
 
+@MainActor
 private struct SafetySectionCard: View {
     let section: LiveSafetyCockpitSection
-    let onAction: (LivePreflightActionKind) -> Void
+    let onAction: @MainActor (LivePreflightActionKind) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -324,9 +331,10 @@ private struct SafetySectionCard: View {
     }
 }
 
+@MainActor
 private struct SafetyCheckRow: View {
     let check: LivePreflightCheck
-    let onAction: (LivePreflightActionKind) -> Void
+    let onAction: @MainActor (LivePreflightActionKind) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {

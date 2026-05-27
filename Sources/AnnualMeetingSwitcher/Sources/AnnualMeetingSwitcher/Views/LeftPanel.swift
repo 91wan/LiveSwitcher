@@ -3,8 +3,9 @@ import UniformTypeIdentifiers
 
 // MARK: - 左侧信号源面板
 
+@MainActor
 struct LeftPanel: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @State private var isDraggingOver = false
 
     var body: some View {
@@ -47,7 +48,9 @@ struct LeftPanel: View {
     }
 
     private var agendaControlRow: some View {
-        HStack(spacing: 7) {
+        @Bindable var viewModel = viewModel
+
+        return HStack(spacing: 7) {
             HStack(spacing: 5) {
                 Image(systemName: "calendar")
                     .font(StudioTheme.TypeScale.label.weight(.bold))
@@ -95,6 +98,7 @@ struct LeftPanel: View {
     }
 
     private var autoPlayOptionRow: some View {
+        @Bindable var viewModel = viewModel
         let model = AutoNextVideoControlModel.make(
             isEnabled: viewModel.autoPlayNextVideoOnEnd,
             hasCurrentProgram: viewModel.currentProgramItem != nil
@@ -447,8 +451,9 @@ struct LeftPanel: View {
 
 // MARK: - 键盘快捷键处理：透明 View 嵌入主 Stack，绑定 1-9
 
+@MainActor
 struct ShortcutKeyHandler: View {
-    @ObservedObject var viewModel: SwitcherViewModel
+    var viewModel: SwitcherViewModel
 
     var body: some View {
         ZStack {
@@ -503,7 +508,7 @@ struct SecondaryImportButtonStyle: ButtonStyle {
 
 #Preview {
     LeftPanel()
-        .environmentObject({
+        .environment({
             let vm = SwitcherViewModel()
             vm.programItems = [
                 ProgramItem(title: "开场视频", subtitle: "MP4"),

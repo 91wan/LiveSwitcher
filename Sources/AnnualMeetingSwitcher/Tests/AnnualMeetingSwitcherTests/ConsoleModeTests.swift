@@ -86,7 +86,10 @@ final class ConsoleModeTests: XCTestCase {
 
         XCTAssertTrue(content.contains("setupContentTabs"))
         XCTAssertTrue(content.contains("liveContent"))
-        XCTAssertTrue(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live)"))
+        XCTAssertTrue(content.contains("hasMountedLiveMode"))
+        XCTAssertTrue(content.contains("prewarmLiveModeLayer"))
+        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
+        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountLiveLayer("))
         XCTAssertTrue(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
         XCTAssertFalse(content.contains("retainedTab(.preview) {\n                    if viewModel.consoleMode == .live"))
         XCTAssertFalse(content.contains("activeContentTab"))
@@ -102,13 +105,19 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(content.contains("trimLoadedSetupTabsForLiveMode"))
     }
 
-    func testSetupTabsUnmountWhileLiveModeIsActive() {
+    func testOnlyCurrentSetupTabStaysMountedWhileLiveModeIsActive() {
         let loaded: Set<MainConsoleTab> = [.preview, .audioMixer, .overlays]
 
         XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupTab(
             .audioMixer,
             consoleMode: .live,
-            selectedTab: .audioMixer,
+            selectedTab: .preview,
+            loadedTabs: loaded
+        ))
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupTab(
+            .preview,
+            consoleMode: .live,
+            selectedTab: .preview,
             loadedTabs: loaded
         ))
         XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupTab(
@@ -117,11 +126,31 @@ final class ConsoleModeTests: XCTestCase {
             selectedTab: .preview,
             loadedTabs: loaded
         ))
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupLayer(
+            consoleMode: .live,
+            selectedTab: .preview,
+            loadedTabs: [.preview]
+        ))
     }
 
-    func testLiveModeLayerMountsOnlyWhenLiveIsActive() {
+    func testLiveModeLayerRetainsAfterPrewarmOrFirstLiveMount() {
         XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .live))
         XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup))
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(
+            consoleMode: .setup,
+            hasMountedLiveLayer: true
+        ))
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(
+            consoleMode: .setup,
+            hasMountedLiveLayer: false
+        ))
+    }
+
+    func testConsoleModeSwitchesAvoidWholeLayoutAnimation() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertFalse(content.contains("withAnimation(.easeInOut(duration: 0.16)) {\n                    viewModel.consoleMode = .live"))
+        XCTAssertFalse(content.contains("withAnimation(.easeInOut(duration: 0.16)) {\n                    viewModel.navigateToSetup(viewModel.selectedMainTab)"))
     }
 
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {

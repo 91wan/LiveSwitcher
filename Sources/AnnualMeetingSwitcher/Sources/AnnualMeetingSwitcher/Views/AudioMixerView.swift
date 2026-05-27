@@ -1,7 +1,8 @@
 import SwiftUI
 
+@MainActor
 struct AudioMixerView: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     private var pageModel: AudioMixerPageModel {
         AudioMixerPageModel(
@@ -84,7 +85,9 @@ struct AudioMixerView: View {
     }
 
     private var mixerSection: some View {
-        StudioSectionCard(
+        @Bindable var viewModel = viewModel
+
+        return StudioSectionCard(
             title: "调音台",
             subtitle: "用户推子与实际输出",
             status: ("3 路推子", .idle)
@@ -133,6 +136,7 @@ struct AudioMixerView: View {
     }
 
     private var transitionCard: some View {
+        @Bindable var viewModel = viewModel
         let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
 
         return StudioSectionCard(

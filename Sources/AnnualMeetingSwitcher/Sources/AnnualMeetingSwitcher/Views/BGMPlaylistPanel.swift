@@ -1,8 +1,9 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+@MainActor
 struct BGMPlaylistPanel: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @State private var categorySelection = BGMCategorySelectionState(selectedCategory: .warmUp)
 
     var body: some View {
@@ -405,9 +406,10 @@ private struct BGMProgressBar: View {
 
 // MARK: - BGM 曲目行
 
+@MainActor
 struct BGMItemRow: View {
     let bgm: BGMItem
-    @ObservedObject var viewModel: SwitcherViewModel
+    var viewModel: SwitcherViewModel
     var compact: Bool = false
     @State private var isHovered = false
 
@@ -489,7 +491,7 @@ struct BGMItemRow: View {
 
 #Preview {
     BGMPlaylistPanel()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
         .padding()
         .background(Color(NSColor.windowBackgroundColor))
 }

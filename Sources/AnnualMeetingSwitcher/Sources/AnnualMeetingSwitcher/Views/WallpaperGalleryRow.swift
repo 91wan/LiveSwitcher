@@ -28,8 +28,9 @@ enum WallpaperImportService {
     }
 }
 
+@MainActor
 struct WallpaperGalleryRow: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @State private var isDroppingWallpaper = false
 
     var body: some View {
@@ -102,7 +103,9 @@ struct WallpaperGalleryRow: View {
                 didRequestImport = true
                 provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
                     guard let url = WallpaperDropSupport.decodeFileURL(from: item) else { return }
-                    importWallpaperOnMain(url)
+                    Task { @MainActor in
+                        importWallpaper(url)
+                    }
                 }
                 continue
             }
@@ -110,9 +113,11 @@ struct WallpaperGalleryRow: View {
             if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
                 didRequestImport = true
                 provider.loadFileRepresentation(forTypeIdentifier: UTType.image.identifier) { url, _ in
-                    guard let url,
-                          let persistedURL = persistDroppedWallpaperFile(from: url) else { return }
-                    importWallpaperOnMain(persistedURL)
+                    Task { @MainActor in
+                        guard let url,
+                              let persistedURL = persistDroppedWallpaperFile(from: url) else { return }
+                        importWallpaper(persistedURL)
+                    }
                 }
             }
         }
@@ -146,11 +151,9 @@ struct WallpaperGalleryRow: View {
         }
     }
 
-    private func importWallpaperOnMain(_ url: URL) {
-        DispatchQueue.main.async {
-            if viewModel.addWallpaper(url: url) {
-                viewModel.setActiveWallpaper(url: url)
-            }
+    private func importWallpaper(_ url: URL) {
+        if viewModel.addWallpaper(url: url) {
+            viewModel.setActiveWallpaper(url: url)
         }
     }
 }

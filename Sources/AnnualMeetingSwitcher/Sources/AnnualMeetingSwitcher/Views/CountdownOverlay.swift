@@ -2,8 +2,9 @@ import SwiftUI
 
 // MARK: - Tier1: 倒计时叠层（副屏居中大字）
 
+@MainActor
 struct CountdownOverlay: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     var body: some View {
         // 居中显示，不影响视频播放区域（视频透过背景可见）

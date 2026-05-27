@@ -2,9 +2,11 @@ import SwiftUI
 
 // MARK: - Main view
 
+@MainActor
 struct ContentView: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @State private var loadedSetupTabs: Set<MainConsoleTab> = [.preview]
+    @State private var hasMountedLiveMode = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -21,6 +23,7 @@ struct ContentView: View {
         .accessibilityLabel("LiveSwitcher main console")
         .onAppear {
             markSetupTabLoaded(viewModel.selectedMainTab)
+            prewarmLiveModeLayer()
         }
         .onChange(of: viewModel.selectedMainTab) { _, newTab in
             markSetupTabLoaded(newTab)
@@ -29,6 +32,7 @@ struct ContentView: View {
             if newMode == .setup {
                 markSetupTabLoaded(viewModel.selectedMainTab)
             } else {
+                hasMountedLiveMode = true
                 trimLoadedSetupTabsForLiveMode()
             }
         }
@@ -41,13 +45,20 @@ struct ContentView: View {
                 StudioTheme.canvasGradient
                     .ignoresSafeArea()
 
-                if viewModel.consoleMode == .setup {
+                if ConsoleModeMountPolicy.shouldMountSetupLayer(
+                    consoleMode: viewModel.consoleMode,
+                    selectedTab: viewModel.selectedMainTab,
+                    loadedTabs: loadedSetupTabs
+                ) {
                     consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup) {
                         setupContentTabs
                     }
                 }
 
-                if ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: viewModel.consoleMode) {
+                if ConsoleModeMountPolicy.shouldMountLiveLayer(
+                    consoleMode: viewModel.consoleMode,
+                    hasMountedLiveLayer: hasMountedLiveMode
+                ) {
                     consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
                         liveContent
                     }
@@ -125,6 +136,14 @@ struct ContentView: View {
         loadedSetupTabs = [viewModel.selectedMainTab]
     }
 
+    private func prewarmLiveModeLayer() {
+        guard !hasMountedLiveMode else { return }
+        Task { @MainActor in
+            await Task.yield()
+            hasMountedLiveMode = true
+        }
+    }
+
     private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
         let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
         return content()
@@ -145,9 +164,7 @@ struct ContentView: View {
                 .layoutPriority(3)
 
             LiveOpsPanel {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .live
-                }
+                viewModel.consoleMode = .live
             }
             .frame(width: StudioTheme.directorRailWidth)
             .layoutPriority(1)
@@ -199,9 +216,7 @@ struct ContentView: View {
                 systemImage: ConsoleMode.live.systemImage,
                 isSelected: viewModel.consoleMode == .live
             ) {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.consoleMode = .live
-                }
+                viewModel.consoleMode = .live
             }
         }
         .padding(5)
@@ -219,9 +234,7 @@ struct ContentView: View {
                 systemImage: "chevron.left",
                 isSelected: false
             ) {
-                withAnimation(.easeInOut(duration: 0.16)) {
-                    viewModel.navigateToSetup(viewModel.selectedMainTab)
-                }
+                viewModel.navigateToSetup(viewModel.selectedMainTab)
             }
             .accessibilityHint("返回准备模式")
         }
@@ -231,9 +244,7 @@ struct ContentView: View {
         Menu {
             ForEach(MainConsoleTab.allCases, id: \.self) { tab in
                 Button {
-                    withAnimation(.easeInOut(duration: 0.16)) {
-                        viewModel.navigateToSetup(tab)
-                    }
+                    viewModel.navigateToSetup(tab)
                 } label: {
                     Label(tab.setupMenuShortcutLabel, systemImage: tab.systemImage)
                 }
@@ -267,8 +278,9 @@ struct ContentView: View {
 
 // MARK: - V21 Fix #3: 全局键盘监听器（NSEvent.addLocalMonitorForEvents 可靠拦截字符键）
 
+@MainActor
 struct GlobalKeyMonitor: NSViewRepresentable {
-    @ObservedObject var viewModel: SwitcherViewModel
+    var viewModel: SwitcherViewModel
 
     func makeNSView(context: Context) -> NSView {
         let view = KeyMonitorView()
@@ -385,5 +397,5 @@ final class KeyMonitorView: NSView {
 
 #Preview {
     ContentView()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
 }
