@@ -61,7 +61,8 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertFalse(source.contains("setupTabCluster"))
         XCTAssertFalse(source.contains("navigationTab("))
         XCTAssertTrue(source.contains("viewModel.consoleMode == .setup"))
-        XCTAssertTrue(source.contains("activeContentTab"))
+        XCTAssertTrue(source.contains("setupContentTabs"))
+        XCTAssertFalse(source.contains("activeContentTab"))
         XCTAssertFalse(source.contains("Image(systemName: \"ellipsis\")"))
     }
 
@@ -78,6 +79,24 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(monitor.contains("var isLiveMode: Bool"))
         XCTAssertTrue(monitor.contains("if !isLiveMode"))
         XCTAssertTrue(toolbar.contains("var consoleMode: ConsoleMode"))
+    }
+
+    func testLiveModeDoesNotMountInactiveSetupTabsDuringModeSwitch() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("setupContentTabs"))
+        XCTAssertTrue(content.contains("if viewModel.consoleMode == .live"))
+        XCTAssertFalse(content.contains("retainedTab(.preview) {\n                    if viewModel.consoleMode == .live"))
+        XCTAssertFalse(content.contains("activeContentTab"))
+    }
+
+    func testSetupTabsMountLazilyToAvoidLiveSetupSwitchStalls() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("@State private var loadedSetupTabs"))
+        XCTAssertTrue(content.contains("shouldMountSetupTab(.audioMixer)"))
+        XCTAssertTrue(content.contains("shouldMountSetupTab(.overlays)"))
+        XCTAssertTrue(content.contains("markSetupTabLoaded"))
     }
 
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {

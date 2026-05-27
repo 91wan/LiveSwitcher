@@ -272,7 +272,9 @@ final class SwitcherViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var bgmProgressTimer: Timer?
     private var mediaVolumeFadeTask: Task<Void, Never>?
+    private var bgmPlayerVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    private var bgmFallbackEndObserver: NSObjectProtocol?
     private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
     private var bgmTransitionGeneration: Int = 0
     var panicAudioPauseTask: Task<Void, Never>?
@@ -365,6 +367,7 @@ final class SwitcherViewModel: ObservableObject {
 
     deinit {
         mediaVolumeFadeTask?.cancel()
+        bgmPlayerVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
         bgmTransitionTasks.values.forEach { $0.cancel() }
         panicAudioPauseTask?.cancel()
@@ -373,6 +376,9 @@ final class SwitcherViewModel: ObservableObject {
         systemVolumeObserver?.stop()
         if let externalDisplayChangeObserver {
             NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
+        }
+        if let bgmFallbackEndObserver {
+            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
         }
         let avCoordinator = avCoordinator
         Task { @MainActor in
@@ -468,9 +474,10 @@ final class SwitcherViewModel: ObservableObject {
         }
 
         let effectiveBGM = effectiveBGMOutputVolume()
-        if let bgmFadeDuration, let bgmAudioPlayer {
-            bgmAudioPlayer.setVolume(effectiveBGM, fadeDuration: bgmFadeDuration)
+        if let bgmFadeDuration, bgmAudioPlayer != nil {
+            fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration)
         } else {
+            bgmPlayerVolumeFadeTask?.cancel()
             bgmAudioPlayer?.volume = effectiveBGM
         }
 
@@ -535,6 +542,68 @@ final class SwitcherViewModel: ObservableObject {
             ) { [weak self] volume in
                 self?.bgmFallbackPlayer.volume = volume
             }
+        }
+    }
+
+    private func fadeBGMPlayerVolume(to targetVolume: Float, duration: Double) {
+        bgmPlayerVolumeFadeTask?.cancel()
+        guard let player = bgmAudioPlayer else { return }
+        guard duration > 0 else {
+            player.volume = targetVolume
+            return
+        }
+
+        bgmPlayerVolumeFadeTask = Task { @MainActor [weak self, weak player] in
+            guard let self, let player else { return }
+            let startVolume = player.volume
+            await self.runLinearFade(
+                from: startVolume,
+                to: targetVolume,
+                duration: duration
+            ) { [weak player] volume in
+                player?.volume = volume
+            }
+        }
+    }
+
+    private func fadeBGMPlayerVolume(_ player: AVAudioPlayer, to targetVolume: Float, duration: Double) {
+        guard duration > 0 else {
+            player.volume = targetVolume
+            return
+        }
+
+        let taskID = UUID()
+        bgmTransitionTasks[taskID] = Task { @MainActor [weak self, weak player] in
+            defer { self?.bgmTransitionTasks[taskID] = nil }
+            guard let self, let player else { return }
+            let startVolume = player.volume
+            await self.runLinearFade(
+                from: startVolume,
+                to: targetVolume,
+                duration: duration
+            ) { [weak player] volume in
+                player?.volume = volume
+            }
+        }
+    }
+
+    func installBGMFallbackEndObserver(for item: AVPlayerItem) {
+        removeBGMFallbackEndObserver()
+        bgmFallbackEndObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemDidPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.bgmDidFinish()
+            }
+        }
+    }
+
+    func removeBGMFallbackEndObserver() {
+        if let bgmFallbackEndObserver {
+            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
+            self.bgmFallbackEndObserver = nil
         }
     }
 
@@ -1389,7 +1458,7 @@ final class SwitcherViewModel: ObservableObject {
             clearBGMTakeoverIfNeeded()
             fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
             if let removedPlayer = bgmAudioPlayer {
-                removedPlayer.setVolume(0, fadeDuration: fadeDur)
+                fadeBGMPlayerVolume(removedPlayer, to: 0, duration: fadeDur)
                 releaseBGMPlayerAfterFade(removedPlayer, duration: fadeDur)
             }
             bgmAudioPlayer = nil
@@ -1467,12 +1536,13 @@ final class SwitcherViewModel: ObservableObject {
                 clearBGMTakeoverIfNeeded()
                 recordBGMPlaybackState(isPlaying: false, reason: "operator")
                 fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
-                bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)
+                fadeBGMPlayerVolume(to: 0, duration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
                 Task { @MainActor in
                     if fadeDur > 0 {
                         try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
                     }
+                    capturedPlayer?.volume = 0
                     capturedPlayer?.pause()
                 }
                 fadeBGMFallbackVolume(to: 0, duration: fadeDur)
@@ -1509,14 +1579,16 @@ final class SwitcherViewModel: ObservableObject {
             let fadeDur = liveAudioFadeDuration
 
             // 切歌时取消旧 fallback fade，避免旧任务回写新曲目的目标音量。
+            bgmPlayerVolumeFadeTask?.cancel()
             bgmFallbackVolumeFadeTask?.cancel()
             if let oldPlayer = bgmAudioPlayer {
-                oldPlayer.setVolume(0, fadeDuration: fadeDur)
+                fadeBGMPlayerVolume(oldPlayer, to: 0, duration: fadeDur)
                 releaseBGMPlayerAfterFade(oldPlayer, duration: fadeDur)
             }
             bgmAudioPlayer?.delegate = nil
             bgmAudioPlayer = nil
             resetBGMRealtimeMeter()
+            removeBGMFallbackEndObserver()
             bgmFallbackPlayer.pause()
             bgmFallbackPlayer.replaceCurrentItem(with: nil)
 
@@ -1531,11 +1603,12 @@ final class SwitcherViewModel: ObservableObject {
                 player.isMeteringEnabled = true
                 player.prepareToPlay()
                 player.play()
-                player.setVolume(targetVolume, fadeDuration: fadeDur)  // Bug Fix #1: 淡入
                 bgmAudioPlayer = player
+                fadeBGMPlayerVolume(to: targetVolume, duration: fadeDur)
                 bgmDuration = player.duration > 0 ? player.duration : nil
             } else {
                 let avItem = AVPlayerItem(url: item.url)
+                installBGMFallbackEndObserver(for: avItem)
                 bgmFallbackPlayer.replaceCurrentItem(with: avItem)
                 bgmFallbackPlayer.volume = 0
                 bgmFallbackPlayer.play()
@@ -1557,7 +1630,9 @@ final class SwitcherViewModel: ObservableObject {
         bgmTransitionGeneration += 1
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
+        bgmPlayerVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
+        removeBGMFallbackEndObserver()
         bgmFallbackPlayer.volume = 0
         bgmFallbackPlayer.pause()
         bgmFallbackPlayer.replaceCurrentItem(with: nil)
@@ -1621,6 +1696,7 @@ final class SwitcherViewModel: ObservableObject {
             guard self.currentBGMItem == nil, !self.isBGMPlaying else { return }
             self.bgmFallbackPlayer.volume = 0
             self.bgmFallbackPlayer.pause()
+            self.removeBGMFallbackEndObserver()
             self.bgmFallbackPlayer.replaceCurrentItem(with: nil)
         }
     }

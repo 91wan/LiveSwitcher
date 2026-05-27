@@ -11,14 +11,16 @@ final class BGMProgressStore: ObservableObject {
 
     func update(currentTime: Double, duration: Double) {
         let safeCurrentTime = max(0, currentTime)
-        self.currentTime = safeCurrentTime
         guard duration > 0 else {
+            self.currentTime = safeCurrentTime
             self.duration = nil
             progress = 0
             return
         }
+        let displayedCurrentTime = min(safeCurrentTime, duration)
+        self.currentTime = displayedCurrentTime
         self.duration = duration
-        progress = Self.clampedProgress(safeCurrentTime / duration)
+        progress = Self.clampedProgress(displayedCurrentTime / duration)
     }
 
     func reset() {

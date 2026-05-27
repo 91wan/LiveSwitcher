@@ -4,6 +4,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var viewModel: SwitcherViewModel
+    @State private var loadedSetupTabs: Set<MainConsoleTab> = [.preview]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -18,6 +19,17 @@ struct ContentView: View {
         .background(GlobalKeyMonitor(viewModel: viewModel))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("LiveSwitcher main console")
+        .onAppear {
+            markSetupTabLoaded(viewModel.selectedMainTab)
+        }
+        .onChange(of: viewModel.selectedMainTab) { _, newTab in
+            markSetupTabLoaded(newTab)
+        }
+        .onChange(of: viewModel.consoleMode) { _, newMode in
+            if newMode == .setup {
+                markSetupTabLoaded(viewModel.selectedMainTab)
+            }
+        }
     }
 
     @ViewBuilder
@@ -27,26 +39,12 @@ struct ContentView: View {
                 StudioTheme.canvasGradient
                     .ignoresSafeArea()
 
-                retainedTab(.preview) {
-                    if viewModel.consoleMode == .live {
-                        LiveModeView {
-                            viewModel.navigateToSetup(.audioMixer)
-                        }
-                    } else {
-                        runDesk()
+                if viewModel.consoleMode == .live {
+                    LiveModeView {
+                        viewModel.navigateToSetup(.audioMixer)
                     }
-                }
-
-                retainedTab(.audioMixer) {
-                    AudioMixerView()
-                        .frame(maxWidth: 940, maxHeight: .infinity)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-
-                retainedTab(.overlays) {
-                    SettingsView()
-                        .frame(maxWidth: 1100, maxHeight: .infinity)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    setupContentTabs
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -62,17 +60,46 @@ struct ContentView: View {
         }
     }
 
+    @ViewBuilder
+    private var setupContentTabs: some View {
+        if shouldMountSetupTab(.preview) {
+            retainedTab(.preview) {
+                runDesk()
+            }
+        }
+
+        if shouldMountSetupTab(.audioMixer) {
+            retainedTab(.audioMixer) {
+                AudioMixerView()
+                    .frame(maxWidth: 940, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+
+        if shouldMountSetupTab(.overlays) {
+            retainedTab(.overlays) {
+                SettingsView()
+                    .frame(maxWidth: 1100, maxHeight: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+
+    private func shouldMountSetupTab(_ tab: MainConsoleTab) -> Bool {
+        tab == viewModel.selectedMainTab || loadedSetupTabs.contains(tab)
+    }
+
+    private func markSetupTabLoaded(_ tab: MainConsoleTab) {
+        loadedSetupTabs.insert(tab)
+    }
+
     private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
-        let model = TabRetentionModel(tab: tab, selectedTab: activeContentTab)
+        let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
         return content()
             .opacity(model.opacity)
             .allowsHitTesting(model.allowsHitTesting)
             .accessibilityHidden(model.accessibilityHidden)
             .zIndex(model.zIndex)
-    }
-
-    private var activeContentTab: MainConsoleTab {
-        viewModel.consoleMode == .live ? .preview : viewModel.selectedMainTab
     }
 
     private func runDesk() -> some View {

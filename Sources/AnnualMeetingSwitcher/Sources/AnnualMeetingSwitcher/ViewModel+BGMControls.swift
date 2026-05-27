@@ -55,6 +55,7 @@ extension SwitcherViewModel {
 
     /// V21 Fix #1: 当前曲目播放完毕回调
     func bgmDidFinish() {
+        removeBGMFallbackEndObserver()
         guard !isPanicMode else {
             isBGMPlaying = false
             resetBGMRealtimeMeter()
@@ -112,6 +113,7 @@ extension SwitcherViewModel {
         bgmAudioPlayer = nil
         resetBGMRealtimeMeter()
         cancelBGMFallbackFade()
+        removeBGMFallbackEndObserver()
         bgmFallbackPlayer.volume = 0
         bgmFallbackPlayer.pause()
         bgmFallbackPlayer.replaceCurrentItem(with: nil)

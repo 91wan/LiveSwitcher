@@ -21,6 +21,7 @@ final class BGMProgressStoreTests: XCTestCase {
         let store = BGMProgressStore()
 
         store.update(currentTime: 125, duration: 100)
+        XCTAssertEqual(store.currentTime, 100)
         XCTAssertEqual(store.progress, 1, accuracy: 0.0001)
 
         store.update(currentTime: 8, duration: 0)
@@ -84,6 +85,15 @@ final class BGMProgressStoreTests: XCTestCase {
 
         XCTAssertTrue(updateBody.contains("bgmFallbackPlayer.currentTime()"))
         XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
+    }
+
+    func testStoppingBGMUsesOwnedLinearFadeBeforePausing() throws {
+        let source = try sourceText("ViewModel.swift")
+        let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
+
+        XCTAssertTrue(source.contains("fadeBGMPlayerVolume"))
+        XCTAssertTrue(toggleBody.contains("fadeBGMPlayerVolume(to: 0"))
+        XCTAssertFalse(toggleBody.contains("bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

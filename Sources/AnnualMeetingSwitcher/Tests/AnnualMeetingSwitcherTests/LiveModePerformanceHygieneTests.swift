@@ -5,11 +5,14 @@ final class LiveModePerformanceHygieneTests: XCTestCase {
     func testLiveModeAndOutputDoNotSynchronouslyLoadImagesInBody() throws {
         let liveMode = try sourceText("Views/LiveModeView.swift")
         let output = try sourceText("Output/OutputWindowController.swift")
+        let wallpaper = try sourceText("Views/WallpaperGalleryRow.swift")
 
         XCTAssertFalse(liveMode.contains("NSImage(contentsOf:"))
         XCTAssertFalse(output.contains("NSImage(contentsOf: url)"))
+        XCTAssertFalse(wallpaper.contains("NSImage(contentsOf:"))
         XCTAssertTrue(liveMode.contains("AsyncLocalImage"))
         XCTAssertTrue(output.contains("AsyncLocalImage"))
+        XCTAssertTrue(wallpaper.contains("AsyncLocalImage(url: url)"))
     }
 
     func testLiveLayoutWidthStillFitsMinimumWindow() {
