@@ -144,6 +144,21 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains("Label(\"Open BGM Library\""))
     }
 
+    func testLiveQuickRailKeepsBGMPlaylistInFirstViewportPriority() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        guard let cut = source.range(of: "cutBusCard"),
+              let bgm = source.range(of: "bgmCard"),
+              let overlay = source.range(of: "overlayCard"),
+              let wallpaper = source.range(of: "wallpaperCard") else {
+            return XCTFail("Expected live quick rail cards to be declared in LiveModeView.")
+        }
+
+        XCTAssertLessThan(cut.lowerBound, bgm.lowerBound)
+        XCTAssertLessThan(bgm.lowerBound, overlay.lowerBound)
+        XCTAssertLessThan(bgm.lowerBound, wallpaper.lowerBound)
+    }
+
     func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
