@@ -4,7 +4,6 @@ import UniformTypeIdentifiers
 @MainActor
 struct BGMPlaylistPanel: View {
     @Environment(SwitcherViewModel.self) var viewModel
-    @State private var categorySelection = BGMCategorySelectionState(selectedCategory: .warmUp)
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -211,7 +210,7 @@ struct BGMPlaylistPanel: View {
             .labelsHidden()
             .font(StudioTheme.TypeScale.heading)
             .accessibilityLabel("BGM 分类")
-            .accessibilityValue(categorySelection.selectedCategory.rawValue)
+            .accessibilityValue(viewModel.bgmLibraryCategorySelection.selectedCategory.rawValue)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 10)
@@ -224,7 +223,7 @@ struct BGMPlaylistPanel: View {
     // MARK: - 曲目列表
 
     private var bgmList: some View {
-        let filteredBGM = viewModel.bgmItems.filter { $0.category == categorySelection.selectedCategory }
+        let filteredBGM = viewModel.bgmItems.filter { $0.category == viewModel.bgmLibraryCategorySelection.selectedCategory }
 
         return Group {
             if filteredBGM.isEmpty {
@@ -247,7 +246,7 @@ struct BGMPlaylistPanel: View {
                         .listRowBackground(Color.clear)
                     }
                     .onMove { from, to in
-                        viewModel.moveBGMItems(in: categorySelection.selectedCategory, from: from, to: to)
+                        viewModel.moveBGMItems(in: viewModel.bgmLibraryCategorySelection.selectedCategory, from: from, to: to)
                     }
                 }
                 .listStyle(.plain)
@@ -345,7 +344,7 @@ struct BGMPlaylistPanel: View {
                 let bgm = BGMItem(
                     title: title,
                     url: url,
-                    category: categorySelection.selectedCategory
+                    category: viewModel.bgmLibraryCategorySelection.selectedCategory
                 )
                 importedItems.append(bgm)
                 existingItems.append(bgm)
@@ -356,8 +355,8 @@ struct BGMPlaylistPanel: View {
 
     private var selectedCategoryBinding: Binding<BGMCategory> {
         Binding(
-            get: { categorySelection.selectedCategory },
-            set: { categorySelection.selectCategory($0) }
+            get: { viewModel.bgmLibraryCategorySelection.selectedCategory },
+            set: { viewModel.bgmLibraryCategorySelection.selectCategory($0) }
         )
     }
 

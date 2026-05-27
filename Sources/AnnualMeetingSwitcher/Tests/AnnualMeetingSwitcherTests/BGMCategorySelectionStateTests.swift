@@ -42,4 +42,37 @@ final class BGMCategorySelectionStateTests: XCTestCase {
 
         XCTAssertEqual(state.selectedCategory, .warmUp)
     }
+
+    @MainActor
+    func testAudioLibraryCategorySelectionLivesInViewModel() throws {
+        let suiteName = "LiveSwitcher.BGMCategorySelectionStateTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+        let panelSource = try sourceText("Views/BGMPlaylistPanel.swift")
+
+        viewModel.bgmLibraryCategorySelection.selectCategory(.award)
+
+        XCTAssertEqual(viewModel.bgmLibraryCategorySelection.selectedCategory, .award)
+        XCTAssertFalse(panelSource.contains("@State private var categorySelection"))
+        XCTAssertTrue(panelSource.contains("viewModel.bgmLibraryCategorySelection"))
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return try String(contentsOf: candidate, encoding: .utf8)
+            }
+        }
+        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
 }
