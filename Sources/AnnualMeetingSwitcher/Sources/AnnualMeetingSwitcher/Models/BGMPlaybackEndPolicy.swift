@@ -1,8 +1,6 @@
 import Foundation
 
 enum BGMPlaybackEndPolicy {
-    static let finishTolerance: TimeInterval = 0.25
-
     static func shouldTreatAsFinished(
         isPlaying: Bool,
         playMode: BGMPlayMode,
@@ -11,7 +9,7 @@ enum BGMPlaybackEndPolicy {
     ) -> Bool {
         guard isPlaying, playMode != .loopOne else { return false }
         guard currentTime.isFinite, let duration, duration.isFinite, duration > 0 else { return false }
-        return currentTime >= duration + finishTolerance
+        return currentTime >= duration
     }
 
     static func numberOfLoops(for playMode: BGMPlayMode) -> Int {
