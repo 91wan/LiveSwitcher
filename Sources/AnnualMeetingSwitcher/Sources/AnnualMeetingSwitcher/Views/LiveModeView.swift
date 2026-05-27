@@ -1,7 +1,8 @@
 import SwiftUI
 
+@MainActor
 struct LiveModeView: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     let onOpenMixer: () -> Void
 
     var body: some View {
@@ -95,8 +96,9 @@ private struct AgendaAutoAdvancePromptBanner: View {
     }
 }
 
+@MainActor
 struct LiveSourceRail: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
 
     var body: some View {
         let programCount = viewModel.programItems.count
@@ -263,11 +265,14 @@ struct LiveProgramStack: View {
     }
 }
 
+@MainActor
 struct LiveAudioStrip: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     let onOpenMixer: () -> Void
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         HStack(spacing: 10) {
             LiveAudioFader(
                 title: "Master",
@@ -427,8 +432,9 @@ private struct LiveAudioMeter: View {
     }
 }
 
+@MainActor
 struct LiveQuickRail: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     @State private var liveBGMCategory: BGMCategory = .warmUp
     let onOpenMixer: () -> Void
 
@@ -484,6 +490,7 @@ struct LiveQuickRail: View {
     }
 
     private var modesCard: some View {
+        @Bindable var viewModel = viewModel
         let isModeActive = viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled
         return quickCard(title: "模式", status: isModeActive ? "激活" : "", kind: isModeActive ? .warn : .idle) {
             HStack(spacing: 8) {
@@ -1137,8 +1144,9 @@ private struct ModeToggleCard: View {
     }
 }
 
+@MainActor
 struct LiveRuntimeStatusBar: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
 
     var body: some View {
         HStack(spacing: 10) {

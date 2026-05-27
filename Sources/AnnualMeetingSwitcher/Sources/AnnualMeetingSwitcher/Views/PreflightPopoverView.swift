@@ -4,14 +4,15 @@ import UniformTypeIdentifiers
 
 // MARK: - Preflight
 
+@MainActor
 struct PreflightPopoverView: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     @State private var copiedReport = false
     @State private var supportMessage: String?
     @State private var preflightListMode: PreflightReviewMode = .needsAttention
     @State private var preflightActionMessage: String?
-    var onPreflightAction: (LivePreflightActionKind) -> Void = { _ in }
-    var onOpenSafetyCockpit: () -> Void = {}
+    var onPreflightAction: @MainActor (LivePreflightActionKind) -> Void = { _ in }
+    var onOpenSafetyCockpit: @MainActor () -> Void = {}
 
     var body: some View {
         VStack(spacing: 0) {
@@ -160,6 +161,7 @@ struct PreflightPopoverView: View {
         )
     }
 
+    @MainActor
     private func handlePreflightRowAction(_ action: LivePreflightActionKind) {
         let routing = PreflightActionRoutingModel.make(action: action)
         onPreflightAction(action)
@@ -168,6 +170,7 @@ struct PreflightPopoverView: View {
         }
     }
 
+    @MainActor
     private func showPreflightActionMessage(_ message: String) {
         preflightActionMessage = message
         Task { @MainActor in
@@ -178,6 +181,7 @@ struct PreflightPopoverView: View {
         }
     }
 
+    @MainActor
     private func copyPreflightReport() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(viewModel.livePreflightReportText(), forType: .string)
@@ -188,6 +192,7 @@ struct PreflightPopoverView: View {
         }
     }
 
+    @MainActor
     private func copySupportReport() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(viewModel.liveSupportReportText(), forType: .string)
@@ -199,6 +204,7 @@ struct PreflightPopoverView: View {
         showSupportMessage("支持报告已复制")
     }
 
+    @MainActor
     private func saveSupportReport() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.plainText]
@@ -221,6 +227,7 @@ struct PreflightPopoverView: View {
         }
     }
 
+    @MainActor
     private func showSupportMessage(_ message: String) {
         supportMessage = message
         Task { @MainActor in
@@ -342,10 +349,11 @@ private struct PreflightSummaryCard: View {
     }
 }
 
+@MainActor
 private struct PreflightGroupView: View {
     let group: LivePreflightGroup
     let checks: [LivePreflightCheck]
-    let onAction: (LivePreflightActionKind) -> Void
+    let onAction: @MainActor (LivePreflightActionKind) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -362,9 +370,10 @@ private struct PreflightGroupView: View {
     }
 }
 
+@MainActor
 private struct PreflightRowView: View {
     let check: LivePreflightCheck
-    let onAction: (LivePreflightActionKind) -> Void
+    let onAction: @MainActor (LivePreflightActionKind) -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -488,5 +497,5 @@ private struct PreflightRowView: View {
 
 #Preview {
     PreflightPopoverView()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
 }

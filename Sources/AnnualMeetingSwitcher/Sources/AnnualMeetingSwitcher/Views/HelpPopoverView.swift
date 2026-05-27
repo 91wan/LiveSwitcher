@@ -61,5 +61,5 @@ private struct HelpSectionView: View {
 
 #Preview {
     HelpPopoverView()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
 }

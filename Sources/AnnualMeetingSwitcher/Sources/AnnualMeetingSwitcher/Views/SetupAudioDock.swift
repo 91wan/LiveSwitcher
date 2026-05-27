@@ -1,10 +1,12 @@
 import SwiftUI
 
+@MainActor
 struct SetupAudioDock: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     let onOpenMixer: () -> Void
 
     var body: some View {
+        @Bindable var viewModel = viewModel
         let model = SetupAudioDockModel.make(
             masterVolume: viewModel.masterVolume,
             mediaVolume: viewModel.mediaVolume,

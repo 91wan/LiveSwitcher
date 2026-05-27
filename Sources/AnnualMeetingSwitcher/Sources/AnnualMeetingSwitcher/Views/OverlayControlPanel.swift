@@ -4,8 +4,9 @@ import UniformTypeIdentifiers
 
 // MARK: - 叠层控制面板
 
+@MainActor
 struct OverlayControlPanel: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     private var activeOverlayCount: Int {
         [

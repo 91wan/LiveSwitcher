@@ -2,8 +2,9 @@ import SwiftUI
 
 // MARK: - 叠层 / 字幕页面
 
+@MainActor
 struct SettingsView: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     var body: some View {
         ScrollView {
@@ -32,6 +33,6 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
         .frame(width: 900, height: 700)
 }

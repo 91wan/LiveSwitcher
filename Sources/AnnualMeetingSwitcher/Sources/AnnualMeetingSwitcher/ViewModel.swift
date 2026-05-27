@@ -1,4 +1,5 @@
 import SwiftUI
+import Observation
 import Combine
 import AppKit
 import AVFoundation
@@ -69,17 +70,18 @@ private struct LiveMasterMeterCandidate {
 }
 
 @MainActor
-final class SwitcherViewModel: ObservableObject {
+@Observable
+final class SwitcherViewModel {
 
     // MARK: - 主窗口导航
 
-    @Published var selectedMainTab: MainConsoleTab = .preview
-    @Published var consoleMode: ConsoleMode = .setup {
+    var selectedMainTab: MainConsoleTab = .preview
+    var consoleMode: ConsoleMode = .setup {
         didSet {
             userDefaults.set(consoleMode.rawValue, forKey: UDKeys.consoleMode)
         }
     }
-    @Published var themeOverride: ThemeOverride = .dark {
+    var themeOverride: ThemeOverride = .dark {
         didSet {
             userDefaults.set(themeOverride.rawValue, forKey: UDKeys.themeOverride)
         }
@@ -87,7 +89,7 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - 节目状态
 
-    @Published var currentProgramItem: ProgramItem? {
+    var currentProgramItem: ProgramItem? {
         didSet {
             if currentProgramItem?.id != oldValue?.id {
                 currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
@@ -97,9 +99,9 @@ final class SwitcherViewModel: ObservableObject {
             }
         }
     }
-    @Published var currentProgramSwitchedAt: Date?
-    @Published var programItems: [ProgramItem] = []
-    @Published var showAgendaTimeline: Bool = false {
+    var currentProgramSwitchedAt: Date?
+    var programItems: [ProgramItem] = []
+    var showAgendaTimeline: Bool = false {
         didSet {
             userDefaults.set(showAgendaTimeline, forKey: UDKeys.showAgendaTimeline)
         }
@@ -107,45 +109,45 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - 推流状态
 
-    @Published var isBroadcasting: Bool = false
-    @Published var broadcastSafetyNotice: String?
+    var isBroadcasting: Bool = false
+    var broadcastSafetyNotice: String?
 
     // MARK: - HTML 大屏展示
 
     /// 当前推送到副屏 WKWebView 的 HTML 文件 URL；切换其他节目时清空
-    @Published var currentHTMLURL: URL? = nil
+    var currentHTMLURL: URL? = nil
 
 
     // MARK: - 音量控制（Fix Issue #7/#8: 所有 didSet 在 @MainActor 上安全执行）
 
     /// 主音量 [0.0, 1.0] - 联控 AVPlayer + BGM
-    @Published var masterVolume: Double = 0.5 {
+    var masterVolume: Double = 0.5 {
         didSet { applyMasterVolume() }
     }
 
     /// 媒体源音量 [0.0, 1.0]
-    @Published var mediaVolume: Double = 1.0 {
+    var mediaVolume: Double = 1.0 {
         didSet { applyMasterVolume() }
     }
 
     /// BGM 音量 [0.0, 1.0]
-    @Published var bgmVolume: Double = 0.5 {
+    var bgmVolume: Double = 0.5 {
         didSet { applyBGMVolume() }
     }
 
     /// Live mode mute controls are session-scoped operator actions and are not persisted.
-    @Published var isMasterAudioMuted: Bool = false {
+    var isMasterAudioMuted: Bool = false {
         didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
-    @Published var isMediaAudioMuted: Bool = false {
+    var isMediaAudioMuted: Bool = false {
         didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
-    @Published var isBGMAudioMuted: Bool = false {
+    var isBGMAudioMuted: Bool = false {
         didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
     }
 
     /// 音频输出策略。默认保持“混合”，与当前已存在的实际行为一致。
-    @Published var audioStrategy: AudioStrategy = .mixed {
+    var audioStrategy: AudioStrategy = .mixed {
         didSet {
             applyAudioRoutingForRuntimeChange(reason: .strategyChanged)
             userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
@@ -154,26 +156,26 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - 转场配置
 
-    @Published var crossfadeDuration: Double = 3.0
+    var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = 2.0
     private let speakerModeDuckedRatio: Float = 0.07
 
     // MARK: - 背景壁纸（多张）
 
-    @Published var backgroundWallpapers: [URL] = []
-    @Published var backgroundImage: NSImage?
-    @Published var activeWallpaperURL: URL? {
+    var backgroundWallpapers: [URL] = []
+    var backgroundImage: NSImage?
+    var activeWallpaperURL: URL? {
         didSet {
             loadBackgroundImage(from: activeWallpaperURL)
         }
     }
-    @Published var cornerLogoURL: URL? {
+    var cornerLogoURL: URL? {
         didSet {
             loadCornerLogoImage(from: cornerLogoURL)
         }
     }
-    @Published var cornerLogoImage: NSImage?
-    @Published var cornerLogoPosition: CornerLogoPosition = .topRight {
+    var cornerLogoImage: NSImage?
+    var cornerLogoPosition: CornerLogoPosition = .topRight {
         didSet {
             userDefaults.set(cornerLogoPosition.rawValue, forKey: UDKeys.cornerLogoPosition)
         }
@@ -181,29 +183,29 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - BGM 列表
 
-    @Published var bgmItems: [BGMItem] = []
-    @Published var currentBGMItem: BGMItem?
-    @Published var isBGMPlaying: Bool = false
-    @Published var isBGMAudioTakeoverActive: Bool = false {
+    var bgmItems: [BGMItem] = []
+    var currentBGMItem: BGMItem?
+    var isBGMPlaying: Bool = false
+    var isBGMAudioTakeoverActive: Bool = false {
         didSet { applyAudioRoutingForRuntimeChange(reason: .strategyChanged) }
     }
-    @Published var bgmPlayMode: BGMPlayMode = .loopAll
-    @Published private(set) var supportEvents: [LiveSupportEvent] = []
+    var bgmPlayMode: BGMPlayMode = .loopAll
+    private(set) var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
-    @Published var isSpeakerMode: Bool = false {
+    var isSpeakerMode: Bool = false {
         didSet {
             userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
         }
     }
 
     /// 视频播毕后仅自动播放队列里的紧邻下一条视频；默认关闭，避免现场自动打开演示文件。
-    @Published var autoPlayNextVideoOnEnd: Bool = false {
+    var autoPlayNextVideoOnEnd: Bool = false {
         didSet {
             userDefaults.set(autoPlayNextVideoOnEnd, forKey: UDKeys.autoPlayNextVideoOnEnd)
         }
     }
-    @Published var autoAdvanceAtScheduledTime: Bool = false {
+    var autoAdvanceAtScheduledTime: Bool = false {
         didSet {
             userDefaults.set(autoAdvanceAtScheduledTime, forKey: UDKeys.autoAdvanceAtScheduledTime)
         }
@@ -247,7 +249,7 @@ final class SwitcherViewModel: ObservableObject {
             refreshExternalDisplayAvailability()
         }
     }
-    @Published private(set) var isExternalDisplayAvailable: Bool = false
+    private(set) var isExternalDisplayAvailable: Bool = false
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
@@ -287,7 +289,7 @@ final class SwitcherViewModel: ObservableObject {
 
     // MARK: - V25: 翻页拦截器状态
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
-    @Published var isPageInterceptEnabled: Bool = false {
+    var isPageInterceptEnabled: Bool = false {
         didSet { applyPageInterceptState() }
     }
     private var pageInterceptEventTap: CFMachPort?
@@ -366,23 +368,25 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     deinit {
-        mediaVolumeFadeTask?.cancel()
-        bgmPlayerVolumeFadeTask?.cancel()
-        bgmFallbackVolumeFadeTask?.cancel()
-        bgmTransitionTasks.values.forEach { $0.cancel() }
-        panicAudioPauseTask?.cancel()
-        backgroundImageLoadTask?.cancel()
-        cornerLogoImageLoadTask?.cancel()
-        systemVolumeObserver?.stop()
-        if let externalDisplayChangeObserver {
-            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
-        }
-        if let bgmFallbackEndObserver {
-            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
-        }
-        let avCoordinator = avCoordinator
-        Task { @MainActor in
-            avCoordinator.shutdown()
+        MainActor.assumeIsolated {
+            mediaVolumeFadeTask?.cancel()
+            bgmPlayerVolumeFadeTask?.cancel()
+            bgmFallbackVolumeFadeTask?.cancel()
+            bgmTransitionTasks.values.forEach { $0.cancel() }
+            panicAudioPauseTask?.cancel()
+            backgroundImageLoadTask?.cancel()
+            cornerLogoImageLoadTask?.cancel()
+            systemVolumeObserver?.stop()
+            if let externalDisplayChangeObserver {
+                NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
+            }
+            if let bgmFallbackEndObserver {
+                NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
+            }
+            let avCoordinator = avCoordinator
+            Task { @MainActor in
+                avCoordinator.shutdown()
+            }
         }
     }
 
@@ -752,7 +756,7 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func loadData() {
-        // Fix Issue #2: loadData is called from @MainActor init, all @Published updates are safe
+        // Fix Issue #2: loadData is called from @MainActor init, all state updates are safe
         if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
             let titles = userDefaults.stringArray(forKey: "pushList_titles") ?? []
             let subtitles = userDefaults.stringArray(forKey: "pushList_subtitles") ?? []
@@ -1043,7 +1047,7 @@ final class SwitcherViewModel: ObservableObject {
     /// 将 HTML 文件推送到副屏 WKWebView
     func openHTMLInOutputWindow(url: URL) {
         currentHTMLURL = url
-        // isBroadcasting 时 objectWillChange 已由 @Published 自动触发，无需手动 send
+        // Observation tracks currentHTMLURL changes; no manual invalidation is needed.
     }
 
     /// 结束 HTML 展示，回到空闲壁纸态。
@@ -1799,7 +1803,7 @@ final class SwitcherViewModel: ObservableObject {
             }
             let outputView = AnyView(
                 OutputView()
-                    .environmentObject(self)
+                    .environment(self)
             )
             outputWindowController?.mountAnyView(rootView: outputView)
         }
@@ -2038,27 +2042,27 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     // MARK: - Tier1: 紧急切黑 State
-    @Published var isPanicMode: Bool       = false
-    @Published var isFadeToBlackActive: Bool = false
+    var isPanicMode: Bool       = false
+    var isFadeToBlackActive: Bool = false
 
     // MARK: - Tier1: Overlay State（叠层状态变量）
-    @Published var overlayComposerState = OverlayComposerState()
-    @Published var isCountdownActive: Bool = false
-    @Published var countdownTitle: String  = "活动即将开始"
-    @Published var countdownSeconds: Int   = 0
-    @Published var countdownPresets: [CountdownPreset] = []
+    var overlayComposerState = OverlayComposerState()
+    var isCountdownActive: Bool = false
+    var countdownTitle: String  = "活动即将开始"
+    var countdownSeconds: Int   = 0
+    var countdownPresets: [CountdownPreset] = []
     var countdownTimer: Timer?
 
-    @Published var isTickerActive: Bool    = false
-    @Published var tickerText: String      = "Welcome · The program will begin shortly"
-    @Published var tickerSpeed: Double     = 80.0
-    @Published var tickerPresets: [TickerPreset] = []
+    var isTickerActive: Bool    = false
+    var tickerText: String      = "Welcome · The program will begin shortly"
+    var tickerSpeed: Double     = 80.0
+    var tickerPresets: [TickerPreset] = []
 
     // MARK: - V27: Lower Third（下三分之一条）状态
-    @Published var isLowerThirdVisible: Bool = false
-    @Published var lowerThirdName: String    = ""
-    @Published var lowerThirdTitle: String   = ""
-    @Published var lowerThirdPresets: [LowerThirdPreset] = []
+    var isLowerThirdVisible: Bool = false
+    var lowerThirdName: String    = ""
+    var lowerThirdTitle: String   = ""
+    var lowerThirdPresets: [LowerThirdPreset] = []
 }
 
 // MARK: - V25: 翻页拦截 CGEventTap 全局 C 回调

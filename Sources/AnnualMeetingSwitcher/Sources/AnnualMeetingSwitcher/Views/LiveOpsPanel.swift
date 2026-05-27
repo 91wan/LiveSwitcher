@@ -1,7 +1,8 @@
 import SwiftUI
 
+@MainActor
 struct LiveOpsPanel: View {
-    @EnvironmentObject private var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) private var viewModel
     let onSwitchToLive: () -> Void
 
     var body: some View {

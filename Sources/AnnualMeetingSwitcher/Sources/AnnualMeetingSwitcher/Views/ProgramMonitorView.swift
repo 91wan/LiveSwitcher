@@ -2,8 +2,9 @@ import SwiftUI
 
 // MARK: - Program Monitor
 
+@MainActor
 struct ProgramMonitorView: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @State private var isHoveringPreviewDeck = false
     var isLiveMode: Bool = false
 
@@ -276,6 +277,7 @@ struct ProgramMonitorView: View {
     }
 
     private var transitionControlCard: some View {
+        @Bindable var viewModel = viewModel
         let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
 
         return HStack(spacing: 14) {
@@ -427,6 +429,6 @@ struct ProgramMonitorView: View {
 
 #Preview {
     ProgramMonitorView()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
         .frame(width: 700, height: 620)
 }

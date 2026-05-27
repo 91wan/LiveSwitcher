@@ -15,10 +15,13 @@ private enum CornerLogoImportService {
     }
 }
 
+@MainActor
 struct CornerLogoCard: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {

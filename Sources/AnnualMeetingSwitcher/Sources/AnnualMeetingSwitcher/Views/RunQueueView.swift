@@ -474,6 +474,7 @@ struct AgendaScheduleEditorPopover: View {
     }
 }
 
+@MainActor
 struct ProgressSliderRow: View {
     @ObservedObject var avCoordinator: AVPlayerCoordinator
     @State private var isDragging = false

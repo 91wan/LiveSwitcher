@@ -6,12 +6,12 @@ import SwiftUI
 
 struct LiveSwitcherApp: App {
     @NSApplicationDelegateAdaptor(LiveSwitcherAppDelegate.self) private var appDelegate
-    @StateObject private var viewModel: SwitcherViewModel
+    @State private var viewModel: SwitcherViewModel
     @Environment(\.openWindow) private var openWindow
 
     init() {
         let viewModel = Self.makeViewModel()
-        _viewModel = StateObject(wrappedValue: viewModel)
+        _viewModel = State(wrappedValue: viewModel)
         LiveSwitcherAppDelegate.sharedViewModel = viewModel
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 900_000_000)
@@ -22,7 +22,7 @@ struct LiveSwitcherApp: App {
     var body: some Scene {
         WindowGroup("LiveSwitcher", id: "main-console") {
             ContentView()
-                .environmentObject(viewModel)
+                .environment(viewModel)
                 .frame(minWidth: AppConfiguration.minWindowWidth,
                        minHeight: AppConfiguration.minWindowHeight)
         }
@@ -111,7 +111,7 @@ struct LiveSwitcherApp: App {
 
         Window("现场安全台", id: "safety-cockpit") {
             SafetyCockpitView()
-                .environmentObject(viewModel)
+                .environment(viewModel)
         }
         .defaultSize(width: 880, height: 720)
         .windowResizability(.contentMinSize)
@@ -193,7 +193,7 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
         window.minSize = NSSize(width: AppConfiguration.minWindowWidth, height: AppConfiguration.minWindowHeight)
         window.contentView = NSHostingView(
             rootView: ContentView()
-                .environmentObject(viewModel)
+                .environment(viewModel)
                 .frame(
                     minWidth: AppConfiguration.minWindowWidth,
                     minHeight: AppConfiguration.minWindowHeight

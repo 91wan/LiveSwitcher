@@ -140,8 +140,9 @@ final class TickerEngine: ObservableObject {
 
 // MARK: - TickerOverlay（V28 修复版：StateObject 驱动，避免 Timer 泄漏与重叠）
 
+@MainActor
 struct TickerOverlay: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @StateObject private var engine = TickerEngine()
 
     var body: some View {

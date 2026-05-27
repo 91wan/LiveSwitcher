@@ -3,8 +3,9 @@ import SwiftUI
 
 // MARK: - 主工具栏
 
+@MainActor
 struct MainToolbar: View {
-    @EnvironmentObject var viewModel: SwitcherViewModel
+    @Environment(SwitcherViewModel.self) var viewModel
     @Environment(\.openWindow) private var openWindow
     @State private var showHelp = false
     @State private var showPreflight = false
@@ -47,6 +48,7 @@ struct MainToolbar: View {
         }
     }
 
+    @MainActor
     private func handlePreflightAction(_ action: LivePreflightActionKind) {
         let routing = PreflightActionRoutingModel.make(action: action)
         viewModel.performLivePreflightAction(action)
@@ -94,6 +96,7 @@ struct MainToolbar: View {
         PreflightButtonModel.make(summary: viewModel.livePreflightSummary)
     }
 
+    @MainActor
     private func togglePanic() {
         withAnimation(.easeInOut(duration: 0.25)) {
             viewModel.togglePanicMode()
@@ -201,6 +204,6 @@ struct MainToolbar: View {
 
 #Preview {
     MainToolbar()
-        .environmentObject(SwitcherViewModel())
+        .environment(SwitcherViewModel())
         .frame(width: 900)
 }
