@@ -1,0 +1,44 @@
+import AVFoundation
+import XCTest
+@testable import LiveSwitcher
+
+@MainActor
+final class BGMFallbackPlaybackTests: XCTestCase {
+    func testFallbackPlayerEndNotificationAdvancesToNextTrack() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempFileURL(ext: "mp3")
+        let secondURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "Fallback A", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Fallback B", url: secondURL, category: .warmUp)
+        viewModel.bgmItems = [first, second]
+
+        viewModel.toggleBGM(first)
+        let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: fallbackItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
+    private func makeViewModel() -> SwitcherViewModel {
+        let suiteName = "BGMFallbackPlaybackTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+    }
+
+    private func makeTempFileURL(ext: String) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        try Data("not-a-decodable-audio-fixture".utf8).write(to: url)
+        return url
+    }
+}

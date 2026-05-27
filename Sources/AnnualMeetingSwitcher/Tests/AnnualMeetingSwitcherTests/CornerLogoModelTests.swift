@@ -70,6 +70,14 @@ final class CornerLogoModelTests: XCTestCase {
         XCTAssertTrue(card.contains("cornerLogoPosition"))
     }
 
+    func testProgramMonitorPreviewsCornerLogoOverlay() throws {
+        let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+
+        XCTAssertTrue(monitor.contains("monitorCornerLogoOverlay"))
+        XCTAssertTrue(monitor.contains("AsyncLocalImage(url: viewModel.cornerLogoURL"))
+        XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
+    }
+
     private func isolatedDefaults() -> UserDefaults {
         let suiteName = "LiveSwitcher.CornerLogoModelTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

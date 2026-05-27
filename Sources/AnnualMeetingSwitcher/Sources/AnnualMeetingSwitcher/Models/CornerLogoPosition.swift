@@ -44,6 +44,10 @@ enum CornerLogoPosition: String, CaseIterable, Equatable {
             return .bottomTrailing
         }
     }
+
+    var monitorAlignment: Alignment {
+        alignment
+    }
 }
 
 enum OutputLayerZIndex {

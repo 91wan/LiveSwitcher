@@ -161,19 +161,19 @@ struct WallpaperThumbView: View {
 
     var body: some View {
         ZStack {
-            if let img = NSImage(contentsOf: url) {
-                Image(nsImage: img)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 80, height: 60)
-                    .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusS))
-            } else {
+            AsyncLocalImage(url: url) {
                 RoundedRectangle(cornerRadius: StudioTheme.radiusS)
                     .fill(StudioTheme.Surface.raised)
                     .frame(width: 80, height: 60)
                 Image(systemName: "photo")
                     .foregroundStyle(StudioTheme.textSecondary)
                     .accessibilityHidden(true)
+            } content: { img in
+                Image(nsImage: img)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 80, height: 60)
+                    .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusS))
             }
 
             if isActive {

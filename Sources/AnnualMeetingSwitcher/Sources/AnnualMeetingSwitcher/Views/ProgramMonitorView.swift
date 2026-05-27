@@ -47,6 +47,8 @@ struct ProgramMonitorView: View {
                 .animation(.easeInOut(duration: viewModel.crossfadeDuration),
                            value: viewModel.currentProgramItem)
 
+            monitorCornerLogoOverlay
+
             if viewModel.isBroadcasting {
                 RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
                     .stroke(StudioTheme.borderCritical.opacity(0.95), lineWidth: 3)
@@ -98,6 +100,25 @@ struct ProgramMonitorView: View {
         .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderCritical.opacity(0.75), lineWidth: 1))
         .accessibilityLabel("主输出正在直播")
+    }
+
+    @ViewBuilder
+    private var monitorCornerLogoOverlay: some View {
+        AsyncLocalImage(url: viewModel.cornerLogoURL) {
+            EmptyView()
+        } content: { image in
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: isLiveMode ? 52 : 42)
+                .padding(16)
+                .frame(
+                    maxWidth: .infinity,
+                    maxHeight: .infinity,
+                    alignment: viewModel.cornerLogoPosition.monitorAlignment
+                )
+                .accessibilityLabel("角标 Logo 监看")
+        }
     }
 
     private var monitorTopChrome: some View {
