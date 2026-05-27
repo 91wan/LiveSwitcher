@@ -34,6 +34,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
         let safetyCockpit = try sourceText("Views/SafetyCockpitView.swift")
         let preflightPopover = try sourceText("Views/PreflightPopoverView.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
+        let content = try sourceText("ContentView.swift")
 
         XCTAssertTrue(safetyCockpit.contains("@MainActor\n    private func performAction"))
         XCTAssertTrue(safetyCockpit.contains("@MainActor\n    private func copySupportReport"))
@@ -43,7 +44,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
         XCTAssertTrue(preflightPopover.contains("@MainActor\n    private func copySupportReport"))
         XCTAssertTrue(preflightPopover.contains("@MainActor\n    private func saveSupportReport"))
         XCTAssertTrue(toolbar.contains("@MainActor\n    private func handlePreflightAction"))
-        XCTAssertTrue(toolbar.contains("@MainActor\n    private func togglePanic"))
+        XCTAssertTrue(content.contains("@MainActor\n    private func togglePanic"))
     }
 
     func testSwiftFiveTenViewBoundariesStayMainActorIsolated() throws {

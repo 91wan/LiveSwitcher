@@ -71,24 +71,10 @@ struct MainToolbar: View {
     }
 
     private var embeddedToolbarActionCluster: some View {
-        HStack(spacing: 10) {
-            panicButton
+        HStack(spacing: ToolbarLayoutMetrics.interItemSpacing) {
+            toolbarModeButtons
             preflightButton
             helpButton
-        }
-    }
-
-    private var panicModel: PanicButtonModel {
-        PanicButtonModel.make(
-            isActive: viewModel.isPanicMode,
-            consoleMode: consoleMode
-        )
-    }
-
-    private var panicTint: Color {
-        switch panicModel.visualRole {
-        case .danger:
-            return StudioTheme.Action.danger
         }
     }
 
@@ -96,46 +82,25 @@ struct MainToolbar: View {
         PreflightButtonModel.make(summary: viewModel.livePreflightSummary)
     }
 
-    @MainActor
-    private func togglePanic() {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            viewModel.togglePanicMode()
-        }
-    }
-
-    private var panicButton: some View {
-        Button(action: togglePanic) {
-            HStack(spacing: 8) {
-                Image(systemName: panicModel.systemImage)
-                    .font(StudioTheme.TypeScale.heading.weight(.black))
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(panicModel.title)
-                        .font(StudioTheme.TypeScale.body.weight(.black))
-                    Text(panicModel.subtitle)
-                        .font(StudioTheme.TypeScale.label.weight(.bold))
-                        .opacity(0.88)
-                }
+    private var toolbarModeButtons: some View {
+        HStack(spacing: ToolbarLayoutMetrics.modeButtonSpacing) {
+            ToolbarModeButton(
+                title: "主持人",
+                systemImage: "mic.fill",
+                isActive: viewModel.isSpeakerMode
+            ) {
+                viewModel.toggleSpeakerMode()
             }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 12)
-            .frame(minWidth: panicModel.minWidth)
-            .frame(height: panicModel.height)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(panicTint)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .stroke(StudioTheme.Surface.pressed.opacity(viewModel.isPanicMode ? 0.46 : 0.18), lineWidth: 1)
-            )
-            .shadow(color: panicTint.opacity(viewModel.isPanicMode ? 0.36 : 0.24), radius: 12, x: 0, y: 7)
+            ToolbarModeButton(
+                title: "PPT",
+                systemImage: "hand.raised.slash.fill",
+                isActive: viewModel.isPageInterceptEnabled
+            ) {
+                viewModel.isPageInterceptEnabled.toggle()
+            }
         }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help(panicModel.help)
-        .accessibilityLabel(panicModel.accessibilityLabel)
-        .accessibilityHint(panicModel.accessibilityHint)
+        .frame(minWidth: ToolbarLayoutMetrics.modeButtonGroupMinWidth)
+        .frame(height: ToolbarLayoutMetrics.actionHeight)
     }
 
     private var preflightButton: some View {
@@ -198,6 +163,46 @@ struct MainToolbar: View {
         .accessibilityHint("打开使用说明")
     }
 
+}
+
+private struct ToolbarModeButton: View {
+    let title: String
+    let systemImage: String
+    let isActive: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+            }
+            .frame(maxWidth: .infinity)
+            .foregroundStyle(isActive ? .white : StudioTheme.Action.primary)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 8)
+        .frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)
+        .frame(height: ToolbarLayoutMetrics.actionHeight)
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .fill(isActive ? StudioTheme.Action.primary : StudioTheme.Surface.base)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(isActive ? StudioTheme.Action.primary.opacity(0.32) : StudioTheme.Action.primary.opacity(0.18), lineWidth: 1)
+        )
+        .shadow(color: isActive ? StudioTheme.Action.primary.opacity(0.18) : .clear, radius: 8, x: 0, y: 4)
+        .focusable(false)
+        .help(isActive ? "\(title)模式已开启" : "开启\(title)模式")
+        .accessibilityLabel(title)
+        .accessibilityValue(isActive ? "开" : "关")
+    }
 }
 
 // MARK: - Preview

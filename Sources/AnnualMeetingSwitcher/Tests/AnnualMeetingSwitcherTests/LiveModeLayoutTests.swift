@@ -121,17 +121,18 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains("onOpenMixer()"))
     }
 
-    func testLiveModeQuickRailIncludesSpeakerAndPPTModes() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+    func testLiveModeQuickRailLeavesModesToTopToolbarAndKeepsCoreActions() throws {
+        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let toolbar = try sourceText("Views/MainToolbar.swift")
 
-        XCTAssertTrue(source.contains("modesCard"))
-        XCTAssertTrue(source.contains("ModeToggleCard("))
-        XCTAssertTrue(source.contains("Toggle(isOn: $isOn)"))
-        XCTAssertFalse(source.contains("isOn: $viewModel.isSpeakerMode"))
-        XCTAssertTrue(source.contains("speakerModeBinding"))
-        XCTAssertTrue(source.contains("isOn: $viewModel.isPageInterceptEnabled"))
-        XCTAssertTrue(source.range(of: "outputCard")!.lowerBound < source.range(of: "modesCard")!.lowerBound)
-        XCTAssertTrue(source.range(of: "modesCard")!.lowerBound < source.range(of: "cutBusCard")!.lowerBound)
+        XCTAssertFalse(liveMode.contains("modesCard"))
+        XCTAssertFalse(liveMode.contains("ModeToggleCard("))
+        XCTAssertFalse(liveMode.contains("isOn: $viewModel.isSpeakerMode"))
+        XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
+        XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
+        XCTAssertTrue(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
+        XCTAssertTrue(toolbar.contains("主持人"))
+        XCTAssertTrue(toolbar.contains("PPT"))
     }
 
     func testLiveBGMCardShowsMiniPlaylistWithoutSetupNavigation() throws {
@@ -155,8 +156,8 @@ final class LiveModeLayoutTests: XCTestCase {
         }
 
         XCTAssertLessThan(cut.lowerBound, bgm.lowerBound)
-        XCTAssertLessThan(bgm.lowerBound, overlay.lowerBound)
         XCTAssertLessThan(bgm.lowerBound, wallpaper.lowerBound)
+        XCTAssertLessThan(wallpaper.lowerBound, overlay.lowerBound)
     }
 
     func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
