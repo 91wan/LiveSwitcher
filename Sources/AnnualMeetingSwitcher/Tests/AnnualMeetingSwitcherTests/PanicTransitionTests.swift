@@ -1,0 +1,102 @@
+import XCTest
+import AppKit
+@testable import LiveSwitcher
+
+@MainActor
+final class PanicTransitionTests: XCTestCase {
+    private func makeViewModel() -> SwitcherViewModel {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
+        viewModel.keynotePresentationHandler = { _ in }
+        viewModel.pptxOpenHandler = { _ in }
+        viewModel.activeDeckPresentationHandler = {}
+        viewModel.invalidDeckHandler = { _ in }
+        viewModel.deckStopHandler = {}
+        return viewModel
+    }
+
+    private func makeTempURL(ext: String) throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        FileManager.default.createFile(atPath: url.path, contents: Data("stub".utf8))
+        return url
+    }
+
+    func testPanicUsesFadedAudioRouting() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.4
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.togglePanicMode()
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .panicChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.4)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.4)
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
+    }
+
+    func testPanicPausesBGMAndRestoresOnlyIfItWasPlaying() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp)
+
+        viewModel.toggleBGM(item)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+
+        viewModel.togglePanicMode()
+        XCTAssertFalse(viewModel.isBGMPlaying)
+
+        viewModel.togglePanicMode()
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+    }
+
+    func testPanicDoesNotResumeBGMIfTrackChangedDuringPanic() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempURL(ext: "mp3")
+        let secondURL = try makeTempURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+
+        viewModel.toggleBGM(first)
+        viewModel.togglePanicMode()
+        viewModel.currentBGMItem = second
+
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+    }
+
+    func testFadeToBlackDoesNotChangeMediaOrBGMPlayback() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempURL(ext: "mp4")
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: bgmURL)
+        }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.toggleBGM(BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp))
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.toggleFadeToBlack()
+
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+}

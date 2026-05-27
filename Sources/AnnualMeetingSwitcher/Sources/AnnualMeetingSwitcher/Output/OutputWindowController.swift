@@ -358,8 +358,9 @@ private struct OutputCornerLogoLayer: View {
     let position: CornerLogoPosition
 
     var body: some View {
-        if let url,
-           let image = NSImage(contentsOf: url) {
+        AsyncLocalImage(url: url) {
+            EmptyView()
+        } content: { image in
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -378,14 +379,13 @@ import AVFoundation
 
 /// V34 副屏输出（等比填满版）：
 /// - videoGravity = .resizeAspectFill
-/// - 用 Combine 在 Coordinator 里订阅 coordinator.isPlaying，直接操作 nsView.isHidden
-/// - 避免 updateNSView 不被调用（coordinator 是 let，SwiftUI diff 认为无变化）的问题
-/// - 避免 .opacity(0) 无法遮盖 AVPlayerLayer（Metal 合成层）的问题
+/// - 仅根据是否仍加载媒体来控制 AVPlayerView 显隐
+/// - 暂停时保持播放器层挂载，避免恢复播放时出现有声音但黑屏
 struct OutputVideoPlayerView: NSViewRepresentable {
     let coordinator: AVPlayerCoordinator
 
-    func makeCoordinator() -> HiddenCoordinator {
-        HiddenCoordinator()
+    func makeCoordinator() -> VisibilityCoordinator {
+        VisibilityCoordinator()
     }
 
     func makeNSView(context: Context) -> AVPlayerView {
@@ -394,7 +394,6 @@ struct OutputVideoPlayerView: NSViewRepresentable {
         view.controlsStyle = .none
         view.videoGravity = .resizeAspectFill
         view.autoresizingMask = [.width, .height]
-        // 订阅 isPlaying，直接在 AppKit 层同步 isHidden
         context.coordinator.bind(avCoordinator: coordinator, to: view)
         return view
     }
@@ -402,20 +401,24 @@ struct OutputVideoPlayerView: NSViewRepresentable {
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         nsView.player = coordinator.player
         nsView.videoGravity = .resizeAspectFill
-        // 同步当前状态（防止首次 layout 时状态不一致）
-        nsView.isHidden = !coordinator.isPlaying
+        nsView.isHidden = !VideoLayerVisibilityModel.shouldShowVideoLayer(
+            sourceKind: coordinator.currentURL.map { _ in .media },
+            hasLoadedMedia: coordinator.hasLoadedMedia
+        )
     }
 
     @MainActor
-    class HiddenCoordinator {
+    class VisibilityCoordinator {
         private var cancellable: AnyCancellable?
 
         func bind(avCoordinator: AVPlayerCoordinator, to view: AVPlayerView) {
-            // 订阅 @Published isPlaying，在主线程直接设置 AppKit isHidden
-            cancellable = avCoordinator.$isPlaying
+            cancellable = avCoordinator.$hasLoadedMedia
                 .receive(on: DispatchQueue.main)
-                .sink { [weak view] isPlaying in
-                    view?.isHidden = !isPlaying
+                .sink { [weak view] hasLoadedMedia in
+                    view?.isHidden = !VideoLayerVisibilityModel.shouldShowVideoLayer(
+                        sourceKind: avCoordinator.currentURL.map { _ in .media },
+                        hasLoadedMedia: hasLoadedMedia
+                    )
                 }
         }
     }

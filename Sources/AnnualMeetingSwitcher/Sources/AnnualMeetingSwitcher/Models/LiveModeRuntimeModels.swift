@@ -78,6 +78,28 @@ struct LiveCutBusModel: Equatable {
     }
 }
 
+struct LiveMediaRestartControlModel: Equatable {
+    let isEnabled: Bool
+    let title: String
+    let help: String
+
+    static func make(currentItem: ProgramItem?) -> LiveMediaRestartControlModel {
+        guard let currentItem, currentItem.supportsSeeking else {
+            return LiveMediaRestartControlModel(
+                isEnabled: false,
+                title: "从头播放",
+                help: "当前源不支持从头播放"
+            )
+        }
+
+        return LiveMediaRestartControlModel(
+            isEnabled: true,
+            title: "从头播放",
+            help: "从头重新播放当前视频"
+        )
+    }
+}
+
 struct LiveRuntimeStatusChip: Equatable {
     let text: String
     let kind: StudioTheme.StatusKind

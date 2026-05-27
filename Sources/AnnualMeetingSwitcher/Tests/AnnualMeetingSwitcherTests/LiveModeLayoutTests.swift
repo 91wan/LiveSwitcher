@@ -116,7 +116,8 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("modesCard"))
-        XCTAssertTrue(source.contains("Toggle(isOn: isOn)"))
+        XCTAssertTrue(source.contains("ModeToggleCard("))
+        XCTAssertTrue(source.contains("Toggle(isOn: $isOn)"))
         XCTAssertFalse(source.contains("isOn: $viewModel.isSpeakerMode"))
         XCTAssertTrue(source.contains("speakerModeBinding"))
         XCTAssertTrue(source.contains("isOn: $viewModel.isPageInterceptEnabled"))

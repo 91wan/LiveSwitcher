@@ -35,7 +35,7 @@ extension SwitcherViewModel {
         isSpeakerMode.toggle()
         LiveSwitcherTelemetry.speakerModeChanged(isOn: isSpeakerMode)
         recordSupportEvent(kind: .speakerModeChanged, detail: "isOn=\(isSpeakerMode)")
-        applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
+        applyAudioRoutingForRuntimeChange(reason: .speakerChanged)
     }
 
     // Toggle loop mode: loopAll → loopOne → sequential → loopAll
@@ -61,7 +61,7 @@ extension SwitcherViewModel {
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "finished")
-            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -72,7 +72,7 @@ extension SwitcherViewModel {
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "missingCurrent")
-            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -87,7 +87,7 @@ extension SwitcherViewModel {
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "finished")
-            applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration)
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -113,7 +113,7 @@ extension SwitcherViewModel {
         bgmDuration = nil
         LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
         recordSupportEvent(kind: .bgmPlaybackFailed, detail: "state=stopped")
-        applyAudioRouting(mediaFadeDuration: liveAudioFadeDuration, bgmFadeDuration: liveAudioFadeDuration)
+        applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
     }
 
     func playNextBGM() {

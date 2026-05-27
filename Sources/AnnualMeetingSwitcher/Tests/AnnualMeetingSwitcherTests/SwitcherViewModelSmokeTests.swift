@@ -226,6 +226,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
     func testMixedStrategyKeepsMediaAndBGMChannelsActive() {
         let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
 
         viewModel.masterVolume = 0.8
         viewModel.mediaVolume = 0.5
@@ -268,6 +269,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
     func testFollowSourceAndSpeakerModeDoNotResurrectMutedBGM() {
         let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
 
         viewModel.masterVolume = 0.8
         viewModel.mediaVolume = 0.5

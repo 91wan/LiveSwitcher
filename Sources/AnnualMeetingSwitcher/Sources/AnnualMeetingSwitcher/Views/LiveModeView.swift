@@ -24,7 +24,7 @@ struct LiveModeView: View {
                     .frame(height: 38)
                 }
 
-                HStack(alignment: .top, spacing: 10) {
+                HStack(alignment: .top, spacing: LiveModeLayoutMetrics.mainColumnSpacing) {
                     LiveSourceRail()
                         .frame(width: viewModel.programItems.isEmpty ? LiveModeLayoutMetrics.sourceRailWidthEmpty : LiveModeLayoutMetrics.sourceRailWidth)
                         .animation(.easeInOut(duration: 0.2), value: viewModel.programItems.isEmpty)
@@ -51,7 +51,7 @@ struct LiveModeView: View {
                     .frame(height: LiveModeLayoutMetrics.footerHeight)
                     .layoutPriority(2)
             }
-            .padding(.horizontal, 10)
+            .padding(.horizontal, LiveModeLayoutMetrics.horizontalContentPadding / 2)
             .padding(.top, LiveModeLayoutMetrics.contentTopPadding)
             .padding(.bottom, LiveModeLayoutMetrics.contentBottomPadding)
         }
@@ -500,48 +500,24 @@ struct LiveQuickRail: View {
     private var modesCard: some View {
         let isModeActive = viewModel.isSpeakerMode || viewModel.isPageInterceptEnabled
         return quickCard(title: "模式", status: isModeActive ? "激活" : "", kind: isModeActive ? .warn : .idle) {
-            modeToggleRow(
-                title: "主持人",
-                subtitle: "压低 BGM",
-                systemImage: "mic.fill",
-                isOn: speakerModeBinding
-            )
-            modeToggleRow(
-                title: "PPT",
-                subtitle: "接管翻页",
-                systemImage: "hand.raised.slash.fill",
-                isOn: $viewModel.isPageInterceptEnabled
-            )
-        }
-    }
+            HStack(spacing: 8) {
+                ModeToggleCard(
+                    title: "主持人",
+                    subtitle: "压低 BGM",
+                    systemImage: "mic.fill",
+                    isOn: speakerModeBinding
+                )
+                .frame(maxWidth: .infinity)
 
-    private func modeToggleRow(
-        title: String,
-        subtitle: String,
-        systemImage: String,
-        isOn: Binding<Bool>
-    ) -> some View {
-        Toggle(isOn: isOn) {
-            HStack(spacing: 7) {
-                Image(systemName: systemImage)
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .foregroundStyle(isOn.wrappedValue ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
-                    .frame(width: 18)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(StudioTheme.TypeScale.caption.weight(.black))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(subtitle)
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
+                ModeToggleCard(
+                    title: "PPT",
+                    subtitle: "接管翻页",
+                    systemImage: "hand.raised.slash.fill",
+                    isOn: $viewModel.isPageInterceptEnabled
+                )
+                .frame(maxWidth: .infinity)
             }
         }
-        .toggleStyle(.switch)
-        .controlSize(.small)
-        .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
-        .help(isOn.wrappedValue ? "\(title)模式已开启" : "开启\(title)模式")
     }
 
     private var speakerModeBinding: Binding<Bool> {
@@ -559,6 +535,7 @@ struct LiveQuickRail: View {
             programItems: viewModel.programItems,
             currentProgramItem: viewModel.currentProgramItem
         )
+        let restart = LiveMediaRestartControlModel.make(currentItem: viewModel.currentProgramItem)
 
         return quickCard(title: "切换", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
@@ -579,6 +556,21 @@ struct LiveQuickRail: View {
 
                 ftbButton
             }
+
+            Button {
+                viewModel.restartCurrentMediaFromBeginning()
+            } label: {
+                Label(restart.title, systemImage: "backward.end.fill")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 34)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .disabled(!restart.isEnabled)
+            .help(restart.help)
+            .accessibilityLabel(restart.title)
+            .accessibilityHint(restart.help)
         }
     }
 
@@ -900,9 +892,9 @@ struct LiveQuickRail: View {
                 transportButton("forward.end.fill", enabled: controls.canSkipNext, hint: controls.skipDisabledReason) {
                     viewModel.playNextBGM()
                 }
-                Spacer()
-                bgmCategoryMenu(picker: picker, title: playlist.categoryButtonTitle)
             }
+
+            bgmCategoryMenu(picker: picker, title: playlist.categoryButtonTitle)
 
             liveBGMPlaylistRows(playlist)
         }
@@ -936,7 +928,8 @@ struct LiveQuickRail: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.78)
         }
-        .frame(width: 78, height: LiveModeLayoutMetrics.transportButtonSize)
+        .frame(maxWidth: .infinity)
+        .frame(height: LiveModeLayoutMetrics.transportButtonSize)
         .buttonStyle(.bordered)
         .controlSize(.small)
         .accessibilityLabel("选择 BGM 分类")
@@ -986,7 +979,7 @@ struct LiveQuickRail: View {
                                 Spacer(minLength: 0)
                             }
                             .padding(.horizontal, 6)
-                            .frame(height: 24)
+                            .frame(height: 28)
                             .background(
                                 row.isCurrent ? StudioTheme.Action.primary.opacity(0.10) : StudioTheme.Surface.raised.opacity(0.58),
                                 in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
@@ -1075,21 +1068,19 @@ private struct LiveWallpaperPickerThumb: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            Group {
-                if let image = NSImage(contentsOf: item.url) {
+            AsyncLocalImage(url: item.url) {
+                Rectangle()
+                    .fill(StudioTheme.Surface.raised)
+                    .overlay {
+                        Image(systemName: "photo")
+                            .font(StudioTheme.TypeScale.caption)
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .accessibilityHidden(true)
+                    }
+            } content: { image in
                     Image(nsImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(StudioTheme.Surface.raised)
-                        .overlay {
-                            Image(systemName: "photo")
-                                .font(StudioTheme.TypeScale.caption)
-                                .foregroundStyle(StudioTheme.textTertiary)
-                                .accessibilityHidden(true)
-                        }
-                }
             }
             .frame(width: 44, height: 32)
             .clipShape(.rect(cornerRadius: StudioTheme.radiusS))
@@ -1108,6 +1099,54 @@ private struct LiveWallpaperPickerThumb: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
                 .stroke(item.isActive ? StudioTheme.Action.primary : StudioTheme.borderSubtle, lineWidth: item.isActive ? 2 : 1)
         )
+    }
+}
+
+private struct ModeToggleCard: View {
+    let title: String
+    let subtitle: String
+    let systemImage: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(isOn ? StudioTheme.Tone.warn : StudioTheme.textTertiary)
+                    .frame(width: 16)
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.76)
+            }
+
+            Text(subtitle)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textTertiary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+
+            Toggle(isOn: $isOn) {
+                EmptyView()
+            }
+            .toggleStyle(.switch)
+            .controlSize(.small)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(8)
+        .frame(minHeight: 74, alignment: .top)
+        .background(StudioTheme.Surface.raised.opacity(0.62), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
+                .stroke(isOn ? StudioTheme.Tone.warn.opacity(0.32) : StudioTheme.borderSubtle, lineWidth: 1)
+        )
+        .help(isOn ? "\(title)模式已开启" : "开启\(title)模式")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title)模式")
+        .accessibilityValue(isOn ? "开" : "关")
     }
 }
 

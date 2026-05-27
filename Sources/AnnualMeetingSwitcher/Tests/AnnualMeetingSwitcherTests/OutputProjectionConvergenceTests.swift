@@ -47,8 +47,9 @@ final class OutputProjectionConvergenceTests: XCTestCase {
 
         XCTAssertEqual(viewModel.currentProgramItem, item)
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
-        XCTAssertEqual(viewModel.avCoordinator.volume, 1, accuracy: 0.001)
         XCTAssertFalse(observedVolumes.contains(0), "Media route should not be muted during media startup.")
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .programChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, viewModel.liveAudioFadeDuration)
     }
 
     func testExternalDisplayAvailabilityIsCachedUntilExplicitRefresh() {
