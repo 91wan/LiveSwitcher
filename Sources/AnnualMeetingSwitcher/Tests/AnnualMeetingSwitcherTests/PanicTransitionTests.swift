@@ -162,4 +162,120 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertTrue(viewModel.isPanicMode)
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
+
+    func testToggleMainVideoPlaybackDuringPanicDoesNotStartMedia() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.togglePanicMode()
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testPlaybackEndedDuringPanicDoesNotAutoAdvanceQueue() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempURL(ext: "mp4")
+        let secondURL = try makeTempURL(ext: "mp4")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: firstURL)
+        let second = ProgramItem(title: "Awards", subtitle: "MP4", sourceURL: secondURL)
+        viewModel.programItems = [first, second]
+        viewModel.autoPlayNextVideoOnEnd = true
+        viewModel.switchToProgram(first)
+        viewModel.togglePanicMode()
+
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.handlePlaybackEnded()
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentProgramItem?.id, first.id)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, firstURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testSelectingBGMDuringPanicCuesButDoesNotPlay() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
+
+        viewModel.togglePanicMode()
+        viewModel.toggleBGM(item)
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
+    func testResumingSelectedBGMDuringPanicDoesNotStartPlayback() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
+        viewModel.currentBGMItem = item
+        viewModel.isBGMPlaying = false
+
+        viewModel.togglePanicMode()
+        viewModel.toggleBGM(item)
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
+    func testTogglingSelectedBGMDuringPanicForcesStoppedState() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
+        viewModel.currentBGMItem = item
+        viewModel.isBGMPlaying = true
+
+        viewModel.togglePanicMode()
+        viewModel.isBGMPlaying = true
+        viewModel.toggleBGM(item)
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
+    func testBGMFinishDuringPanicDoesNotAdvanceToNextTrack() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempURL(ext: "mp3")
+        let secondURL = try makeTempURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+        viewModel.bgmItems = [first, second]
+        viewModel.currentBGMItem = first
+        viewModel.isBGMPlaying = true
+
+        viewModel.togglePanicMode()
+        viewModel.bgmDidFinish()
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, first.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
 }
