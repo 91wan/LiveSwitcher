@@ -50,7 +50,8 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("ContentView.swift")
 
         XCTAssertTrue(source.contains("LiveModeView"))
-        XCTAssertTrue(source.contains("if viewModel.consoleMode == .live"))
+        XCTAssertTrue(source.contains("liveContent"))
+        XCTAssertTrue(source.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live)"))
         XCTAssertFalse(source.contains("runDesk(isLiveMode: viewModel.consoleMode == .live)"))
     }
 

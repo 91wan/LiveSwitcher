@@ -232,6 +232,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.mediaVolume = 0.5
         viewModel.bgmVolume = 0.25
         viewModel.audioStrategy = .mixed
+        viewModel.isBGMPlaying = true
         viewModel.currentProgramItem = ProgramItem(
             title: "片头",
             subtitle: "MP4",
@@ -335,6 +336,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let videoURL = try makeTempFileURL(ext: "mp4")
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
+        viewModel.isBGMPlaying = true
         viewModel.switchToProgram(ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL))
         viewModel.toggleSpeakerMode()
 
@@ -557,6 +559,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.isBGMPlaying = true
         viewModel.isBGMAudioTakeoverActive = true
         viewModel.applyAudioRouting()
 
