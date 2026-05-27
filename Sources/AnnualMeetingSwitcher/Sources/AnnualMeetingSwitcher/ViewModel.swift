@@ -274,6 +274,7 @@ final class SwitcherViewModel: ObservableObject {
     private var mediaVolumeFadeTask: Task<Void, Never>?
     private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    private var bgmTransitionGeneration: Int = 0
     var panicAudioPauseTask: Task<Void, Never>?
     private var backgroundImageLoadTask: Task<Void, Never>?
     private var cornerLogoImageLoadTask: Task<Void, Never>?
@@ -828,7 +829,11 @@ final class SwitcherViewModel: ObservableObject {
             guard let url = item.sourceURL else { return }
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
-            avCoordinator.play()
+            if isPanicMode {
+                avCoordinator.pause()
+            } else {
+                avCoordinator.play()
+            }
             currentProgramItem = item
         case .keynote:
             guard let url = item.sourceURL else { return }
@@ -1212,7 +1217,9 @@ final class SwitcherViewModel: ObservableObject {
         guard let item = currentProgramItem,
               programItemSupportsSeeking(item) else { return }
         programSeekToStartHandler()
-        avCoordinator.play()
+        if !isPanicMode {
+            avCoordinator.play()
+        }
         applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }
@@ -1362,16 +1369,19 @@ final class SwitcherViewModel: ObservableObject {
     func removeBGMItem(_ item: BGMItem) {
         bgmItems.removeAll { $0.id == item.id }
         if currentBGMItem?.id == item.id {
+            bgmTransitionGeneration += 1
+            let generation = bgmTransitionGeneration
+            let fadeDur = liveAudioFadeDuration
             stopBGMTimer()
             clearBGMTakeoverIfNeeded()
-            fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: liveAudioFadeDuration)
-            bgmAudioPlayer?.stop()
-            bgmAudioPlayer?.delegate = nil
+            fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
+            if let removedPlayer = bgmAudioPlayer {
+                removedPlayer.setVolume(0, fadeDuration: fadeDur)
+                releaseBGMPlayerAfterFade(removedPlayer, duration: fadeDur)
+            }
             bgmAudioPlayer = nil
-            bgmFallbackVolumeFadeTask?.cancel()
-            bgmFallbackPlayer.volume = 0
-            bgmFallbackPlayer.pause()
-            bgmFallbackPlayer.replaceCurrentItem(with: nil)
+            fadeBGMFallbackVolume(to: 0, duration: fadeDur)
+            releaseBGMFallbackAfterFade(duration: fadeDur, generation: generation)
             currentBGMItem = nil
             isBGMPlaying = false
             bgmProgress = 0
@@ -1562,6 +1572,21 @@ final class SwitcherViewModel: ObservableObject {
         }
     }
 
+    private func releaseBGMFallbackAfterFade(duration: Double, generation: Int) {
+        let taskID = UUID()
+        bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
+            defer { self?.bgmTransitionTasks[taskID] = nil }
+            if duration > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            }
+            guard let self, !Task.isCancelled, self.bgmTransitionGeneration == generation else { return }
+            guard self.currentBGMItem == nil, !self.isBGMPlaying else { return }
+            self.bgmFallbackPlayer.volume = 0
+            self.bgmFallbackPlayer.pause()
+            self.bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        }
+    }
+
     func cancelBGMFallbackFade() {
         bgmFallbackVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask = nil
@@ -1571,6 +1596,14 @@ final class SwitcherViewModel: ObservableObject {
         if let player = bgmAudioPlayer {
             bgmProgressStore.update(currentTime: player.currentTime, duration: player.duration)
             updateBGMRealtimeMeter(from: player)
+        } else if isBGMPlaying {
+            let fallbackTime = bgmFallbackPlayer.currentTime().seconds
+            let itemDuration = bgmFallbackPlayer.currentItem?.duration.seconds
+            let fallbackDuration = bgmDuration ?? ((itemDuration ?? 0) > 0 && itemDuration?.isFinite == true ? itemDuration : nil)
+            if fallbackTime.isFinite, let fallbackDuration, fallbackDuration > 0 {
+                bgmProgressStore.update(currentTime: fallbackTime, duration: fallbackDuration)
+            }
+            resetBGMRealtimeMeter()
         } else {
             resetBGMRealtimeMeter()
         }
