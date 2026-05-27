@@ -44,7 +44,7 @@ final class TopChromeConvergenceTests: XCTestCase {
             failCount: 0
         )
 
-        XCTAssertEqual(PreflightButtonModel.make(summary: fail).value, "1 错 · 2 警告")
+        XCTAssertEqual(PreflightButtonModel.make(summary: fail).value, "1 故障 · 2 警告")
         XCTAssertEqual(PreflightButtonModel.make(summary: warn).value, "2 警告")
     }
 

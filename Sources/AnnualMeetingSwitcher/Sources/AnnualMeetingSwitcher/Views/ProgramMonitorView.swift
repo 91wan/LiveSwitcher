@@ -117,7 +117,7 @@ struct ProgramMonitorView: View {
                     maxHeight: .infinity,
                     alignment: viewModel.cornerLogoPosition.monitorAlignment
                 )
-                .accessibilityLabel("角标 Logo 监看")
+                .accessibilityLabel("角标监看")
         }
     }
 

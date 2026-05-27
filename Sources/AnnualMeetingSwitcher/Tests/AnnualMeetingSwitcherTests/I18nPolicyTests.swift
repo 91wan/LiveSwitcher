@@ -54,7 +54,7 @@ final class I18nPolicyTests: XCTestCase {
             summary: LivePreflightSummary(status: .fail, title: "未就绪", message: "", passCount: 3, warnCount: 2, failCount: 1)
         )
         XCTAssertEqual(model.title, "检查")
-        XCTAssertEqual(model.value, "1 错 · 2 警告")
+        XCTAssertEqual(model.value, "1 故障 · 2 警告")
     }
 
     func testVisibleConsoleChromeDoesNotRegressToRoundSevenEnglishLabels() throws {
@@ -104,7 +104,7 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(combined.contains("叠层编辑"))
         XCTAssertTrue(combined.contains("BGM 库"))
         XCTAssertTrue(combined.contains("节目转场"))
-        XCTAssertTrue(combined.contains("角标 Logo"))
+        XCTAssertTrue(combined.contains("角标"))
     }
 
     func testI18nPolicyDocumentExistsAndPreservesAllowedTerms() throws {

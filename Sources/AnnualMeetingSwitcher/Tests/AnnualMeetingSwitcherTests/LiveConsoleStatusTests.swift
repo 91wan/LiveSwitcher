@@ -137,7 +137,7 @@ final class LiveConsoleStatusTests: XCTestCase {
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).status, .warn)
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).status, .fail)
         XCTAssertEqual(PreflightButtonModel.make(summary: summary(.warn)).value, "1 警告")
-        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).value, "1 错")
+        XCTAssertEqual(PreflightButtonModel.make(summary: summary(.fail)).value, "1 故障")
     }
 
     private func summary(_ status: LivePreflightStatus) -> LivePreflightSummary {

@@ -372,18 +372,10 @@ private struct LiveAudioFader: View {
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer()
-                HStack(spacing: 4) {
-                    if meter.isEstimated {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(StudioTheme.caption().weight(.black))
-                            .foregroundStyle(StudioTheme.Tone.warn)
-                            .help("估算电平")
-                            .accessibilityLabel("估算电平")
-                    }
-                    Text(meter.decibelText)
-                        .font(StudioTheme.TypeScale.heading.weight(.black))
-                        .foregroundStyle(StudioTheme.color(for: meter.statusKind))
-                }
+                Text(meter.decibelText)
+                    .font(StudioTheme.TypeScale.heading.weight(.black))
+                    .foregroundStyle(StudioTheme.color(for: meter.statusKind))
+                    .help(meter.isEstimated ? "该 channel 没有 AVAudioEngine tap，显示为估算值。" : "实时音频电平")
             }
 
             Slider(value: $value, in: 0...1)
@@ -557,20 +549,21 @@ struct LiveQuickRail: View {
                 ftbButton
             }
 
-            Button {
-                viewModel.restartCurrentMediaFromBeginning()
-            } label: {
-                Label(restart.title, systemImage: "backward.end.fill")
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 34)
+            if restart.isEnabled {
+                Button {
+                    viewModel.restartCurrentMediaFromBeginning()
+                } label: {
+                    Label(restart.title, systemImage: "backward.end.fill")
+                        .font(StudioTheme.TypeScale.caption.weight(.black))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 34)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help(restart.help ?? "")
+                .accessibilityLabel(restart.title)
+                .accessibilityHint(restart.help ?? "")
             }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .disabled(!restart.isEnabled)
-            .help(restart.help)
-            .accessibilityLabel(restart.title)
-            .accessibilityHint(restart.help)
         }
     }
 

@@ -9,27 +9,18 @@ enum CornerLogoPosition: String, CaseIterable, Equatable {
     var displayName: String {
         switch self {
         case .topLeft:
-            return "Top Left"
+            return "左上"
         case .topRight:
-            return "Top Right"
+            return "右上"
         case .bottomLeft:
-            return "Bottom Left"
+            return "左下"
         case .bottomRight:
-            return "Bottom Right"
+            return "右下"
         }
     }
 
     var shortLabel: String {
-        switch self {
-        case .topLeft:
-            return "TL"
-        case .topRight:
-            return "TR"
-        case .bottomLeft:
-            return "BL"
-        case .bottomRight:
-            return "BR"
-        }
+        displayName
     }
 
     var alignment: Alignment {

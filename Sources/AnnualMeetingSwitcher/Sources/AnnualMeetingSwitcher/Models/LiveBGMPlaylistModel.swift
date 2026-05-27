@@ -77,7 +77,7 @@ struct LiveBGMPlaylistModel: Equatable {
             rows: rows,
             visibleRowLimit: cappedLimit,
             remainingCount: max(categoryItems.count - cappedLimit, 0),
-            categoryButtonTitle: "切换分类",
+            categoryButtonTitle: displayCategory.rawValue,
             emptyMessage: "\(displayCategory.rawValue) 没有曲目"
         )
     }
