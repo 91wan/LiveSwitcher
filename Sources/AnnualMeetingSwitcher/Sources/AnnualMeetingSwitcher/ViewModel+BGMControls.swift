@@ -104,6 +104,7 @@ extension SwitcherViewModel {
             recordBGMPlaybackState(isPlaying: false, reason: "finished")
             applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
+            bgmFallbackPlayer.seek(to: .zero)
             return
         }
 

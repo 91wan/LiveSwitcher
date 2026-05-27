@@ -1577,6 +1577,11 @@ final class SwitcherViewModel {
                     bgmFallbackPlayer.volume = 0
                 }
             } else {
+                if bgmAudioPlayer == nil && bgmFallbackPlayer.currentItem == nil {
+                    currentBGMItem = nil
+                    toggleBGM(item)
+                    return
+                }
                 // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
                 bgmTransitionGeneration += 1
                 isBGMPlaying = true

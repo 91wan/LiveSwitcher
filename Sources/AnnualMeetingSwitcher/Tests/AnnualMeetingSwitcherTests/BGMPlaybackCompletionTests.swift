@@ -22,6 +22,28 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmAudioPlayer?.currentTime ?? -1, 0, accuracy: 0.1)
     }
 
+    func testSequentialFinishedCurrentTrackCanBePlayedAgain() throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Solo", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        viewModel.bgmPlayMode = .sequential
+
+        viewModel.bgmDidFinish()
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+
+        viewModel.toggleBGM(item)
+
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmAudioPlayer)
+        XCTAssertEqual(viewModel.bgmAudioPlayer?.currentTime ?? -1, 0, accuracy: 0.1)
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         SwitcherViewModel(
             loadPersistedData: false,
