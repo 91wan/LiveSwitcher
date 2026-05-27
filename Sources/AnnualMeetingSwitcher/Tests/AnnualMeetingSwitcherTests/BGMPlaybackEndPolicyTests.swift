@@ -35,17 +35,17 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
         ))
     }
 
-    func testDoesNotFinishBeforeDurationBoundary() {
+    func testFinishesAtDurationBoundaryButNotBefore() {
         XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
             isPlaying: true,
             playMode: .loopAll,
-            currentTime: 140,
+            currentTime: 143.9,
             duration: 144
         ))
-        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+        XCTAssertTrue(BGMPlaybackEndPolicy.shouldTreatAsFinished(
             isPlaying: true,
             playMode: .loopAll,
-            currentTime: 144.1,
+            currentTime: 144,
             duration: 144
         ))
     }
