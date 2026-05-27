@@ -3,8 +3,8 @@ import XCTest
 
 @MainActor
 final class BGMProgressStoreTests: XCTestCase {
-    func testTimerIntervalIsOperatorFriendlyTenFPS() {
-        XCTAssertEqual(BGMProgressStore.updateInterval, 0.1, accuracy: 0.0001)
+    func testTimerIntervalIsOperatorFriendlyFiveFPS() {
+        XCTAssertEqual(BGMProgressStore.updateInterval, 0.2, accuracy: 0.0001)
     }
 
     func testUpdateCalculatesProgressAndDuration() {

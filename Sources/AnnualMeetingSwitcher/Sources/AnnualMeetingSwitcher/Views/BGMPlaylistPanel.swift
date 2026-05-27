@@ -291,13 +291,30 @@ struct BGMPlaylistPanel: View {
     // MARK: - 状态指示行
 
     private var statusRow: some View {
-        HStack(spacing: 6) {
+        let controls = bgmControlsState
+
+        return HStack(spacing: 6) {
             Circle()
-                .fill(viewModel.bgmItems.isEmpty ? StudioTheme.Tone.idle.opacity(0.4) : StudioTheme.Tone.ready)
+                .fill(StudioTheme.color(for: controls.displayStatusKind))
                 .frame(width: 8, height: 8)
-            Text(viewModel.bgmItems.isEmpty ? "引擎已停止" : "BGM 已就绪")
+            Text(statusRowText(for: controls))
                 .font(StudioTheme.TypeScale.body.weight(.semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
+        }
+    }
+
+    private func statusRowText(for controls: BGMControlsState) -> String {
+        switch controls.displayStatusText {
+        case "播放中":
+            return "BGM 播放中"
+        case "已选":
+            return "BGM 已选中"
+        case "待选":
+            return "请选择 BGM"
+        case "空":
+            return "请添加 BGM"
+        default:
+            return controls.displayStatusText
         }
     }
 
@@ -432,7 +449,7 @@ struct BGMItemRow: View {
                 )
 
                 if isCurrentTrack {
-                    Image(systemName: isPlaying ? "waveform" : "pause.fill")
+                    Image(systemName: isPlaying ? "waveform" : "checkmark")
                         .font(StudioTheme.TypeScale.monoCaption.weight(.black))
                         .foregroundStyle(.white)
                         .frame(width: 15, height: 15)

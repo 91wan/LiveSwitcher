@@ -283,7 +283,8 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("realtimeDB: viewModel.liveMasterMeterRealtimeDB()"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.liveMasterMeterFallbackVolume()"))
         XCTAssertTrue(source.contains("realtimeDB: viewModel.avCoordinator.realtimeLevelDB"))
-        XCTAssertTrue(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
+        XCTAssertTrue(source.contains("realtimeDB: bgmMeterStore.bgmRealtimeLevelDB"))
+        XCTAssertTrue(source.contains("@ObservedObject var bgmMeterStore: AudioMeterStore"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.effectiveBGMOutputVolume()"))
     }
 

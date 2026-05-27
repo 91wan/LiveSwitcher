@@ -20,6 +20,23 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("isVideo: false"))
     }
 
+    func testPausedCurrentBGMRowUsesCuedIconInsteadOfPauseIcon() throws {
+        let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("isPlaying ? \"waveform\" : \"checkmark\""))
+        XCTAssertFalse(source.contains("isPlaying ? \"waveform\" : \"pause.fill\""))
+    }
+
+    func testBGMStatusRowUsesSharedControlsStateCopy() throws {
+        let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("let controls = bgmControlsState"))
+        XCTAssertTrue(source.contains("statusRowText(for: controls)"))
+        XCTAssertFalse(source.contains("viewModel.bgmItems.isEmpty ? \"引擎已停止\" : \"BGM 已就绪\""))
+        XCTAssertTrue(source.contains("case \"播放中\":"))
+        XCTAssertTrue(source.contains("return \"BGM 播放中\""))
+    }
+
     func testBGMPlaylistPanelUsesStudioTypeScaleInsteadOfRawFontLiterals() throws {
         let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
 

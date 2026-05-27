@@ -23,7 +23,9 @@ struct ContentView: View {
         .accessibilityLabel("LiveSwitcher main console")
         .onAppear {
             markSetupTabLoaded(viewModel.selectedMainTab)
-            prewarmLiveModeLayer()
+            if viewModel.consoleMode == .live {
+                hasMountedLiveMode = true
+            }
         }
         .onChange(of: viewModel.selectedMainTab) { _, newTab in
             markSetupTabLoaded(newTab)
@@ -136,21 +138,23 @@ struct ContentView: View {
         loadedSetupTabs = [viewModel.selectedMainTab]
     }
 
-    private func prewarmLiveModeLayer() {
-        guard !hasMountedLiveMode else { return }
-        Task { @MainActor in
-            await Task.yield()
-            hasMountedLiveMode = true
-        }
-    }
-
+    @ViewBuilder
     private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {
         let model = TabRetentionModel(tab: tab, selectedTab: viewModel.selectedMainTab)
-        return content()
-            .opacity(model.opacity)
-            .allowsHitTesting(model.allowsHitTesting)
-            .accessibilityHidden(model.accessibilityHidden)
-            .zIndex(model.zIndex)
+        let isSetupModeActive = viewModel.consoleMode == .setup
+        if isSetupModeActive {
+            content()
+                .opacity(model.opacity)
+                .allowsHitTesting(model.allowsHitTesting)
+                .accessibilityHidden(model.accessibilityHidden)
+                .zIndex(model.zIndex)
+        } else {
+            content()
+                .hidden()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                .zIndex(model.zIndex)
+        }
     }
 
     private func runDesk() -> some View {

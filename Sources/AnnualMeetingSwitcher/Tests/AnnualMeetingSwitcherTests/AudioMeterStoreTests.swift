@@ -1,0 +1,65 @@
+import XCTest
+@testable import LiveSwitcher
+
+@MainActor
+final class AudioMeterStoreTests: XCTestCase {
+    func testPolicyPublishesInitialAndResetLevels() {
+        XCTAssertTrue(AudioMeterPublishPolicy.shouldPublishLevel(previous: nil, next: -24))
+        XCTAssertTrue(AudioMeterPublishPolicy.shouldPublishLevel(previous: -24, next: nil))
+        XCTAssertFalse(AudioMeterPublishPolicy.shouldPublishLevel(previous: nil, next: nil))
+    }
+
+    func testPolicyDedupesTinyMeterChanges() {
+        XCTAssertFalse(AudioMeterPublishPolicy.shouldPublishLevel(previous: -18, next: -17.7))
+        XCTAssertTrue(AudioMeterPublishPolicy.shouldPublishLevel(previous: -18, next: -17.3))
+    }
+
+    func testStoreDedupesSmallBGMLevelChanges() {
+        let store = AudioMeterStore()
+
+        store.updateBGMRealtimeLevel(-20)
+        XCTAssertEqual(store.bgmRealtimeLevelDB, -20)
+
+        store.updateBGMRealtimeLevel(-19.8)
+        XCTAssertEqual(store.bgmRealtimeLevelDB, -20)
+
+        store.updateBGMRealtimeLevel(-19.2)
+        XCTAssertEqual(store.bgmRealtimeLevelDB, -19.2)
+
+        store.resetBGMRealtimeLevel()
+        XCTAssertNil(store.bgmRealtimeLevelDB)
+    }
+
+    func testViewModelDoesNotExposeBGMRealtimeLevelAsObservedState() throws {
+        let source = try sourceText("ViewModel.swift")
+
+        XCTAssertTrue(source.contains("@ObservationIgnored var bgmRealtimeLevelDB"))
+        XCTAssertTrue(source.contains("@ObservationIgnored let audioMeterStore"))
+    }
+
+    func testLiveAudioStripObservesDedicatedMeterStore() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("@ObservedObject var bgmMeterStore: AudioMeterStore"))
+        XCTAssertTrue(source.contains("realtimeDB: bgmMeterStore.bgmRealtimeLevelDB"))
+        XCTAssertFalse(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func sourceURL(_ relativePath: String) throws -> URL {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}

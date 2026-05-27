@@ -9,7 +9,7 @@ struct LiveOverlayRailRowModel: Equatable {
     var disabledHint: String
 
     var toggleText: String {
-        isLive ? "上屏" : "关闭"
+        isLive ? "关闭" : "上屏"
     }
 
     var accessibilityLabel: String {

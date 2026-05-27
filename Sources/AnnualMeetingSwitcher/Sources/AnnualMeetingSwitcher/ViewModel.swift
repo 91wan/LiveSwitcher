@@ -225,7 +225,8 @@ final class SwitcherViewModel {
         get { bgmProgressStore.duration }
         set { bgmProgressStore.duration = (newValue ?? 0) > 0 ? newValue : nil }
     }
-    var bgmRealtimeLevelDB: Float? = nil
+    @ObservationIgnored let audioMeterStore = AudioMeterStore()
+    @ObservationIgnored var bgmRealtimeLevelDB: Float? = nil
 
     /// BGM 播放器
     var bgmAudioPlayer: AVAudioPlayer?
@@ -621,7 +622,7 @@ final class SwitcherViewModel {
         duration: Double,
         apply: @escaping (Float) -> Void
     ) async {
-        let steps = 20
+        let steps = AudioFadeStepPolicy.stepCount(duration: duration)
         let stepDuration = UInt64((duration / Double(steps)) * 1_000_000_000)
 
         for step in 1...steps {
@@ -1755,6 +1756,7 @@ final class SwitcherViewModel {
 
     func resetBGMRealtimeMeter() {
         bgmRealtimeLevelDB = nil
+        audioMeterStore.resetBGMRealtimeLevel()
     }
 
     private func updateBGMRealtimeMeter(from player: AVAudioPlayer) {
@@ -1764,7 +1766,9 @@ final class SwitcherViewModel {
         }
 
         player.updateMeters()
-        bgmRealtimeLevelDB = player.averagePower(forChannel: 0)
+        let level = player.averagePower(forChannel: 0)
+        bgmRealtimeLevelDB = level
+        audioMeterStore.updateBGMRealtimeLevel(level)
     }
 
     // MARK: - 推流控制
