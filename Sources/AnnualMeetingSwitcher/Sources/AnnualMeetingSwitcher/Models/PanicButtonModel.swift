@@ -18,10 +18,10 @@ struct PanicButtonModel: Equatable {
 
     static func make(isActive: Bool, consoleMode: ConsoleMode) -> PanicButtonModel {
         let title = isActive ? "紧急切黑: 开" : "紧急切黑"
-        let subtitle = isActive ? "副屏黑屏 · 音频静音" : "一键应急"
+        let subtitle = isActive ? "黑屏静音 · 媒体暂停" : "一键应急"
         let hint = isActive
-            ? "紧急切黑已开启：副屏黑屏，所有音频静音。再次点击恢复。"
-            : "紧急切黑：将副屏切黑并静音所有音频。"
+            ? "紧急切黑已开启：副屏黑屏，所有音频静音，并暂停当前媒体和暂停 BGM。再次点击恢复。"
+            : "紧急切黑：将副屏切黑、静音所有音频，并暂停当前媒体和暂停 BGM。"
 
         return PanicButtonModel(
             systemImage: isActive ? "eye.slash.fill" : "bolt.fill",
