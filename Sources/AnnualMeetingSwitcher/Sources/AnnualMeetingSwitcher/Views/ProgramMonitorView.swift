@@ -106,20 +106,30 @@ struct ProgramMonitorView: View {
     @ViewBuilder
     private var monitorCornerLogoOverlay: some View {
         if let image = viewModel.cornerLogoImage {
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(height: isLiveMode ? 52 : 42)
-                .padding(viewModel.cornerLogoPosition.monitorPadding(
-                    chromeVisible: monitorChromeVisibility.inlineChromeOpacity > 0
-                ))
-                .frame(
-                    maxWidth: .infinity,
-                    maxHeight: .infinity,
-                    alignment: viewModel.cornerLogoPosition.monitorAlignment
-                )
-                .accessibilityLabel("角标监看")
+            monitorCornerLogoImage(image)
+        } else if let url = viewModel.cornerLogoURL {
+            AsyncLocalImage(url: url) {
+                EmptyView()
+            } content: { image in
+                monitorCornerLogoImage(image)
+            }
         }
+    }
+
+    private func monitorCornerLogoImage(_ image: NSImage) -> some View {
+        Image(nsImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(height: isLiveMode ? 52 : 42)
+            .padding(viewModel.cornerLogoPosition.monitorPadding(
+                chromeVisible: monitorChromeVisibility.inlineChromeOpacity > 0
+            ))
+            .frame(
+                maxWidth: .infinity,
+                maxHeight: .infinity,
+                alignment: viewModel.cornerLogoPosition.monitorAlignment
+            )
+            .accessibilityLabel("角标监看")
     }
 
     private var monitorTopChrome: some View {

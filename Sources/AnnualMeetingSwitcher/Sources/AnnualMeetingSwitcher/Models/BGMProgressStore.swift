@@ -3,7 +3,7 @@ import Combine
 
 @MainActor
 final class BGMProgressStore: ObservableObject {
-    static let updateInterval: TimeInterval = 0.1
+    static let updateInterval: TimeInterval = 0.2
 
     @Published var progress: Double = 0
     @Published var currentTime: Double = 0
