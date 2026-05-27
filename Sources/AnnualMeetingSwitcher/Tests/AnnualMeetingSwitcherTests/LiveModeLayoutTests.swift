@@ -145,6 +145,18 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(source.contains("Label(\"Open BGM Library\""))
     }
 
+    func testLiveBGMTransportHasRestartButtonAndChineseTooltips() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("viewModel.seekBGMToBeginning()"))
+        XCTAssertTrue(source.contains("\"跳回开头\""))
+        XCTAssertTrue(source.contains("\"上一首\""))
+        XCTAssertTrue(source.contains("\"播放 BGM\""))
+        XCTAssertTrue(source.contains("\"暂停 BGM\""))
+        XCTAssertTrue(source.contains("\"下一首\""))
+        XCTAssertFalse(source.contains("\"BGM transport\""))
+    }
+
     func testLiveQuickRailKeepsBGMPlaylistInFirstViewportPriority() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 

@@ -1692,8 +1692,9 @@ final class SwitcherViewModel {
         let taskID = UUID()
         bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
             defer { self?.bgmTransitionTasks[taskID] = nil }
-            if duration > 0 {
-                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            let releaseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: duration)
+            if releaseDelay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
             }
             guard !Task.isCancelled else { return }
             player.delegate = nil
@@ -1705,8 +1706,9 @@ final class SwitcherViewModel {
         let taskID = UUID()
         bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
             defer { self?.bgmTransitionTasks[taskID] = nil }
-            if duration > 0 {
-                try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            let releaseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: duration)
+            if releaseDelay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
             }
             guard let self, !Task.isCancelled, self.bgmTransitionGeneration == generation else { return }
             guard self.currentBGMItem == nil, !self.isBGMPlaying else { return }

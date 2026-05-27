@@ -105,6 +105,17 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertLessThanOrEqual(BGMFadeCompletionPolicy.pauseDelay(fadeDuration: 1.0), 1.1)
     }
 
+    func testBGMReleaseUsesCompletionPolicySettleDelay() throws {
+        let source = try sourceText("ViewModel.swift")
+        let playerReleaseBody = try XCTUnwrap(source.functionBody(named: "releaseBGMPlayerAfterFade"))
+        let fallbackReleaseBody = try XCTUnwrap(source.functionBody(named: "releaseBGMFallbackAfterFade"))
+
+        XCTAssertTrue(playerReleaseBody.contains("BGMFadeCompletionPolicy.pauseDelay"))
+        XCTAssertTrue(fallbackReleaseBody.contains("BGMFadeCompletionPolicy.pauseDelay"))
+        XCTAssertFalse(playerReleaseBody.contains("UInt64(duration * 1_000_000_000)"))
+        XCTAssertFalse(fallbackReleaseBody.contains("UInt64(duration * 1_000_000_000)"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

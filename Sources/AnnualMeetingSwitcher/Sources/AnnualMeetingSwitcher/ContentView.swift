@@ -6,7 +6,6 @@ import SwiftUI
 struct ContentView: View {
     @Environment(SwitcherViewModel.self) var viewModel
     @State private var loadedSetupTabs: Set<MainConsoleTab> = [.preview]
-    @State private var hasMountedLiveMode = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -23,9 +22,6 @@ struct ContentView: View {
         .accessibilityLabel("LiveSwitcher main console")
         .onAppear {
             markSetupTabLoaded(viewModel.selectedMainTab)
-            if viewModel.consoleMode == .live {
-                hasMountedLiveMode = true
-            }
         }
         .onChange(of: viewModel.selectedMainTab) { _, newTab in
             markSetupTabLoaded(newTab)
@@ -34,7 +30,6 @@ struct ContentView: View {
             if newMode == .setup {
                 markSetupTabLoaded(viewModel.selectedMainTab)
             } else {
-                hasMountedLiveMode = true
                 trimLoadedSetupTabsForLiveMode()
             }
         }
@@ -57,10 +52,7 @@ struct ContentView: View {
                     }
                 }
 
-                if ConsoleModeMountPolicy.shouldMountLiveLayer(
-                    consoleMode: viewModel.consoleMode,
-                    hasMountedLiveLayer: hasMountedLiveMode
-                ) {
+                if ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: viewModel.consoleMode) {
                     consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
                         liveContent
                     }
