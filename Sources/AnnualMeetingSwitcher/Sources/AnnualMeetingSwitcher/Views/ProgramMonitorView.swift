@@ -104,9 +104,7 @@ struct ProgramMonitorView: View {
 
     @ViewBuilder
     private var monitorCornerLogoOverlay: some View {
-        AsyncLocalImage(url: viewModel.cornerLogoURL) {
-            EmptyView()
-        } content: { image in
+        if let image = viewModel.cornerLogoImage {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)

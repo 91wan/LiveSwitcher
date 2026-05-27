@@ -87,12 +87,13 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
     }
 
-    func testStoppingBGMUsesOwnedLinearFadeBeforePausing() throws {
+    func testStoppingBGMUsesSingleRoutingFadeBeforePausing() throws {
         let source = try sourceText("ViewModel.swift")
         let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
 
         XCTAssertTrue(source.contains("fadeBGMPlayerVolume"))
-        XCTAssertTrue(toggleBody.contains("fadeBGMPlayerVolume(to: 0"))
+        XCTAssertTrue(toggleBody.contains("applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)"))
+        XCTAssertFalse(toggleBody.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(toggleBody.contains("bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)"))
     }
 

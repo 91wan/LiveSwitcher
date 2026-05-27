@@ -473,7 +473,7 @@ final class SwitcherViewModel: ObservableObject {
             avCoordinator.volume = effectiveMedia
         }
 
-        let effectiveBGM = effectiveBGMOutputVolume()
+        let effectiveBGM = appliedBGMOutputVolume()
         if let bgmFadeDuration, bgmAudioPlayer != nil {
             fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration)
         } else {
@@ -487,6 +487,10 @@ final class SwitcherViewModel: ObservableObject {
             bgmFallbackVolumeFadeTask?.cancel()
             bgmFallbackPlayer.volume = effectiveBGM
         }
+    }
+
+    private func appliedBGMOutputVolume() -> Float {
+        isBGMPlaying ? effectiveBGMOutputVolume() : 0
     }
 
     func applyAudioRoutingForRuntimeChange(reason: AudioRoutingRuntimeChangeReason) {
@@ -1535,9 +1539,8 @@ final class SwitcherViewModel: ObservableObject {
                 resetBGMRealtimeMeter()
                 clearBGMTakeoverIfNeeded()
                 recordBGMPlaybackState(isPlaying: false, reason: "operator")
-                fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
-                fadeBGMPlayerVolume(to: 0, duration: fadeDur)
                 let capturedPlayer = bgmAudioPlayer
+                applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
                 Task { @MainActor in
                     if fadeDur > 0 {
                         try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
@@ -1545,7 +1548,6 @@ final class SwitcherViewModel: ObservableObject {
                     capturedPlayer?.volume = 0
                     capturedPlayer?.pause()
                 }
-                fadeBGMFallbackVolume(to: 0, duration: fadeDur)
                 let stoppingItemID = item.id
                 Task { @MainActor [weak self] in
                     if fadeDur > 0 {
@@ -1557,7 +1559,6 @@ final class SwitcherViewModel: ObservableObject {
                     }
                 }
                 stopBGMTimer()
-                applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
                 if fadeDur <= 0 {
                     bgmAudioPlayer?.volume = 0
                     bgmFallbackPlayer.volume = 0

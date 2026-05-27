@@ -85,7 +85,9 @@ final class ConsoleModeTests: XCTestCase {
         let content = try sourceText("ContentView.swift")
 
         XCTAssertTrue(content.contains("setupContentTabs"))
-        XCTAssertTrue(content.contains("if viewModel.consoleMode == .live"))
+        XCTAssertTrue(content.contains("liveContent"))
+        XCTAssertTrue(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live)"))
+        XCTAssertTrue(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
         XCTAssertFalse(content.contains("retainedTab(.preview) {\n                    if viewModel.consoleMode == .live"))
         XCTAssertFalse(content.contains("activeContentTab"))
     }

@@ -39,12 +39,12 @@ struct ContentView: View {
                 StudioTheme.canvasGradient
                     .ignoresSafeArea()
 
-                if viewModel.consoleMode == .live {
-                    LiveModeView {
-                        viewModel.navigateToSetup(.audioMixer)
-                    }
-                } else {
+                consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup) {
                     setupContentTabs
+                }
+
+                consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
+                    liveContent
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -58,6 +58,23 @@ struct ContentView: View {
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+    }
+
+    private var liveContent: some View {
+        LiveModeView {
+            viewModel.navigateToSetup(.audioMixer)
+        }
+    }
+
+    private func consoleModeRetainedLayer<Content: View>(
+        isActive: Bool,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        content()
+            .opacity(isActive ? 1 : 0)
+            .allowsHitTesting(isActive)
+            .accessibilityHidden(!isActive)
+            .zIndex(isActive ? 1 : 0)
     }
 
     @ViewBuilder

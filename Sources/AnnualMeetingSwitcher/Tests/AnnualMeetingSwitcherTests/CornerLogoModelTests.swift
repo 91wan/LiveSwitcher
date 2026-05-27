@@ -74,7 +74,8 @@ final class CornerLogoModelTests: XCTestCase {
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
 
         XCTAssertTrue(monitor.contains("monitorCornerLogoOverlay"))
-        XCTAssertTrue(monitor.contains("AsyncLocalImage(url: viewModel.cornerLogoURL"))
+        XCTAssertTrue(monitor.contains("if let image = viewModel.cornerLogoImage"))
+        XCTAssertFalse(monitor.contains("AsyncLocalImage(url: viewModel.cornerLogoURL"))
         XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
     }
 
