@@ -147,6 +147,9 @@ struct MainToolbar: View {
                     Text(preflightModel.value)
                         .font(StudioTheme.TypeScale.label.weight(.bold))
                 }
+                Image(systemName: "chevron.down")
+                    .font(StudioTheme.TypeScale.label.weight(.black))
+                    .accessibilityHidden(true)
             }
             .foregroundStyle(StudioTheme.color(for: preflightModel.status))
             .padding(.horizontal, 12)

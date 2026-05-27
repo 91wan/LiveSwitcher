@@ -141,7 +141,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("外接显示器") })
         XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("投射状态") })
         XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("故障") })
-        XCTAssertTrue(model.chips.contains { $0.text.contains("待机") && $0.text.contains("0 个信号源") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("待机") && $0.text.contains("0 信号源") })
     }
 
     @MainActor
