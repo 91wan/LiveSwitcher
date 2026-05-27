@@ -105,7 +105,7 @@ struct LeftPanel: View {
                 Image(systemName: model.systemImage)
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.color(for: model.statusKind))
-                Text("视频播毕自动下一条")
+                Text("自动续播下一项")
                     .font(StudioTheme.caption())
                     .foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
@@ -116,7 +116,8 @@ struct LeftPanel: View {
         .controlSize(.small)
         .padding(.horizontal, 2)
         .padding(.vertical, 2)
-        .help("仅当前节目播毕且下一条也是视频时自动播放；不会自动打开 HTML、PPT 或 Keynote。")
+        .help("当前视频播毕后，如下一项也是视频，会自动续播下一项；不会打开 HTML、PPT 或 Keynote。")
+        .accessibilityLabel("自动续播下一项")
     }
 
     @ViewBuilder

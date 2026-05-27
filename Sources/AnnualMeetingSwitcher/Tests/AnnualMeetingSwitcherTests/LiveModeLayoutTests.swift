@@ -29,6 +29,14 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("struct LiveRuntimeStatusBar"))
     }
 
+    func testLiveSourceRailUsesUnifiedLabelModel() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("SourceRailRowLabelModel.make"))
+        XCTAssertFalse(source.contains("Text(rowModel.queueBadgeText)"))
+        XCTAssertFalse(source.contains("Text(item.displaySourceLabel)"))
+    }
+
     func testLiveModePreservesBreathingRoomBelowChrome() throws {
         let source = try sourceText("Views/LiveModeView.swift")
         let content = try sourceText("ContentView.swift")

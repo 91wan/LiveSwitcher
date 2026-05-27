@@ -23,6 +23,16 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(source.contains("helpButton"))
     }
 
+    func testTopChromeShowsNavigationAffordancesForSetupAndPreflight() throws {
+        let toolbar = try sourceText("Views/MainToolbar.swift")
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(toolbar.contains("chevron.down"))
+        XCTAssertTrue(content.contains("title: \"← 准备\""))
+        XCTAssertTrue(content.contains("systemImage: \"chevron.left\""))
+        XCTAssertTrue(content.contains("accessibilityHint(\"返回准备模式\")"))
+    }
+
     func testStaleToolbarActionModelWasRemoved() throws {
         XCTAssertFalse(sourceExists("Models/ToolbarActionModel.swift"))
     }

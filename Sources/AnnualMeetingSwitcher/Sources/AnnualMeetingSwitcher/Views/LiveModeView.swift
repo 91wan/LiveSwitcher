@@ -192,13 +192,11 @@ private struct LiveSourceRailRow: View {
     let isBroadcasting: Bool
     let action: () -> Void
 
-    private var rowModel: ProgramQueueRowModel {
-        ProgramQueueRowModel(
-            item: item,
+    private var labelModel: SourceRailRowLabelModel {
+        SourceRailRowLabelModel.make(
             queuePosition: queuePosition,
             queueRole: queueRole,
-            isBroadcasting: isBroadcasting,
-            isPlaying: false
+            sourceLabel: item.displaySourceLabel
         )
     }
 
@@ -215,13 +213,9 @@ private struct LiveSourceRailRow: View {
 
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
-                        Text(rowModel.queueBadgeText)
+                        Text(labelModel.text)
                             .font(StudioTheme.TypeScale.label)
                             .foregroundStyle(statusColor)
-                            .lineLimit(1)
-                        Text(item.displaySourceLabel)
-                            .font(StudioTheme.TypeScale.label.weight(.bold))
-                            .foregroundStyle(StudioTheme.textTertiary)
                             .lineLimit(1)
                         Spacer(minLength: 0)
                         PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
@@ -242,7 +236,7 @@ private struct LiveSourceRailRow: View {
             )
         }
         .buttonStyle(.plain)
-            .accessibilityLabel("\(rowModel.queueBadgeText)，\(item.title)，\(item.displaySourceLabel)")
+            .accessibilityLabel("\(labelModel.accessibilityLabel)，\(item.title)")
     }
 
     private var statusColor: Color {

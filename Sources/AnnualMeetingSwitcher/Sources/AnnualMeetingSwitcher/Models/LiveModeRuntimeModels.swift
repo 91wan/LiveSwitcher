@@ -137,7 +137,7 @@ struct LiveRuntimeStatusModel: Equatable {
         let output = snapshot.isBroadcasting ? "直播" : "待机"
         let current = snapshot.currentProgramTitle ?? "无节目"
         let summary = LiveRuntimeStatusChip(
-            text: "\(output) · 当前: \(current) · \(snapshot.programItemCount) 个信号源",
+            text: "\(output) · 当前: \(current) · \(snapshot.programItemCount) 信号源",
             kind: snapshot.isBroadcasting ? .live : .ready
         )
 
@@ -183,6 +183,6 @@ struct LiveRuntimeStatusModel: Equatable {
             }
             return "+ \(hiddenFailCount) 故障"
         }
-        return "+ \(hiddenWarnCount) 个警告"
+        return "+ \(hiddenWarnCount) 警告"
     }
 }

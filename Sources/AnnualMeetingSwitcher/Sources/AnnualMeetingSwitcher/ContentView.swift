@@ -215,14 +215,15 @@ struct ContentView: View {
             setupModeMenuButton
         } else {
             NavigationTabButton(
-                title: ConsoleMode.setup.displayTitle,
-                systemImage: ConsoleMode.setup.systemImage,
+                title: "← 准备",
+                systemImage: "chevron.left",
                 isSelected: false
             ) {
                 withAnimation(.easeInOut(duration: 0.16)) {
                     viewModel.navigateToSetup(viewModel.selectedMainTab)
                 }
             }
+            .accessibilityHint("返回准备模式")
         }
     }
 

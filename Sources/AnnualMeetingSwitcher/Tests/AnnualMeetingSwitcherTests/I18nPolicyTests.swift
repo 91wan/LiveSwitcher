@@ -29,6 +29,8 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertFalse(liveMode.contains("Label(\"Take Next\""))
         XCTAssertTrue(liveMode.contains("Text(\"信号源\")"))
         XCTAssertTrue(liveMode.contains("Label(\"下一项\""))
+        XCTAssertFalse(liveMode.contains("视频播毕自动下一条"))
+        XCTAssertTrue(try sourceText("Views/LeftPanel.swift").contains("自动续播下一项"))
         XCTAssertTrue(tabs.contains("LiveSwitcher · 导播台"))
         XCTAssertTrue(tabs.contains("return \"节目单\""))
         XCTAssertTrue(app.contains("Button(\"节目单\")"))
