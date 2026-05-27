@@ -11,7 +11,7 @@ enum ConsoleModeMountPolicy {
             return tab == selectedTab || loadedTabs.contains(tab)
         }
 
-        return tab == selectedTab && loadedTabs.contains(tab)
+        return false
     }
 
     static func shouldMountSetupLayer(
@@ -19,7 +19,7 @@ enum ConsoleModeMountPolicy {
         selectedTab: MainConsoleTab,
         loadedTabs: Set<MainConsoleTab>
     ) -> Bool {
-        consoleMode == .setup || loadedTabs.contains(selectedTab)
+        consoleMode == .setup
     }
 
     static func shouldMountLiveLayer(consoleMode: ConsoleMode) -> Bool {

@@ -228,6 +228,9 @@ final class SwitcherViewModel {
     @ObservationIgnored let audioMeterStore = AudioMeterStore()
     @ObservationIgnored var bgmRealtimeLevelDB: Float? = nil
 
+    /// Audio page category selection is retained outside the view tree so live/setup mode switches can unmount hidden setup views.
+    var bgmLibraryCategorySelection = BGMCategorySelectionState(selectedCategory: .warmUp)
+
     /// BGM 播放器
     var bgmAudioPlayer: AVAudioPlayer?
     var bgmFallbackPlayer: AVPlayer = AVPlayer()

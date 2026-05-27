@@ -90,7 +90,8 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertFalse(content.contains("prewarmLiveModeLayer"))
         XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
         XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountLiveLayer("))
-        XCTAssertTrue(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
+        XCTAssertFalse(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
+        XCTAssertTrue(content.contains("activeConsoleLayer(isActive: viewModel.consoleMode == .live)"))
         XCTAssertFalse(content.contains("retainedTab(.preview) {\n                    if viewModel.consoleMode == .live"))
         XCTAssertFalse(content.contains("activeContentTab"))
     }
@@ -105,26 +106,29 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(content.contains("trimLoadedSetupTabsForLiveMode"))
     }
 
-    func testRetainedSetupTabsAreAccessibilityHiddenWhileLiveModeIsActive() throws {
+    func testSetupLayerUnmountsWhileLiveModeIsActive() throws {
         let content = try sourceText("ContentView.swift")
 
-        XCTAssertTrue(content.contains("let isSetupModeActive = viewModel.consoleMode == .setup"))
-        XCTAssertTrue(content.contains(".hidden()"))
-        XCTAssertTrue(content.contains(".allowsHitTesting(false)"))
-        XCTAssertTrue(content.contains(".accessibilityHidden(true)"))
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupLayer(
+            consoleMode: .live,
+            selectedTab: .preview,
+            loadedTabs: [.preview]
+        ))
+        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
+        XCTAssertFalse(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
     }
 
-    func testOnlySelectedSetupTabRemainsMountedWhileLiveModeIsActive() {
+    func testSetupTabsUnmountWhileLiveModeIsActive() {
         let loaded: Set<MainConsoleTab> = [.preview, .audioMixer, .overlays]
 
         XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupTab(
-            .audioMixer,
+            .preview,
             consoleMode: .live,
             selectedTab: .preview,
             loadedTabs: loaded
         ))
-        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupTab(
-            .preview,
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupTab(
+            .audioMixer,
             consoleMode: .live,
             selectedTab: .preview,
             loadedTabs: loaded
@@ -135,7 +139,7 @@ final class ConsoleModeTests: XCTestCase {
             selectedTab: .preview,
             loadedTabs: loaded
         ))
-        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupLayer(
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupLayer(
             consoleMode: .live,
             selectedTab: .preview,
             loadedTabs: [.preview]

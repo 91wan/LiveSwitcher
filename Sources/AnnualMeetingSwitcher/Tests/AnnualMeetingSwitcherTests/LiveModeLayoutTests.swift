@@ -59,7 +59,7 @@ final class LiveModeLayoutTests: XCTestCase {
 
         XCTAssertTrue(source.contains("LiveModeView"))
         XCTAssertTrue(source.contains("liveContent"))
-        XCTAssertTrue(source.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live)"))
+        XCTAssertTrue(source.contains("activeConsoleLayer(isActive: viewModel.consoleMode == .live)"))
         XCTAssertFalse(source.contains("runDesk(isLiveMode: viewModel.consoleMode == .live)"))
     }
 

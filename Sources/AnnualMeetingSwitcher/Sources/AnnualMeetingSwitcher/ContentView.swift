@@ -47,13 +47,11 @@ struct ContentView: View {
                     selectedTab: viewModel.selectedMainTab,
                     loadedTabs: loadedSetupTabs
                 ) {
-                    consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup) {
-                        setupContentTabs
-                    }
+                    setupContentTabs
                 }
 
                 if ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: viewModel.consoleMode) {
-                    consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
+                    activeConsoleLayer(isActive: viewModel.consoleMode == .live) {
                         liveContent
                     }
                 }
@@ -77,7 +75,7 @@ struct ContentView: View {
         }
     }
 
-    private func consoleModeRetainedLayer<Content: View>(
+    private func activeConsoleLayer<Content: View>(
         isActive: Bool,
         @ViewBuilder content: () -> Content
     ) -> some View {
