@@ -70,6 +70,22 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertFalse(controls.contains("bgmAudioPlayer?.stop()"))
     }
 
+    func testRemovingCurrentBGMUsesFadeReleaseInsteadOfImmediateHardStop() throws {
+        let source = try sourceText("ViewModel.swift")
+        let removeBody = try XCTUnwrap(source.functionBody(named: "removeBGMItem"))
+
+        XCTAssertFalse(removeBody.contains("bgmAudioPlayer?.stop()"))
+        XCTAssertTrue(removeBody.contains("releaseBGMPlayerAfterFade"))
+    }
+
+    func testFallbackBGMProgressTimerSamplesFallbackPlayerTime() throws {
+        let source = try sourceText("ViewModel.swift")
+        let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
+
+        XCTAssertTrue(updateBody.contains("bgmFallbackPlayer.currentTime()"))
+        XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
@@ -86,5 +102,28 @@ final class BGMProgressStoreTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}
+
+private extension String {
+    func functionBody(named functionName: String) -> String? {
+        guard let nameRange = range(of: "func \(functionName)") else { return nil }
+        guard let openingBrace = self[nameRange.lowerBound...].firstIndex(of: "{") else { return nil }
+
+        var depth = 0
+        var index = openingBrace
+        while index < endIndex {
+            let character = self[index]
+            if character == "{" {
+                depth += 1
+            } else if character == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(self[openingBrace...index])
+                }
+            }
+            index = self.index(after: index)
+        }
+        return nil
     }
 }

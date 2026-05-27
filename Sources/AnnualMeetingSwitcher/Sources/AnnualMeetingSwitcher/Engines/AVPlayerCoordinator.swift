@@ -79,6 +79,8 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 加载并准备视频文件（不自动播放）
     func load(url: URL) {
+        player.pause()
+        isPlaying = false
         currentURL = url
         hasLoadedMedia = true
         didPlayToEnd = false

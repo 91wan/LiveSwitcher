@@ -79,7 +79,7 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
     }
 
-    func testDelayedPanicPauseDoesNotPauseNewMediaSelectedDuringPanic() async throws {
+    func testSwitchingToMediaDuringPanicLoadsButDoesNotPlay() async throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0.12
         let firstURL = try makeTempURL(ext: "mp4")
@@ -98,7 +98,8 @@ final class PanicTransitionTests: XCTestCase {
         try await Task.sleep(nanoseconds: 180_000_000)
 
         XCTAssertEqual(viewModel.currentProgramItem?.id, second.id)
-        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.hasLoadedMedia)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 
     func testDelayedPanicPauseDoesNotPauseNewBGMSelectedDuringPanic() async throws {
@@ -144,5 +145,21 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
         XCTAssertTrue(viewModel.isBGMPlaying)
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
+    func testRestartCurrentMediaDuringPanicSeeksButDoesNotPlay() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        viewModel.togglePanicMode()
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 }
