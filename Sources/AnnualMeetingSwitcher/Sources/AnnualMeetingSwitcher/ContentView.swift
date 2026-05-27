@@ -28,6 +28,8 @@ struct ContentView: View {
         .onChange(of: viewModel.consoleMode) { _, newMode in
             if newMode == .setup {
                 markSetupTabLoaded(viewModel.selectedMainTab)
+            } else {
+                trimLoadedSetupTabsForLiveMode()
             }
         }
     }
@@ -39,12 +41,16 @@ struct ContentView: View {
                 StudioTheme.canvasGradient
                     .ignoresSafeArea()
 
-                consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup) {
-                    setupContentTabs
+                if viewModel.consoleMode == .setup {
+                    consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup) {
+                        setupContentTabs
+                    }
                 }
 
-                consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
-                    liveContent
+                if ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: viewModel.consoleMode) {
+                    consoleModeRetainedLayer(isActive: viewModel.consoleMode == .live) {
+                        liveContent
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -103,11 +109,20 @@ struct ContentView: View {
     }
 
     private func shouldMountSetupTab(_ tab: MainConsoleTab) -> Bool {
-        tab == viewModel.selectedMainTab || loadedSetupTabs.contains(tab)
+        ConsoleModeMountPolicy.shouldMountSetupTab(
+            tab,
+            consoleMode: viewModel.consoleMode,
+            selectedTab: viewModel.selectedMainTab,
+            loadedTabs: loadedSetupTabs
+        )
     }
 
     private func markSetupTabLoaded(_ tab: MainConsoleTab) {
         loadedSetupTabs.insert(tab)
+    }
+
+    private func trimLoadedSetupTabsForLiveMode() {
+        loadedSetupTabs = [viewModel.selectedMainTab]
     }
 
     private func retainedTab<Content: View>(_ tab: MainConsoleTab, @ViewBuilder content: () -> Content) -> some View {

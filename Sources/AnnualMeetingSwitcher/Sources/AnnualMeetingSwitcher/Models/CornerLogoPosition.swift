@@ -48,6 +48,17 @@ enum CornerLogoPosition: String, CaseIterable, Equatable {
     var monitorAlignment: Alignment {
         alignment
     }
+
+    func monitorPadding(chromeVisible: Bool) -> EdgeInsets {
+        let base: CGFloat = 16
+        let safeTop: CGFloat = 64
+        switch self {
+        case .topLeft, .topRight:
+            return EdgeInsets(top: chromeVisible ? safeTop : base, leading: base, bottom: base, trailing: base)
+        case .bottomLeft, .bottomRight:
+            return EdgeInsets(top: base, leading: base, bottom: base, trailing: base)
+        }
+    }
 }
 
 enum OutputLayerZIndex {

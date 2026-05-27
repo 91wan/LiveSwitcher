@@ -176,10 +176,7 @@ final class AVPlayerCoordinator: ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.currentTime = time.seconds
-                if let dur = self.duration, dur > 0 {
-                    self.progress = time.seconds / dur
-                }
+                self.applyProgressState(for: time.seconds)
             }
         }
 
@@ -191,8 +188,15 @@ final class AVPlayerCoordinator: ObservableObject {
                 let secs = cmDuration.seconds
                 if secs.isFinite && secs > 0 {
                     self.duration = secs
+                    self.applyProgressState(for: self.currentTime)
                 }
             }
+    }
+
+    private func applyProgressState(for currentTime: Double) {
+        let state = PlaybackProgressPolicy.displayState(currentTime: currentTime, duration: duration)
+        self.currentTime = state.currentTime
+        self.progress = state.progress
     }
 
     private func observeEnd(for item: AVPlayerItem) {

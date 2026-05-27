@@ -77,6 +77,15 @@ final class CornerLogoModelTests: XCTestCase {
         XCTAssertTrue(monitor.contains("if let image = viewModel.cornerLogoImage"))
         XCTAssertFalse(monitor.contains("AsyncLocalImage(url: viewModel.cornerLogoURL"))
         XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
+        XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorPadding"))
+    }
+
+    func testTopMonitorLogoPositionsAvoidInlineChrome() {
+        let topRight = CornerLogoPosition.topRight.monitorPadding(chromeVisible: true)
+        let bottomRight = CornerLogoPosition.bottomRight.monitorPadding(chromeVisible: true)
+
+        XCTAssertGreaterThan(topRight.top, bottomRight.top)
+        XCTAssertEqual(CornerLogoPosition.topRight.monitorPadding(chromeVisible: false).top, bottomRight.top)
     }
 
     private func isolatedDefaults() -> UserDefaults {
