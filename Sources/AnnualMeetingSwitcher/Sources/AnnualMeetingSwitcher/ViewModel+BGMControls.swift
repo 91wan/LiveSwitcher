@@ -109,7 +109,12 @@ extension SwitcherViewModel {
 
         // 列表循环 / 顺序播放（非最后一首）：播放下一首
         let nextIndex = (index + 1) % items.count
-        toggleBGM(items[nextIndex])
+        let nextItem = items[nextIndex]
+        if nextItem.id == current.id {
+            currentBGMItem = nil
+            isBGMPlaying = false
+        }
+        toggleBGM(nextItem)
     }
 
     private func restartLoopingBGM(_ item: BGMItem) {
