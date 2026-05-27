@@ -984,6 +984,11 @@ final class SwitcherViewModel: ObservableObject {
         LiveSwitcherTelemetry.playbackReachedEnd()
         recordSupportEvent(kind: .playbackReachedEnd, detail: "state=ended")
 
+        guard !isPanicMode else {
+            avCoordinator.pause()
+            return
+        }
+
         if autoPlayNextVideoIfPossible() {
             return
         }
@@ -1171,6 +1176,14 @@ final class SwitcherViewModel: ObservableObject {
             return
         case .media:
             break
+        }
+
+        guard !isPanicMode else {
+            if avCoordinator.isPlaying {
+                avCoordinator.pause()
+                applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
+            }
+            return
         }
 
         // 普通视频
@@ -1440,6 +1453,11 @@ final class SwitcherViewModel: ObservableObject {
     }
 
     func toggleBGM(_ item: BGMItem) {
+        guard !isPanicMode else {
+            cueBGMDuringPanic(item)
+            return
+        }
+
         if currentBGMItem?.id == item.id {
             if isBGMPlaying {
                 // BGM 停止时只解除临时接管，不改变用户选择的混音策略。
@@ -1530,6 +1548,26 @@ final class SwitcherViewModel: ObservableObject {
             startBGMTimer()
             recordBGMPlaybackState(isPlaying: true, reason: "selected")
         }
+    }
+
+    private func cueBGMDuringPanic(_ item: BGMItem) {
+        stopBGMTimer()
+        resetBGMRealtimeMeter()
+        clearBGMTakeoverIfNeeded()
+        bgmTransitionGeneration += 1
+        bgmAudioPlayer?.delegate = nil
+        bgmAudioPlayer = nil
+        bgmFallbackVolumeFadeTask?.cancel()
+        bgmFallbackPlayer.volume = 0
+        bgmFallbackPlayer.pause()
+        bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        currentBGMItem = item
+        isBGMPlaying = false
+        bgmProgress = 0
+        bgmCurrentTime = 0
+        bgmDuration = nil
+        applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+        recordBGMPlaybackState(isPlaying: false, reason: "cuedDuringPanic")
     }
 
     func clearBGMTakeoverIfNeeded() {

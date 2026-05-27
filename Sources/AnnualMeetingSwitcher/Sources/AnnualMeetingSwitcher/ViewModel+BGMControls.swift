@@ -55,6 +55,15 @@ extension SwitcherViewModel {
 
     /// V21 Fix #1: 当前曲目播放完毕回调
     func bgmDidFinish() {
+        guard !isPanicMode else {
+            isBGMPlaying = false
+            resetBGMRealtimeMeter()
+            recordBGMPlaybackState(isPlaying: false, reason: "finishedDuringPanic")
+            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+            stopBGMTimer()
+            return
+        }
+
         // 单曲循环（numberOfLoops == -1）不会触发 delegate
         guard let current = currentBGMItem else {
             isBGMPlaying = false
