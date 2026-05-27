@@ -76,6 +76,11 @@ extension SwitcherViewModel {
             return
         }
 
+        if bgmPlayMode == .loopOne {
+            restartLoopingBGM(current)
+            return
+        }
+
         let items = bgmItems.filter { $0.category == current.category }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
             isBGMPlaying = false
@@ -105,6 +110,18 @@ extension SwitcherViewModel {
         // 列表循环 / 顺序播放（非最后一首）：播放下一首
         let nextIndex = (index + 1) % items.count
         toggleBGM(items[nextIndex])
+    }
+
+    private func restartLoopingBGM(_ item: BGMItem) {
+        stopBGMTimer()
+        bgmAudioPlayer?.delegate = nil
+        bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
+        removeBGMFallbackEndObserver()
+        bgmFallbackPlayer.pause()
+        bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        currentBGMItem = nil
+        toggleBGM(item)
     }
 
     func bgmDidFail() {

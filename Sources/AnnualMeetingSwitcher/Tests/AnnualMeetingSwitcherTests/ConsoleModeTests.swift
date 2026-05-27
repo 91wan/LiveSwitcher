@@ -99,6 +99,29 @@ final class ConsoleModeTests: XCTestCase {
         XCTAssertTrue(content.contains("shouldMountSetupTab(.audioMixer)"))
         XCTAssertTrue(content.contains("shouldMountSetupTab(.overlays)"))
         XCTAssertTrue(content.contains("markSetupTabLoaded"))
+        XCTAssertTrue(content.contains("trimLoadedSetupTabsForLiveMode"))
+    }
+
+    func testSetupTabsUnmountWhileLiveModeIsActive() {
+        let loaded: Set<MainConsoleTab> = [.preview, .audioMixer, .overlays]
+
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupTab(
+            .audioMixer,
+            consoleMode: .live,
+            selectedTab: .audioMixer,
+            loadedTabs: loaded
+        ))
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountSetupTab(
+            .audioMixer,
+            consoleMode: .setup,
+            selectedTab: .preview,
+            loadedTabs: loaded
+        ))
+    }
+
+    func testLiveModeLayerMountsOnlyWhenLiveIsActive() {
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .live))
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup))
     }
 
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {

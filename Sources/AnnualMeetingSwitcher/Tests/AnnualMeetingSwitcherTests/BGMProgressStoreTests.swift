@@ -93,8 +93,16 @@ final class BGMProgressStoreTests: XCTestCase {
 
         XCTAssertTrue(source.contains("fadeBGMPlayerVolume"))
         XCTAssertTrue(toggleBody.contains("applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)"))
+        XCTAssertTrue(toggleBody.contains("BGMFadeCompletionPolicy.pauseDelay"))
         XCTAssertFalse(toggleBody.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(toggleBody.contains("bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)"))
+        XCTAssertFalse(toggleBody.contains("capturedPlayer?.volume = 0"))
+    }
+
+    func testFadeCompletionPolicyAddsSettleTimeBeforePause() {
+        XCTAssertEqual(BGMFadeCompletionPolicy.pauseDelay(fadeDuration: 0), 0)
+        XCTAssertGreaterThan(BGMFadeCompletionPolicy.pauseDelay(fadeDuration: 1.0), 1.0)
+        XCTAssertLessThanOrEqual(BGMFadeCompletionPolicy.pauseDelay(fadeDuration: 1.0), 1.1)
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

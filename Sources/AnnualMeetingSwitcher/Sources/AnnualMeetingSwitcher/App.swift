@@ -5,8 +5,19 @@ import SwiftUI
 // Do NOT add @main here.
 
 struct LiveSwitcherApp: App {
-    @StateObject private var viewModel = Self.makeViewModel()
+    @NSApplicationDelegateAdaptor(LiveSwitcherAppDelegate.self) private var appDelegate
+    @StateObject private var viewModel: SwitcherViewModel
     @Environment(\.openWindow) private var openWindow
+
+    init() {
+        let viewModel = Self.makeViewModel()
+        _viewModel = StateObject(wrappedValue: viewModel)
+        LiveSwitcherAppDelegate.sharedViewModel = viewModel
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 900_000_000)
+            LiveSwitcherAppDelegate.ensureMainWindowIfNeeded(viewModel: viewModel, activate: true)
+        }
+    }
 
     var body: some Scene {
         WindowGroup("LiveSwitcher", id: "main-console") {
@@ -125,5 +136,81 @@ struct LiveSwitcherApp: App {
         case .dark:
             return "2"
         }
+    }
+}
+
+final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
+    static weak var sharedViewModel: SwitcherViewModel?
+    private static var fallbackMainWindow: NSWindow?
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)
+        }
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        if !flag {
+            Task { @MainActor in
+                Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)
+            }
+        }
+        return true
+    }
+
+    @MainActor
+    static func ensureMainWindowIfNeeded(viewModel: SwitcherViewModel?, activate: Bool) {
+        if NSApp.windows.contains(where: isMainConsoleWindow) {
+            return
+        }
+
+        if let fallbackMainWindow, fallbackMainWindow.isVisible {
+            if activate {
+                fallbackMainWindow.makeKeyAndOrderFront(nil)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+            return
+        }
+
+        guard let viewModel else { return }
+
+        let window = NSWindow(
+            contentRect: NSRect(
+                x: 0,
+                y: 0,
+                width: AppConfiguration.minWindowWidth,
+                height: AppConfiguration.minWindowHeight
+            ),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "LiveSwitcher"
+        window.identifier = NSUserInterfaceItemIdentifier("main-console")
+        window.isReleasedWhenClosed = false
+        window.isRestorable = false
+        window.minSize = NSSize(width: AppConfiguration.minWindowWidth, height: AppConfiguration.minWindowHeight)
+        window.contentView = NSHostingView(
+            rootView: ContentView()
+                .environmentObject(viewModel)
+                .frame(
+                    minWidth: AppConfiguration.minWindowWidth,
+                    minHeight: AppConfiguration.minWindowHeight
+                )
+        )
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        if activate {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+        fallbackMainWindow = window
+    }
+
+    private static func isMainConsoleWindow(_ window: NSWindow) -> Bool {
+        guard window.isVisible else { return false }
+        let identifier = window.identifier?.rawValue ?? ""
+        return identifier.hasPrefix("main-console") || window.title == "LiveSwitcher"
     }
 }

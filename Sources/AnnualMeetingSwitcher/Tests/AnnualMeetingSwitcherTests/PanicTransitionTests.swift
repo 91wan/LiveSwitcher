@@ -79,6 +79,33 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
     }
 
+    func testPanicWaitsForAudioFadeBeforePausingPlayback() async throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0.5
+        let videoURL = try makeTempURL(ext: "mp4")
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: bgmURL)
+        }
+        let bgm = BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp)
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.currentBGMItem = bgm
+        viewModel.isBGMPlaying = true
+
+        viewModel.togglePanicMode()
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+
+        try await Task.sleep(nanoseconds: 350_000_000)
+
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
+
     func testSwitchingToMediaDuringPanicLoadsButDoesNotPlay() async throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0.12

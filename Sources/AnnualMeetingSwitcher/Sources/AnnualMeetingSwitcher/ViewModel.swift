@@ -1534,27 +1534,35 @@ final class SwitcherViewModel: ObservableObject {
         if currentBGMItem?.id == item.id {
             if isBGMPlaying {
                 // BGM 停止时只解除临时接管，不改变用户选择的混音策略。
+                bgmTransitionGeneration += 1
+                let generation = bgmTransitionGeneration
                 let fadeDur = liveAudioFadeDuration
                 isBGMPlaying = false
                 resetBGMRealtimeMeter()
                 clearBGMTakeoverIfNeeded()
                 recordBGMPlaybackState(isPlaying: false, reason: "operator")
                 let capturedPlayer = bgmAudioPlayer
+                let stoppingItemID = item.id
+                let pauseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: fadeDur)
                 applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
-                Task { @MainActor in
-                    if fadeDur > 0 {
-                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
+                Task { @MainActor [weak self, weak capturedPlayer] in
+                    if pauseDelay > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(pauseDelay * 1_000_000_000))
                     }
-                    capturedPlayer?.volume = 0
+                    guard let self,
+                          self.bgmTransitionGeneration == generation,
+                          self.currentBGMItem?.id == stoppingItemID,
+                          !self.isBGMPlaying else { return }
                     capturedPlayer?.pause()
                 }
-                let stoppingItemID = item.id
                 Task { @MainActor [weak self] in
-                    if fadeDur > 0 {
-                        try? await Task.sleep(nanoseconds: UInt64(fadeDur * 1_000_000_000))
+                    if pauseDelay > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(pauseDelay * 1_000_000_000))
                     }
                     guard let self else { return }
-                    if self.currentBGMItem?.id == stoppingItemID && !self.isBGMPlaying {
+                    if self.bgmTransitionGeneration == generation,
+                       self.currentBGMItem?.id == stoppingItemID,
+                       !self.isBGMPlaying {
                         self.bgmFallbackPlayer.pause()
                     }
                 }
@@ -1565,6 +1573,7 @@ final class SwitcherViewModel: ObservableObject {
                 }
             } else {
                 // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
+                bgmTransitionGeneration += 1
                 isBGMPlaying = true
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.isMeteringEnabled = true
@@ -1577,6 +1586,7 @@ final class SwitcherViewModel: ObservableObject {
             }
         } else {
             stopBGMTimer()
+            bgmTransitionGeneration += 1
             let fadeDur = liveAudioFadeDuration
 
             // 切歌时取消旧 fallback fade，避免旧任务回写新曲目的目标音量。
@@ -1599,7 +1609,7 @@ final class SwitcherViewModel: ObservableObject {
 
             if let player = try? AVAudioPlayer(contentsOf: item.url) {
                 player.volume = 0  // Bug Fix #1: 从0开始，淡入至目标音量
-                player.numberOfLoops = 0   // V21 Fix #1: 0 = 播完停，delegate 触发自动下一首
+                player.numberOfLoops = BGMPlaybackEndPolicy.numberOfLoops(for: bgmPlayMode)
                 player.delegate = bgmDelegate  // V21 Fix #1: 播完回调
                 player.isMeteringEnabled = true
                 player.prepareToPlay()
@@ -1709,19 +1719,34 @@ final class SwitcherViewModel: ObservableObject {
 
     private func updateBGMProgress() {
         if let player = bgmAudioPlayer {
-            bgmProgressStore.update(currentTime: player.currentTime, duration: player.duration)
+            let currentTime = player.currentTime
+            let duration = player.duration
+            bgmProgressStore.update(currentTime: currentTime, duration: duration)
             updateBGMRealtimeMeter(from: player)
+            finishBGMIfProgressReachedEnd(currentTime: currentTime, duration: duration)
         } else if isBGMPlaying {
             let fallbackTime = bgmFallbackPlayer.currentTime().seconds
             let itemDuration = bgmFallbackPlayer.currentItem?.duration.seconds
             let fallbackDuration = bgmDuration ?? ((itemDuration ?? 0) > 0 && itemDuration?.isFinite == true ? itemDuration : nil)
             if fallbackTime.isFinite, let fallbackDuration, fallbackDuration > 0 {
                 bgmProgressStore.update(currentTime: fallbackTime, duration: fallbackDuration)
+                finishBGMIfProgressReachedEnd(currentTime: fallbackTime, duration: fallbackDuration)
             }
             resetBGMRealtimeMeter()
         } else {
             resetBGMRealtimeMeter()
         }
+    }
+
+    private func finishBGMIfProgressReachedEnd(currentTime: Double, duration: Double?) {
+        guard BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: isBGMPlaying,
+            playMode: bgmPlayMode,
+            currentTime: currentTime,
+            duration: duration
+        ) else { return }
+        bgmAudioPlayer?.delegate = nil
+        bgmDidFinish()
     }
 
     func resetBGMRealtimeMeter() {

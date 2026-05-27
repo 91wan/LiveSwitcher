@@ -109,7 +109,9 @@ struct ProgramMonitorView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(height: isLiveMode ? 52 : 42)
-                .padding(16)
+                .padding(viewModel.cornerLogoPosition.monitorPadding(
+                    chromeVisible: monitorChromeVisibility.inlineChromeOpacity > 0
+                ))
                 .frame(
                     maxWidth: .infinity,
                     maxHeight: .infinity,

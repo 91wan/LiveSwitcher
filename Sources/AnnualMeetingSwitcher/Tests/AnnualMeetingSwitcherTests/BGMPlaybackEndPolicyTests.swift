@@ -1,0 +1,117 @@
+import XCTest
+@testable import LiveSwitcher
+
+final class BGMPlaybackEndPolicyTests: XCTestCase {
+    func testTreatsOverrunNonLoopingPlaybackAsFinished() {
+        XCTAssertTrue(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: true,
+            playMode: .loopAll,
+            currentTime: 161,
+            duration: 144
+        ))
+    }
+
+    func testDoesNotTreatLoopOneOverrunAsFinished() {
+        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: true,
+            playMode: .loopOne,
+            currentTime: 161,
+            duration: 144
+        ))
+    }
+
+    func testDoesNotFinishWhenPlaybackIsStoppedOrDurationUnknown() {
+        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: false,
+            playMode: .loopAll,
+            currentTime: 161,
+            duration: 144
+        ))
+        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: true,
+            playMode: .loopAll,
+            currentTime: 161,
+            duration: nil
+        ))
+    }
+
+    func testDoesNotFinishBeforeDurationBoundary() {
+        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: true,
+            playMode: .loopAll,
+            currentTime: 140,
+            duration: 144
+        ))
+        XCTAssertFalse(BGMPlaybackEndPolicy.shouldTreatAsFinished(
+            isPlaying: true,
+            playMode: .loopAll,
+            currentTime: 144.1,
+            duration: 144
+        ))
+    }
+
+    func testNumberOfLoopsMatchesSelectedPlayMode() {
+        XCTAssertEqual(BGMPlaybackEndPolicy.numberOfLoops(for: .loopOne), -1)
+        XCTAssertEqual(BGMPlaybackEndPolicy.numberOfLoops(for: .loopAll), 0)
+        XCTAssertEqual(BGMPlaybackEndPolicy.numberOfLoops(for: .sequential), 0)
+    }
+
+    func testViewModelUsesEndPolicyFromProgressTimerAndNewPlayers() throws {
+        let source = try sourceText("ViewModel.swift")
+        let controls = try sourceText("ViewModel+BGMControls.swift")
+        let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
+        let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
+
+        XCTAssertTrue(updateBody.contains("finishBGMIfProgressReachedEnd"))
+        XCTAssertTrue(source.contains("BGMPlaybackEndPolicy.shouldTreatAsFinished"))
+        XCTAssertTrue(source.contains("bgmAudioPlayer?.delegate = nil"))
+        XCTAssertTrue(toggleBody.contains("BGMPlaybackEndPolicy.numberOfLoops(for: bgmPlayMode)"))
+        XCTAssertTrue(controls.contains("bgmPlayMode == .loopOne"))
+    }
+
+    func testBGMPauseFadeTasksAreGenerationGuarded() throws {
+        let source = try sourceText("ViewModel.swift")
+        let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
+
+        XCTAssertTrue(toggleBody.contains("bgmTransitionGeneration += 1"))
+        XCTAssertTrue(toggleBody.contains("let generation = bgmTransitionGeneration"))
+        XCTAssertTrue(toggleBody.contains("self.bgmTransitionGeneration == generation"))
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return try String(contentsOf: candidate, encoding: .utf8)
+            }
+        }
+        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}
+
+private extension String {
+    func functionBody(named functionName: String) -> String? {
+        guard let nameRange = range(of: "func \(functionName)") else { return nil }
+        guard let openingBrace = self[nameRange.lowerBound...].firstIndex(of: "{") else { return nil }
+
+        var depth = 0
+        var index = openingBrace
+        while index < endIndex {
+            let character = self[index]
+            if character == "{" {
+                depth += 1
+            } else if character == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(self[openingBrace...index])
+                }
+            }
+            index = self.index(after: index)
+        }
+        return nil
+    }
+}

@@ -84,7 +84,7 @@ extension SwitcherViewModel {
 
     private func pausePlaybackForActivePanic(generation: Int) {
         let snapshot = panicPlaybackSnapshot
-        let delay = max(0, min(liveAudioFadeDuration, 0.25))
+        let delay = max(0, liveAudioFadeDuration)
 
         panicAudioPauseTask?.cancel()
         guard delay > 0 else {
