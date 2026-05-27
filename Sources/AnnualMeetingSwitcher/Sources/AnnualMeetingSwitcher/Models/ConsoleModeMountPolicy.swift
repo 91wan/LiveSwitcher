@@ -22,7 +22,7 @@ enum ConsoleModeMountPolicy {
         consoleMode == .setup || loadedTabs.contains(selectedTab)
     }
 
-    static func shouldMountLiveLayer(consoleMode: ConsoleMode, hasMountedLiveLayer: Bool) -> Bool {
-        consoleMode == .live || hasMountedLiveLayer
+    static func shouldMountLiveLayer(consoleMode: ConsoleMode) -> Bool {
+        consoleMode == .live
     }
 }

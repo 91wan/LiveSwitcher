@@ -851,18 +851,21 @@ struct LiveQuickRail: View {
                 .lineLimit(1)
                 .help(picker.currentTitle)
 
-            HStack(spacing: 7) {
-                transportButton("backward.end.fill", enabled: controls.canSkipPrevious, hint: controls.skipDisabledReason) {
+            HStack(spacing: 6) {
+                transportButton("gobackward", label: "跳回开头", enabled: controls.canSeekToBeginning, disabledHint: controls.seekDisabledReason) {
+                    viewModel.seekBGMToBeginning()
+                }
+                transportButton("backward.end.fill", label: "上一首", enabled: controls.canSkipPrevious, disabledHint: controls.skipDisabledReason) {
                     viewModel.playPreviousBGM()
                 }
-                transportButton(viewModel.isBGMPlaying ? "pause.fill" : "play.fill", enabled: controls.canPlay, hint: controls.playDisabledReason) {
+                transportButton(viewModel.isBGMPlaying ? "pause.fill" : "play.fill", label: viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM", enabled: controls.canPlay, disabledHint: controls.playDisabledReason) {
                     if let current = viewModel.currentBGMItem {
                         viewModel.toggleBGM(current)
                     } else if let first = viewModel.bgmItems.first {
                         viewModel.toggleBGM(first)
                     }
                 }
-                transportButton("forward.end.fill", enabled: controls.canSkipNext, hint: controls.skipDisabledReason) {
+                transportButton("forward.end.fill", label: "下一首", enabled: controls.canSkipNext, disabledHint: controls.skipDisabledReason) {
                     viewModel.playNextBGM()
                 }
             }
@@ -999,7 +1002,7 @@ struct LiveQuickRail: View {
         )
     }
 
-    private func transportButton(_ systemName: String, enabled: Bool, hint: String?, action: @escaping () -> Void) -> some View {
+    private func transportButton(_ systemName: String, label: String, enabled: Bool, disabledHint: String?, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(StudioTheme.TypeScale.body.weight(.black))
@@ -1009,7 +1012,9 @@ struct LiveQuickRail: View {
         .controlSize(.small)
         .disabled(!enabled)
         .opacity(enabled ? 1 : 0.42)
-        .help(hint ?? "BGM transport")
+        .help(enabled ? label : disabledHint ?? label)
+        .accessibilityLabel(label)
+        .accessibilityHint(enabled ? "" : disabledHint ?? "")
     }
 
     private func outputFill(_ model: ProjectionButtonModel) -> Color {

@@ -86,7 +86,7 @@ final class ConsoleModeTests: XCTestCase {
 
         XCTAssertTrue(content.contains("setupContentTabs"))
         XCTAssertTrue(content.contains("liveContent"))
-        XCTAssertTrue(content.contains("hasMountedLiveMode"))
+        XCTAssertFalse(content.contains("hasMountedLiveMode"))
         XCTAssertFalse(content.contains("prewarmLiveModeLayer"))
         XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
         XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountLiveLayer("))
@@ -147,15 +147,14 @@ final class ConsoleModeTests: XCTestCase {
         ))
     }
 
-    func testLiveModeLayerRetainsAfterFirstMountWithoutPrewarming() throws {
+    func testLiveModeLayerUnmountsWhileSetupIsActiveToAvoidHiddenHeavyView() throws {
         let content = try sourceText("ContentView.swift")
         let policy = try sourceText("Models/ConsoleModeMountPolicy.swift")
 
-        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .live, hasMountedLiveLayer: false))
-        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup, hasMountedLiveLayer: false))
-        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup, hasMountedLiveLayer: true))
-        XCTAssertTrue(content.contains("hasMountedLiveMode"))
-        XCTAssertTrue(policy.contains("hasMountedLiveLayer"))
+        XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .live))
+        XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup))
+        XCTAssertFalse(content.contains("hasMountedLiveMode"))
+        XCTAssertFalse(policy.contains("hasMountedLiveLayer"))
         XCTAssertFalse(content.contains("prewarmLiveModeLayer"))
     }
 
