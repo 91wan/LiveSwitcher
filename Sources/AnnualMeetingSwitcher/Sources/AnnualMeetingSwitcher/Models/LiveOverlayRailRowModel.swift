@@ -24,7 +24,7 @@ struct LiveOverlayRailRowModel: Equatable {
         let selected = presets.first { $0.id == selectedID }
         return LiveOverlayRailRowModel(
             title: "人名条",
-            presetLabel: selected?.name ?? placeholderLabel(hasPresets: !presets.isEmpty),
+            presetLabel: selected.map(lowerThirdDisplayName) ?? placeholderLabel(hasPresets: !presets.isEmpty),
             isPlaceholder: selected == nil,
             isLive: isLive,
             canToggle: selected != nil || isLive,
@@ -66,6 +66,12 @@ struct LiveOverlayRailRowModel: Equatable {
 
     private static func placeholderLabel(hasPresets: Bool) -> String {
         hasPresets ? "选择预设..." : "+ 新建预设"
+    }
+
+    private static func lowerThirdDisplayName(_ preset: LowerThirdPreset) -> String {
+        let subtitle = preset.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !subtitle.isEmpty else { return preset.name }
+        return "\(preset.name) · \(subtitle)"
     }
 
     private static func formattedTime(_ seconds: Int) -> String {

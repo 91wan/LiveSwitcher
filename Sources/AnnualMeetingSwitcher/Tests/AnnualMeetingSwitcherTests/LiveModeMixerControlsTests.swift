@@ -140,7 +140,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(model.chips.count, 3)
         XCTAssertTrue(model.chips.contains { $0.kind == .fail && $0.text.contains("外接显示器") })
         XCTAssertTrue(model.chips.contains { $0.kind == .warn && $0.text.contains("投射状态") })
-        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("问题") })
+        XCTAssertTrue(model.chips.contains { $0.text.contains("+") && $0.text.contains("故障") })
         XCTAssertTrue(model.chips.contains { $0.text.contains("待机") && $0.text.contains("0 个信号源") })
     }
 
@@ -299,8 +299,8 @@ final class LiveModeMixerControlsTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("meter.isEstimated"))
-        XCTAssertTrue(source.contains("exclamationmark.triangle.fill"))
-        XCTAssertTrue(source.contains("估算电平"))
+        XCTAssertFalse(source.contains("exclamationmark.triangle.fill"))
+        XCTAssertTrue(source.contains("没有 AVAudioEngine tap"))
     }
 
     func testCutBusUsesFadeToBlackInsteadOfPanic() throws {

@@ -74,7 +74,9 @@ final class LiveMediaControlTests: XCTestCase {
                 currentItem: ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL)
             ).isEnabled
         )
-        XCTAssertFalse(LiveMediaRestartControlModel.make(currentItem: nil).isEnabled)
+        let disabled = LiveMediaRestartControlModel.make(currentItem: nil)
+        XCTAssertFalse(disabled.isEnabled)
+        XCTAssertNil(disabled.help)
     }
 
     func testLiveModeContainsRestartCurrentAction() throws {
@@ -82,6 +84,8 @@ final class LiveMediaControlTests: XCTestCase {
 
         XCTAssertTrue(source.contains("restartCurrentMediaFromBeginning"))
         XCTAssertTrue(source.contains("LiveMediaRestartControlModel"))
+        XCTAssertTrue(source.contains("if restart.isEnabled"))
+        XCTAssertFalse(source.contains(".disabled(!restart.isEnabled)"))
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

@@ -44,10 +44,11 @@ final class CornerLogoModelTests: XCTestCase {
 
     func testCornerLogoPositionsCoverAllFourCorners() {
         XCTAssertEqual(CornerLogoPosition.allCases, [.topLeft, .topRight, .bottomLeft, .bottomRight])
-        XCTAssertEqual(CornerLogoPosition.topLeft.displayName, "Top Left")
-        XCTAssertEqual(CornerLogoPosition.topRight.displayName, "Top Right")
-        XCTAssertEqual(CornerLogoPosition.bottomLeft.displayName, "Bottom Left")
-        XCTAssertEqual(CornerLogoPosition.bottomRight.displayName, "Bottom Right")
+        XCTAssertEqual(CornerLogoPosition.topLeft.displayName, "左上")
+        XCTAssertEqual(CornerLogoPosition.topRight.displayName, "右上")
+        XCTAssertEqual(CornerLogoPosition.bottomLeft.displayName, "左下")
+        XCTAssertEqual(CornerLogoPosition.bottomRight.displayName, "右下")
+        XCTAssertEqual(CornerLogoPosition.topLeft.shortLabel, "左上")
     }
 
     func testOutputLayerPlacesCornerLogoBelowPanicAndAboveOverlays() throws {
@@ -65,7 +66,8 @@ final class CornerLogoModelTests: XCTestCase {
         let card = try sourceText("Sources/AnnualMeetingSwitcher/Views/CornerLogoCard.swift")
 
         XCTAssertTrue(monitor.contains("CornerLogoCard"))
-        XCTAssertTrue(card.contains("角标 Logo"))
+        XCTAssertTrue(card.contains("Text(\"角标\")"))
+        XCTAssertFalse(card.contains("Text(\"角标 Logo\")"))
         XCTAssertTrue(card.contains("导入 Logo"))
         XCTAssertTrue(card.contains("cornerLogoPosition"))
     }

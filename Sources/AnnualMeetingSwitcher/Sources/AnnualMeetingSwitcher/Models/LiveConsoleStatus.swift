@@ -130,7 +130,7 @@ struct PreflightButtonModel: Equatable {
     private static func countText(failCount: Int, warnCount: Int) -> String {
         var parts: [String] = []
         if failCount > 0 {
-            parts.append("\(failCount) 错")
+            parts.append("\(failCount) 故障")
         }
         if warnCount > 0 {
             parts.append("\(warnCount) 警告")

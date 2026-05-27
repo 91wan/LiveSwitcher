@@ -81,14 +81,14 @@ struct LiveCutBusModel: Equatable {
 struct LiveMediaRestartControlModel: Equatable {
     let isEnabled: Bool
     let title: String
-    let help: String
+    let help: String?
 
     static func make(currentItem: ProgramItem?) -> LiveMediaRestartControlModel {
         guard let currentItem, currentItem.supportsSeeking else {
             return LiveMediaRestartControlModel(
                 isEnabled: false,
                 title: "从头播放",
-                help: "当前源不支持从头播放"
+                help: nil
             )
         }
 
@@ -177,10 +177,12 @@ struct LiveRuntimeStatusModel: Equatable {
     }
 
     private static func overflowText(hiddenFailCount: Int, hiddenWarnCount: Int) -> String {
-        let overflowCount = hiddenFailCount + hiddenWarnCount
         if hiddenFailCount > 0 {
-            return "+ \(overflowCount) 个问题"
+            if hiddenWarnCount > 0 {
+                return "+ \(hiddenFailCount) 故障 · \(hiddenWarnCount) 警告"
+            }
+            return "+ \(hiddenFailCount) 故障"
         }
-        return "+ \(overflowCount) 个警告"
+        return "+ \(hiddenWarnCount) 个警告"
     }
 }

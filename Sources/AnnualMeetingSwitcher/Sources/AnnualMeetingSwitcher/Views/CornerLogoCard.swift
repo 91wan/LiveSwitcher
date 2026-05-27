@@ -22,7 +22,7 @@ struct CornerLogoCard: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("角标 Logo")
+                    Text("角标")
                         .font(StudioTheme.sectionTitle())
                         .foregroundStyle(StudioTheme.textPrimary)
                     Text("输出画面的常驻品牌标识")
@@ -42,7 +42,7 @@ struct CornerLogoCard: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Picker("位置", selection: $viewModel.cornerLogoPosition) {
                         ForEach(CornerLogoPosition.allCases, id: \.self) { position in
-                            Text(position.shortLabel)
+                            Text(position.displayName)
                                 .tag(position)
                         }
                     }

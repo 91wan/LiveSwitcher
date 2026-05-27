@@ -294,7 +294,7 @@ private struct PreflightSummaryCard: View {
             HStack(spacing: 6) {
                 countPill("过", summary.passCount, StudioTheme.Tone.ready)
                 countPill("警", summary.warnCount, StudioTheme.Tone.warn)
-                countPill("错", summary.failCount, StudioTheme.Tone.fail)
+                countPill("故障", summary.failCount, StudioTheme.Tone.fail)
             }
         }
         .padding(13)

@@ -10,8 +10,9 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
             isPlaying: false
         )
 
-        XCTAssertEqual(model.categoryButtonTitle, "切换分类")
+        XCTAssertEqual(model.categoryButtonTitle, BGMCategory.warmUp.rawValue)
         XCTAssertEqual(model.displayCategory, .warmUp)
+        XCTAssertEqual(model.categoryButtonTitle, BGMCategory.warmUp.rawValue)
         XCTAssertEqual(model.rows, [])
         XCTAssertEqual(model.emptyMessage, "暖场音乐 没有曲目")
     }
@@ -64,6 +65,7 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.displayCategory, .award)
+        XCTAssertEqual(model.categoryButtonTitle, BGMCategory.award.rawValue)
         XCTAssertEqual(model.rows.map(\.title), ["Award"])
     }
 
