@@ -8,6 +8,8 @@ final class PanicButtonModelTests: XCTestCase {
         XCTAssertEqual(model.visualRole, .danger)
         XCTAssertEqual(model.title, "紧急切黑")
         XCTAssertEqual(model.subtitle, "一键应急")
+        XCTAssertTrue(model.help.localizedStandardContains("暂停当前媒体"))
+        XCTAssertTrue(model.help.localizedStandardContains("暂停 BGM"))
         XCTAssertFalse(model.help.contains("老板键"))
         XCTAssertGreaterThanOrEqual(model.height, ToolbarLayoutMetrics.actionHeight)
     }
@@ -26,7 +28,9 @@ final class PanicButtonModelTests: XCTestCase {
         XCTAssertEqual(model.visualRole, .danger)
         XCTAssertEqual(model.systemImage, "eye.slash.fill")
         XCTAssertEqual(model.title, "紧急切黑: 开")
-        XCTAssertEqual(model.subtitle, "副屏黑屏 · 音频静音")
+        XCTAssertEqual(model.subtitle, "黑屏静音 · 媒体暂停")
         XCTAssertTrue(model.accessibilityHint.localizedStandardContains("副屏黑屏"))
+        XCTAssertTrue(model.accessibilityHint.localizedStandardContains("暂停当前媒体"))
+        XCTAssertTrue(model.accessibilityHint.localizedStandardContains("暂停 BGM"))
     }
 }

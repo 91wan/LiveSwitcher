@@ -15,6 +15,8 @@ final class HelpCopyModelTests: XCTestCase {
         XCTAssertTrue(text.contains("直播"))
         XCTAssertTrue(text.contains("红色"))
         XCTAssertTrue(text.contains("紧急切黑"))
+        XCTAssertTrue(text.contains("暂停当前媒体"))
+        XCTAssertTrue(text.contains("暂停 BGM"))
         XCTAssertFalse(text.contains("老板键"))
     }
 
