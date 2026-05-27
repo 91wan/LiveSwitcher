@@ -229,6 +229,7 @@ final class SwitcherViewModel: ObservableObject {
     var bgmAudioPlayer: AVAudioPlayer?
     var bgmFallbackPlayer: AVPlayer = AVPlayer()
     var panicPlaybackSnapshot: PanicPlaybackSnapshot?
+    var panicAudioTransitionGeneration: Int = 0
     private(set) var lastAudioRoutingTransition: AudioRoutingTransition?
 
     // MARK: - 引擎
@@ -1404,13 +1405,19 @@ final class SwitcherViewModel: ObservableObject {
     func seekBGMToBeginning() {
         bgmAudioPlayer?.currentTime = 0
         bgmFallbackPlayer.seek(to: .zero)
-        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? 0)
+        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? bgmDuration ?? 0)
     }
 
     func seekBGM(toProgress progress: Double) {
         let clampedProgress = BGMProgressStore.clampedProgress(progress)
         guard let player = bgmAudioPlayer else {
-            bgmProgress = clampedProgress
+            guard let duration = bgmDuration, duration > 0 else {
+                bgmProgress = clampedProgress
+                return
+            }
+            let targetTime = duration * clampedProgress
+            bgmFallbackPlayer.seek(to: CMTime(seconds: targetTime, preferredTimescale: 600))
+            bgmProgressStore.update(currentTime: targetTime, duration: duration)
             return
         }
         let duration = player.duration

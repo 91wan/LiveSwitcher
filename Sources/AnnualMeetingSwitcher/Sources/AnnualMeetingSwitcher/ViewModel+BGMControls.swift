@@ -119,6 +119,7 @@ extension SwitcherViewModel {
     func playNextBGM() {
         guard let current = currentBGMItem else { return }
         let items = bgmItems.filter { $0.category == current.category }
+        guard items.count > 1 else { return }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else { return }
 
         let nextIndex = (index + 1) % items.count
@@ -130,6 +131,7 @@ extension SwitcherViewModel {
     func playPreviousBGM() {
         guard let current = currentBGMItem else { return }
         let items = bgmItems.filter { $0.category == current.category }
+        guard items.count > 1 else { return }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else { return }
 
         let prevIndex = (index - 1 + items.count) % items.count

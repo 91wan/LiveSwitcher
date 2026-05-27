@@ -96,7 +96,11 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 播放
     func play() {
-        if player.currentItem == nil, let currentURL {
+        if player.currentItem == nil {
+            guard let currentURL else {
+                isPlaying = false
+                return
+            }
             load(url: currentURL)
         }
         player.play()

@@ -34,13 +34,16 @@ extension SwitcherViewModel {
     // MARK: - Private
 
     private func activatePanic() {
+        panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
         isPanicMode = true
         applyAudioRoutingForRuntimeChange(reason: .panicChanged)
-        pausePlaybackForActivePanic()
+        pausePlaybackForActivePanic(generation: panicAudioTransitionGeneration)
     }
 
     private func deactivatePanic() {
+        panicAudioTransitionGeneration += 1
+        panicAudioPauseTask?.cancel()
         let snapshot = panicPlaybackSnapshot
         panicPlaybackSnapshot = nil
         isPanicMode = false
@@ -79,33 +82,44 @@ extension SwitcherViewModel {
         return currentBGMItem?.id == snapshot.currentBGMID
     }
 
-    private func pausePlaybackForActivePanic() {
+    private func pausePlaybackForActivePanic(generation: Int) {
         let snapshot = panicPlaybackSnapshot
         let delay = max(0, min(liveAudioFadeDuration, 0.25))
 
         panicAudioPauseTask?.cancel()
         guard delay > 0 else {
-            pausePlaybackAfterPanicFade(snapshot)
+            pausePlaybackAfterPanicFade(snapshot, generation: generation)
             return
         }
 
         panicAudioPauseTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            guard let self, self.isPanicMode else { return }
-            self.pausePlaybackAfterPanicFade(snapshot)
+            guard let self, self.isPanicMode, self.panicAudioTransitionGeneration == generation else { return }
+            self.pausePlaybackAfterPanicFade(snapshot, generation: generation)
         }
     }
 
-    private func pausePlaybackAfterPanicFade(_ snapshot: PanicPlaybackSnapshot?) {
-        guard isPanicMode else { return }
-        if snapshot?.wasMediaPlaying == true {
+    private func pausePlaybackAfterPanicFade(_ snapshot: PanicPlaybackSnapshot?, generation: Int) {
+        guard isPanicMode, panicAudioTransitionGeneration == generation else { return }
+        if shouldPauseMediaForActivePanic(snapshot) {
             avCoordinator.pause()
         }
-        if snapshot?.wasBGMPlaying == true {
+        if shouldPauseBGMForActivePanic(snapshot) {
             bgmAudioPlayer?.pause()
             bgmFallbackPlayer.pause()
             isBGMPlaying = false
             stopBGMTimer()
         }
+    }
+
+    private func shouldPauseMediaForActivePanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
+        guard let snapshot, snapshot.wasMediaPlaying else { return false }
+        guard currentProgramItem?.sourceKind == .media else { return false }
+        return currentProgramItem?.id == snapshot.currentProgramID
+    }
+
+    private func shouldPauseBGMForActivePanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
+        guard let snapshot, snapshot.wasBGMPlaying else { return false }
+        return currentBGMItem?.id == snapshot.currentBGMID
     }
 }

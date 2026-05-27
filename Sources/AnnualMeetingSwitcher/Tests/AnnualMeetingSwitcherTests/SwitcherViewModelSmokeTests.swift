@@ -503,6 +503,49 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmFallbackPlayer.volume, 0.2, accuracy: 0.0001)
     }
 
+    func testBGMNextPreviousAreNoopsWhenOnlyOneTrackInCurrentCategory() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempFileURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Only Track", url: bgmURL, category: .warmUp)
+        viewModel.bgmItems = [item]
+        viewModel.currentBGMItem = item
+        viewModel.isBGMPlaying = true
+
+        viewModel.playNextBGM()
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+
+        viewModel.playPreviousBGM()
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+    }
+
+    func testFallbackBGMSeekUpdatesCurrentTimeAndKeepsDuration() {
+        let viewModel = makeViewModel()
+        viewModel.bgmDuration = 200
+
+        viewModel.seekBGM(toProgress: 0.25)
+
+        XCTAssertEqual(viewModel.bgmProgress, 0.25, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmCurrentTime, 50, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(viewModel.bgmDuration), 200, accuracy: 0.0001)
+    }
+
+    func testFallbackBGMSeekToBeginningKeepsKnownDuration() {
+        let viewModel = makeViewModel()
+        viewModel.bgmDuration = 90
+        viewModel.bgmCurrentTime = 45
+        viewModel.bgmProgress = 0.5
+
+        viewModel.seekBGMToBeginning()
+
+        XCTAssertEqual(viewModel.bgmProgress, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmCurrentTime, 0, accuracy: 0.0001)
+        XCTAssertEqual(try XCTUnwrap(viewModel.bgmDuration), 90, accuracy: 0.0001)
+    }
+
     func testExplicitBGMTakeoverStillMutesMediaWhenOperatorEnablesIt() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
