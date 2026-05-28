@@ -10,6 +10,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             primaryNavigationBar
+            automationRuntimeNoticeBanner
             mainContent
         }
         .background(StudioTheme.canvasGradient)
@@ -296,6 +297,62 @@ struct ContentView: View {
         .accessibilityLabel("准备模式")
         .accessibilityValue(viewModel.selectedMainTab.setupMenuTitle)
         .accessibilityHint("选择准备页面")
+    }
+
+    @ViewBuilder
+    private var automationRuntimeNoticeBanner: some View {
+        if let notice = viewModel.automationRuntimeNotice {
+            AutomationRuntimeNoticeBanner(notice: notice) {
+                withAnimation(.easeInOut(duration: 0.16)) {
+                    viewModel.dismissAutomationRuntimeNotice()
+                }
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 6)
+            .background(StudioTheme.Surface.base.opacity(0.72))
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+}
+
+private struct AutomationRuntimeNoticeBanner: View {
+    let notice: AutomationRuntimeNotice
+    let onDismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .center, spacing: StudioTheme.spacingS) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(StudioTheme.Tone.warn)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(notice.title)
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(notice.message)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 8)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(StudioTheme.TypeScale.caption.weight(.black))
+                    .frame(width: 28, height: 28)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(StudioTheme.textSecondary)
+            .accessibilityLabel("关闭自动化失败提示")
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(StudioTheme.Tone.warn.opacity(0.10), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.Tone.warn.opacity(0.24), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(notice.title)：\(notice.message)")
     }
 }
 

@@ -66,6 +66,29 @@ final class AudioRoutingTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.5)
     }
 
+    func testBGMTakeoverUsesLimiterChangedRoutingReason() {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.5
+
+        viewModel.isBGMAudioTakeoverActive = true
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .limiterChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.5)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.5)
+    }
+
+    func testDirectSpeakerModeSetterStillAppliesSpeakerRouting() {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1.25
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.isSpeakerMode = true
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .speakerChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.25)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.25)
+    }
+
     func testFaderDragUsesShortRoutingTransition() {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 2.0

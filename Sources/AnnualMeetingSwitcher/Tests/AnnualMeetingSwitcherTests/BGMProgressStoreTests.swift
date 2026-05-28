@@ -87,6 +87,15 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
     }
 
+    func testBGMProgressTimerIgnoresStaleTransitionGeneration() throws {
+        let source = try sourceText("ViewModel.swift")
+        let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer"))
+
+        XCTAssertTrue(startBody.contains("let generation = bgmTransitionGeneration"))
+        XCTAssertTrue(startBody.contains("self.bgmTransitionGeneration == generation"))
+        XCTAssertTrue(startBody.contains("updateBGMProgress"))
+    }
+
     func testStoppingBGMUsesSingleRoutingFadeBeforePausing() throws {
         let source = try sourceText("ViewModel.swift")
         let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
