@@ -69,6 +69,42 @@ private struct LiveMasterMeterCandidate {
     }
 }
 
+final class ViewModelCleanupBag {
+    var mediaVolumeFadeTask: Task<Void, Never>?
+    var bgmPlayerVolumeFadeTask: Task<Void, Never>?
+    var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    var bgmFallbackEndObserver: NSObjectProtocol?
+    var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    var panicAudioPauseTask: Task<Void, Never>?
+    var backgroundImageLoadTask: Task<Void, Never>?
+    var cornerLogoImageLoadTask: Task<Void, Never>?
+    var systemVolumeObserver: SystemVolumeObserver?
+    var externalDisplayChangeObserver: NSObjectProtocol?
+
+    func cancelAll() {
+        mediaVolumeFadeTask?.cancel()
+        bgmPlayerVolumeFadeTask?.cancel()
+        bgmFallbackVolumeFadeTask?.cancel()
+        bgmTransitionTasks.values.forEach { $0.cancel() }
+        panicAudioPauseTask?.cancel()
+        backgroundImageLoadTask?.cancel()
+        cornerLogoImageLoadTask?.cancel()
+        systemVolumeObserver?.stop()
+        if let externalDisplayChangeObserver {
+            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
+            self.externalDisplayChangeObserver = nil
+        }
+        if let bgmFallbackEndObserver {
+            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
+            self.bgmFallbackEndObserver = nil
+        }
+    }
+
+    deinit {
+        cancelAll()
+    }
+}
+
 @MainActor
 @Observable
 final class SwitcherViewModel {
@@ -284,17 +320,8 @@ final class SwitcherViewModel {
 
     private var cancellables = Set<AnyCancellable>()
     private var bgmProgressTimer: Timer?
-    @ObservationIgnored nonisolated(unsafe) private var mediaVolumeFadeTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var bgmPlayerVolumeFadeTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var bgmFallbackEndObserver: NSObjectProtocol?
-    @ObservationIgnored nonisolated(unsafe) private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
-    @ObservationIgnored nonisolated(unsafe) var panicAudioPauseTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var backgroundImageLoadTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var cornerLogoImageLoadTask: Task<Void, Never>?
-    @ObservationIgnored nonisolated(unsafe) private var systemVolumeObserver: SystemVolumeObserver?
-    @ObservationIgnored nonisolated(unsafe) private var externalDisplayChangeObserver: NSObjectProtocol?
     private let supportEventLimit = 80
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
@@ -383,32 +410,10 @@ final class SwitcherViewModel {
     }
 
     deinit {
-        let mediaVolumeFadeTask = mediaVolumeFadeTask
-        let bgmPlayerVolumeFadeTask = bgmPlayerVolumeFadeTask
-        let bgmFallbackVolumeFadeTask = bgmFallbackVolumeFadeTask
-        let bgmTransitionTasks = bgmTransitionTasks
-        let panicAudioPauseTask = panicAudioPauseTask
-        let backgroundImageLoadTask = backgroundImageLoadTask
-        let cornerLogoImageLoadTask = cornerLogoImageLoadTask
-        let systemVolumeObserver = systemVolumeObserver
-        let externalDisplayChangeObserver = externalDisplayChangeObserver
-        let bgmFallbackEndObserver = bgmFallbackEndObserver
+        let cleanupBag = cleanupBag
         let avCoordinator = avCoordinator
 
-        mediaVolumeFadeTask?.cancel()
-        bgmPlayerVolumeFadeTask?.cancel()
-        bgmFallbackVolumeFadeTask?.cancel()
-        bgmTransitionTasks.values.forEach { $0.cancel() }
-        panicAudioPauseTask?.cancel()
-        backgroundImageLoadTask?.cancel()
-        cornerLogoImageLoadTask?.cancel()
-        systemVolumeObserver?.stop()
-        if let externalDisplayChangeObserver {
-            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
-        }
-        if let bgmFallbackEndObserver {
-            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
-        }
+        cleanupBag.cancelAll()
         avCoordinator.shutdownNonisolated()
     }
 
@@ -495,7 +500,7 @@ final class SwitcherViewModel {
         if let mediaFadeDuration {
             fadeMediaVolume(to: effectiveMedia, duration: mediaFadeDuration)
         } else {
-            mediaVolumeFadeTask?.cancel()
+            cleanupBag.mediaVolumeFadeTask?.cancel()
             avCoordinator.volume = effectiveMedia
         }
 
@@ -503,14 +508,14 @@ final class SwitcherViewModel {
         if let bgmFadeDuration, bgmAudioPlayer != nil {
             fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration)
         } else {
-            bgmPlayerVolumeFadeTask?.cancel()
+            cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
             bgmAudioPlayer?.volume = effectiveBGM
         }
 
         if let bgmFadeDuration {
             fadeBGMFallbackVolume(to: effectiveBGM, duration: bgmFadeDuration)
         } else {
-            bgmFallbackVolumeFadeTask?.cancel()
+            cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
             bgmFallbackPlayer.volume = effectiveBGM
         }
     }
@@ -536,13 +541,13 @@ final class SwitcherViewModel {
     }
 
     private func fadeMediaVolume(to targetVolume: Float, duration: Double) {
-        mediaVolumeFadeTask?.cancel()
+        cleanupBag.mediaVolumeFadeTask?.cancel()
         guard duration > 0 else {
             avCoordinator.volume = targetVolume
             return
         }
 
-        mediaVolumeFadeTask = Task { @MainActor [weak self] in
+        cleanupBag.mediaVolumeFadeTask = Task { @MainActor [weak self] in
             guard let self else { return }
             let startVolume = self.avCoordinator.volume
             await self.runLinearFade(
@@ -556,13 +561,13 @@ final class SwitcherViewModel {
     }
 
     private func fadeBGMFallbackVolume(to targetVolume: Float, duration: Double) {
-        bgmFallbackVolumeFadeTask?.cancel()
+        cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         guard duration > 0 else {
             bgmFallbackPlayer.volume = targetVolume
             return
         }
 
-        bgmFallbackVolumeFadeTask = Task { @MainActor [weak self] in
+        cleanupBag.bgmFallbackVolumeFadeTask = Task { @MainActor [weak self] in
             guard let self else { return }
             let startVolume = self.bgmFallbackPlayer.volume
             await self.runLinearFade(
@@ -576,14 +581,14 @@ final class SwitcherViewModel {
     }
 
     private func fadeBGMPlayerVolume(to targetVolume: Float, duration: Double) {
-        bgmPlayerVolumeFadeTask?.cancel()
+        cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
         guard let player = bgmAudioPlayer else { return }
         guard duration > 0 else {
             player.volume = targetVolume
             return
         }
 
-        bgmPlayerVolumeFadeTask = Task { @MainActor [weak self, weak player] in
+        cleanupBag.bgmPlayerVolumeFadeTask = Task { @MainActor [weak self, weak player] in
             guard let self, let player else { return }
             let startVolume = player.volume
             await self.runLinearFade(
@@ -603,8 +608,8 @@ final class SwitcherViewModel {
         }
 
         let taskID = UUID()
-        bgmTransitionTasks[taskID] = Task { @MainActor [weak self, weak player] in
-            defer { self?.bgmTransitionTasks[taskID] = nil }
+        cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self, weak player] in
+            defer { self?.cleanupBag.bgmTransitionTasks[taskID] = nil }
             guard let self, let player else { return }
             let startVolume = player.volume
             await self.runLinearFade(
@@ -619,7 +624,7 @@ final class SwitcherViewModel {
 
     func installBGMFallbackEndObserver(for item: AVPlayerItem) {
         removeBGMFallbackEndObserver()
-        bgmFallbackEndObserver = NotificationCenter.default.addObserver(
+        cleanupBag.bgmFallbackEndObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
             queue: .main
@@ -631,9 +636,9 @@ final class SwitcherViewModel {
     }
 
     func removeBGMFallbackEndObserver() {
-        if let bgmFallbackEndObserver {
-            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
-            self.bgmFallbackEndObserver = nil
+        if let observer = cleanupBag.bgmFallbackEndObserver {
+            NotificationCenter.default.removeObserver(observer)
+            self.cleanupBag.bgmFallbackEndObserver = nil
         }
     }
 
@@ -663,13 +668,13 @@ final class SwitcherViewModel {
     }
 
     private func loadBackgroundImage(from url: URL?) {
-        backgroundImageLoadTask?.cancel()
+        cleanupBag.backgroundImageLoadTask?.cancel()
         guard let url else {
             backgroundImage = nil
             return
         }
         backgroundImage = NSImage(byReferencing: url)
-        backgroundImageLoadTask = Task { @MainActor [weak self] in
+        cleanupBag.backgroundImageLoadTask = Task { @MainActor [weak self] in
             let data = await Self.imageData(from: url)
             guard !Task.isCancelled, let self, self.activeWallpaperURL == url else { return }
             self.backgroundImage = data.flatMap(NSImage.init(data:))
@@ -677,13 +682,13 @@ final class SwitcherViewModel {
     }
 
     private func loadCornerLogoImage(from url: URL?) {
-        cornerLogoImageLoadTask?.cancel()
+        cleanupBag.cornerLogoImageLoadTask?.cancel()
         guard let url else {
             cornerLogoImage = nil
             return
         }
         cornerLogoImage = NSImage(byReferencing: url)
-        cornerLogoImageLoadTask = Task { @MainActor [weak self] in
+        cleanupBag.cornerLogoImageLoadTask = Task { @MainActor [weak self] in
             let data = await Self.imageData(from: url)
             guard !Task.isCancelled, let self, self.cornerLogoURL == url else { return }
             self.cornerLogoImage = data.flatMap(NSImage.init(data:))
@@ -717,7 +722,7 @@ final class SwitcherViewModel {
 
     private func setupExternalDisplayObserver() {
         refreshExternalDisplayAvailability()
-        externalDisplayChangeObserver = NotificationCenter.default.addObserver(
+        cleanupBag.externalDisplayChangeObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
             queue: .main
@@ -1692,8 +1697,8 @@ final class SwitcherViewModel {
             let fadeDur = liveAudioFadeDuration
 
             // 切歌时取消旧 fallback fade，避免旧任务回写新曲目的目标音量。
-            bgmPlayerVolumeFadeTask?.cancel()
-            bgmFallbackVolumeFadeTask?.cancel()
+            cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
+            cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
             if let oldPlayer = bgmAudioPlayer {
                 fadeBGMPlayerVolume(oldPlayer, to: 0, duration: fadeDur)
                 releaseBGMPlayerAfterFade(oldPlayer, duration: fadeDur)
@@ -1743,8 +1748,8 @@ final class SwitcherViewModel {
         bgmTransitionGeneration += 1
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
-        bgmPlayerVolumeFadeTask?.cancel()
-        bgmFallbackVolumeFadeTask?.cancel()
+        cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
+        cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         removeBGMFallbackEndObserver()
         bgmFallbackPlayer.volume = 0
         bgmFallbackPlayer.pause()
@@ -1787,8 +1792,8 @@ final class SwitcherViewModel {
 
     private func releaseBGMPlayerAfterFade(_ player: AVAudioPlayer, duration: Double) {
         let taskID = UUID()
-        bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
-            defer { self?.bgmTransitionTasks[taskID] = nil }
+        cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
+            defer { self?.cleanupBag.bgmTransitionTasks[taskID] = nil }
             let releaseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: duration)
             if releaseDelay > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
@@ -1801,8 +1806,8 @@ final class SwitcherViewModel {
 
     private func releaseBGMFallbackAfterFade(duration: Double, generation: Int) {
         let taskID = UUID()
-        bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
-            defer { self?.bgmTransitionTasks[taskID] = nil }
+        cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
+            defer { self?.cleanupBag.bgmTransitionTasks[taskID] = nil }
             let releaseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: duration)
             if releaseDelay > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
@@ -1817,8 +1822,8 @@ final class SwitcherViewModel {
     }
 
     func cancelBGMFallbackFade() {
-        bgmFallbackVolumeFadeTask?.cancel()
-        bgmFallbackVolumeFadeTask = nil
+        cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
+        cleanupBag.bgmFallbackVolumeFadeTask = nil
     }
 
     private func updateBGMProgress() {
@@ -1947,7 +1952,7 @@ final class SwitcherViewModel {
     // MARK: - System Volume Observer
 
     private func setupSystemVolumeObserver() {
-        guard systemVolumeObserver == nil else { return }
+        guard cleanupBag.systemVolumeObserver == nil else { return }
         let observer = SystemVolumeObserver { [weak self] volume, deviceID in
             guard let self else { return }
             // 只在差值 > 1% 时更新，防止循环触发
@@ -1960,7 +1965,7 @@ final class SwitcherViewModel {
                 )
             }
         }
-        systemVolumeObserver = observer
+        cleanupBag.systemVolumeObserver = observer
         observer.start()
     }
 
