@@ -15,7 +15,9 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
     func testViewModelDeinitDoesNotAssumeMainActorExecutor() throws {
         let source = try sourceText("ViewModel.swift")
-        let deinitBody = try XCTUnwrap(source.functionBody(named: "deinit"))
+        let deinitBody = try XCTUnwrap(
+            source.functionBodies(named: "deinit").first { $0.contains("avCoordinator") }
+        )
 
         XCTAssertFalse(deinitBody.contains("MainActor.assumeIsolated"))
         XCTAssertFalse(deinitBody.contains("Task { @MainActor"))
@@ -74,6 +76,37 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
                 XCTAssertFalse(viewModel.isBroadcasting)
             }
         }
+    }
+
+    func testViewModelCleanupResourcesLiveInCleanupBagInsteadOfUnsafeActorState() throws {
+        let source = try sourceText("ViewModel.swift")
+
+        XCTAssertFalse(source.contains("@ObservationIgnored nonisolated(unsafe)"))
+        XCTAssertTrue(source.contains("final class ViewModelCleanupBag"))
+        XCTAssertTrue(source.contains("@ObservationIgnored let cleanupBag = ViewModelCleanupBag()"))
+    }
+
+    func testCleanupBagCancelsTrackedTasksSynchronously() {
+        let bag = ViewModelCleanupBag()
+        let mediaTask = Task<Void, Never> {
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+        }
+        let bgmTask = Task<Void, Never> {
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+        }
+        let transitionTask = Task<Void, Never> {
+            try? await Task.sleep(nanoseconds: 10_000_000_000)
+        }
+
+        bag.mediaVolumeFadeTask = mediaTask
+        bag.bgmPlayerVolumeFadeTask = bgmTask
+        bag.bgmTransitionTasks[UUID()] = transitionTask
+
+        bag.cancelAll()
+
+        XCTAssertTrue(mediaTask.isCancelled)
+        XCTAssertTrue(bgmTask.isCancelled)
+        XCTAssertTrue(transitionTask.isCancelled)
     }
 
     func testAutomationAlertsAreThrottled() throws {
@@ -163,5 +196,36 @@ private extension String {
             index = self.index(after: index)
         }
         return nil
+    }
+
+    func functionBodies(named functionName: String) -> [String] {
+        let marker = functionName == "deinit" ? "deinit {" : "func \(functionName)"
+        var bodies: [String] = []
+        var searchStart = startIndex
+
+        while let markerRange = self[searchStart...].range(of: marker),
+              let openingBrace = self[markerRange.lowerBound...].firstIndex(of: "{") {
+            var depth = 0
+            var index = openingBrace
+            while index < endIndex {
+                let character = self[index]
+                if character == "{" {
+                    depth += 1
+                } else if character == "}" {
+                    depth -= 1
+                    if depth == 0 {
+                        bodies.append(String(self[openingBrace...index]))
+                        searchStart = self.index(after: index)
+                        break
+                    }
+                }
+                index = self.index(after: index)
+            }
+            if index >= endIndex {
+                break
+            }
+        }
+
+        return bodies
     }
 }

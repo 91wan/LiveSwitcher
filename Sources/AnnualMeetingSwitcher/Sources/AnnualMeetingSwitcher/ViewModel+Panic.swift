@@ -43,7 +43,7 @@ extension SwitcherViewModel {
 
     private func deactivatePanic() {
         panicAudioTransitionGeneration += 1
-        panicAudioPauseTask?.cancel()
+        cleanupBag.panicAudioPauseTask?.cancel()
         let snapshot = panicPlaybackSnapshot
         panicPlaybackSnapshot = nil
         isPanicMode = false
@@ -86,13 +86,13 @@ extension SwitcherViewModel {
         let snapshot = panicPlaybackSnapshot
         let delay = max(0, liveAudioFadeDuration)
 
-        panicAudioPauseTask?.cancel()
+        cleanupBag.panicAudioPauseTask?.cancel()
         guard delay > 0 else {
             pausePlaybackAfterPanicFade(snapshot, generation: generation)
             return
         }
 
-        panicAudioPauseTask = Task { @MainActor [weak self] in
+        cleanupBag.panicAudioPauseTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard let self, self.isPanicMode, self.panicAudioTransitionGeneration == generation else { return }
             self.pausePlaybackAfterPanicFade(snapshot, generation: generation)
