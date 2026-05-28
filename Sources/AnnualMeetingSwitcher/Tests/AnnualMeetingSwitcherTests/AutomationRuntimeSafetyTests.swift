@@ -1,4 +1,5 @@
 import XCTest
+@testable import LiveSwitcher
 
 final class AutomationRuntimeSafetyTests: XCTestCase {
     func testAppleScriptAutomationRunsOnMainActorInsteadOfDetachedThread() throws {
@@ -17,8 +18,62 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         let deinitBody = try XCTUnwrap(source.functionBody(named: "deinit"))
 
         XCTAssertFalse(deinitBody.contains("MainActor.assumeIsolated"))
-        XCTAssertTrue(deinitBody.contains("Task { @MainActor"))
-        XCTAssertTrue(deinitBody.contains("avCoordinator.shutdown()"))
+        XCTAssertFalse(deinitBody.contains("Task { @MainActor"))
+        XCTAssertTrue(deinitBody.contains("avCoordinator.shutdownNonisolated()"))
+    }
+
+    @MainActor
+    func testAutomationAlertThrottleSuppressesSameActionAfterDismissalWindow() async throws {
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: .standard
+        )
+        var alerts: [(String, String)] = []
+        viewModel.automationFailureAlertHandler = { title, message in
+            alerts.append((title, message))
+        }
+        let error = AppleScriptError.executionFailed(
+            action: "keynote.next-slide",
+            message: "mock failure"
+        )
+
+        viewModel.handleAppleScriptFailure(
+            error,
+            action: "keynote.next-slide",
+            alertTitle: "下一页失败"
+        )
+        try await Task.sleep(nanoseconds: 1_100_000_000)
+        viewModel.handleAppleScriptFailure(
+            error,
+            action: "keynote.next-slide",
+            alertTitle: "下一页失败"
+        )
+        viewModel.handleAppleScriptFailure(
+            error,
+            action: "keynote.previous-slide",
+            alertTitle: "上一页失败"
+        )
+
+        XCTAssertEqual(alerts.map(\.0), ["下一页失败", "上一页失败"])
+    }
+
+    @MainActor
+    func testViewModelCanCreateAndReleaseRepeatedlyWithSynchronousCoordinatorShutdown() throws {
+        let suiteName = "AutomationRuntimeSafetyTests.lifecycle.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
+        for _ in 0..<100 {
+            autoreleasepool {
+                let viewModel = SwitcherViewModel(
+                    loadPersistedData: false,
+                    enableSystemVolumeObserver: false,
+                    userDefaults: userDefaults
+                )
+                XCTAssertFalse(viewModel.isBroadcasting)
+            }
+        }
     }
 
     func testAutomationAlertsAreThrottled() throws {
@@ -48,6 +103,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         let deinitBody = try XCTUnwrap(source.functionBody(named: "deinit"))
 
         XCTAssertFalse(deinitBody.contains("Task { @MainActor"))
+        XCTAssertTrue(source.contains("nonisolated func shutdownNonisolated()"))
         XCTAssertTrue(source.contains("Owners must call shutdown() before releasing"))
     }
 

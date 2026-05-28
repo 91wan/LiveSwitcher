@@ -269,7 +269,8 @@ final class SwitcherViewModel {
     var activeDeckPresentationHandler: () -> Void = {}
     var invalidDeckHandler: (URL) -> Void = { _ in }
     private var isPresentingAutomationAlert = false
-    private var automationAlertSuppressionUntil: Date?
+    private let automationAlertSuppressionWindow: TimeInterval = 15
+    private var automationAlertSuppressionUntilByAction: [String: Date] = [:]
     var automationFailureAlertHandler: (String, String) -> Void = { title, message in
         let alert = NSAlert()
         alert.messageText = title
@@ -394,23 +395,21 @@ final class SwitcherViewModel {
         let bgmFallbackEndObserver = bgmFallbackEndObserver
         let avCoordinator = avCoordinator
 
-        Task { @MainActor in
-            mediaVolumeFadeTask?.cancel()
-            bgmPlayerVolumeFadeTask?.cancel()
-            bgmFallbackVolumeFadeTask?.cancel()
-            bgmTransitionTasks.values.forEach { $0.cancel() }
-            panicAudioPauseTask?.cancel()
-            backgroundImageLoadTask?.cancel()
-            cornerLogoImageLoadTask?.cancel()
-            systemVolumeObserver?.stop()
-            if let externalDisplayChangeObserver {
-                NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
-            }
-            if let bgmFallbackEndObserver {
-                NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
-            }
-            avCoordinator.shutdown()
+        mediaVolumeFadeTask?.cancel()
+        bgmPlayerVolumeFadeTask?.cancel()
+        bgmFallbackVolumeFadeTask?.cancel()
+        bgmTransitionTasks.values.forEach { $0.cancel() }
+        panicAudioPauseTask?.cancel()
+        backgroundImageLoadTask?.cancel()
+        cornerLogoImageLoadTask?.cancel()
+        systemVolumeObserver?.stop()
+        if let externalDisplayChangeObserver {
+            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
         }
+        if let bgmFallbackEndObserver {
+            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
+        }
+        avCoordinator.shutdownNonisolated()
     }
 
     // MARK: - 音量实际应用（Fix Issue #7/#8）
@@ -1043,47 +1042,57 @@ final class SwitcherViewModel {
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
 
         if let alertTitle {
-            presentAutomationAlert(title: alertTitle, message: alertMessage ?? message)
+            presentAutomationAlert(
+                title: alertTitle,
+                message: alertMessage ?? message,
+                action: action
+            )
         }
     }
 
-    private func presentAutomationAlert(title: String, message: String) {
-        guard canPresentAutomationAlert() else { return }
-        isPresentingAutomationAlert = true
-        automationFailureAlertHandler(title, message)
-        isPresentingAutomationAlert = false
-        automationAlertSuppressionUntil = Date().addingTimeInterval(1.0)
+    private func presentAutomationAlert(title: String, message: String, action: String) {
+        performAutomationAlert(action: action) {
+            automationFailureAlertHandler(title, message)
+        }
     }
 
     private func presentAutomationAlert(
         title: String,
         message: String,
+        action: String,
         primaryButton: String,
         secondaryButton: String,
         primaryAction: (() -> Void)?
     ) {
-        guard canPresentAutomationAlert() else { return }
-        isPresentingAutomationAlert = true
-        defer {
-            isPresentingAutomationAlert = false
-            automationAlertSuppressionUntil = Date().addingTimeInterval(1.0)
-        }
-
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = message
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: primaryButton)
-        alert.addButton(withTitle: secondaryButton)
-        let response = alert.runModal()
-        if response == .alertFirstButtonReturn {
-            primaryAction?()
+        performAutomationAlert(action: action) {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: primaryButton)
+            alert.addButton(withTitle: secondaryButton)
+            let response = alert.runModal()
+            if response == .alertFirstButtonReturn {
+                primaryAction?()
+            }
         }
     }
 
-    private func canPresentAutomationAlert(now: Date = Date()) -> Bool {
+    private func performAutomationAlert(action: String, _ present: () -> Void) {
+        guard canPresentAutomationAlert(action: action) else { return }
+        isPresentingAutomationAlert = true
+        defer {
+            isPresentingAutomationAlert = false
+            automationAlertSuppressionUntilByAction[action] = Date()
+                .addingTimeInterval(automationAlertSuppressionWindow)
+        }
+        present()
+    }
+
+    private func canPresentAutomationAlert(action: String, now: Date = Date()) -> Bool {
         guard !isPresentingAutomationAlert else { return false }
-        if let automationAlertSuppressionUntil, now < automationAlertSuppressionUntil {
+        if let suppressionUntil = automationAlertSuppressionUntilByAction[action],
+           now < suppressionUntil {
             return false
         }
         return true
@@ -1980,6 +1989,7 @@ final class SwitcherViewModel {
                 self.presentAutomationAlert(
                     title: "PPT模式需要辅助功能权限",
                     message: "翻页笔接管需要「辅助功能」权限才能工作。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 即可使用 PPT模式。",
+                    action: "pageIntercept.accessibilityPermission",
                     primaryButton: "打开系统设置",
                     secondaryButton: "稍后处理"
                 ) {
@@ -2024,6 +2034,7 @@ final class SwitcherViewModel {
                 self.presentAutomationAlert(
                     title: "PPT模式无法启动",
                     message: "翻页笔接管需要「辅助功能」权限。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 再开启 PPT模式。",
+                    action: "pageIntercept.eventTapCreateFailed",
                     primaryButton: "打开系统设置",
                     secondaryButton: "稍后处理"
                 ) {
