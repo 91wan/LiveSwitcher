@@ -25,39 +25,28 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     @MainActor
-    func testAutomationAlertThrottleSuppressesSameActionAfterDismissalWindow() async throws {
+    func testAppleScriptFailuresUseSupportEventsWithoutModalAlerts() throws {
+        let suiteName = "AutomationRuntimeSafetyTests.nonmodalAutomation.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: .standard
+            userDefaults: userDefaults
         )
-        var alerts: [(String, String)] = []
-        viewModel.automationFailureAlertHandler = { title, message in
-            alerts.append((title, message))
-        }
         let error = AppleScriptError.executionFailed(
             action: "keynote.next-slide",
             message: "mock failure"
         )
 
-        viewModel.handleAppleScriptFailure(
-            error,
-            action: "keynote.next-slide",
-            alertTitle: "下一页失败"
-        )
-        try await Task.sleep(nanoseconds: 1_100_000_000)
-        viewModel.handleAppleScriptFailure(
-            error,
-            action: "keynote.next-slide",
-            alertTitle: "下一页失败"
-        )
-        viewModel.handleAppleScriptFailure(
-            error,
-            action: "keynote.previous-slide",
-            alertTitle: "上一页失败"
-        )
+        for _ in 0..<10 {
+            viewModel.handleAppleScriptFailure(error, action: "keynote.next-slide")
+        }
 
-        XCTAssertEqual(alerts.map(\.0), ["下一页失败", "上一页失败"])
+        let appleScriptFailures = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
+        XCTAssertEqual(appleScriptFailures.count, 10)
+        XCTAssertTrue(appleScriptFailures.allSatisfy { $0.detail.contains("action=keynote.next-slide") })
     }
 
     @MainActor
@@ -118,14 +107,17 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(transitionTask.isCancelled)
     }
 
-    func testAutomationAlertsAreThrottled() throws {
+    func testOnlyPermissionPromptsUseModalAutomationAlerts() throws {
         let source = try sourceText("ViewModel.swift")
+        let runAutomationScriptBody = try XCTUnwrap(source.functionBody(named: "runAutomationScript"))
         let failureBody = try XCTUnwrap(source.functionBody(named: "handleAppleScriptFailure"))
         let startPageInterceptBody = try XCTUnwrap(source.functionBody(named: "startPageIntercept"))
 
+        XCTAssertFalse(source.contains("automationFailureAlertHandler"))
+        XCTAssertFalse(runAutomationScriptBody.contains("alertTitle"))
         XCTAssertTrue(source.contains("isPresentingAutomationAlert"))
         XCTAssertTrue(source.contains("presentAutomationAlert("))
-        XCTAssertTrue(failureBody.contains("presentAutomationAlert("))
+        XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
         XCTAssertTrue(startPageInterceptBody.contains("presentAutomationAlert("))
         XCTAssertFalse(startPageInterceptBody.contains("let alert = NSAlert()"))
     }
