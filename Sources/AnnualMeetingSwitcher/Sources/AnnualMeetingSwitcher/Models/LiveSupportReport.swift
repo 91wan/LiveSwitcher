@@ -142,9 +142,10 @@ enum LiveSupportRedactor {
 
     private static func redactPathTokens(in text: String) -> String {
         let extensionPattern = protectedExtensionPattern
+        let pathRootPattern = #"~|/Users|/Volumes|/private|/tmp|/Applications|/var/folders"#
         let fileURLPattern = #"(?i)file://[^\s,;)\]}]+"#
-        let pathWithExtensionPattern = #"(?i)(?:/Users|/Volumes|/private|/tmp)/[^,\n;)\]}]*?\.(?:\#(extensionPattern))\b"#
-        let fallbackPathPattern = #"(?i)(?:/Users|/Volumes|/private|/tmp)/[^\s,;)\]}]+"#
+        let pathWithExtensionPattern = #"(?i)(?:\#(pathRootPattern))/[^,\n;)\]}]*?\.(?:\#(extensionPattern))\b"#
+        let fallbackPathPattern = #"(?i)(?:\#(pathRootPattern))/[^\s,;)\]}]+"#
 
         return replaceMatches(
             in: replaceMatches(

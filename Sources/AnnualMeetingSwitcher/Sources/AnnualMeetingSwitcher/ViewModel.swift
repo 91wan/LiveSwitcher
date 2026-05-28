@@ -727,7 +727,7 @@ final class SwitcherViewModel {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            MainActor.assumeIsolated {
                 self?.refreshExternalDisplayAvailability()
             }
         }
@@ -1114,7 +1114,9 @@ final class SwitcherViewModel {
     }
 
     private static func openWithWPSOffice(url: URL) async throws {
-        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.kingsoft.wpsoffice.mac") else {
+        guard let appURL = NSWorkspace.shared.urlForApplication(
+            withBundleIdentifier: AppConfiguration.wpsBundleIdentifier
+        ) else {
             throw AppleScriptError.executionFailed(
                 action: "wps.open.command",
                 message: "WPS Office application was not found"
@@ -1318,8 +1320,7 @@ final class SwitcherViewModel {
             }
         } else if !windowNames.isEmpty {
             for name in windowNames {
-                let cleanName = name.replacingOccurrences(of: ".key", with: "")
-                    .replacingOccurrences(of: ".pptx", with: "")
+                let cleanName = KeynoteController.cleanedDocumentTitle(from: name)
                 let alreadyAdded = programItems.contains { $0.title == cleanName }
                 if !alreadyAdded {
                     let item = ProgramItem(

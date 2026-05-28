@@ -94,17 +94,7 @@ extension SwitcherViewModel {
 
         // 顺序播放：到最后一首时停止
         if bgmPlayMode == .sequential && index == items.count - 1 {
-            bgmAudioPlayer?.delegate = nil
-            bgmAudioPlayer = nil
-            isBGMPlaying = false
-            clearBGMTakeoverIfNeeded()
-            resetBGMRealtimeMeter()
-            recordBGMPlaybackState(isPlaying: false, reason: "finished")
-            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
-            stopBGMTimer()
-            removeBGMFallbackEndObserver()
-            bgmFallbackPlayer.seek(to: .zero)
-            bgmFallbackPlayer.replaceCurrentItem(with: nil)
+            finishSequentialBGMPlayback()
             return
         }
 
@@ -120,6 +110,20 @@ extension SwitcherViewModel {
             isBGMPlaying = false
         }
         toggleBGM(nextItem)
+    }
+
+    private func finishSequentialBGMPlayback() {
+        bgmAudioPlayer?.delegate = nil
+        bgmAudioPlayer = nil
+        isBGMPlaying = false
+        clearBGMTakeoverIfNeeded()
+        resetBGMRealtimeMeter()
+        recordBGMPlaybackState(isPlaying: false, reason: "finished")
+        applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+        stopBGMTimer()
+        removeBGMFallbackEndObserver()
+        bgmFallbackPlayer.seek(to: .zero)
+        bgmFallbackPlayer.replaceCurrentItem(with: nil)
     }
 
     private func restartLoopingBGM(_ item: BGMItem) {
