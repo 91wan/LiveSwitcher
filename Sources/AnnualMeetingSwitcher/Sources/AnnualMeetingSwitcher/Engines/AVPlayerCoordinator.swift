@@ -14,7 +14,7 @@ final class AVPlayerCoordinator: ObservableObject {
     // MARK: - 公开属性
 
     /// 底层 AVPlayer 实例（供 VideoPlayerView 使用）
-    let player = AVPlayer()
+    nonisolated let player = AVPlayer()
 
     /// 当前播放进度 [0.0, 1.0]
     @Published var progress: Double = 0.0
@@ -52,10 +52,10 @@ final class AVPlayerCoordinator: ObservableObject {
 
     // MARK: - Internal state
 
-    private var timeObserverToken: Any?
-    private var durationCancellable: AnyCancellable?
-    private var endObserver: NSObjectProtocol?
-    private var mediaAudioMeterTap: MediaAudioMeterTap?
+    nonisolated(unsafe) private var timeObserverToken: Any?
+    nonisolated(unsafe) private var durationCancellable: AnyCancellable?
+    nonisolated(unsafe) private var endObserver: NSObjectProtocol?
+    nonisolated(unsafe) private var mediaAudioMeterTap: MediaAudioMeterTap?
 
     // MARK: - Init / Deinit
 
@@ -123,8 +123,22 @@ final class AVPlayerCoordinator: ObservableObject {
     /// This keeps observer removal deterministic instead of relying on async deinit work.
     func shutdown() {
         stop()
-        cleanupObservers()
+        shutdownNonisolated()
         onPlaybackEnded = nil
+    }
+
+    nonisolated func shutdownNonisolated() {
+        player.pause()
+        if let token = timeObserverToken {
+            player.removeTimeObserver(token)
+            timeObserverToken = nil
+        }
+        if let token = endObserver {
+            NotificationCenter.default.removeObserver(token)
+            endObserver = nil
+        }
+        durationCancellable = nil
+        mediaAudioMeterTap = nil
     }
 
     /// 跳到开头
@@ -211,16 +225,7 @@ final class AVPlayerCoordinator: ObservableObject {
     }
 
     private func cleanupObservers() {
-        if let token = timeObserverToken {
-            player.removeTimeObserver(token)
-            timeObserverToken = nil
-        }
-        if let token = endObserver {
-            NotificationCenter.default.removeObserver(token)
-            endObserver = nil
-        }
-        durationCancellable = nil
-        mediaAudioMeterTap = nil
+        shutdownNonisolated()
     }
 
     private func installMeterTap(on item: AVPlayerItem) {
