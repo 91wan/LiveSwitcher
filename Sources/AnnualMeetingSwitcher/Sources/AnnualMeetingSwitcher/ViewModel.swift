@@ -307,15 +307,6 @@ final class SwitcherViewModel {
     private var isPresentingAutomationAlert = false
     private let automationAlertSuppressionWindow: TimeInterval = 15
     private var automationAlertSuppressionUntilByAction: [String: Date] = [:]
-    var automationFailureAlertHandler: (String, String) -> Void = { title, message in
-        let alert = NSAlert()
-        alert.messageText = title
-        alert.informativeText = message
-        alert.alertStyle = .warning
-        alert.addButton(withTitle: "好的")
-        alert.runModal()
-    }
-
     // MARK: - Combine / Timers
 
     private var cancellables = Set<AnyCancellable>()
@@ -1017,48 +1008,19 @@ final class SwitcherViewModel {
         alert.runModal()
     }
 
-    private func runAutomationScript(
-        _ source: String,
-        action: String,
-        alertTitle: String? = nil,
-        alertMessage: String? = nil
-    ) {
+    private func runAutomationScript(_ source: String, action: String) {
         Task { @MainActor [weak self] in
             do {
                 try AppleScriptRunner.run(source, action: action)
             } catch {
-                self?.handleAppleScriptFailure(
-                    error,
-                    action: action,
-                    alertTitle: alertTitle,
-                    alertMessage: alertMessage
-                )
+                self?.handleAppleScriptFailure(error, action: action)
             }
         }
     }
 
-    func handleAppleScriptFailure(
-        _ error: Error,
-        action: String,
-        alertTitle: String? = nil,
-        alertMessage: String? = nil
-    ) {
+    func handleAppleScriptFailure(_ error: Error, action: String) {
         let message = appleScriptFailureMessage(error)
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
-
-        if let alertTitle {
-            presentAutomationAlert(
-                title: alertTitle,
-                message: alertMessage ?? message,
-                action: action
-            )
-        }
-    }
-
-    private func presentAutomationAlert(title: String, message: String, action: String) {
-        performAutomationAlert(action: action) {
-            automationFailureAlertHandler(title, message)
-        }
     }
 
     private func presentAutomationAlert(
@@ -1191,9 +1153,7 @@ final class SwitcherViewModel {
         let script = PresentationAutomationService.keynoteStartScript(url: url)
         runAutomationScript(
             script,
-            action: "keynote.open.present",
-            alertTitle: "Keynote 自动化失败",
-            alertMessage: "Keynote 无法打开或放映当前文稿。请确认 Keynote 已安装，并允许 LiveSwitcher 控制 Keynote。"
+            action: "keynote.open.present"
         )
     }
 
@@ -1213,12 +1173,7 @@ final class SwitcherViewModel {
             do {
                 try await Self.openWithWPSOffice(url: url)
             } catch {
-                self?.handleAppleScriptFailure(
-                    error,
-                    action: "wps.open.command",
-                    alertTitle: "未检测到 WPS Office / Keynote",
-                    alertMessage: "LiveSwitcher 无法通过 WPS Office 打开当前 PPTX。请确认 WPS Office 已安装，或改用可直接放映的 Keynote 文件。"
-                )
+                self?.handleAppleScriptFailure(error, action: "wps.open.command")
             }
         }
     }
@@ -1234,9 +1189,7 @@ final class SwitcherViewModel {
         """
         runAutomationScript(
             script,
-            action: "keynote.present.front",
-            alertTitle: "Keynote 自动化失败",
-            alertMessage: "LiveSwitcher 无法放映当前最前面的 Keynote 文稿。请确认 Keynote 已打开文稿并完成自动化授权。"
+            action: "keynote.present.front"
         )
     }
 
@@ -1251,9 +1204,7 @@ final class SwitcherViewModel {
         """
         runAutomationScript(
             script,
-            action: "keynote.next-slide",
-            alertTitle: "Keynote 翻页失败",
-            alertMessage: "LiveSwitcher 未能切到下一页。请确认 Keynote 正在放映，并允许 LiveSwitcher 控制 Keynote。"
+            action: "keynote.next-slide"
         )
     }
 
@@ -1268,9 +1219,7 @@ final class SwitcherViewModel {
         """
         runAutomationScript(
             script,
-            action: "keynote.previous-slide",
-            alertTitle: "Keynote 翻页失败",
-            alertMessage: "LiveSwitcher 未能切到上一页。请确认 Keynote 正在放映，并允许 LiveSwitcher 控制 Keynote。"
+            action: "keynote.previous-slide"
         )
     }
 
@@ -1382,9 +1331,7 @@ final class SwitcherViewModel {
         """
         runAutomationScript(
             script,
-            action: "keynote.stop.presentation",
-            alertTitle: "Keynote 停止失败",
-            alertMessage: "LiveSwitcher 未能停止当前 Keynote 放映。请确认 Keynote 仍在运行并完成自动化授权。"
+            action: "keynote.stop.presentation"
         )
     }
 
