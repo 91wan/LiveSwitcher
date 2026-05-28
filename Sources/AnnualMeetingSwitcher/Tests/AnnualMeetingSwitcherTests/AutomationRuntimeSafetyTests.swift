@@ -86,6 +86,15 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(source.contains("@ObservationIgnored let cleanupBag = ViewModelCleanupBag()"))
     }
 
+    func testExternalDisplayObserverDoesNotAddExtraMainActorTaskHop() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try XCTUnwrap(source.functionBody(named: "setupExternalDisplayObserver"))
+
+        XCTAssertTrue(body.contains("queue: .main"))
+        XCTAssertTrue(body.contains("MainActor.assumeIsolated"))
+        XCTAssertFalse(body.contains("Task { @MainActor"))
+    }
+
     func testCleanupBagCancelsTrackedTasksSynchronously() {
         let bag = ViewModelCleanupBag()
         let mediaTask = Task<Void, Never> {

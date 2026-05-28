@@ -8,7 +8,7 @@ struct WPSApplicationSnapshot: Equatable {
 }
 
 final class WPSApplicationMonitor {
-    private static let wpsBundleIdentifier = "com.kingsoft.wpsoffice.mac"
+    private static let wpsBundleIdentifier = AppConfiguration.wpsBundleIdentifier
 
     private let lock = NSLock()
     private var cachedProcessIdentifier: pid_t?

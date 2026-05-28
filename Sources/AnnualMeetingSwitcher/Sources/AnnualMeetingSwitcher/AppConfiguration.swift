@@ -8,6 +8,8 @@ enum AppConfiguration {
     static let appVersion = "0.4.0"
     /// 统一 Bundle Identifier
     static let bundleIdentifier = "com.91wan.liveswitcher"
+    /// WPS Office Bundle Identifier
+    static let wpsBundleIdentifier = "com.kingsoft.wpsoffice.mac"
     /// 窗口最小宽度
     static let minWindowWidth: CGFloat = 1360
     /// 窗口最小高度

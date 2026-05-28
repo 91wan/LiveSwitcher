@@ -55,7 +55,10 @@ final class LiveSupportReportPrivacyTests: XCTestCase {
         let text = [
             "projection.fail.closed: loaded \"Opening Video.mp4\" and 'Agenda.html'",
             "wallpaper \(smartQuotedImage) from file:///Users/" + "operator/Show/Sponsor%20Wall.jpg",
-            "fallback path /tmp/live-switcher/Client Deck.pptx"
+            "fallback path /tmp/live-switcher/Client Deck.pptx",
+            "app bundle /Applications/LiveSwitcher.app/Contents/MacOS/LiveSwitcher",
+            "cache /var/folders/gm/live-switcher/Sponsor Wall.jpg",
+            "settings ~/Library/Application Support/LiveSwitcher/Agenda.html"
         ].joined(separator: "\n")
 
         let redacted = LiveSupportRedactor.safeText(text)
@@ -72,6 +75,9 @@ final class LiveSupportReportPrivacyTests: XCTestCase {
         XCTAssertFalse(redacted.localizedStandardContains("file://"))
         XCTAssertFalse(redacted.localizedStandardContains("/Users/"))
         XCTAssertFalse(redacted.localizedStandardContains("/tmp/"))
+        XCTAssertFalse(redacted.localizedStandardContains("/Applications/"))
+        XCTAssertFalse(redacted.localizedStandardContains("/var/folders/"))
+        XCTAssertFalse(redacted.localizedStandardContains("~/Library/"))
     }
 
     func testAppleScriptFailureEventIsRetainedAndSanitized() {

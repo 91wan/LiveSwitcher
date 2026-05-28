@@ -171,7 +171,7 @@ struct PresentationReadinessSummary: Equatable {
 
 enum PresentationReadinessProbe {
     static let keynoteBundleIdentifier = "com.apple.iWork.Keynote"
-    static let wpsBundleIdentifier = "com.kingsoft.wpsoffice.mac"
+    static let wpsBundleIdentifier = AppConfiguration.wpsBundleIdentifier
 
     static func probe(
         item: ProgramItem,
