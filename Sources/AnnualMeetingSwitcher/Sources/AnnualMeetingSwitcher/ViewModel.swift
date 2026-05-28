@@ -1890,7 +1890,7 @@ final class SwitcherViewModel {
             outputWindowController?.mountAnyView(rootView: outputView)
         }
         broadcastSafetyNotice = nil
-        outputWindowController?.show(on: targetScreen, fullScreen: true)
+        outputWindowController?.show(on: targetScreen)
     }
 
     func hideOutputWindow() {
@@ -1911,16 +1911,45 @@ final class SwitcherViewModel {
         detail: String,
         timestamp: Date = Date()
     ) {
-        supportEvents.append(
-            LiveSupportEvent(
-                timestamp: timestamp,
-                kind: kind,
-                detail: detail
+        let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
+        if kind == .appleScriptFailed,
+           let existingIndex = supportEvents.lastIndex(where: {
+               $0.kind == kind && supportEventBaseDetail($0.detail) == event.detail
+           }) {
+            let existing = supportEvents.remove(at: existingIndex)
+            let count = supportEventCoalescedCount(existing.detail) + 1
+            supportEvents.append(
+                LiveSupportEvent(
+                    timestamp: timestamp,
+                    kind: kind,
+                    detail: "\(event.detail),count=\(count)"
+                )
             )
-        )
+        } else {
+            supportEvents.append(event)
+        }
         if supportEvents.count > supportEventLimit {
             supportEvents.removeFirst(supportEvents.count - supportEventLimit)
         }
+    }
+
+    private func supportEventBaseDetail(_ detail: String) -> String {
+        guard let range = detail.range(of: ",count=", options: .backwards) else {
+            return detail
+        }
+        let suffix = detail[range.upperBound...]
+        guard !suffix.isEmpty, suffix.allSatisfy(\.isNumber) else {
+            return detail
+        }
+        return String(detail[..<range.lowerBound])
+    }
+
+    private func supportEventCoalescedCount(_ detail: String) -> Int {
+        guard let range = detail.range(of: ",count=", options: .backwards),
+              let count = Int(detail[range.upperBound...]) else {
+            return 1
+        }
+        return max(count, 1)
     }
 
     // MARK: - System Volume Observer
