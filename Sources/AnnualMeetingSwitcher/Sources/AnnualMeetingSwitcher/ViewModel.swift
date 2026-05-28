@@ -147,6 +147,7 @@ final class SwitcherViewModel {
 
     var isBroadcasting: Bool = false
     var broadcastSafetyNotice: String?
+    var automationRuntimeNotice: AutomationRuntimeNotice?
 
     // MARK: - HTML 大屏展示
 
@@ -223,7 +224,10 @@ final class SwitcherViewModel {
     var currentBGMItem: BGMItem?
     var isBGMPlaying: Bool = false
     var isBGMAudioTakeoverActive: Bool = false {
-        didSet { applyAudioRoutingForRuntimeChange(reason: .strategyChanged) }
+        didSet {
+            guard oldValue != isBGMAudioTakeoverActive else { return }
+            applyAudioRoutingForRuntimeChange(reason: .limiterChanged)
+        }
     }
     var bgmPlayMode: BGMPlayMode = .loopAll {
         didSet {
@@ -236,6 +240,8 @@ final class SwitcherViewModel {
     var isSpeakerMode: Bool = false {
         didSet {
             userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
+            guard oldValue != isSpeakerMode else { return }
+            applyAudioRoutingForRuntimeChange(reason: .speakerChanged)
         }
     }
 
@@ -307,6 +313,8 @@ final class SwitcherViewModel {
     private var isPresentingAutomationAlert = false
     private let automationAlertSuppressionWindow: TimeInterval = 15
     private var automationAlertSuppressionUntilByAction: [String: Date] = [:]
+    private let automationNoticeSuppressionWindow: TimeInterval = 15
+    private var automationNoticeSuppressionUntilByAction: [String: Date] = [:]
     // MARK: - Combine / Timers
 
     private var cancellables = Set<AnyCancellable>()
@@ -1021,6 +1029,22 @@ final class SwitcherViewModel {
     func handleAppleScriptFailure(_ error: Error, action: String) {
         let message = appleScriptFailureMessage(error)
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
+        showAutomationRuntimeNotice(action: action)
+    }
+
+    func dismissAutomationRuntimeNotice() {
+        automationRuntimeNotice = nil
+    }
+
+    private func showAutomationRuntimeNotice(action: String, now: Date = Date()) {
+        if let suppressionUntil = automationNoticeSuppressionUntilByAction[action],
+           now < suppressionUntil {
+            return
+        }
+
+        automationRuntimeNotice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: now)
+        automationNoticeSuppressionUntilByAction[action] = now
+            .addingTimeInterval(automationNoticeSuppressionWindow)
     }
 
     private func presentAutomationAlert(
@@ -1726,9 +1750,11 @@ final class SwitcherViewModel {
 
     func startBGMTimer() {
         stopBGMTimer()
+        let generation = bgmTransitionGeneration
         bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.updateBGMProgress()
+                guard let self, self.bgmTransitionGeneration == generation else { return }
+                self.updateBGMProgress()
             }
         }
     }

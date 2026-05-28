@@ -4,6 +4,7 @@ enum AudioRoutingRuntimeChangeReason: Equatable {
     case programChanged
     case mediaPlaybackChanged
     case strategyChanged
+    case limiterChanged
     case speakerChanged
     case panicChanged
     case bgmPlaybackChanged
@@ -33,6 +34,7 @@ enum AudioRoutingTransitionPolicy {
         case .programChanged,
              .mediaPlaybackChanged,
              .strategyChanged,
+             .limiterChanged,
              .speakerChanged,
              .panicChanged,
              .bgmPlaybackChanged:

@@ -25,7 +25,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     @MainActor
-    func testAppleScriptFailuresUseSupportEventsWithoutModalAlerts() throws {
+    func testAppleScriptFailuresCreateVisibleNonModalNoticeAndSupportEvent() throws {
         let suiteName = "AutomationRuntimeSafetyTests.nonmodalAutomation.\(UUID().uuidString)"
         let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
@@ -37,16 +37,57 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         )
         let error = AppleScriptError.executionFailed(
             action: "keynote.next-slide",
-            message: "mock failure"
+            message: "/Users/operator/Show/Agenda.html failed"
         )
 
-        for _ in 0..<10 {
-            viewModel.handleAppleScriptFailure(error, action: "keynote.next-slide")
-        }
+        viewModel.handleAppleScriptFailure(error, action: "keynote.next-slide")
 
         let appleScriptFailures = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
-        XCTAssertEqual(appleScriptFailures.count, 10)
-        XCTAssertTrue(appleScriptFailures.allSatisfy { $0.detail.contains("action=keynote.next-slide") })
+        XCTAssertEqual(appleScriptFailures.count, 1)
+        XCTAssertTrue(appleScriptFailures.last?.detail.contains("action=keynote.next-slide") == true)
+        XCTAssertFalse(appleScriptFailures.last?.detail.localizedStandardContains("/Users/") == true)
+        XCTAssertFalse(appleScriptFailures.last?.detail.localizedStandardContains("Agenda.html") == true)
+
+        let notice = try XCTUnwrap(viewModel.automationRuntimeNotice)
+        XCTAssertEqual(notice.action, "keynote.next-slide")
+        XCTAssertEqual(notice.title, "翻页失败")
+        XCTAssertTrue(notice.message.contains("演示软件正在放映"))
+        XCTAssertFalse(notice.message.localizedStandardContains("/Users/"))
+        XCTAssertFalse(notice.message.localizedStandardContains("Agenda.html"))
+    }
+
+    @MainActor
+    func testAutomationRuntimeNoticeThrottlesSameActionButAllowsDifferentAction() throws {
+        let suiteName = "AutomationRuntimeSafetyTests.noticeThrottle.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: userDefaults
+        )
+        let error = AppleScriptError.executionFailed(
+            action: "keynote.next-slide",
+            message: "first failure"
+        )
+
+        viewModel.handleAppleScriptFailure(error, action: "keynote.next-slide")
+        let firstNotice = viewModel.automationRuntimeNotice
+
+        viewModel.handleAppleScriptFailure(
+            AppleScriptError.executionFailed(action: "keynote.next-slide", message: "second failure"),
+            action: "keynote.next-slide"
+        )
+        XCTAssertEqual(viewModel.automationRuntimeNotice, firstNotice)
+
+        viewModel.handleAppleScriptFailure(
+            AppleScriptError.executionFailed(action: "wps.open.script", message: "wps failure"),
+            action: "wps.open.script"
+        )
+
+        XCTAssertNotEqual(viewModel.automationRuntimeNotice, firstNotice)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "WPS 打开失败")
     }
 
     @MainActor
@@ -118,6 +159,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(source.contains("isPresentingAutomationAlert"))
         XCTAssertTrue(source.contains("presentAutomationAlert("))
         XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
+        XCTAssertTrue(failureBody.contains("recordSupportEvent"))
+        XCTAssertTrue(failureBody.contains("showAutomationRuntimeNotice"))
         XCTAssertTrue(startPageInterceptBody.contains("presentAutomationAlert("))
         XCTAssertFalse(startPageInterceptBody.contains("let alert = NSAlert()"))
     }

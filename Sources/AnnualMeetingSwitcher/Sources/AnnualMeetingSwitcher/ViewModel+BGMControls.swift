@@ -35,7 +35,6 @@ extension SwitcherViewModel {
         isSpeakerMode.toggle()
         LiveSwitcherTelemetry.speakerModeChanged(isOn: isSpeakerMode)
         recordSupportEvent(kind: .speakerModeChanged, detail: "isOn=\(isSpeakerMode)")
-        applyAudioRoutingForRuntimeChange(reason: .speakerChanged)
     }
 
     // Toggle loop mode: loopAll → loopOne → sequential → loopAll
