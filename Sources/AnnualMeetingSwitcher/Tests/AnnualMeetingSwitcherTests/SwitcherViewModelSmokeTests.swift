@@ -900,6 +900,38 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertNil(viewModel.broadcastSafetyNotice)
     }
 
+    func testSafeBroadcastToggleDoesNotRecordStartedWhenDisplayDisappearsBeforeShow() {
+        let viewModel = makeViewModel()
+        var providerCalls = 0
+        viewModel.externalScreenProvider = {
+            providerCalls += 1
+            return providerCalls == 1 ? (NSScreen.main ?? NSScreen.screens.first) : nil
+        }
+
+        viewModel.handleSafeBroadcastToggle()
+
+        let kinds = viewModel.supportEvents.map(\.kind)
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertTrue(kinds.contains(.projectionLost))
+        XCTAssertFalse(kinds.contains(.projectionStarted))
+    }
+
+    func testBroadcastToggleDoesNotRecordStartedWhenDisplayDisappearsBeforeShow() {
+        let viewModel = makeViewModel()
+        var providerCalls = 0
+        viewModel.externalScreenProvider = {
+            providerCalls += 1
+            return providerCalls == 1 ? (NSScreen.main ?? NSScreen.screens.first) : nil
+        }
+
+        viewModel.handleBroadcastToggle()
+
+        let kinds = viewModel.supportEvents.map(\.kind)
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertTrue(kinds.contains(.projectionLost))
+        XCTAssertFalse(kinds.contains(.projectionStarted))
+    }
+
     func testBroadcastToggleCycleDoesNotClearCurrentHTMLPresentationState() throws {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()

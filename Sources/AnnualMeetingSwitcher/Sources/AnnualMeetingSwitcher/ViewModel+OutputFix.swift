@@ -30,6 +30,7 @@ extension SwitcherViewModel {
         broadcastSafetyNotice = nil
         isBroadcasting = true
         showOutputWindow()
+        guard isBroadcasting else { return }
         LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
         recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=\(isBroadcasting)")
         recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")

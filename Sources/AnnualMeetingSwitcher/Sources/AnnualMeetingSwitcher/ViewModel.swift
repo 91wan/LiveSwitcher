@@ -1863,6 +1863,7 @@ final class SwitcherViewModel {
         isBroadcasting.toggle()
         if isBroadcasting {
             showOutputWindow()
+            guard isBroadcasting else { return }
             recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
         } else {
             hideOutputWindow()
