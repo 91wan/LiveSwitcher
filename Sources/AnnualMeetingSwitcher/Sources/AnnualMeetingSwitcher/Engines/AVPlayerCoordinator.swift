@@ -62,17 +62,7 @@ final class AVPlayerCoordinator: ObservableObject {
     init() {}
 
     deinit {
-        let player = player
-        let timeObserverToken = timeObserverToken
-        let endObserver = endObserver
-        Task { @MainActor in
-            if let timeObserverToken {
-                player.removeTimeObserver(timeObserverToken)
-            }
-            if let endObserver {
-                NotificationCenter.default.removeObserver(endObserver)
-            }
-        }
+        // Owners must call shutdown() before releasing AVPlayerCoordinator so time observers are removed deterministically.
     }
 
     // MARK: - 公开 API

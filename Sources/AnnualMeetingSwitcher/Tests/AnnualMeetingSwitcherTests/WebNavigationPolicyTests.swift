@@ -21,4 +21,16 @@ final class WebNavigationPolicyTests: XCTestCase {
         XCTAssertFalse(WebNavigationPolicy.shouldAllowNavigation(url: otherFile, allowedRoot: root))
         XCTAssertFalse(WebNavigationPolicy.shouldAllowNavigation(url: nil, allowedRoot: root))
     }
+
+    func testReloadComparisonUsesNormalizedFilePaths() {
+        let target = URL(fileURLWithPath: "/tmp/live-switcher/show/Opening Video.html")
+        let current = URL(string: "file:///tmp/live-switcher/show/Opening%20Video.html")!
+
+        XCTAssertFalse(WebNavigationPolicy.shouldReloadFileURL(current: current, target: target))
+        XCTAssertTrue(WebNavigationPolicy.shouldReloadFileURL(
+            current: URL(fileURLWithPath: "/tmp/live-switcher/show/Other.html"),
+            target: target
+        ))
+        XCTAssertTrue(WebNavigationPolicy.shouldReloadFileURL(current: nil, target: target))
+    }
 }

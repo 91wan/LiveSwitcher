@@ -11,6 +11,15 @@ final class AppleScriptSupportTests: XCTestCase {
         )
     }
 
+    func testQuotedStringEscapesControlCharacters() {
+        let path = "/tmp/show files/deck\nwith\rcontrols\t.key"
+
+        XCTAssertEqual(
+            AppleScriptSupport.quotedString(path),
+            "\"/tmp/show files/deck\\nwith\\rcontrols\\t.key\""
+        )
+    }
+
     func testPOSIXFileExpressionUsesEscapedQuotedPath() {
         let path = "/tmp/show files/keynote \"final\" \\ deck.key"
 

@@ -19,6 +19,15 @@ enum WebNavigationPolicy {
         return targetPath == rootPath || targetPath.hasPrefix(rootPath + "/")
     }
 
+    static func shouldReloadFileURL(current: URL?, target: URL) -> Bool {
+        guard let current else { return true }
+        return normalizedFilePath(current) != normalizedFilePath(target)
+    }
+
+    private static func normalizedFilePath(_ url: URL) -> String {
+        url.standardizedFileURL.path
+    }
+
     private static func normalizedDirectoryPath(_ url: URL) -> String {
         var path = url.standardizedFileURL.path
         while path.count > 1 && path.hasSuffix("/") {

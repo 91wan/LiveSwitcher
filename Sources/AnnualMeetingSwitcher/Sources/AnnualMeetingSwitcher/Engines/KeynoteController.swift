@@ -105,8 +105,14 @@ final class KeynoteController {
             paths.append(singlePath)
         }
 
-        // 包含 .key 和 .pptx（Keynote 打开后也会有 pptx 路径）
-        return paths.filter { $0.hasSuffix(".key") || $0.hasSuffix(".pptx") || $0.hasSuffix(".keynote") }
+        // 包含 .key/.keynote/.ppt/.pptx（Keynote 打开后也会有演示文件路径）
+        return paths.filter {
+            let normalizedPath = $0.lowercased()
+            return normalizedPath.hasSuffix(".key")
+                || normalizedPath.hasSuffix(".pptx")
+                || normalizedPath.hasSuffix(".ppt")
+                || normalizedPath.hasSuffix(".keynote")
+        }
     }
 
     // MARK: - 以"在窗口中播放"方式启动指定 Keynote 文件放映
