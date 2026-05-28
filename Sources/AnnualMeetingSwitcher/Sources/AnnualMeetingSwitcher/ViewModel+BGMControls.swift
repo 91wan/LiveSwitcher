@@ -92,21 +92,25 @@ extension SwitcherViewModel {
             return
         }
 
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
-
         // 顺序播放：到最后一首时停止
         if bgmPlayMode == .sequential && index == items.count - 1 {
+            bgmAudioPlayer?.delegate = nil
+            bgmAudioPlayer = nil
             isBGMPlaying = false
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "finished")
             applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
+            removeBGMFallbackEndObserver()
             bgmFallbackPlayer.seek(to: .zero)
+            bgmFallbackPlayer.replaceCurrentItem(with: nil)
             return
         }
+
+        bgmAudioPlayer?.delegate = nil
+        bgmAudioPlayer = nil
+        resetBGMRealtimeMeter()
 
         // 列表循环 / 顺序播放（非最后一首）：播放下一首
         let nextIndex = (index + 1) % items.count

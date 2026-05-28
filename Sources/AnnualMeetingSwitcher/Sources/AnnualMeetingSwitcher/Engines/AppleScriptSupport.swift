@@ -9,6 +9,12 @@ enum AppleScriptSupport {
                 escaped += "\\\\"
             case "\"":
                 escaped += "\\\""
+            case "\n":
+                escaped += "\\n"
+            case "\r":
+                escaped += "\\r"
+            case "\t":
+                escaped += "\\t"
             default:
                 escaped.append(character)
             }

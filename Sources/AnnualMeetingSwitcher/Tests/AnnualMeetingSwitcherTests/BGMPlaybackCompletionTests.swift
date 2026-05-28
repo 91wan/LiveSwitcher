@@ -44,6 +44,52 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmAudioPlayer?.currentTime ?? -1, 0, accuracy: 0.1)
     }
 
+    func testSequentialFinishedFallbackTrackClearsFallbackItemBeforeReplay() throws {
+        let (directory, audioURL) = try makeFallbackAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Fallback", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+        viewModel.bgmPlayMode = .sequential
+
+        viewModel.bgmDidFinish()
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+
+        viewModel.toggleBGM(item)
+
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
+    func testBGMPlayModePersistsAcrossViewModelInstances() {
+        let suiteName = "LiveSwitcherBGMPlayModeTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let first = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+        first.bgmPlayMode = .loopOne
+
+        let second = SwitcherViewModel(
+            loadPersistedData: true,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+
+        XCTAssertEqual(second.bgmPlayMode, .loopOne)
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         SwitcherViewModel(
             loadPersistedData: false,
@@ -58,6 +104,15 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let audioURL = directory.appendingPathComponent("solo.wav")
         try writeSineWaveFixture(to: audioURL)
+        return (directory, audioURL)
+    }
+
+    private func makeFallbackAudioFixture() throws -> (directory: URL, audioURL: URL) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LiveSwitcherBGMFallbackCompletionTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let audioURL = directory.appendingPathComponent("fallback.mp3")
+        try Data("not a decodable audio file".utf8).write(to: audioURL)
         return (directory, audioURL)
     }
 

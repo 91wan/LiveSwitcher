@@ -189,7 +189,11 @@ final class SwitcherViewModel {
     var isBGMAudioTakeoverActive: Bool = false {
         didSet { applyAudioRoutingForRuntimeChange(reason: .strategyChanged) }
     }
-    var bgmPlayMode: BGMPlayMode = .loopAll
+    var bgmPlayMode: BGMPlayMode = .loopAll {
+        didSet {
+            userDefaults.set(bgmPlayMode.rawValue, forKey: UDKeys.bgmPlayMode)
+        }
+    }
     private(set) var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
@@ -264,6 +268,8 @@ final class SwitcherViewModel {
     var programSeekToEndHandler: () -> Void = {}
     var activeDeckPresentationHandler: () -> Void = {}
     var invalidDeckHandler: (URL) -> Void = { _ in }
+    private var isPresentingAutomationAlert = false
+    private var automationAlertSuppressionUntil: Date?
     var automationFailureAlertHandler: (String, String) -> Void = { title, message in
         let alert = NSAlert()
         alert.messageText = title
@@ -277,17 +283,17 @@ final class SwitcherViewModel {
 
     private var cancellables = Set<AnyCancellable>()
     private var bgmProgressTimer: Timer?
-    private var mediaVolumeFadeTask: Task<Void, Never>?
-    private var bgmPlayerVolumeFadeTask: Task<Void, Never>?
-    private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
-    private var bgmFallbackEndObserver: NSObjectProtocol?
-    private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    @ObservationIgnored nonisolated(unsafe) private var mediaVolumeFadeTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var bgmPlayerVolumeFadeTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var bgmFallbackEndObserver: NSObjectProtocol?
+    @ObservationIgnored nonisolated(unsafe) private var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
     private var bgmTransitionGeneration: Int = 0
-    var panicAudioPauseTask: Task<Void, Never>?
-    private var backgroundImageLoadTask: Task<Void, Never>?
-    private var cornerLogoImageLoadTask: Task<Void, Never>?
-    private var systemVolumeObserver: SystemVolumeObserver?
-    private var externalDisplayChangeObserver: NSObjectProtocol?
+    @ObservationIgnored nonisolated(unsafe) var panicAudioPauseTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var backgroundImageLoadTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var cornerLogoImageLoadTask: Task<Void, Never>?
+    @ObservationIgnored nonisolated(unsafe) private var systemVolumeObserver: SystemVolumeObserver?
+    @ObservationIgnored nonisolated(unsafe) private var externalDisplayChangeObserver: NSObjectProtocol?
     private let supportEventLimit = 80
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
@@ -310,10 +316,14 @@ final class SwitcherViewModel {
 
     private enum UDKeys {
         static let pushList = "pushList_paths"
+        static let pushListTitles = "pushList_titles"
+        static let pushListSubtitles = "pushList_subtitles"
         static let pushListScheduledStarts = "pushList_scheduled_starts"
         static let pushListScheduledDurations = "pushList_scheduled_durations"
         static let bgmList = "bgmList_paths"
+        static let bgmListTitles = "bgmList_titles"
         static let bgmListCategories = "bgmList_categories"
+        static let bgmPlayMode = "bgmPlayMode"
         static let wallpapers = "backgroundWallpapers_paths"
         static let activeWallpaper = "activeWallpaper_path"
         static let cornerLogo = "cornerLogo_path"
@@ -372,7 +382,19 @@ final class SwitcherViewModel {
     }
 
     deinit {
-        MainActor.assumeIsolated {
+        let mediaVolumeFadeTask = mediaVolumeFadeTask
+        let bgmPlayerVolumeFadeTask = bgmPlayerVolumeFadeTask
+        let bgmFallbackVolumeFadeTask = bgmFallbackVolumeFadeTask
+        let bgmTransitionTasks = bgmTransitionTasks
+        let panicAudioPauseTask = panicAudioPauseTask
+        let backgroundImageLoadTask = backgroundImageLoadTask
+        let cornerLogoImageLoadTask = cornerLogoImageLoadTask
+        let systemVolumeObserver = systemVolumeObserver
+        let externalDisplayChangeObserver = externalDisplayChangeObserver
+        let bgmFallbackEndObserver = bgmFallbackEndObserver
+        let avCoordinator = avCoordinator
+
+        Task { @MainActor in
             mediaVolumeFadeTask?.cancel()
             bgmPlayerVolumeFadeTask?.cancel()
             bgmFallbackVolumeFadeTask?.cancel()
@@ -387,10 +409,7 @@ final class SwitcherViewModel {
             if let bgmFallbackEndObserver {
                 NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
             }
-            let avCoordinator = avCoordinator
-            Task { @MainActor in
-                avCoordinator.shutdown()
-            }
+            avCoordinator.shutdown()
         }
     }
 
@@ -720,8 +739,8 @@ final class SwitcherViewModel {
         let pushScheduledStarts = ProgramQueueStore.encodedScheduleStarts(for: persistentProgramItems)
         let pushScheduledDurations = ProgramQueueStore.encodedScheduleDurations(for: persistentProgramItems)
         userDefaults.set(pushPaths, forKey: UDKeys.pushList)
-        userDefaults.set(pushTitles, forKey: "pushList_titles")
-        userDefaults.set(pushSubtitles, forKey: "pushList_subtitles")
+        userDefaults.set(pushTitles, forKey: UDKeys.pushListTitles)
+        userDefaults.set(pushSubtitles, forKey: UDKeys.pushListSubtitles)
         userDefaults.set(pushScheduledStarts, forKey: UDKeys.pushListScheduledStarts)
         userDefaults.set(pushScheduledDurations, forKey: UDKeys.pushListScheduledDurations)
 
@@ -730,7 +749,7 @@ final class SwitcherViewModel {
         let bgmTitles = bgmItems.map { $0.title }
         userDefaults.set(bgmPaths, forKey: UDKeys.bgmList)
         userDefaults.set(bgmCategories, forKey: UDKeys.bgmListCategories)
-        userDefaults.set(bgmTitles, forKey: "bgmList_titles")
+        userDefaults.set(bgmTitles, forKey: UDKeys.bgmListTitles)
 
         let wallpaperPaths = backgroundWallpapers.map { $0.path }
         userDefaults.set(wallpaperPaths, forKey: UDKeys.wallpapers)
@@ -762,8 +781,8 @@ final class SwitcherViewModel {
     func loadData() {
         // Fix Issue #2: loadData is called from @MainActor init, all state updates are safe
         if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
-            let titles = userDefaults.stringArray(forKey: "pushList_titles") ?? []
-            let subtitles = userDefaults.stringArray(forKey: "pushList_subtitles") ?? []
+            let titles = userDefaults.stringArray(forKey: UDKeys.pushListTitles) ?? []
+            let subtitles = userDefaults.stringArray(forKey: UDKeys.pushListSubtitles) ?? []
             let scheduledStarts = userDefaults.stringArray(forKey: UDKeys.pushListScheduledStarts) ?? []
             let scheduledDurations = userDefaults.stringArray(forKey: UDKeys.pushListScheduledDurations) ?? []
             let missingCount = paths.enumerated().filter { index, path in
@@ -790,7 +809,7 @@ final class SwitcherViewModel {
 
         if let paths = userDefaults.stringArray(forKey: UDKeys.bgmList) {
             let categories = userDefaults.stringArray(forKey: UDKeys.bgmListCategories) ?? []
-            let titles = userDefaults.stringArray(forKey: "bgmList_titles") ?? []
+            let titles = userDefaults.stringArray(forKey: UDKeys.bgmListTitles) ?? []
             var missingCount = 0
             for (i, path) in paths.enumerated() {
                 let url = URL(fileURLWithPath: path)
@@ -841,6 +860,11 @@ final class SwitcherViewModel {
         if let storedAudioStrategy = userDefaults.string(forKey: UDKeys.audioStrategy),
            let audioStrategy = AudioStrategy(persistedValue: storedAudioStrategy) {
             self.audioStrategy = audioStrategy
+        }
+
+        if let rawPlayMode = userDefaults.string(forKey: UDKeys.bgmPlayMode),
+           let storedPlayMode = BGMPlayMode(rawValue: rawPlayMode) {
+            bgmPlayMode = storedPlayMode
         }
 
         if userDefaults.object(forKey: UDKeys.speakerMode) != nil {
@@ -995,11 +1019,11 @@ final class SwitcherViewModel {
         alertTitle: String? = nil,
         alertMessage: String? = nil
     ) {
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task { @MainActor [weak self] in
             do {
                 try AppleScriptRunner.run(source, action: action)
             } catch {
-                await self?.handleAppleScriptFailure(
+                self?.handleAppleScriptFailure(
                     error,
                     action: action,
                     alertTitle: alertTitle,
@@ -1019,8 +1043,50 @@ final class SwitcherViewModel {
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
 
         if let alertTitle {
-            automationFailureAlertHandler(alertTitle, alertMessage ?? message)
+            presentAutomationAlert(title: alertTitle, message: alertMessage ?? message)
         }
+    }
+
+    private func presentAutomationAlert(title: String, message: String) {
+        guard canPresentAutomationAlert() else { return }
+        isPresentingAutomationAlert = true
+        automationFailureAlertHandler(title, message)
+        isPresentingAutomationAlert = false
+        automationAlertSuppressionUntil = Date().addingTimeInterval(1.0)
+    }
+
+    private func presentAutomationAlert(
+        title: String,
+        message: String,
+        primaryButton: String,
+        secondaryButton: String,
+        primaryAction: (() -> Void)?
+    ) {
+        guard canPresentAutomationAlert() else { return }
+        isPresentingAutomationAlert = true
+        defer {
+            isPresentingAutomationAlert = false
+            automationAlertSuppressionUntil = Date().addingTimeInterval(1.0)
+        }
+
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: primaryButton)
+        alert.addButton(withTitle: secondaryButton)
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            primaryAction?()
+        }
+    }
+
+    private func canPresentAutomationAlert(now: Date = Date()) -> Bool {
+        guard !isPresentingAutomationAlert else { return false }
+        if let automationAlertSuppressionUntil, now < automationAlertSuppressionUntil {
+            return false
+        }
+        return true
     }
 
     private func appleScriptFailureMessage(_ error: Error) -> String {
@@ -1033,18 +1099,32 @@ final class SwitcherViewModel {
         return String(describing: error)
     }
 
-    nonisolated private static func openWithWPSOffice(url: URL) throws {
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-a", "WPS Office", url.path]
-        try task.run()
-        task.waitUntilExit()
-
-        guard task.terminationStatus == 0 else {
+    private static func openWithWPSOffice(url: URL) async throws {
+        guard let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.kingsoft.wpsoffice.mac") else {
             throw AppleScriptError.executionFailed(
                 action: "wps.open.command",
-                message: "open exited with status \(task.terminationStatus)"
+                message: "WPS Office application was not found"
             )
+        }
+
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = true
+
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            NSWorkspace.shared.open(
+                [url],
+                withApplicationAt: appURL,
+                configuration: configuration
+            ) { _, error in
+                if let error {
+                    continuation.resume(throwing: AppleScriptError.executionFailed(
+                        action: "wps.open.command",
+                        message: error.localizedDescription
+                    ))
+                } else {
+                    continuation.resume()
+                }
+            }
         }
     }
 
@@ -1103,21 +1183,21 @@ final class SwitcherViewModel {
 
     /// V24 Fix #3: PPTX → 默认调取 WPS Office 执行播放（彻底替换 Keynote 调用逻辑）
     func openPPTXWithKeynote(url: URL) {
-        Task.detached(priority: .userInitiated) { [weak self] in
+        Task { @MainActor [weak self] in
             // 优先尝试 WPS Office
             let wpsScript = PresentationAutomationService.wpsOpenScript(url: url)
             do {
                 try AppleScriptRunner.run(wpsScript, action: "wps.open.script")
                 return
             } catch {
-                await self?.handleAppleScriptFailure(error, action: "wps.open.script")
+                self?.handleAppleScriptFailure(error, action: "wps.open.script")
             }
 
-            // WPS AppleScript 不可用时，降级用 open -a 命令行方式打开 WPS
+            // WPS AppleScript 不可用时，降级用 NSWorkspace 打开 WPS，避免沙盒下调用 /usr/bin/open。
             do {
-                try Self.openWithWPSOffice(url: url)
+                try await Self.openWithWPSOffice(url: url)
             } catch {
-                await self?.handleAppleScriptFailure(
+                self?.handleAppleScriptFailure(
                     error,
                     action: "wps.open.command",
                     alertTitle: "未检测到 WPS Office / Keynote",
@@ -1891,19 +1971,18 @@ final class SwitcherViewModel {
         let axOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
         if !AXIsProcessTrustedWithOptions(axOptions) {
             Task { @MainActor [weak self] in
-                self?.isPageInterceptEnabled = false
-                self?.recordSupportEvent(
+                guard let self else { return }
+                self.isPageInterceptEnabled = false
+                self.recordSupportEvent(
                     kind: .pageInterceptDisabled,
                     detail: "reason=accessibilityPermission"
                 )
-                let alert = NSAlert()
-                alert.messageText = "PPT模式需要辅助功能权限"
-                alert.informativeText = "翻页笔接管需要「辅助功能」权限才能工作。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 即可使用 PPT模式。"
-                alert.alertStyle = .warning
-                alert.addButton(withTitle: "打开系统设置")
-                alert.addButton(withTitle: "稍后处理")
-                let response = alert.runModal()
-                if response == .alertFirstButtonReturn {
+                self.presentAutomationAlert(
+                    title: "PPT模式需要辅助功能权限",
+                    message: "翻页笔接管需要「辅助功能」权限才能工作。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 即可使用 PPT模式。",
+                    primaryButton: "打开系统设置",
+                    secondaryButton: "稍后处理"
+                ) {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }
@@ -1935,21 +2014,19 @@ final class SwitcherViewModel {
         ) else {
             Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
             Task { @MainActor [weak self] in
-                self?.isPageInterceptEnabled = false
+                guard let self else { return }
+                self.isPageInterceptEnabled = false
                 LiveSwitcherTelemetry.pageInterceptDisabled(reason: "eventTapCreateFailed")
-                self?.recordSupportEvent(
+                self.recordSupportEvent(
                     kind: .pageInterceptDisabled,
                     detail: "reason=eventTapCreateFailed"
                 )
-                // 弹出权限引导 Alert
-                let alert = NSAlert()
-                alert.messageText = "PPT模式无法启动"
-                alert.informativeText = "翻页笔接管需要「辅助功能」权限。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 再开启 PPT模式。"
-                alert.alertStyle = .warning
-                alert.addButton(withTitle: "打开系统设置")
-                alert.addButton(withTitle: "稍后处理")
-                let response = alert.runModal()
-                if response == .alertFirstButtonReturn {
+                self.presentAutomationAlert(
+                    title: "PPT模式无法启动",
+                    message: "翻页笔接管需要「辅助功能」权限。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 再开启 PPT模式。",
+                    primaryButton: "打开系统设置",
+                    secondaryButton: "稍后处理"
+                ) {
                     if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
                         NSWorkspace.shared.open(url)
                     }

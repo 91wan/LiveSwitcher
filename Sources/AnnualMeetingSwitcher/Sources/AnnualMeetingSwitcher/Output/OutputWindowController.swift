@@ -522,7 +522,7 @@ struct OutputWebView: NSViewRepresentable {
     func updateNSView(_ nsView: WKWebView, context: Context) {
         context.coordinator.configure(for: url)
         // 仅在 URL 真正变化时重载，防止 SwiftUI diff 触发无效重载
-        guard nsView.url?.absoluteString != url.absoluteString else { return }
+        guard WebNavigationPolicy.shouldReloadFileURL(current: nsView.url, target: url) else { return }
         nsView.stopLoading()
         nsView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
     }

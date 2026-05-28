@@ -106,13 +106,13 @@ final class TickerEngine: ObservableObject {
 
     func start(speed: Double) {
         stop()
+        guard textWidth > 0, containerWidth > 0 else { return }
         let spd = max(speed, 20.0)
         let delta = CGFloat(spd / 60.0)
         let tw = textWidth
         scrollTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+            MainActor.assumeIsolated {
                 self.offsetA -= delta
                 self.offsetB -= delta
                 if self.offsetA < -(tw + 40) {
