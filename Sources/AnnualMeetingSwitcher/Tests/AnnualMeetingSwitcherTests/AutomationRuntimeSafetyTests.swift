@@ -1,4 +1,5 @@
 import XCTest
+import AppKit
 @testable import LiveSwitcher
 
 final class AutomationRuntimeSafetyTests: XCTestCase {
@@ -88,6 +89,32 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
         XCTAssertNotEqual(viewModel.automationRuntimeNotice, firstNotice)
         XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "WPS 打开失败")
+    }
+
+    @MainActor
+    func testPageInterceptWPSMissingCreatesVisibleNotice() throws {
+        let hasRunningWPS = NSWorkspace.shared.runningApplications.contains {
+            $0.bundleIdentifier == AppConfiguration.wpsBundleIdentifier
+        }
+        if hasRunningWPS {
+            throw XCTSkip("WPS is running on this host; missing-WPS intercept path is not deterministic.")
+        }
+
+        let suiteName = "AutomationRuntimeSafetyTests.pageInterceptWPSMissing.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: userDefaults
+        )
+
+        XCTAssertTrue(viewModel.handlePageInterceptKey(keyCode: 121))
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "翻页失败")
+        XCTAssertTrue(viewModel.automationRuntimeNotice?.message.contains("演示软件正在放映") == true)
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .pageInterceptWPSNotRunning })
     }
 
     @MainActor
