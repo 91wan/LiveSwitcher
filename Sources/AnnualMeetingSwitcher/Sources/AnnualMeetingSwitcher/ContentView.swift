@@ -423,8 +423,8 @@ final class KeyMonitorView: NSView {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control])
         guard modifiers.isEmpty else { return event }
 
-        // 如果当前焦点在文本框，不拦截
-        if let fr = window?.firstResponder, fr is NSText { return event }
+        // 如果当前焦点在文本框或原生控件，不拦截，避免抢走按钮/滑杆的键盘操作
+        if let fr = window?.firstResponder, fr is NSText || fr is NSControl { return event }
 
         let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true
 

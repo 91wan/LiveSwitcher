@@ -60,6 +60,12 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(content.contains("guard presentationShortcutsEnabled else { return event }"))
     }
 
+    func testGlobalShortcutsRespectNativeControlFocus() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("fr is NSText || fr is NSControl"))
+    }
+
     func testStaleToolbarActionModelWasRemoved() throws {
         XCTAssertFalse(sourceExists("Models/ToolbarActionModel.swift"))
     }
