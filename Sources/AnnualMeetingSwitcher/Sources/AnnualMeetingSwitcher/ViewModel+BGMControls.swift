@@ -10,9 +10,9 @@ final class BGMPlayerDelegate: NSObject, AVAudioPlayerDelegate {
         guard let vm = viewModel else { return }
         Task { @MainActor in
             if flag {
-                vm.bgmDidFinish()
+                vm.bgmDidFinish(from: player)
             } else {
-                vm.bgmDidFail()
+                vm.bgmDidFail(from: player)
             }
         }
     }
@@ -53,6 +53,11 @@ extension SwitcherViewModel {
     }
 
     /// V21 Fix #1: 当前曲目播放完毕回调
+    func bgmDidFinish(from player: AVAudioPlayer) {
+        guard bgmAudioPlayer === player else { return }
+        bgmDidFinish()
+    }
+
     func bgmDidFinish() {
         removeBGMFallbackEndObserver()
         guard !isPanicMode else {
@@ -138,6 +143,11 @@ extension SwitcherViewModel {
         bgmFallbackPlayer.replaceCurrentItem(with: nil)
         currentBGMItem = nil
         toggleBGM(item)
+    }
+
+    func bgmDidFail(from player: AVAudioPlayer) {
+        guard bgmAudioPlayer === player else { return }
+        bgmDidFail()
     }
 
     func bgmDidFail() {

@@ -69,6 +69,58 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
     }
 
+    func testStaleRemovedAudioPlayerFinishCannotStopNewCurrentTrack() async throws {
+        let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
+        let secondURL = directory.appendingPathComponent("second.wav")
+        try writeSineWaveFixture(to: secondURL)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [first, second]
+        viewModel.bgmPlayMode = .sequential
+        viewModel.liveAudioFadeDuration = 1.0
+
+        viewModel.toggleBGM(first)
+        let stalePlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        viewModel.removeBGMItem(first)
+        viewModel.toggleBGM(second)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+
+        viewModel.bgmDelegate.audioPlayerDidFinishPlaying(stalePlayer, successfully: true)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
+    func testStaleRemovedAudioPlayerFailureCannotStopNewCurrentTrack() async throws {
+        let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
+        let secondURL = directory.appendingPathComponent("second.wav")
+        try writeSineWaveFixture(to: secondURL)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [first, second]
+        viewModel.bgmPlayMode = .sequential
+        viewModel.liveAudioFadeDuration = 1.0
+
+        viewModel.toggleBGM(first)
+        let stalePlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        viewModel.removeBGMItem(first)
+        viewModel.toggleBGM(second)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+
+        viewModel.bgmDelegate.audioPlayerDidFinishPlaying(stalePlayer, successfully: false)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
     func testBGMPlayModePersistsAcrossViewModelInstances() {
         let suiteName = "LiveSwitcherBGMPlayModeTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -99,10 +151,14 @@ final class BGMPlaybackCompletionTests: XCTestCase {
     }
 
     private func makeAudioFixture() throws -> (directory: URL, audioURL: URL) {
+        try makeAudioFixture(named: "solo.wav")
+    }
+
+    private func makeAudioFixture(named fileName: String) throws -> (directory: URL, audioURL: URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LiveSwitcherBGMCompletionTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        let audioURL = directory.appendingPathComponent("solo.wav")
+        let audioURL = directory.appendingPathComponent(fileName)
         try writeSineWaveFixture(to: audioURL)
         return (directory, audioURL)
     }
