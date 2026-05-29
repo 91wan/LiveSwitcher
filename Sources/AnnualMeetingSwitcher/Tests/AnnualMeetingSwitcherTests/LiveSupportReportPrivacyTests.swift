@@ -101,6 +101,29 @@ final class LiveSupportReportPrivacyTests: XCTestCase {
         XCTAssertFalse(report.localizedStandardContains("Agenda.html"))
     }
 
+    func testSupportEventDetailCollapsesLineBreaksBeforeReportRendering() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1_790_000_000),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide\n- forged.event: /Users/operator/Show/Deck.key"
+        )
+
+        XCTAssertFalse(event.detail.contains("\n"))
+        XCTAssertTrue(event.detail.contains("action=keynote.next-slide"))
+        XCTAssertTrue(event.detail.contains("[path redacted]"))
+
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnosticsSnapshot(),
+            checks: [],
+            events: [event],
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_001)
+        )
+
+        XCTAssertFalse(report.contains("\n- forged.event"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+        XCTAssertFalse(report.localizedStandardContains("Deck.key"))
+    }
+
     private func diagnosticsSnapshot(currentProgramTitle: String? = nil) -> LiveDiagnosticsSnapshot {
         LiveDiagnosticsSnapshot(
             appVersion: "0.4.0",

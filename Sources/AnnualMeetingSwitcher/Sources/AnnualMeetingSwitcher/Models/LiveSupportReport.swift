@@ -46,7 +46,7 @@ struct LiveSupportEvent: Equatable {
     init(timestamp: Date, kind: LiveSupportEventKind, detail: String) {
         self.timestamp = timestamp
         self.kind = kind
-        self.detail = LiveSupportRedactor.safeText(detail)
+        self.detail = LiveSupportRedactor.safeEventDetail(detail)
     }
 }
 
@@ -130,6 +130,13 @@ enum LiveSupportRedactor {
             .components(separatedBy: .newlines)
             .map(safeLine)
             .joined(separator: "\n")
+    }
+
+    static func safeEventDetail(_ text: String) -> String {
+        safeText(text)
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
     }
 
     private static func safeLine(_ text: String) -> String {
