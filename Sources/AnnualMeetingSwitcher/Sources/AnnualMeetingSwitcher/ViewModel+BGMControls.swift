@@ -56,6 +56,9 @@ extension SwitcherViewModel {
     func bgmDidFinish() {
         removeBGMFallbackEndObserver()
         guard !isPanicMode else {
+            if panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
+                panicPlaybackSnapshot?.wasBGMPlaying = false
+            }
             isBGMPlaying = false
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "finishedDuringPanic")
