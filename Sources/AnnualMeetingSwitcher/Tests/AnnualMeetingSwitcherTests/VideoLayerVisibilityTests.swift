@@ -111,6 +111,14 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertTrue(source.contains("VideoLayerVisibilityModel"))
     }
 
+    func testOutputVideoPlayerVisibilityUsesCurrentProgramSourceKindNotLoadedURL() throws {
+        let source = try sourceText("Output/OutputWindowController.swift")
+
+        XCTAssertTrue(source.contains("sourceKind: viewModel.currentProgramItem?.sourceKind"))
+        XCTAssertFalse(source.contains("sourceKind: coordinator.currentURL.map { _ in .media }"))
+        XCTAssertFalse(source.contains("sourceKind: avCoordinator.currentURL.map { _ in .media }"))
+    }
+
     func testProgramMonitorDoesNotMountVideoOnlyWhilePlaying() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 

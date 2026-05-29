@@ -293,7 +293,10 @@ struct OutputView: View {
         // AVPlayer 视频层：始终在视图树中
         // 在 AppKit 层通过 nsView.isHidden 控制 AVPlayerLayer 显隐，
         // 避免 Metal 合成层"穿透" opacity 显示最后一帧。
-        OutputVideoPlayerView(coordinator: viewModel.avCoordinator)
+        OutputVideoPlayerView(
+            coordinator: viewModel.avCoordinator,
+            sourceKind: viewModel.currentProgramItem?.sourceKind
+        )
 
         // HTML 大屏展示层（与视频层互斥）
         if let htmlURL = displayState.currentHTMLURL {
@@ -384,6 +387,7 @@ import AVFoundation
 /// - 暂停时保持播放器层挂载，避免恢复播放时出现有声音但黑屏
 struct OutputVideoPlayerView: NSViewRepresentable {
     let coordinator: AVPlayerCoordinator
+    let sourceKind: ProgramSourceKind?
 
     func makeCoordinator() -> VisibilityCoordinator {
         VisibilityCoordinator()
@@ -395,32 +399,37 @@ struct OutputVideoPlayerView: NSViewRepresentable {
         view.controlsStyle = .none
         view.videoGravity = .resizeAspectFill
         view.autoresizingMask = [.width, .height]
-        context.coordinator.bind(avCoordinator: coordinator, to: view)
+        context.coordinator.bind(avCoordinator: coordinator, sourceKind: sourceKind, to: view)
         return view
     }
 
     func updateNSView(_ nsView: AVPlayerView, context: Context) {
         nsView.player = coordinator.player
         nsView.videoGravity = .resizeAspectFill
-        nsView.isHidden = !VideoLayerVisibilityModel.shouldShowVideoLayer(
-            sourceKind: coordinator.currentURL.map { _ in .media },
-            hasLoadedMedia: coordinator.hasLoadedMedia
-        )
+        context.coordinator.update(sourceKind: sourceKind, hasLoadedMedia: coordinator.hasLoadedMedia, view: nsView)
     }
 
     @MainActor
     class VisibilityCoordinator {
         private var cancellable: AnyCancellable?
+        private var sourceKind: ProgramSourceKind?
 
-        func bind(avCoordinator: AVPlayerCoordinator, to view: AVPlayerView) {
+        func bind(avCoordinator: AVPlayerCoordinator, sourceKind: ProgramSourceKind?, to view: AVPlayerView) {
+            self.sourceKind = sourceKind
             cancellable = avCoordinator.$hasLoadedMedia
                 .receive(on: DispatchQueue.main)
-                .sink { [weak view] hasLoadedMedia in
-                    view?.isHidden = !VideoLayerVisibilityModel.shouldShowVideoLayer(
-                        sourceKind: avCoordinator.currentURL.map { _ in .media },
-                        hasLoadedMedia: hasLoadedMedia
-                    )
+                .sink { [weak self, weak view] hasLoadedMedia in
+                    guard let self, let view else { return }
+                    self.update(sourceKind: self.sourceKind, hasLoadedMedia: hasLoadedMedia, view: view)
                 }
+        }
+
+        func update(sourceKind: ProgramSourceKind?, hasLoadedMedia: Bool, view: AVPlayerView) {
+            self.sourceKind = sourceKind
+            view.isHidden = !VideoLayerVisibilityModel.shouldShowVideoLayer(
+                sourceKind: sourceKind,
+                hasLoadedMedia: hasLoadedMedia
+            )
         }
     }
 }
