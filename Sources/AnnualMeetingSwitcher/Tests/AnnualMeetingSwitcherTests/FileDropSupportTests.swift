@@ -32,12 +32,14 @@ final class FileDropSupportTests: XCTestCase {
         let pptx = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/deck.pptx"))
         let ppt = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/legacy.ppt"))
         let keynote = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/deck.key"))
+        let keynotePackage = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/deck.keynote"))
 
         XCTAssertEqual(media?.sourceKind, .media)
         XCTAssertEqual(html?.sourceKind, .html)
         XCTAssertEqual(pptx?.sourceKind, .pptx)
         XCTAssertEqual(ppt?.sourceKind, .pptx)
         XCTAssertEqual(keynote?.sourceKind, .keynote)
+        XCTAssertEqual(keynotePackage?.sourceKind, .keynote)
     }
 
     func testImportableProgramItemRejectsUnsupportedFiles() {
