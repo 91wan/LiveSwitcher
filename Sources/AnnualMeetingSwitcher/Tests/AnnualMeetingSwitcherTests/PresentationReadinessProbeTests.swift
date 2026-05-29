@@ -92,6 +92,36 @@ final class PresentationReadinessProbeTests: XCTestCase {
         XCTAssertEqual(result.severity, .blocked)
     }
 
+    func testCachedReadinessRefreshesWhenSamePathFileChanges() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PresentationReadinessProbeTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let url = directory.appendingPathComponent("Deck.key")
+        let item = ProgramItem(title: "Deck", sourceURL: url)
+        try Data("bad".utf8).write(to: url)
+        let environment = PresentationReadinessEnvironment(
+            fileExists: { FileManager.default.fileExists(atPath: $0.path) },
+            presentationDocumentIsValid: { url, _ in
+                (try? String(contentsOf: url, encoding: .utf8)) == "valid"
+            },
+            applicationDisplayName: { _ in "Keynote" },
+            applicationInstalled: { _ in true },
+            automationPermission: { _ in .allowed },
+            usesCache: true
+        )
+
+        XCTAssertEqual(
+            PresentationReadinessProbe.probe(item: item, environment: environment),
+            .fileBroken("Presentation file is invalid")
+        )
+
+        try Data("valid".utf8).write(to: url)
+
+        XCTAssertEqual(PresentationReadinessProbe.probe(item: item, environment: environment), .ready("Keynote"))
+    }
+
     func testAutomationPermissionDeniedIsWarning() {
         let url = URL(fileURLWithPath: "/tmp/deck.key")
         let item = ProgramItem(title: "Deck", sourceURL: url)

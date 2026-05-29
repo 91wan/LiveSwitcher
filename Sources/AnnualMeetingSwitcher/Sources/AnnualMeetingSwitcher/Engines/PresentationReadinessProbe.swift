@@ -286,8 +286,39 @@ enum PresentationReadinessProbe {
         [
             item.id.uuidString,
             item.sourceURL?.path ?? "",
-            item.sourceKind.displayCacheKey
+            item.sourceKind.displayCacheKey,
+            sourceFingerprint(for: item.sourceURL)
         ].joined(separator: "|")
+    }
+
+    private static func sourceFingerprint(for url: URL?) -> String {
+        guard let url else {
+            return "no-source"
+        }
+
+        var isDirectoryObject = ObjCBool(false)
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectoryObject) else {
+            return "missing"
+        }
+
+        do {
+            let attributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            let modifiedAt = (attributes[.modificationDate] as? Date)?.timeIntervalSince1970 ?? -1
+            let fileSize = (attributes[.size] as? NSNumber)?.intValue ?? -1
+            let isDirectory = isDirectoryObject.boolValue
+            let childCount: Int
+            if isDirectory {
+                childCount = (try? FileManager.default.contentsOfDirectory(
+                    at: url,
+                    includingPropertiesForKeys: nil
+                ).count) ?? -1
+            } else {
+                childCount = -1
+            }
+            return "\(isDirectory ? "dir" : "file"):\(fileSize):\(modifiedAt):\(childCount)"
+        } catch {
+            return "missing"
+        }
     }
 }
 
