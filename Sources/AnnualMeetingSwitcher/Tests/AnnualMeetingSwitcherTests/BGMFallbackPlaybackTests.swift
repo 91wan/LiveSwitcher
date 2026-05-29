@@ -27,6 +27,33 @@ final class BGMFallbackPlaybackTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testSwitchingFallbackBGMKeepsOldItemLoadedForFadeOut() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0.2
+        let firstURL = try makeTempFileURL(ext: "mp3")
+        let secondURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "Fallback A", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Fallback B", url: secondURL, category: .warmUp)
+        viewModel.bgmItems = [first, second]
+
+        viewModel.toggleBGM(first)
+        let retiringPlayer = viewModel.bgmFallbackPlayer
+        let retiringItem = try XCTUnwrap(retiringPlayer.currentItem)
+        retiringPlayer.volume = 0.6
+
+        viewModel.toggleBGM(second)
+
+        XCTAssertFalse(viewModel.bgmFallbackPlayer === retiringPlayer)
+        XCTAssertTrue(retiringPlayer.currentItem === retiringItem)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         let suiteName = "BGMFallbackPlaybackTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

@@ -75,6 +75,7 @@ final class ViewModelCleanupBag {
     var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     var bgmFallbackEndObserver: NSObjectProtocol?
     var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
+    var retiredBGMFallbackPlayers: [UUID: AVPlayer] = [:]
     var panicAudioPauseTask: Task<Void, Never>?
     var backgroundImageLoadTask: Task<Void, Never>?
     var cornerLogoImageLoadTask: Task<Void, Never>?
@@ -86,6 +87,11 @@ final class ViewModelCleanupBag {
         bgmPlayerVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
         bgmTransitionTasks.values.forEach { $0.cancel() }
+        retiredBGMFallbackPlayers.values.forEach { player in
+            player.pause()
+            player.replaceCurrentItem(with: nil)
+        }
+        retiredBGMFallbackPlayers.removeAll()
         panicAudioPauseTask?.cancel()
         backgroundImageLoadTask?.cancel()
         cornerLogoImageLoadTask?.cancel()
@@ -1683,8 +1689,7 @@ final class SwitcherViewModel {
             bgmAudioPlayer = nil
             resetBGMRealtimeMeter()
             removeBGMFallbackEndObserver()
-            bgmFallbackPlayer.pause()
-            bgmFallbackPlayer.replaceCurrentItem(with: nil)
+            retireCurrentBGMFallbackPlayerForSwitch(duration: fadeDur)
 
             currentBGMItem = item
             isBGMPlaying = true
@@ -1796,6 +1801,38 @@ final class SwitcherViewModel {
             self.bgmFallbackPlayer.pause()
             self.removeBGMFallbackEndObserver()
             self.bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        }
+    }
+
+    private func retireCurrentBGMFallbackPlayerForSwitch(duration: Double) {
+        guard bgmFallbackPlayer.currentItem != nil else { return }
+
+        let player = bgmFallbackPlayer
+        let taskID = UUID()
+        cleanupBag.retiredBGMFallbackPlayers[taskID] = player
+        bgmFallbackPlayer = AVPlayer()
+
+        cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self, weak player] in
+            defer {
+                self?.cleanupBag.bgmTransitionTasks[taskID] = nil
+                self?.cleanupBag.retiredBGMFallbackPlayers[taskID] = nil
+            }
+            guard let self, let player else { return }
+            if duration > 0 {
+                await self.runLinearFade(
+                    from: player.volume,
+                    to: 0,
+                    duration: duration
+                ) { [weak player] volume in
+                    player?.volume = volume
+                }
+            } else {
+                player.volume = 0
+            }
+            guard !Task.isCancelled else { return }
+            player.volume = 0
+            player.pause()
+            player.replaceCurrentItem(with: nil)
         }
     }
 
