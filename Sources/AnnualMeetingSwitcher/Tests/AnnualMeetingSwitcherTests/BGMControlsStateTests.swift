@@ -76,4 +76,48 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertTrue(twoInCategory.canSkipNext)
         XCTAssertNil(twoInCategory.skipDisabledReason)
     }
+
+    func testDefaultPlaybackSelectionPrefersCurrentThenSelectedCategory() {
+        let warmUp = BGMItem(title: "Warm Up", url: URL(fileURLWithPath: "/tmp/warm-up.mp3"), category: .warmUp)
+        let awardA = BGMItem(title: "Award A", url: URL(fileURLWithPath: "/tmp/award-a.mp3"), category: .award)
+        let awardB = BGMItem(title: "Award B", url: URL(fileURLWithPath: "/tmp/award-b.mp3"), category: .award)
+        let exit = BGMItem(title: "Exit", url: URL(fileURLWithPath: "/tmp/exit.mp3"), category: .exit)
+
+        XCTAssertEqual(
+            BGMDefaultSelectionPolicy.defaultItem(
+                items: [warmUp, awardA, awardB, exit],
+                currentItem: nil,
+                selectedCategory: .award
+            )?.id,
+            awardA.id
+        )
+        XCTAssertEqual(
+            BGMDefaultSelectionPolicy.defaultItem(
+                items: [warmUp, awardA, awardB, exit],
+                currentItem: exit,
+                selectedCategory: .award
+            )?.id,
+            exit.id
+        )
+    }
+
+    func testDefaultPlaybackSelectionFallsBackToFirstLibraryItemWhenCategoryIsEmpty() {
+        let warmUp = BGMItem(title: "Warm Up", url: URL(fileURLWithPath: "/tmp/warm-up.mp3"), category: .warmUp)
+
+        XCTAssertEqual(
+            BGMDefaultSelectionPolicy.defaultItem(
+                items: [warmUp],
+                currentItem: nil,
+                selectedCategory: .exit
+            )?.id,
+            warmUp.id
+        )
+        XCTAssertNil(
+            BGMDefaultSelectionPolicy.defaultItem(
+                items: [],
+                currentItem: nil,
+                selectedCategory: .exit
+            )
+        )
+    }
 }

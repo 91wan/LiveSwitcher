@@ -129,10 +129,12 @@ struct BGMPlaylistPanel: View {
 
             // 播放 / 暂停
             Button(action: {
-                if let current = viewModel.currentBGMItem {
-                    viewModel.toggleBGM(current)
-                } else if let first = viewModel.bgmItems.first {
-                    viewModel.toggleBGM(first)
+                if let item = BGMDefaultSelectionPolicy.defaultItem(
+                    items: viewModel.bgmItems,
+                    currentItem: viewModel.currentBGMItem,
+                    selectedCategory: viewModel.bgmLibraryCategorySelection.selectedCategory
+                ) {
+                    viewModel.toggleBGM(item)
                 }
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
