@@ -24,6 +24,19 @@ final class ProgramItemSourceCapabilitiesTests: XCTestCase {
         XCTAssertFalse(ProgramItem(title: "Deck", subtitle: "KEY (活动)", sourceURL: nil).supportsSeeking)
     }
 
+    func testLegacyPPTUsesPresentationCapabilities() {
+        let legacyPPT = ProgramItem(
+            title: "Legacy PPT",
+            subtitle: "PPT",
+            sourceURL: URL(fileURLWithPath: "/tmp/legacy.ppt")
+        )
+
+        XCTAssertEqual(legacyPPT.sourceKind, .pptx)
+        XCTAssertTrue(legacyPPT.supportsPresentationControl)
+        XCTAssertFalse(legacyPPT.supportsSeeking)
+        XCTAssertEqual(legacyPPT.displaySourceLabel, "PPTX")
+    }
+
     func testDisplaySourceLabelUsesSourceKind() {
         XCTAssertEqual(ProgramItem(title: "Movie", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/movie.mp4")).displaySourceLabel, "VIDEO")
         XCTAssertEqual(ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: URL(fileURLWithPath: "/tmp/index.html")).displaySourceLabel, "HTML")

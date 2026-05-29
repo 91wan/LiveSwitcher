@@ -23,7 +23,7 @@ enum ProgramSourceKind: Equatable {
             self = .html
         } else if ext == "key" || ext == "keynote" {
             self = .keynote
-        } else if ext == "pptx" {
+        } else if ext == "ppt" || ext == "pptx" {
             self = .pptx
         } else {
             self = .unsupported

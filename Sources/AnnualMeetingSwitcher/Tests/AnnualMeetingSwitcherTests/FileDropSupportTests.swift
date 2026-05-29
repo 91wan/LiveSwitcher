@@ -30,11 +30,13 @@ final class FileDropSupportTests: XCTestCase {
         let media = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/clip.mp4"))
         let html = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/index.html"))
         let pptx = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/deck.pptx"))
+        let ppt = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/legacy.ppt"))
         let keynote = FileDropSupport.importableProgramItem(from: URL(fileURLWithPath: "/tmp/deck.key"))
 
         XCTAssertEqual(media?.sourceKind, .media)
         XCTAssertEqual(html?.sourceKind, .html)
         XCTAssertEqual(pptx?.sourceKind, .pptx)
+        XCTAssertEqual(ppt?.sourceKind, .pptx)
         XCTAssertEqual(keynote?.sourceKind, .keynote)
     }
 
