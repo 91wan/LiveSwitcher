@@ -1590,13 +1590,13 @@ final class SwitcherViewModel {
     func seekBGMToBeginning() {
         bgmAudioPlayer?.currentTime = 0
         bgmFallbackPlayer.seek(to: .zero)
-        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? bgmDuration ?? 0)
+        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? fallbackBGMKnownDuration() ?? 0)
     }
 
     func seekBGM(toProgress progress: Double) {
         let clampedProgress = BGMProgressStore.clampedProgress(progress)
         guard let player = bgmAudioPlayer else {
-            guard let duration = bgmDuration, duration > 0 else {
+            guard let duration = fallbackBGMKnownDuration(), duration > 0 else {
                 bgmProgress = clampedProgress
                 return
             }
@@ -1612,6 +1612,13 @@ final class SwitcherViewModel {
         }
         player.currentTime = duration * clampedProgress
         bgmProgressStore.update(currentTime: player.currentTime, duration: duration)
+    }
+
+    private func fallbackBGMKnownDuration() -> Double? {
+        BGMFallbackDurationPolicy.knownDuration(
+            storedDuration: bgmDuration,
+            itemDuration: bgmFallbackPlayer.currentItem?.duration.seconds
+        )
     }
 
     func toggleBGM(_ item: BGMItem) {

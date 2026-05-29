@@ -41,6 +41,19 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertNil(store.duration)
     }
 
+    func testFallbackDurationPolicyUsesStoredDurationFirstThenCurrentItemDuration() {
+        XCTAssertEqual(
+            BGMFallbackDurationPolicy.knownDuration(storedDuration: 90, itemDuration: 120),
+            90
+        )
+        XCTAssertEqual(
+            BGMFallbackDurationPolicy.knownDuration(storedDuration: nil, itemDuration: 120),
+            120
+        )
+        XCTAssertNil(BGMFallbackDurationPolicy.knownDuration(storedDuration: 0, itemDuration: .infinity))
+        XCTAssertNil(BGMFallbackDurationPolicy.knownDuration(storedDuration: nil, itemDuration: .nan))
+    }
+
     func testViewModelNoLongerPublishesBGMProgressTriplet() throws {
         let source = try sourceText("ViewModel.swift")
 
@@ -85,6 +98,18 @@ final class BGMProgressStoreTests: XCTestCase {
 
         XCTAssertTrue(updateBody.contains("bgmFallbackPlayer.currentTime()"))
         XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
+    }
+
+    func testBGMSeekUsesFallbackDurationPolicyForAVPlayerFallbackItems() throws {
+        let source = try sourceText("ViewModel.swift")
+        let seekBody = try XCTUnwrap(source.functionBody(named: "seekBGM"))
+        let beginningBody = try XCTUnwrap(source.functionBody(named: "seekBGMToBeginning"))
+
+        XCTAssertTrue(source.contains("private func fallbackBGMKnownDuration()"))
+        XCTAssertTrue(source.contains("BGMFallbackDurationPolicy.knownDuration"))
+        XCTAssertTrue(source.contains("bgmFallbackPlayer.currentItem?.duration.seconds"))
+        XCTAssertTrue(seekBody.contains("fallbackBGMKnownDuration()"))
+        XCTAssertTrue(beginningBody.contains("fallbackBGMKnownDuration()"))
     }
 
     func testBGMProgressTimerIgnoresStaleTransitionGeneration() throws {
