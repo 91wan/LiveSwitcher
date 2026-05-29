@@ -426,6 +426,8 @@ final class KeyMonitorView: NSView {
         // 如果当前焦点在文本框，不拦截
         if let fr = window?.firstResponder, fr is NSText { return event }
 
+        let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true
+
         switch event.keyCode {
         // [ = keyCode 33
         case 33:
@@ -455,10 +457,12 @@ final class KeyMonitorView: NSView {
             return nil
         // Left Arrow = keyCode 123
         case 123:
+            guard presentationShortcutsEnabled else { return event }
             Task { @MainActor in vm.keynotePreviousSlide() }
             return nil
         // Right Arrow = keyCode 124
         case 124:
+            guard presentationShortcutsEnabled else { return event }
             Task { @MainActor in vm.keynoteNextSlide() }
             return nil
         default:
