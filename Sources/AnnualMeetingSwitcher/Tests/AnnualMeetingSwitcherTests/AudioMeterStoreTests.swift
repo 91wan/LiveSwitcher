@@ -40,6 +40,10 @@ final class AudioMeterStoreTests: XCTestCase {
     func testLiveAudioStripObservesDedicatedMeterStore() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
+        XCTAssertTrue(source.contains("@ObservedObject var avCoordinator: AVPlayerCoordinator"))
+        XCTAssertTrue(source.contains("avCoordinator: viewModel.avCoordinator"))
+        XCTAssertTrue(source.contains("realtimeDB: avCoordinator.realtimeLevelDB"))
+        XCTAssertFalse(source.contains("realtimeDB: viewModel.avCoordinator.realtimeLevelDB"))
         XCTAssertTrue(source.contains("@ObservedObject var bgmMeterStore: AudioMeterStore"))
         XCTAssertTrue(source.contains("realtimeDB: bgmMeterStore.bgmRealtimeLevelDB"))
         XCTAssertFalse(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
