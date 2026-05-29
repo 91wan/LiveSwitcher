@@ -167,8 +167,11 @@ final class AVPlayerCoordinator: ObservableObject {
             }
             load(url: currentURL)
         }
+        let wasPlaying = isPlaying
         player.pause()
-        isPlaying = false
+        if !wasPlaying {
+            isPlaying = false
+        }
         didPlayToEnd = false
         player.seek(to: .zero) { [weak self] finished in
             Task { @MainActor [weak self] in
