@@ -243,9 +243,12 @@ final class AVPlayerCoordinator: ObservableObject {
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
             queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
+        ) { [weak self, weak item] _ in
+            Task { @MainActor [weak self, weak item] in
+                guard let self,
+                      let item,
+                      self.player.currentItem === item
+                else { return }
                 self.isPlaying = false
                 self.didPlayToEnd = true
                 self.progress = 1.0

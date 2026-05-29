@@ -61,6 +61,32 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertFalse(coordinator.isPlaying)
     }
 
+    func testStaleMediaEndNotificationCannotMarkNewLoadedMediaEnded() throws {
+        let coordinator = AVPlayerCoordinator()
+        let firstURL = try makeTempURL()
+        let secondURL = try makeTempURL()
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        var playbackEndedCount = 0
+        coordinator.onPlaybackEnded = {
+            playbackEndedCount += 1
+        }
+
+        coordinator.load(url: firstURL)
+        coordinator.play()
+        let staleItem = try XCTUnwrap(coordinator.player.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: staleItem)
+        coordinator.load(url: secondURL)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(coordinator.currentURL, secondURL)
+        XCTAssertFalse(coordinator.didPlayToEnd)
+        XCTAssertEqual(playbackEndedCount, 0)
+    }
+
     func testPauseThenPlayPreservesCurrentItemAndLoadedMedia() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
