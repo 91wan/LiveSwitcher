@@ -36,6 +36,27 @@ final class AudioRoutingTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.25)
     }
 
+    func testFirstMediaProgramWhileBGMPlayingStartsMutedBeforeFadeIn() throws {
+        let viewModel = makeViewModel()
+        viewModel.masterVolume = 0.8
+        viewModel.mediaVolume = 0.5
+        viewModel.audioStrategy = .mixed
+        viewModel.liveAudioFadeDuration = 1.25
+        viewModel.avCoordinator.volume = 0.4
+        viewModel.isBGMPlaying = true
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+        let item = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL)
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertEqual(viewModel.currentProgramItem, item)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .programChanged)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.25)
+    }
+
     func testSwitchingBetweenMediaItemsStartsNewItemMutedBeforeFadeIn() throws {
         let viewModel = makeViewModel()
         viewModel.masterVolume = 0.8
