@@ -213,7 +213,7 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 跳到末尾（Skip to end）
     func seekToEnd() {
-        guard let dur = duration, dur > 0 else { return }
+        guard let dur = duration, dur.isFinite, dur > 0 else { return }
         let seekItem = player.currentItem
         didPlayToEnd = false
         let target = CMTime(seconds: AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: dur), preferredTimescale: 600)
