@@ -119,6 +119,7 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertTrue(startBody.contains("let generation = bgmTransitionGeneration"))
         XCTAssertTrue(startBody.contains("self.bgmTransitionGeneration == generation"))
         XCTAssertTrue(startBody.contains("updateBGMProgress"))
+        XCTAssertFalse(startBody.contains("Task { @MainActor"))
     }
 
     func testStoppingBGMUsesSingleRoutingFadeBeforePausing() throws {
