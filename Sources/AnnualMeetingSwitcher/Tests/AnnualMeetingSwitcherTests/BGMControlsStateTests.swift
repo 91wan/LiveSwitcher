@@ -101,16 +101,15 @@ final class BGMControlsStateTests: XCTestCase {
         )
     }
 
-    func testDefaultPlaybackSelectionFallsBackToFirstLibraryItemWhenCategoryIsEmpty() {
+    func testDefaultPlaybackSelectionDoesNotCrossPlayEmptySelectedCategory() {
         let warmUp = BGMItem(title: "Warm Up", url: URL(fileURLWithPath: "/tmp/warm-up.mp3"), category: .warmUp)
 
-        XCTAssertEqual(
+        XCTAssertNil(
             BGMDefaultSelectionPolicy.defaultItem(
                 items: [warmUp],
                 currentItem: nil,
                 selectedCategory: .exit
-            )?.id,
-            warmUp.id
+            )
         )
         XCTAssertNil(
             BGMDefaultSelectionPolicy.defaultItem(

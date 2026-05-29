@@ -10,6 +10,6 @@ enum BGMDefaultSelectionPolicy {
            items.contains(where: { $0.id == currentItem.id }) {
             return currentItem
         }
-        return items.first { $0.category == selectedCategory } ?? items.first
+        return items.first { $0.category == selectedCategory }
     }
 }

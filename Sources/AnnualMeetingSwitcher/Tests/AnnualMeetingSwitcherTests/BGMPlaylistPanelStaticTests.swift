@@ -43,6 +43,9 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
 
         XCTAssertTrue(librarySource.contains("BGMDefaultSelectionPolicy.defaultItem"))
         XCTAssertTrue(liveSource.contains("BGMDefaultSelectionPolicy.defaultItem"))
+        XCTAssertTrue(librarySource.contains("let defaultPlaybackItem"))
+        XCTAssertTrue(librarySource.contains(".disabled(!(controls.canPlay && defaultPlaybackItem != nil))"))
+        XCTAssertTrue(liveSource.contains("selectedCategory: playlist.displayCategory"))
         XCTAssertFalse(librarySource.contains("else if let first = viewModel.bgmItems.first"))
         XCTAssertFalse(liveSource.contains("else if let first = viewModel.bgmItems.first"))
     }
