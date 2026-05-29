@@ -230,6 +230,42 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 
+    func testPanicDoesNotResumeMediaIfPlaybackEndedDuringPanic() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        viewModel.togglePanicMode()
+
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.handlePlaybackEnded()
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
+    func testPanicDoesNotResumeBGMIfTrackFinishedDuringPanic() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp)
+
+        viewModel.currentBGMItem = item
+        viewModel.isBGMPlaying = true
+        viewModel.togglePanicMode()
+
+        viewModel.bgmDidFinish()
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+    }
+
     func testSelectingBGMDuringPanicCuesButDoesNotPlay() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
