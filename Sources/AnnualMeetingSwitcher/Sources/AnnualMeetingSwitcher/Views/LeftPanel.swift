@@ -410,7 +410,8 @@ struct LeftPanel: View {
             panel.canChooseDirectories = false
             panel.allowedContentTypes = [
                 UTType("com.apple.iWork.Keynote.key"),
-                UTType("com.apple.keynote.key")
+                UTType("com.apple.keynote.key"),
+                UTType(filenameExtension: "keynote")
             ].compactMap { $0 }
             if panel.allowedContentTypes.isEmpty {
                 panel.allowedContentTypes = [.data]

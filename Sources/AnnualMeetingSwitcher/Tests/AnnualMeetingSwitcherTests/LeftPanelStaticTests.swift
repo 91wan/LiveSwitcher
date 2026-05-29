@@ -23,6 +23,12 @@ final class LeftPanelStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("filenameExtension: \"ppt\""))
     }
 
+    func testKeynotePickerAcceptsKeynotePackageFiles() throws {
+        let source = try String(contentsOf: leftPanelURL(), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("filenameExtension: \"keynote\""))
+    }
+
     private func leftPanelURL() throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
