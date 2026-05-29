@@ -53,6 +53,13 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(toolbar.contains("PPT"))
     }
 
+    func testGlobalArrowShortcutsRequirePresentationControl() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true"))
+        XCTAssertTrue(content.contains("guard presentationShortcutsEnabled else { return event }"))
+    }
+
     func testStaleToolbarActionModelWasRemoved() throws {
         XCTAssertFalse(sourceExists("Models/ToolbarActionModel.swift"))
     }
