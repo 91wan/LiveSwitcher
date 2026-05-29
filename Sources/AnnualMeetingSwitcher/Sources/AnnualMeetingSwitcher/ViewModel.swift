@@ -953,6 +953,8 @@ final class SwitcherViewModel {
     // MARK: - 节目操作
 
     func switchToProgram(_ item: ProgramItem) {
+        guard programSourceIsAvailable(item) else { return }
+
         switch item.sourceKind {
         case .agendaMarker, .unsupported:
             return
@@ -1003,6 +1005,50 @@ final class SwitcherViewModel {
             currentHTMLURL = nil
             avCoordinator.stop()
             activeDeckPresentationHandler()
+        }
+    }
+
+    private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {
+        switch item.sourceKind {
+        case .media, .html, .keynote, .pptx:
+            guard let url = item.sourceURL else {
+                handleUnavailableProgramSource(item, reason: "sourceURLMissing")
+                return false
+            }
+            guard FileManager.default.fileExists(atPath: url.path) else {
+                handleUnavailableProgramSource(item, reason: "fileMissing")
+                return false
+            }
+            return true
+        case .activeDeck, .agendaMarker, .unsupported:
+            return true
+        }
+    }
+
+    private func handleUnavailableProgramSource(_ item: ProgramItem, reason: String) {
+        recordSupportEvent(
+            kind: .programItemFileMissing,
+            detail: "sourceKind=\(programSourceKindSupportLabel(item.sourceKind)),reason=\(reason)"
+        )
+        showAutomationRuntimeNotice(action: "program.source.missing")
+    }
+
+    private func programSourceKindSupportLabel(_ kind: ProgramSourceKind) -> String {
+        switch kind {
+        case .media:
+            return "media"
+        case .html:
+            return "html"
+        case .keynote:
+            return "keynote"
+        case .pptx:
+            return "pptx"
+        case .activeDeck:
+            return "activeDeck"
+        case .agendaMarker:
+            return "agendaMarker"
+        case .unsupported:
+            return "unsupported"
         }
     }
 

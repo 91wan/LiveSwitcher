@@ -1215,6 +1215,72 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 
+    func testSwitchingToMissingMediaFileDoesNotReplaceCurrentProgram() throws {
+        let viewModel = makeViewModel()
+        let currentURL = try makeTempFileURL(ext: "mp4")
+        let missingURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        defer { try? FileManager.default.removeItem(at: currentURL) }
+
+        let currentItem = ProgramItem(title: "当前片头", subtitle: "MP4", sourceURL: currentURL)
+        let missingItem = ProgramItem(title: "已移动文件", subtitle: "MP4", sourceURL: missingURL)
+
+        viewModel.switchToProgram(currentItem)
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, currentURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(missingItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, currentItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, currentURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.supportEvents.last?.kind, .programItemFileMissing)
+        XCTAssertTrue(viewModel.supportEvents.last?.detail.contains("sourceKind=media") == true)
+        XCTAssertFalse(viewModel.supportEvents.last?.detail.contains(missingURL.lastPathComponent) == true)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "节目文件不存在")
+    }
+
+    func testSwitchingToMissingHTMLFileDoesNotPromoteCurrentHTML() throws {
+        let viewModel = makeViewModel()
+        let missingURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("html")
+        let missingItem = ProgramItem(title: "已删除签到页", subtitle: "HTML", sourceURL: missingURL)
+
+        viewModel.switchToProgram(missingItem)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(viewModel.supportEvents.last?.kind, .programItemFileMissing)
+        XCTAssertTrue(viewModel.supportEvents.last?.detail.contains("sourceKind=html") == true)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "节目文件不存在")
+    }
+
+    func testSwitchingToMissingPPTXFileDoesNotInvokeOpenHandler() throws {
+        let viewModel = makeViewModel()
+        let missingURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("pptx")
+        let missingItem = ProgramItem(title: "已删除流程稿", subtitle: "PPTX", sourceURL: missingURL)
+        var openedURL: URL?
+        viewModel.pptxOpenHandler = { openedURL = $0 }
+
+        viewModel.switchToProgram(missingItem)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertNil(viewModel.avCoordinator.currentURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertNil(openedURL)
+        XCTAssertEqual(viewModel.supportEvents.last?.kind, .programItemFileMissing)
+        XCTAssertTrue(viewModel.supportEvents.last?.detail.contains("sourceKind=pptx") == true)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "节目文件不存在")
+    }
+
     func testSwitchingFromVideoToHTMLWhileBroadcastingDoesNotReopenOutputWindow() throws {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
