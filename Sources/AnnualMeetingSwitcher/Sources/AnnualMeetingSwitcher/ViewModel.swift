@@ -1252,7 +1252,7 @@ final class SwitcherViewModel {
                 in: programItems
               ) else { return false }
         switchToProgram(nextItem)
-        return true
+        return currentProgramItem?.id == nextItem.id
     }
 
     /// Fix Issue #3: 打开并立即放映 Keynote 文件
