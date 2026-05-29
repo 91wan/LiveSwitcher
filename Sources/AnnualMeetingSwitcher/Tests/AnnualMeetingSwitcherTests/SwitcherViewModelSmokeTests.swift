@@ -2204,6 +2204,28 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems, [videoItem])
     }
 
+    func testRemovingCurrentActiveDeckStopsDeckPresentation() throws {
+        let viewModel = makeViewModel()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+        viewModel.addProgramItem(activeDeckItem)
+        viewModel.switchToProgram(activeDeckItem)
+
+        viewModel.removeProgramItem(withID: activeDeckItem.id)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(stopInvocationCount, 1)
+    }
+
     func testRemovingCurrentActiveDeckWhileBroadcastingDoesNotHideOutputWindow() throws {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
@@ -2621,6 +2643,55 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(outputSpy.mountCount, 1)
         XCTAssertEqual(outputSpy.showCount, 1)
         XCTAssertEqual(outputSpy.hideCount, 0)
+    }
+
+    func testSwitchingAwayFromActiveDeckStopsDeckPresentation() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let videoItem = ProgramItem(title: "返场视频", subtitle: "MP4", sourceURL: videoURL)
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.switchToProgram(activeDeckItem)
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+
+        viewModel.switchToProgram(videoItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertEqual(stopInvocationCount, 1)
+    }
+
+    func testSelectingAgendaMarkerDoesNotStopCurrentActiveDeckPresentation() {
+        let viewModel = makeViewModel()
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let agendaMarker = ProgramItem.agendaMarker(title: "中场提醒")
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.switchToProgram(agendaMarker)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(stopInvocationCount, 0)
     }
 
     func testMultiStepProgramSwitchWhileBroadcastingReusesSingleOutputWindowController() throws {
