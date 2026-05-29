@@ -149,11 +149,15 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 跳到开头
     func seekToBeginning() {
+        let seekItem = player.currentItem
         didPlayToEnd = false
         player.seek(to: .zero) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.progress = 0.0
-                self?.currentTime = 0.0
+                guard let self,
+                      self.player.currentItem === seekItem
+                else { return }
+                self.progress = 0.0
+                self.currentTime = 0.0
             }
         }
     }
@@ -172,10 +176,12 @@ final class AVPlayerCoordinator: ObservableObject {
         if !wasPlaying {
             isPlaying = false
         }
+        let seekItem = player.currentItem
         didPlayToEnd = false
         player.seek(to: .zero) { [weak self] finished in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                guard self.player.currentItem === seekItem else { return }
                 self.progress = 0.0
                 self.currentTime = 0.0
                 guard finished else { return }
@@ -188,11 +194,15 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 跳到末尾（Skip to end）
     func seekToEnd() {
         guard let dur = duration, dur > 0 else { return }
+        let seekItem = player.currentItem
         let target = CMTime(seconds: dur - 0.5, preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
             Task { @MainActor [weak self] in
-                self?.progress = 1.0
-                self?.currentTime = dur
+                guard let self,
+                      self.player.currentItem === seekItem
+                else { return }
+                self.progress = 1.0
+                self.currentTime = dur
             }
         }
     }

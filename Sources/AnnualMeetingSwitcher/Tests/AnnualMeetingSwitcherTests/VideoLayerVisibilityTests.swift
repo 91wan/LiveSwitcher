@@ -121,6 +121,49 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(coordinator.currentURL, url)
     }
 
+    func testStaleRestartSeekCompletionCannotStartNewLoadedMedia() throws {
+        let coordinator = AVPlayerCoordinator()
+        let firstURL = try makeTempURL()
+        let secondURL = try makeTempURL()
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        var restartReadyCount = 0
+
+        coordinator.load(url: firstURL)
+        coordinator.play()
+        coordinator.restartFromBeginning {
+            restartReadyCount += 1
+        }
+        coordinator.load(url: secondURL)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(coordinator.currentURL, secondURL)
+        XCTAssertFalse(coordinator.isPlaying)
+        XCTAssertEqual(restartReadyCount, 0)
+    }
+
+    func testStaleSeekToEndCompletionCannotMarkNewLoadedMediaComplete() throws {
+        let coordinator = AVPlayerCoordinator()
+        let firstURL = try makeTempURL()
+        let secondURL = try makeTempURL()
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+
+        coordinator.load(url: firstURL)
+        coordinator.duration = 25
+        coordinator.seekToEnd()
+        coordinator.load(url: secondURL)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(coordinator.currentURL, secondURL)
+        XCTAssertEqual(coordinator.progress, 0)
+        XCTAssertEqual(coordinator.currentTime, 0)
+    }
+
     func testPlayWithoutLoadedMediaDoesNotReportPlaying() {
         let coordinator = AVPlayerCoordinator()
 
