@@ -34,6 +34,13 @@ enum AutomationRuntimeNoticePolicy {
     }
 
     private static func copy(for action: String) -> (title: String, message: String) {
+        if action.hasPrefix("program.source.missing") {
+            return (
+                "节目文件不存在",
+                "请确认素材仍在原位置，或重新导入该节目。"
+            )
+        }
+
         if action.hasPrefix("wps.open") {
             return (
                 "WPS 打开失败",

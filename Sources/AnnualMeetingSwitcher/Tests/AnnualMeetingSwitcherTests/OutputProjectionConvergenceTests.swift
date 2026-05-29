@@ -22,13 +22,18 @@ final class OutputProjectionConvergenceTests: XCTestCase {
         XCTAssertEqual(before, after)
     }
 
-    func testSwitchingToMediaDoesNotRouteFollowProgramThroughZeroBeforePlaybackStarts() {
+    func testSwitchingToMediaDoesNotRouteFollowProgramThroughZeroBeforePlaybackStarts() throws {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.masterVolume = 1
         viewModel.mediaVolume = 1
         viewModel.bgmVolume = 0
         viewModel.audioStrategy = .followProgram
         viewModel.avCoordinator.volume = 0.5
+        let mediaURL = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        FileManager.default.createFile(atPath: mediaURL.path, contents: Data("stub".utf8))
+        defer { try? FileManager.default.removeItem(at: mediaURL) }
 
         var observedVolumes: [Float] = []
         let observation = viewModel.avCoordinator.player.observe(\.volume, options: [.new]) { _, change in
@@ -40,7 +45,7 @@ final class OutputProjectionConvergenceTests: XCTestCase {
         let item = ProgramItem(
             title: "Opening",
             subtitle: "VIDEO",
-            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+            sourceURL: mediaURL
         )
         viewModel.switchToProgram(item)
         observation.invalidate()
