@@ -70,6 +70,7 @@ enum PresentationReadinessResult: Equatable {
 struct PresentationReadinessEnvironment {
     var directProbe: ((ProgramItem) -> PresentationReadinessResult)?
     var fileExists: (URL) -> Bool
+    var presentationDocumentIsValid: (URL, ProgramSourceKind) -> Bool
     var applicationDisplayName: (String) -> String
     var applicationInstalled: (String) -> Bool
     var automationPermission: (String) -> PresentationAutomationPermission
@@ -78,6 +79,7 @@ struct PresentationReadinessEnvironment {
     init(_ directProbe: @escaping (ProgramItem) -> PresentationReadinessResult) {
         self.directProbe = directProbe
         self.fileExists = { _ in false }
+        self.presentationDocumentIsValid = { _, _ in false }
         self.applicationDisplayName = { $0 }
         self.applicationInstalled = { _ in false }
         self.automationPermission = { _ in .unknown }
@@ -86,6 +88,7 @@ struct PresentationReadinessEnvironment {
 
     init(
         fileExists: @escaping (URL) -> Bool,
+        presentationDocumentIsValid: @escaping (URL, ProgramSourceKind) -> Bool,
         applicationDisplayName: @escaping (String) -> String,
         applicationInstalled: @escaping (String) -> Bool,
         automationPermission: @escaping (String) -> PresentationAutomationPermission,
@@ -93,6 +96,7 @@ struct PresentationReadinessEnvironment {
     ) {
         self.directProbe = nil
         self.fileExists = fileExists
+        self.presentationDocumentIsValid = presentationDocumentIsValid
         self.applicationDisplayName = applicationDisplayName
         self.applicationInstalled = applicationInstalled
         self.automationPermission = automationPermission
@@ -101,6 +105,9 @@ struct PresentationReadinessEnvironment {
 
     static let live = PresentationReadinessEnvironment(
         fileExists: { FileManager.default.fileExists(atPath: $0.path) },
+        presentationDocumentIsValid: { url, sourceKind in
+            PresentationDocumentValidator.isLikelyValid(url: url, sourceKind: sourceKind)
+        },
         applicationDisplayName: { bundleID in
             bundleID == PresentationReadinessProbe.wpsBundleIdentifier ? "WPS Office" : "Keynote"
         },
@@ -225,6 +232,9 @@ enum PresentationReadinessProbe {
             guard environment.fileExists(sourceURL) else {
                 return .fileBroken("File missing")
             }
+            guard environment.presentationDocumentIsValid(sourceURL, .keynote) else {
+                return .fileBroken("Presentation file is invalid")
+            }
             return appReadiness(bundleID: keynoteBundleIdentifier, environment: environment)
 
         case .pptx:
@@ -233,6 +243,9 @@ enum PresentationReadinessProbe {
             }
             guard environment.fileExists(sourceURL) else {
                 return .fileBroken("File missing")
+            }
+            guard environment.presentationDocumentIsValid(sourceURL, .pptx) else {
+                return .fileBroken("Presentation file is invalid")
             }
             if environment.applicationInstalled(wpsBundleIdentifier) {
                 return appReadiness(bundleID: wpsBundleIdentifier, environment: environment)
