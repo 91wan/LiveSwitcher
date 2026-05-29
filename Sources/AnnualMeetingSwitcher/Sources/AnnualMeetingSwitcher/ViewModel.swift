@@ -313,6 +313,7 @@ final class SwitcherViewModel {
     var pptxOpenHandler: (URL) -> Void = { _ in }
     var deckStopHandler: () -> Void = {}
     var programSeekToStartHandler: () -> Void = {}
+    var programRestartFromBeginningHandler: (@escaping () -> Void) -> Void = { _ in }
     var programSeekToEndHandler: () -> Void = {}
     var activeDeckPresentationHandler: () -> Void = {}
     var invalidDeckHandler: (URL) -> Void = { _ in }
@@ -392,6 +393,9 @@ final class SwitcherViewModel {
         }
         self.programSeekToStartHandler = { [weak self] in
             self?.avCoordinator.seekToBeginning()
+        }
+        self.programRestartFromBeginningHandler = { [weak self] onReadyToPlay in
+            self?.avCoordinator.restartFromBeginning(onReadyToPlay: onReadyToPlay)
         }
         self.programSeekToEndHandler = { [weak self] in
             self?.avCoordinator.seekToEnd()
@@ -1391,11 +1395,14 @@ final class SwitcherViewModel {
     func restartCurrentMediaFromBeginning() {
         guard let item = currentProgramItem,
               programItemSupportsSeeking(item) else { return }
-        programSeekToStartHandler()
-        if !isPanicMode {
-            avCoordinator.play()
+        if isPanicMode {
+            programSeekToStartHandler()
+            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
+        } else {
+            programRestartFromBeginningHandler { [weak self] in
+                self?.applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
+            }
         }
-        applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }
 
