@@ -953,11 +953,14 @@ final class SwitcherViewModel {
         case .media:
             guard let url = item.sourceURL else { return }
             let isReplacingLoadedMedia = avCoordinator.hasLoadedMedia
+            let isStartingFreshMediaProgram = currentProgramItem == nil && !isReplacingLoadedMedia
             let isReplacingNonMediaProgram = currentProgramItem != nil && currentProgramItem?.sourceKind != .media
             let needsMutedClearedProgramStartup = needsMutedMediaStartupAfterClearedProgram
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
-            if liveAudioFadeDuration > 0 && (isReplacingLoadedMedia || isReplacingNonMediaProgram || needsMutedClearedProgramStartup) {
+            if liveAudioFadeDuration > 0
+                && ((isStartingFreshMediaProgram && isBGMPlaying)
+                    || isReplacingLoadedMedia || isReplacingNonMediaProgram || needsMutedClearedProgramStartup) {
                 // 避免新媒体在 currentProgramItem 更新前继承上一条媒体音量；programChanged 会淡入到目标值。
                 avCoordinator.volume = 0
             }
