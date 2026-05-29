@@ -55,6 +55,7 @@ extension SwitcherViewModel {
     /// V21 Fix #1: 当前曲目播放完毕回调
     func bgmDidFinish(from player: AVAudioPlayer) {
         guard bgmAudioPlayer === player else { return }
+        guard isBGMPlaying || isPanicMode else { return }
         bgmDidFinish()
     }
 

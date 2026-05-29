@@ -205,6 +205,31 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testPausedBGMFinishDuringFadeDoesNotAdvanceToNextTrack() async throws {
+        let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
+        let secondURL = directory.appendingPathComponent("second.wav")
+        try writeSineWaveFixture(to: secondURL)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [first, second]
+        viewModel.bgmPlayMode = .loopAll
+        viewModel.liveAudioFadeDuration = 1.0
+
+        viewModel.toggleBGM(first)
+        let pausedPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+
+        viewModel.toggleBGM(first)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+
+        viewModel.bgmDelegate.audioPlayerDidFinishPlaying(pausedPlayer, successfully: true)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, first.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
+
     func testBGMPlayModePersistsAcrossViewModelInstances() {
         let suiteName = "LiveSwitcherBGMPlayModeTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
