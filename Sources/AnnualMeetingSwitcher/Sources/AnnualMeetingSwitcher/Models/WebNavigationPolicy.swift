@@ -14,7 +14,7 @@ enum WebNavigationPolicy {
         }
 
         let rootPath = normalizedDirectoryPath(allowedRoot)
-        let targetPath = url.standardizedFileURL.path
+        let targetPath = normalizedFilePath(url)
 
         return targetPath == rootPath || targetPath.hasPrefix(rootPath + "/")
     }
@@ -25,11 +25,11 @@ enum WebNavigationPolicy {
     }
 
     private static func normalizedFilePath(_ url: URL) -> String {
-        url.standardizedFileURL.path
+        url.standardizedFileURL.resolvingSymlinksInPath().path
     }
 
     private static func normalizedDirectoryPath(_ url: URL) -> String {
-        var path = url.standardizedFileURL.path
+        var path = url.standardizedFileURL.resolvingSymlinksInPath().path
         while path.count > 1 && path.hasSuffix("/") {
             path.removeLast()
         }
