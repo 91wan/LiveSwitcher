@@ -31,6 +31,16 @@ struct BGMControlsState: Equatable {
         } else {
             displayStatus = ("待选", .idle)
         }
+        let skipDisabledReason: String?
+        if canSkip {
+            skipDisabledReason = nil
+        } else if !hasLibraryItems {
+            skipDisabledReason = "请先添加 BGM。"
+        } else if currentItem == nil {
+            skipDisabledReason = "请先选择或播放一首 BGM。"
+        } else {
+            skipDisabledReason = "当前分类至少需要两首曲目。"
+        }
 
         return BGMControlsState(
             canSeekToBeginning: currentItem != nil,
@@ -40,7 +50,7 @@ struct BGMControlsState: Equatable {
             displayStatusText: displayStatus.text,
             displayStatusKind: displayStatus.kind,
             playDisabledReason: hasLibraryItems ? nil : "请先添加 BGM。",
-            skipDisabledReason: canSkip ? nil : "当前分类至少需要两首曲目。",
+            skipDisabledReason: skipDisabledReason,
             seekDisabledReason: currentItem == nil ? "请先选择或播放一首 BGM。" : nil
         )
     }

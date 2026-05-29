@@ -12,6 +12,7 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertEqual(state.displayStatusText, "空")
         XCTAssertEqual(state.displayStatusKind, .warn)
         XCTAssertEqual(state.playDisabledReason, "请先添加 BGM。")
+        XCTAssertEqual(state.skipDisabledReason, "请先添加 BGM。")
     }
 
     func testSingleTrackWithoutCurrentCanStartPlaybackButCannotSeekOrSkip() {
@@ -25,6 +26,17 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertFalse(state.canSkipNext)
         XCTAssertEqual(state.displayStatusText, "待选")
         XCTAssertEqual(state.displayStatusKind, .idle)
+    }
+
+    func testMultipleTracksWithoutCurrentExplainsSelectionRequiredBeforeSkipping() {
+        let opening = BGMItem(title: "Opening", url: URL(fileURLWithPath: "/tmp/opening.mp3"), category: .warmUp)
+        let intro = BGMItem(title: "Intro", url: URL(fileURLWithPath: "/tmp/intro.mp3"), category: .warmUp)
+
+        let state = BGMControlsState.make(items: [opening, intro], currentItem: nil)
+
+        XCTAssertFalse(state.canSkipPrevious)
+        XCTAssertFalse(state.canSkipNext)
+        XCTAssertEqual(state.skipDisabledReason, "请先选择或播放一首 BGM。")
     }
 
     func testCurrentTrackEnablesSeekAndPlay() {
@@ -59,7 +71,9 @@ final class BGMControlsStateTests: XCTestCase {
 
         XCTAssertFalse(singleInCategory.canSkipPrevious)
         XCTAssertFalse(singleInCategory.canSkipNext)
+        XCTAssertEqual(singleInCategory.skipDisabledReason, "当前分类至少需要两首曲目。")
         XCTAssertTrue(twoInCategory.canSkipPrevious)
         XCTAssertTrue(twoInCategory.canSkipNext)
+        XCTAssertNil(twoInCategory.skipDisabledReason)
     }
 }
