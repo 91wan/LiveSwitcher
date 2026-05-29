@@ -89,6 +89,24 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertTrue(failures[0].detail.contains("count=100"))
     }
 
+    func testRepeatedPageInterceptWPSMissingEventsCoalesceWithoutEvictingImportantEvents() {
+        let viewModel = makeViewModel()
+        viewModel.recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
+
+        for _ in 0..<100 {
+            viewModel.recordSupportEvent(
+                kind: .pageInterceptWPSNotRunning,
+                detail: "direction=next,state=notRunning"
+            )
+        }
+
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStarted })
+        let failures = viewModel.supportEvents.filter { $0.kind == .pageInterceptWPSNotRunning }
+        XCTAssertEqual(failures.count, 1)
+        XCTAssertTrue(failures[0].detail.contains("direction=next"))
+        XCTAssertTrue(failures[0].detail.contains("count=100"))
+    }
+
     func testOverlaySupportEventsDoNotRecordOperatorText() {
         let viewModel = makeViewModel()
 

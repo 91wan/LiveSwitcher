@@ -1978,7 +1978,7 @@ final class SwitcherViewModel {
         timestamp: Date = Date()
     ) {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
-        if kind == .appleScriptFailed,
+        if shouldCoalesceSupportEvent(kind),
            let existingIndex = supportEvents.lastIndex(where: {
                $0.kind == kind && supportEventBaseDetail($0.detail) == event.detail
            }) {
@@ -1996,6 +1996,15 @@ final class SwitcherViewModel {
         }
         if supportEvents.count > supportEventLimit {
             supportEvents.removeFirst(supportEvents.count - supportEventLimit)
+        }
+    }
+
+    private func shouldCoalesceSupportEvent(_ kind: LiveSupportEventKind) -> Bool {
+        switch kind {
+        case .appleScriptFailed, .pageInterceptWPSNotRunning:
+            return true
+        default:
+            return false
         }
     }
 
