@@ -79,6 +79,22 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(coordinator.currentURL, url)
     }
 
+    func testRestartFromBeginningKeepsPlayingStateWhileSeekIsPending() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.play()
+        XCTAssertTrue(coordinator.isPlaying)
+
+        coordinator.restartFromBeginning()
+
+        XCTAssertTrue(coordinator.isPlaying)
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+        XCTAssertEqual(coordinator.currentURL, url)
+    }
+
     func testPlayWithoutLoadedMediaDoesNotReportPlaying() {
         let coordinator = AVPlayerCoordinator()
 
