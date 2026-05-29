@@ -954,6 +954,8 @@ final class SwitcherViewModel {
 
     func switchToProgram(_ item: ProgramItem) {
         guard programSourceIsAvailable(item) else { return }
+        guard item.sourceKind.isActivatableProgram else { return }
+        stopCurrentDeckPresentationIfNeeded(before: item)
 
         switch item.sourceKind {
         case .agendaMarker, .unsupported:
@@ -1006,6 +1008,14 @@ final class SwitcherViewModel {
             avCoordinator.stop()
             activeDeckPresentationHandler()
         }
+    }
+
+    private func stopCurrentDeckPresentationIfNeeded(before nextItem: ProgramItem) {
+        guard let currentProgramItem,
+              currentProgramItem.id != nextItem.id,
+              currentProgramItem.supportsPresentationControl
+        else { return }
+        deckStopHandler()
     }
 
     private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {
@@ -1517,6 +1527,9 @@ final class SwitcherViewModel {
         programItems.removeAll { $0.id == id }
         if currentProgramItem?.id == id {
             needsMutedMediaStartupAfterClearedProgram = currentProgramItem?.sourceKind == .media
+            if currentProgramItem?.supportsPresentationControl == true {
+                deckStopHandler()
+            }
             currentProgramItem = nil
             currentHTMLURL = nil   // Bug2修复：删除HTML条目时清空大屏
             avCoordinator.stop()

@@ -39,8 +39,26 @@ enum ProgramSourceKind: Equatable {
         }
     }
 
+    var isActivatableProgram: Bool {
+        switch self {
+        case .media, .html, .keynote, .pptx, .activeDeck:
+            return true
+        case .agendaMarker, .unsupported:
+            return false
+        }
+    }
+
     var supportsSeeking: Bool {
         self == .media
+    }
+
+    var supportsPresentationControl: Bool {
+        switch self {
+        case .keynote, .pptx, .activeDeck:
+            return true
+        case .media, .html, .agendaMarker, .unsupported:
+            return false
+        }
     }
 
     static func isVideoFileURL(_ url: URL) -> Bool {
@@ -68,6 +86,10 @@ extension ProgramItem {
 
     var supportsSeeking: Bool {
         sourceKind.supportsSeeking
+    }
+
+    var supportsPresentationControl: Bool {
+        sourceKind.supportsPresentationControl
     }
 
     var isVideoMedia: Bool {
