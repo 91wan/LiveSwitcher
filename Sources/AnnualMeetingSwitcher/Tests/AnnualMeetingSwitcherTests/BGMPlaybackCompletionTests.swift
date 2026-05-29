@@ -205,6 +205,24 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testBGMDecodeErrorStopsCurrentPlayback() async throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Decode Tail", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let failedPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+
+        viewModel.bgmDelegate.audioPlayerDecodeErrorDidOccur(failedPlayer, error: nil)
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
     func testPausedBGMFinishDuringFadeDoesNotAdvanceToNextTrack() async throws {
         let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
         let secondURL = directory.appendingPathComponent("second.wav")
