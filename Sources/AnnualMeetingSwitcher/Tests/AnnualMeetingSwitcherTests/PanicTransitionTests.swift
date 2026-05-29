@@ -319,6 +319,25 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
     }
 
+    func testTogglingSameBGMDuringPanicPreventsAutomaticResume() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let bgmURL = try makeTempURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: bgmURL) }
+        let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
+        viewModel.currentBGMItem = item
+        viewModel.isBGMPlaying = true
+
+        viewModel.togglePanicMode()
+        viewModel.isBGMPlaying = true
+        viewModel.toggleBGM(item)
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
+
     func testBGMFinishDuringPanicDoesNotAdvanceToNextTrack() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
