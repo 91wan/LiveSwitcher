@@ -66,6 +66,13 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(content.contains("fr is NSText || fr is NSControl"))
     }
 
+    func testRunQueueDoesNotInstallDuplicateUnmodifiedNumberShortcuts() throws {
+        let leftPanel = try sourceText("Views/LeftPanel.swift")
+
+        XCTAssertFalse(leftPanel.contains("ShortcutKeyHandler"))
+        XCTAssertFalse(leftPanel.contains(".keyboardShortcut(KeyEquivalent(Character(\"\\(index)\")), modifiers: [])"))
+    }
+
     func testStaleToolbarActionModelWasRemoved() throws {
         XCTAssertFalse(sourceExists("Models/ToolbarActionModel.swift"))
     }
