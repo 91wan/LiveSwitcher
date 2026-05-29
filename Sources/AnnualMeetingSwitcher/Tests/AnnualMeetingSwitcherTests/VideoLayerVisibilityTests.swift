@@ -122,6 +122,22 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(coordinator.currentURL, url)
     }
 
+    func testSeekingAfterReachedEndClearsEndedState() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.play()
+        coordinator.didPlayToEnd = true
+
+        coordinator.seek(to: 12)
+
+        XCTAssertFalse(coordinator.didPlayToEnd)
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+        XCTAssertEqual(coordinator.currentURL, url)
+    }
+
     func testRestartFromBeginningKeepsPlayingStateWhileSeekIsPending() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
