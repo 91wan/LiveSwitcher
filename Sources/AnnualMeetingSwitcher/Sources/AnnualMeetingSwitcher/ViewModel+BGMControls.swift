@@ -64,8 +64,15 @@ extension SwitcherViewModel {
             if panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
                 panicPlaybackSnapshot?.wasBGMPlaying = false
             }
+            bgmAudioPlayer?.delegate = nil
+            bgmAudioPlayer = nil
+            bgmFallbackPlayer.pause()
+            bgmFallbackPlayer.replaceCurrentItem(with: nil)
             isBGMPlaying = false
             resetBGMRealtimeMeter()
+            bgmProgress = 0
+            bgmCurrentTime = 0
+            bgmDuration = nil
             recordBGMPlaybackState(isPlaying: false, reason: "finishedDuringPanic")
             applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
             stopBGMTimer()
