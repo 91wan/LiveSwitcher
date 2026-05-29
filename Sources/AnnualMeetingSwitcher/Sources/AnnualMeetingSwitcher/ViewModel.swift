@@ -1980,7 +1980,9 @@ final class SwitcherViewModel {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
         if shouldCoalesceSupportEvent(kind),
            let existingIndex = supportEvents.lastIndex(where: {
-               $0.kind == kind && supportEventBaseDetail($0.detail) == event.detail
+               $0.kind == kind
+                   && supportEventCoalescingKey(kind: kind, detail: $0.detail)
+                   == supportEventCoalescingKey(kind: kind, detail: event.detail)
            }) {
             let existing = supportEvents.remove(at: existingIndex)
             let count = supportEventCoalescedCount(existing.detail) + 1
@@ -2006,6 +2008,22 @@ final class SwitcherViewModel {
         default:
             return false
         }
+    }
+
+    private func supportEventCoalescingKey(kind: LiveSupportEventKind, detail: String) -> String {
+        let baseDetail = supportEventBaseDetail(detail)
+        guard kind == .appleScriptFailed,
+              let actionRange = baseDetail.range(of: "action=")
+        else {
+            return baseDetail
+        }
+
+        let actionStart = actionRange.lowerBound
+        let afterAction = baseDetail[actionRange.upperBound...]
+        let actionValue = afterAction.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false).first
+            .map(String.init) ?? ""
+        guard !actionValue.isEmpty else { return baseDetail }
+        return "\(baseDetail[actionStart..<actionRange.upperBound])\(actionValue)"
     }
 
     private func supportEventBaseDetail(_ detail: String) -> String {
