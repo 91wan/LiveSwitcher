@@ -272,6 +272,7 @@ struct LiveAudioStrip: View {
 
     var body: some View {
         LiveAudioStripContent(
+            avCoordinator: viewModel.avCoordinator,
             bgmMeterStore: viewModel.audioMeterStore,
             onOpenMixer: onOpenMixer
         )
@@ -281,6 +282,7 @@ struct LiveAudioStrip: View {
 @MainActor
 private struct LiveAudioStripContent: View {
     @Environment(SwitcherViewModel.self) private var viewModel
+    @ObservedObject var avCoordinator: AVPlayerCoordinator
     @ObservedObject var bgmMeterStore: AudioMeterStore
     let onOpenMixer: () -> Void
 
@@ -306,7 +308,7 @@ private struct LiveAudioStripContent: View {
                 value: $viewModel.mediaVolume,
                 isMuted: $viewModel.isMediaAudioMuted,
                 meter: LiveAudioMeterModel.make(
-                    realtimeDB: viewModel.avCoordinator.realtimeLevelDB,
+                    realtimeDB: avCoordinator.realtimeLevelDB,
                     fallbackEffectiveVolume: viewModel.effectiveMediaOutputVolume(),
                     isMuted: viewModel.isMasterAudioMuted || viewModel.isMediaAudioMuted
                 ),
