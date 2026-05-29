@@ -100,6 +100,10 @@ final class AVPlayerCoordinator: ObservableObject {
             }
             load(url: currentURL)
         }
+        if didPlayToEnd {
+            restartFromBeginning()
+            return
+        }
         player.play()
         isPlaying = true
     }
