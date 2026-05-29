@@ -158,6 +158,9 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFail() {
+        if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
+            panicPlaybackSnapshot?.wasBGMPlaying = false
+        }
         stopBGMTimer()
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil

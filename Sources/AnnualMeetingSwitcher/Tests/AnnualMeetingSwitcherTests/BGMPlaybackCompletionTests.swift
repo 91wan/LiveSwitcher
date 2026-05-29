@@ -128,6 +128,31 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
     }
 
+    func testBGMFailureDuringPanicPreventsAutomaticResume() throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Panic Failure", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let failedPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+
+        viewModel.togglePanicMode()
+        viewModel.bgmDidFail(from: failedPlayer)
+
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
+
     func testStaleRemovedAudioPlayerFinishCannotStopNewCurrentTrack() async throws {
         let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
         let secondURL = directory.appendingPathComponent("second.wav")
