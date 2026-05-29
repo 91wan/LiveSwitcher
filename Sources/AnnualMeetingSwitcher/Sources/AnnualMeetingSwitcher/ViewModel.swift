@@ -2170,6 +2170,7 @@ final class SwitcherViewModel {
                     kind: .pageInterceptWPSNotRunning,
                     detail: "direction=\(direction),state=notRunning"
                 )
+                self?.showAutomationRuntimeNotice(action: "wps.page.\(direction)")
             }
             return
         }
