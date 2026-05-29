@@ -276,7 +276,13 @@ final class SwitcherViewModel {
     }
     var bgmDuration: Double? {
         get { bgmProgressStore.duration }
-        set { bgmProgressStore.duration = (newValue ?? 0) > 0 ? newValue : nil }
+        set {
+            guard let newValue, newValue.isFinite, newValue > 0 else {
+                bgmProgressStore.duration = nil
+                return
+            }
+            bgmProgressStore.duration = newValue
+        }
     }
     @ObservationIgnored let audioMeterStore = AudioMeterStore()
     @ObservationIgnored var bgmRealtimeLevelDB: Float? = nil
@@ -1621,7 +1627,6 @@ final class SwitcherViewModel {
         let clampedProgress = BGMProgressStore.clampedProgress(progress)
         guard let player = bgmAudioPlayer else {
             guard let duration = fallbackBGMKnownDuration(), duration > 0 else {
-                bgmProgress = clampedProgress
                 return
             }
             let targetTime = duration * clampedProgress

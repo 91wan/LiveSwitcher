@@ -533,6 +533,27 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(try XCTUnwrap(viewModel.bgmDuration), 200, accuracy: 0.0001)
     }
 
+    func testFallbackBGMSeekWithoutKnownDurationDoesNotMoveDisplayedProgress() {
+        let viewModel = makeViewModel()
+        viewModel.bgmDuration = nil
+        viewModel.bgmCurrentTime = 18
+        viewModel.bgmProgress = 0.4
+
+        viewModel.seekBGM(toProgress: 0.8)
+
+        XCTAssertEqual(viewModel.bgmProgress, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmCurrentTime, 18, accuracy: 0.0001)
+        XCTAssertNil(viewModel.bgmDuration)
+    }
+
+    func testBGMDurationRejectsNonFiniteValues() {
+        let viewModel = makeViewModel()
+
+        viewModel.bgmDuration = .infinity
+
+        XCTAssertNil(viewModel.bgmDuration)
+    }
+
     func testFallbackBGMSeekToBeginningKeepsKnownDuration() {
         let viewModel = makeViewModel()
         viewModel.bgmDuration = 90
