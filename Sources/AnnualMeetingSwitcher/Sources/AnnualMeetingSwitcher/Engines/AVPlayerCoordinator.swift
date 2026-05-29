@@ -215,6 +215,7 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 跳到指定时间（秒）
     func seek(to seconds: Double) {
         didPlayToEnd = false
+        applyProgressState(for: seconds)
         let target = CMTime(seconds: seconds, preferredTimescale: 600)
         player.seek(to: target)
     }

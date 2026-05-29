@@ -138,6 +138,20 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(coordinator.currentURL, url)
     }
 
+    func testSeekUpdatesDisplayedProgressImmediately() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.duration = 100
+
+        coordinator.seek(to: 25)
+
+        XCTAssertEqual(coordinator.currentTime, 25)
+        XCTAssertEqual(coordinator.progress, 0.25, accuracy: 0.001)
+    }
+
     func testSeekToEndAfterReachedEndClearsEndedState() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
