@@ -1880,7 +1880,7 @@ final class SwitcherViewModel {
         stopBGMTimer()
         let generation = bgmTransitionGeneration
         bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            MainActor.assumeIsolated {
                 guard let self, self.bgmTransitionGeneration == generation else { return }
                 self.updateBGMProgress()
             }
