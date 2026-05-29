@@ -935,8 +935,12 @@ final class SwitcherViewModel {
             return
         case .media:
             guard let url = item.sourceURL else { return }
+            let isReplacingLoadedMedia = currentProgramItem?.sourceKind == .media && avCoordinator.hasLoadedMedia
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
+            if isReplacingLoadedMedia {
+                avCoordinator.volume = 0      // 媒体换媒体时避免新片头继承上一条音量，再由 programChanged 淡入
+            }
             if isPanicMode {
                 avCoordinator.pause()
             } else {
