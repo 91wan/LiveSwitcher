@@ -2694,6 +2694,36 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(stopInvocationCount, 0)
     }
 
+    func testInvalidKeynoteDoesNotStopCurrentActiveDeckPresentation() throws {
+        let viewModel = makeViewModel()
+        let invalidKeynoteURL = try makeEmptyTempFileURL(ext: "key")
+        defer { try? FileManager.default.removeItem(at: invalidKeynoteURL) }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let invalidKeynoteItem = ProgramItem(title: "空白 Keynote", subtitle: "KEY", sourceURL: invalidKeynoteURL)
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        var invalidDeckURL: URL?
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckURL = url
+        }
+
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.switchToProgram(invalidKeynoteItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(stopInvocationCount, 0)
+        XCTAssertEqual(invalidDeckURL, invalidKeynoteURL)
+    }
+
     func testMultiStepProgramSwitchWhileBroadcastingReusesSingleOutputWindowController() throws {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
