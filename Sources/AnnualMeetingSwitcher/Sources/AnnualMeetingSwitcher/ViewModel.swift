@@ -1704,6 +1704,26 @@ final class SwitcherViewModel {
         )
     }
 
+    private func rewindBGMIfAtEndBeforeResume() {
+        let endTolerance = 0.05
+        if let player = bgmAudioPlayer, player.duration > 0 {
+            let restartThreshold = max(0, player.duration - endTolerance)
+            if player.currentTime >= restartThreshold {
+                player.currentTime = 0
+                bgmProgressStore.update(currentTime: 0, duration: player.duration)
+            }
+        }
+
+        guard let duration = fallbackBGMKnownDuration(), duration > 0 else { return }
+        let currentTime = bgmFallbackPlayer.currentTime().seconds
+        guard currentTime.isFinite else { return }
+        let restartThreshold = max(0, duration - endTolerance)
+        if currentTime >= restartThreshold {
+            bgmFallbackPlayer.seek(to: .zero)
+            bgmProgressStore.update(currentTime: 0, duration: duration)
+        }
+    }
+
     func toggleBGM(_ item: BGMItem) {
         guard !isPanicMode else {
             cueBGMDuringPanic(item)
@@ -1758,6 +1778,7 @@ final class SwitcherViewModel {
                 }
                 // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
                 bgmTransitionGeneration += 1
+                rewindBGMIfAtEndBeforeResume()
                 isBGMPlaying = true
                 bgmAudioPlayer?.volume = 0
                 bgmAudioPlayer?.isMeteringEnabled = true
