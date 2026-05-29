@@ -2827,6 +2827,35 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertNil(viewModel.currentHTMLURL)
     }
 
+    func testPlaybackEndedWithMissingAutoNextVideoReturnsToIdleInsteadOfStaleCurrent() throws {
+        let viewModel = makeViewModel()
+        let firstVideoURL = try makeTempFileURL(ext: "mp4")
+        let missingNextURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mov")
+        defer { try? FileManager.default.removeItem(at: firstVideoURL) }
+
+        let firstVideo = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: firstVideoURL)
+        let missingNext = ProgramItem(title: "已移动下一条", subtitle: "MOV", sourceURL: missingNextURL)
+        viewModel.addProgramItem(firstVideo)
+        viewModel.addProgramItem(missingNext)
+        viewModel.autoPlayNextVideoOnEnd = true
+        viewModel.switchToProgram(firstVideo)
+
+        viewModel.avCoordinator.isPlaying = false
+        viewModel.avCoordinator.didPlayToEnd = true
+        viewModel.avCoordinator.onPlaybackEnded?()
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.didPlayToEnd)
+        XCTAssertNotEqual(viewModel.avCoordinator.currentURL, missingNextURL)
+        XCTAssertEqual(viewModel.supportEvents.last?.kind, .programItemFileMissing)
+        XCTAssertTrue(viewModel.supportEvents.last?.detail.contains("sourceKind=media") == true)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "节目文件不存在")
+    }
+
     func testPlaybackEndedDoesNotAutoOpenNonVideoNextProgram() throws {
         let viewModel = makeViewModel()
         let videoURL = try makeTempFileURL(ext: "mp4")
