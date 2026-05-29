@@ -862,7 +862,7 @@ struct LiveQuickRail: View {
                     if let item = BGMDefaultSelectionPolicy.defaultItem(
                         items: viewModel.bgmItems,
                         currentItem: viewModel.currentBGMItem,
-                        selectedCategory: liveBGMCategory
+                        selectedCategory: playlist.displayCategory
                     ) {
                         viewModel.toggleBGM(item)
                     }

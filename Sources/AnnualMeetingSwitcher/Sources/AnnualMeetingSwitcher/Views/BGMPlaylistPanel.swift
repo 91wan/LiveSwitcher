@@ -91,6 +91,12 @@ struct BGMPlaylistPanel: View {
     private var bgmControlButtons: some View {
         let diskSize: CGFloat = 32
         let controls = bgmControlsState
+        let defaultPlaybackItem = BGMDefaultSelectionPolicy.defaultItem(
+            items: viewModel.bgmItems,
+            currentItem: viewModel.currentBGMItem,
+            selectedCategory: viewModel.bgmLibraryCategorySelection.selectedCategory
+        )
+        let canPlayDefault = controls.canPlay && defaultPlaybackItem != nil
 
         return HStack(spacing: 8) {
             Spacer()
@@ -129,24 +135,20 @@ struct BGMPlaylistPanel: View {
 
             // 播放 / 暂停
             Button(action: {
-                if let item = BGMDefaultSelectionPolicy.defaultItem(
-                    items: viewModel.bgmItems,
-                    currentItem: viewModel.currentBGMItem,
-                    selectedCategory: viewModel.bgmLibraryCategorySelection.selectedCategory
-                ) {
+                if let item = defaultPlaybackItem {
                     viewModel.toggleBGM(item)
                 }
             }) {
                 Image(systemName: viewModel.isBGMPlaying ? "pause.circle.fill" : "play.circle.fill")
                     .font(StudioTheme.TypeScale.display)
-                    .foregroundStyle(controls.canPlay ? (viewModel.isBGMPlaying ? StudioTheme.Tone.live : StudioTheme.Action.primary) : StudioTheme.textTertiary)
+                    .foregroundStyle(canPlayDefault ? (viewModel.isBGMPlaying ? StudioTheme.Tone.live : StudioTheme.Action.primary) : StudioTheme.textTertiary)
             }
             .buttonStyle(.plain)
-            .disabled(!controls.canPlay)
-            .opacity(controls.canPlay ? 1 : 0.42)
+            .disabled(!(controls.canPlay && defaultPlaybackItem != nil))
+            .opacity(canPlayDefault ? 1 : 0.42)
             .help(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
             .accessibilityLabel(viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM")
-            .accessibilityHint(controls.playDisabledReason ?? "切换 BGM 播放状态。")
+            .accessibilityHint(controls.playDisabledReason ?? (defaultPlaybackItem == nil ? "当前分类没有可播放 BGM。" : "切换 BGM 播放状态。"))
 
             // 下一首
             Button(action: { viewModel.playNextBGM() }) {
