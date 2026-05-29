@@ -983,7 +983,7 @@ final class SwitcherViewModel {
             currentProgramItem = item
         case .keynote:
             guard let url = item.sourceURL else { return }
-            if !isLikelyValidDeckDocument(url: url) {
+            if !isLikelyValidDeckDocument(url: url, sourceKind: .keynote) {
                 invalidDeckHandler(url)
                 return
             }
@@ -994,7 +994,7 @@ final class SwitcherViewModel {
             keynotePresentationHandler(url)
         case .pptx:
             guard let url = item.sourceURL else { return }
-            if !isLikelyValidDeckDocument(url: url) {
+            if !isLikelyValidDeckDocument(url: url, sourceKind: .pptx) {
                 invalidDeckHandler(url)
                 return
             }
@@ -1088,14 +1088,23 @@ final class SwitcherViewModel {
         switchToProgram(item)
     }
 
-    private func isLikelyValidDeckDocument(url: URL) -> Bool {
+    private func isLikelyValidDeckDocument(url: URL, sourceKind: ProgramSourceKind) -> Bool {
         guard FileManager.default.fileExists(atPath: url.path) else { return false }
 
         let keys: Set<URLResourceKey> = [.isDirectoryKey, .isPackageKey, .fileSizeKey]
         let values = try? url.resourceValues(forKeys: keys)
 
-        if values?.isDirectory == true || values?.isPackage == true {
-            return true
+        switch sourceKind {
+        case .keynote:
+            if values?.isDirectory == true || values?.isPackage == true {
+                return true
+            }
+        case .pptx:
+            if values?.isDirectory == true || values?.isPackage == true {
+                return false
+            }
+        case .media, .html, .activeDeck, .agendaMarker, .unsupported:
+            return false
         }
 
         if let fileSize = values?.fileSize {
