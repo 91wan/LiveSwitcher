@@ -2001,7 +2001,7 @@ final class SwitcherViewModel {
 
     private func shouldCoalesceSupportEvent(_ kind: LiveSupportEventKind) -> Bool {
         switch kind {
-        case .appleScriptFailed, .pageInterceptWPSNotRunning:
+        case .appleScriptFailed, .pageInterceptWPSNotRunning, .pageInterceptForwardedToWPS:
             return true
         default:
             return false
