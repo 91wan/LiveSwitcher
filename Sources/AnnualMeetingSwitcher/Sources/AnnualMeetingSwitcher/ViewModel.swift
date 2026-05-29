@@ -634,13 +634,19 @@ final class SwitcherViewModel {
 
     func installBGMFallbackEndObserver(for item: AVPlayerItem) {
         removeBGMFallbackEndObserver()
+        let generation = bgmTransitionGeneration
         cleanupBag.bgmFallbackEndObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
             queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.bgmDidFinish()
+        ) { [weak self, weak item] _ in
+            Task { @MainActor [weak self, weak item] in
+                guard let self,
+                      let item,
+                      self.bgmTransitionGeneration == generation,
+                      self.bgmFallbackPlayer.currentItem === item
+                else { return }
+                self.bgmDidFinish()
             }
         }
     }
