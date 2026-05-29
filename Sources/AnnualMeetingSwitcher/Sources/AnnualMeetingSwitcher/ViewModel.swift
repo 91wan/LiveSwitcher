@@ -1357,6 +1357,9 @@ final class SwitcherViewModel {
 
         guard !isPanicMode else {
             if avCoordinator.isPlaying {
+                if panicPlaybackSnapshot?.currentProgramID == item.id {
+                    panicPlaybackSnapshot?.wasMediaPlaying = false
+                }
                 avCoordinator.pause()
                 applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
             }

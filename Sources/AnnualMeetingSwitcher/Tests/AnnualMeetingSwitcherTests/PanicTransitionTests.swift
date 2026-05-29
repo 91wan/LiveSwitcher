@@ -205,6 +205,28 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 
+    func testManualMediaPauseDuringPanicPreventsAutomaticResume() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 1
+        let videoURL = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: videoURL) }
+
+        viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePanicMode()
+        XCTAssertTrue(viewModel.isPanicMode)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.toggleMainVideoPlayback()
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+
+        viewModel.togglePanicMode()
+
+        XCTAssertFalse(viewModel.isPanicMode)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+    }
+
     func testPlaybackEndedDuringPanicDoesNotAutoAdvanceQueue() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
