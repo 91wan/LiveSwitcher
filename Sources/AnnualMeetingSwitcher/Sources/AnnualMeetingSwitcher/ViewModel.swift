@@ -955,13 +955,13 @@ final class SwitcherViewModel {
     func switchToProgram(_ item: ProgramItem) {
         guard programSourceIsAvailable(item) else { return }
         guard item.sourceKind.isActivatableProgram else { return }
-        stopCurrentDeckPresentationIfNeeded(before: item)
 
         switch item.sourceKind {
         case .agendaMarker, .unsupported:
             return
         case .media:
             guard let url = item.sourceURL else { return }
+            stopCurrentDeckPresentationIfNeeded(before: item)
             let isReplacingLoadedMedia = avCoordinator.hasLoadedMedia
             let isStartingFreshMediaProgram = currentProgramItem == nil && !isReplacingLoadedMedia
             let isReplacingNonMediaProgram = currentProgramItem != nil && currentProgramItem?.sourceKind != .media
@@ -987,22 +987,26 @@ final class SwitcherViewModel {
                 invalidDeckHandler(url)
                 return
             }
+            stopCurrentDeckPresentationIfNeeded(before: item)
             currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.stop()              // 清空旧视频，避免副屏/监视器残留上一条节目
             keynotePresentationHandler(url)
         case .pptx:
             guard let url = item.sourceURL else { return }
+            stopCurrentDeckPresentationIfNeeded(before: item)
             currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.stop()              // 清空旧视频，避免副屏/监视器残留上一条节目
             pptxOpenHandler(url)
         case .html:
             guard let url = item.sourceURL else { return }
+            stopCurrentDeckPresentationIfNeeded(before: item)
             currentProgramItem = item
             avCoordinator.stop()              // Bug3修复：stop清空currentURL，监视器不再显示视频
             openHTMLInOutputWindow(url: url)
         case .activeDeck:
+            stopCurrentDeckPresentationIfNeeded(before: item)
             currentProgramItem = item
             currentHTMLURL = nil
             avCoordinator.stop()
