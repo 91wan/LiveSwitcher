@@ -22,6 +22,25 @@ final class WebNavigationPolicyTests: XCTestCase {
         XCTAssertFalse(WebNavigationPolicy.shouldAllowNavigation(url: nil, allowedRoot: root))
     }
 
+    func testRejectsSymlinkNavigationEscapingAllowedRoot() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("WebNavigationPolicyTests-\(UUID().uuidString)", isDirectory: true)
+        let root = directory.appendingPathComponent("show", isDirectory: true)
+        let outside = directory.appendingPathComponent("outside", isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let outsideFile = outside.appendingPathComponent("secret.html")
+        try Data("<html>secret</html>".utf8).write(to: outsideFile)
+        let symlink = root.appendingPathComponent("linked-outside", isDirectory: true)
+        try FileManager.default.createSymbolicLink(at: symlink, withDestinationURL: outside)
+
+        let escapedURL = symlink.appendingPathComponent("secret.html")
+
+        XCTAssertFalse(WebNavigationPolicy.shouldAllowNavigation(url: escapedURL, allowedRoot: root))
+    }
+
     func testReloadComparisonUsesNormalizedFilePaths() {
         let target = URL(fileURLWithPath: "/tmp/live-switcher/show/Opening Video.html")
         let current = URL(string: "file:///tmp/live-switcher/show/Opening%20Video.html")!
