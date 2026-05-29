@@ -199,6 +199,7 @@ final class AVPlayerCoordinator: ObservableObject {
     func seekToEnd() {
         guard let dur = duration, dur > 0 else { return }
         let seekItem = player.currentItem
+        didPlayToEnd = false
         let target = CMTime(seconds: dur - 0.5, preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
             Task { @MainActor [weak self] in
