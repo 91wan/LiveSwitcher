@@ -4,7 +4,8 @@ import Combine
 
 enum AVPlayerSeekTargetPolicy {
     static func seekToEndSeconds(duration: Double) -> Double {
-        max(0, duration - 0.5)
+        guard duration.isFinite, duration > 0 else { return 0 }
+        return max(0, duration - 0.5)
     }
 
     static func manualSeekSeconds(seconds: Double, duration: Double?) -> Double {

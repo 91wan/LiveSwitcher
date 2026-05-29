@@ -170,6 +170,9 @@ final class VideoLayerVisibilityTests: XCTestCase {
     }
 
     func testSeekToEndTargetNeverGoesNegativeForShortMedia() {
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: .nan), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: .infinity), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: -4), 0)
         XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 0.2), 0)
         XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 0.5), 0)
         XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 10), 9.5)
