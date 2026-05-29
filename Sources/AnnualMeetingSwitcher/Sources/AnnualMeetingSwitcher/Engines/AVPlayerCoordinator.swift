@@ -2,6 +2,12 @@ import Foundation
 import AVFoundation
 import Combine
 
+enum AVPlayerSeekTargetPolicy {
+    static func seekToEndSeconds(duration: Double) -> Double {
+        max(0, duration - 0.5)
+    }
+}
+
 // MARK: - AVPlayer 协调器
 // 职责：
 // - 管理普通视频文件播放（非 SCK 采集流）
@@ -200,7 +206,7 @@ final class AVPlayerCoordinator: ObservableObject {
         guard let dur = duration, dur > 0 else { return }
         let seekItem = player.currentItem
         didPlayToEnd = false
-        let target = CMTime(seconds: dur - 0.5, preferredTimescale: 600)
+        let target = CMTime(seconds: AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: dur), preferredTimescale: 600)
         player.seek(to: target) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self,
