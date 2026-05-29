@@ -994,6 +994,10 @@ final class SwitcherViewModel {
             keynotePresentationHandler(url)
         case .pptx:
             guard let url = item.sourceURL else { return }
+            if !isLikelyValidDeckDocument(url: url) {
+                invalidDeckHandler(url)
+                return
+            }
             stopCurrentDeckPresentationIfNeeded(before: item)
             currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
@@ -1104,8 +1108,8 @@ final class SwitcherViewModel {
     private func presentInvalidDeckAlert(for url: URL) {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "当前 Keynote 文件无效"
-        alert.informativeText = "“\(url.lastPathComponent)” 不是可直接播放的 Keynote 文稿，已阻止发送给 Keynote。请删除这条节目，或重新导入真实的 .key 文件。"
+        alert.messageText = "当前演示文件无效"
+        alert.informativeText = "“\(url.lastPathComponent)” 不是可直接播放的演示文稿，已阻止发送到输出。请删除这条节目，或重新导入真实的 Keynote / PowerPoint 文件。"
         alert.addButton(withTitle: "好的")
         alert.runModal()
     }

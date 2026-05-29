@@ -1110,6 +1110,42 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(invalidDeckAlertURL, invalidKeynoteURL)
     }
 
+    func testSwitchingToInvalidPPTXDoesNotInterruptCurrentPlayback() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let invalidPPTXURL = try makeEmptyTempFileURL(ext: "pptx")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: invalidPPTXURL)
+        }
+
+        var openedURL: URL?
+        var invalidDeckAlertURL: URL?
+        viewModel.pptxOpenHandler = { url in
+            openedURL = url
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckAlertURL = url
+        }
+
+        let videoItem = ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL)
+        let invalidPPTXItem = ProgramItem(title: "损坏流程稿", subtitle: "PPTX", sourceURL: invalidPPTXURL)
+
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(invalidPPTXItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertNil(openedURL)
+        XCTAssertEqual(invalidDeckAlertURL, invalidPPTXURL)
+    }
+
     func testSwitchingToPPTXStopsPreviousVideoAndInvokesOpenHandler() throws {
         let viewModel = makeViewModel()
         let videoURL = try makeTempFileURL(ext: "mp4")
@@ -2722,6 +2758,36 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(presentFrontDeckInvocationCount, 1)
         XCTAssertEqual(stopInvocationCount, 0)
         XCTAssertEqual(invalidDeckURL, invalidKeynoteURL)
+    }
+
+    func testInvalidPPTXDoesNotStopCurrentActiveDeckPresentation() throws {
+        let viewModel = makeViewModel()
+        let invalidPPTXURL = try makeEmptyTempFileURL(ext: "pptx")
+        defer { try? FileManager.default.removeItem(at: invalidPPTXURL) }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let invalidPPTXItem = ProgramItem(title: "空白 PPT", subtitle: "PPTX", sourceURL: invalidPPTXURL)
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        var invalidDeckURL: URL?
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckURL = url
+        }
+
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.switchToProgram(invalidPPTXItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(stopInvocationCount, 0)
+        XCTAssertEqual(invalidDeckURL, invalidPPTXURL)
     }
 
     func testMultiStepProgramSwitchWhileBroadcastingReusesSingleOutputWindowController() throws {
