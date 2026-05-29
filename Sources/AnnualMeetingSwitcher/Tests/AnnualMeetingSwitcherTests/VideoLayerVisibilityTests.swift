@@ -175,6 +175,14 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 10), 9.5)
     }
 
+    func testManualSeekTargetIsClampedToPlayableMediaRange() {
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: -8, duration: 120), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: 32, duration: 120), 32)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: 161, duration: 144), 144)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: .nan, duration: 144), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: 42, duration: nil), 42)
+    }
+
     func testRestartFromBeginningKeepsPlayingStateWhileSeekIsPending() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
