@@ -169,6 +169,12 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(coordinator.currentURL, url)
     }
 
+    func testSeekToEndTargetNeverGoesNegativeForShortMedia() {
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 0.2), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 0.5), 0)
+        XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 10), 9.5)
+    }
+
     func testRestartFromBeginningKeepsPlayingStateWhileSeekIsPending() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
