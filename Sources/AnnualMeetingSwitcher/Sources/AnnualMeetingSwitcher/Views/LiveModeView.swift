@@ -859,10 +859,12 @@ struct LiveQuickRail: View {
                     viewModel.playPreviousBGM()
                 }
                 transportButton(viewModel.isBGMPlaying ? "pause.fill" : "play.fill", label: viewModel.isBGMPlaying ? "暂停 BGM" : "播放 BGM", enabled: controls.canPlay, disabledHint: controls.playDisabledReason) {
-                    if let current = viewModel.currentBGMItem {
-                        viewModel.toggleBGM(current)
-                    } else if let first = viewModel.bgmItems.first {
-                        viewModel.toggleBGM(first)
+                    if let item = BGMDefaultSelectionPolicy.defaultItem(
+                        items: viewModel.bgmItems,
+                        currentItem: viewModel.currentBGMItem,
+                        selectedCategory: liveBGMCategory
+                    ) {
+                        viewModel.toggleBGM(item)
                     }
                 }
                 transportButton("forward.end.fill", label: "下一首", enabled: controls.canSkipNext, disabledHint: controls.skipDisabledReason) {

@@ -37,6 +37,16 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("return \"BGM 播放中\""))
     }
 
+    func testBGMPlayButtonsUseSelectedCategoryDefaultInsteadOfFirstLibraryItem() throws {
+        let librarySource = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
+        let liveSource = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(librarySource.contains("BGMDefaultSelectionPolicy.defaultItem"))
+        XCTAssertTrue(liveSource.contains("BGMDefaultSelectionPolicy.defaultItem"))
+        XCTAssertFalse(librarySource.contains("else if let first = viewModel.bgmItems.first"))
+        XCTAssertFalse(liveSource.contains("else if let first = viewModel.bgmItems.first"))
+    }
+
     func testBGMPlaylistPanelUsesStudioTypeScaleInsteadOfRawFontLiterals() throws {
         let source = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
 
