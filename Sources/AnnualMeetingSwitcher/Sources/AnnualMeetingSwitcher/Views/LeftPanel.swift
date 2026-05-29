@@ -43,8 +43,6 @@ struct LeftPanel: View {
         .padding(16)
         .frame(width: StudioTheme.directorRailWidth)
         .studioCard(cornerRadius: 28)
-        // ── 键盘快捷键 1-9 绑定 ──
-        .background(ShortcutKeyHandler(viewModel: viewModel))
     }
 
     private var agendaControlRow: some View {
@@ -448,29 +446,6 @@ struct LeftPanel: View {
             }
         }
         return didRequestImport
-    }
-}
-
-// MARK: - 键盘快捷键处理：透明 View 嵌入主 Stack，绑定 1-9
-
-@MainActor
-struct ShortcutKeyHandler: View {
-    var viewModel: SwitcherViewModel
-
-    var body: some View {
-        ZStack {
-            ForEach(1...9, id: \.self) { index in
-                Button("") {
-                    viewModel.switchToProgram(at: index - 1)
-                }
-                .keyboardShortcut(KeyEquivalent(Character("\(index)")), modifiers: [])
-                .accessibilityHidden(true)
-                .opacity(0)
-                .frame(width: 0, height: 0)
-            }
-        }
-        .frame(width: 0, height: 0)
-        .hidden()
     }
 }
 

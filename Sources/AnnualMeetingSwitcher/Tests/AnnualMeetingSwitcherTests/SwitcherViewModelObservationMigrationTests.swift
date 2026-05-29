@@ -50,7 +50,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     func testSwiftFiveTenViewBoundariesStayMainActorIsolated() throws {
         let viewFiles = [
             "ContentView.swift": ["struct ContentView: View", "struct GlobalKeyMonitor: NSViewRepresentable"],
-            "Views/LeftPanel.swift": ["struct LeftPanel: View", "struct ShortcutKeyHandler: View"],
+            "Views/LeftPanel.swift": ["struct LeftPanel: View"],
             "Views/ProgramMonitorView.swift": ["struct ProgramMonitorView: View"],
             "Views/LiveModeView.swift": [
                 "struct LiveModeView: View",
