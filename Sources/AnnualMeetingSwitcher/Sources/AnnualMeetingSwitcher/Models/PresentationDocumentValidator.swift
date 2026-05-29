@@ -10,7 +10,7 @@ enum PresentationDocumentValidator {
         switch sourceKind {
         case .keynote:
             if values?.isDirectory == true || values?.isPackage == true {
-                return true
+                return directoryHasContents(url, fileManager: fileManager)
             }
         case .pptx:
             if values?.isDirectory == true || values?.isPackage == true {
@@ -25,5 +25,16 @@ enum PresentationDocumentValidator {
         }
 
         return false
+    }
+
+    private static func directoryHasContents(_ url: URL, fileManager: FileManager) -> Bool {
+        guard let contents = try? fileManager.contentsOfDirectory(
+            at: url,
+            includingPropertiesForKeys: nil,
+            options: [.skipsHiddenFiles]
+        ) else {
+            return false
+        }
+        return !contents.isEmpty
     }
 }
