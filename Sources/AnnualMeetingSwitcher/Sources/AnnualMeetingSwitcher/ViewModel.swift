@@ -1559,6 +1559,7 @@ final class SwitcherViewModel {
             fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)
             if let removedPlayer = bgmAudioPlayer {
                 fadeBGMPlayerVolume(removedPlayer, to: 0, duration: fadeDur)
+                removedPlayer.delegate = nil
                 releaseBGMPlayerAfterFade(removedPlayer, duration: fadeDur)
             }
             bgmAudioPlayer = nil
