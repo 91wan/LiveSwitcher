@@ -66,6 +66,12 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(content.contains("fr is NSText || fr is NSControl"))
     }
 
+    func testNonEmergencyGlobalShortcutsIgnoreShiftModifiedKeys() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("event.modifierFlags.intersection([.command, .option, .control, .shift])"))
+    }
+
     func testRunQueueDoesNotInstallDuplicateUnmodifiedNumberShortcuts() throws {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
 
