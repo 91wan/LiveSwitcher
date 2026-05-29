@@ -16,6 +16,13 @@ final class BGMPlayerDelegate: NSObject, AVAudioPlayerDelegate {
             }
         }
     }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        guard let vm = viewModel else { return }
+        Task { @MainActor in
+            vm.bgmDidFail(from: player)
+        }
+    }
 }
 
 extension SwitcherViewModel {
