@@ -76,6 +76,22 @@ final class PresentationReadinessProbeTests: XCTestCase {
         XCTAssertEqual(result.severity, .blocked)
     }
 
+    func testInvalidPresentationFileIsBlockedBeforeAppChecks() {
+        let url = URL(fileURLWithPath: "/tmp/directory.pptx")
+        let item = ProgramItem(title: "Deck", sourceURL: url)
+        let environment = PresentationReadinessEnvironment.fixture(
+            existingFiles: [url],
+            invalidPresentationFiles: [url],
+            installedBundleIDs: [PresentationReadinessProbe.wpsBundleIdentifier],
+            automationPermission: .allowed
+        )
+
+        let result = PresentationReadinessProbe.probe(item: item, environment: environment)
+
+        XCTAssertEqual(result, .fileBroken("Presentation file is invalid"))
+        XCTAssertEqual(result.severity, .blocked)
+    }
+
     func testAutomationPermissionDeniedIsWarning() {
         let url = URL(fileURLWithPath: "/tmp/deck.key")
         let item = ProgramItem(title: "Deck", sourceURL: url)
@@ -156,11 +172,15 @@ final class PresentationReadinessProbeTests: XCTestCase {
 private extension PresentationReadinessEnvironment {
     static func fixture(
         existingFiles: Set<URL> = [],
+        invalidPresentationFiles: Set<URL> = [],
         installedBundleIDs: Set<String> = [],
         automationPermission: PresentationAutomationPermission = .unknown
     ) -> PresentationReadinessEnvironment {
         PresentationReadinessEnvironment(
             fileExists: { existingFiles.contains($0) },
+            presentationDocumentIsValid: { url, _ in
+                existingFiles.contains(url) && !invalidPresentationFiles.contains(url)
+            },
             applicationDisplayName: { bundleID in
                 bundleID == PresentationReadinessProbe.wpsBundleIdentifier ? "WPS Office" : "Keynote"
             },
