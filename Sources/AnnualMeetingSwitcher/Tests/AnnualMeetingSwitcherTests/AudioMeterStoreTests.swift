@@ -45,6 +45,21 @@ final class AudioMeterStoreTests: XCTestCase {
         XCTAssertFalse(source.contains("realtimeDB: viewModel.bgmRealtimeLevelDB"))
     }
 
+    func testAVPlayerCoordinatorKeepsMediaMeterTapAliveAfterLoadAndClearsOnStop() {
+        let coordinator = AVPlayerCoordinator()
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        FileManager.default.createFile(atPath: url.path, contents: Data())
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        XCTAssertTrue(coordinator.hasActiveMediaAudioMeterTap)
+
+        coordinator.stop()
+        XCTAssertFalse(coordinator.hasActiveMediaAudioMeterTap)
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

@@ -40,6 +40,10 @@ final class AVPlayerCoordinator: ObservableObject {
     /// Realtime media-channel power in dBFS when the current AVPlayerItem exposes readable audio.
     @Published var realtimeLevelDB: Float?
 
+    var hasActiveMediaAudioMeterTap: Bool {
+        mediaAudioMeterTap != nil
+    }
+
     /// 播放到末尾时的回调（由 ViewModel 绑定）
     var onPlaybackEnded: (() -> Void)?
 
@@ -69,6 +73,7 @@ final class AVPlayerCoordinator: ObservableObject {
 
     /// 加载并准备视频文件（不自动播放）
     func load(url: URL) {
+        cleanupObservers()
         player.pause()
         isPlaying = false
         currentURL = url
@@ -108,6 +113,7 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 停止并回到开头
     func stop() {
         player.pause()
+        cleanupObservers()
         player.replaceCurrentItem(with: nil)  // Bug3/4修复：清空player，监视器和大屏均回到壁纸
         currentURL = nil
         hasLoadedMedia = false
@@ -173,8 +179,6 @@ final class AVPlayerCoordinator: ObservableObject {
     // MARK: - 观察者管理
 
     private func observeItem(_ item: AVPlayerItem) {
-        cleanupObservers()
-
         // 周期时间观察（每 0.5s 回调一次）
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
