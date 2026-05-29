@@ -420,7 +420,7 @@ final class KeyMonitorView: NSView {
         }
 
         // 跳过有修饰键的组合（避免和系统/菜单冲突）
-        let modifiers = event.modifierFlags.intersection([.command, .option, .control])
+        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
         guard modifiers.isEmpty else { return event }
 
         // 如果当前焦点在文本框或原生控件，不拦截，避免抢走按钮/滑杆的键盘操作
