@@ -28,8 +28,13 @@ final class LiveMediaControlTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 1.0
         let videoURL = try makeTempURL(ext: "mp4")
         defer { try? FileManager.default.removeItem(at: videoURL) }
-        var didSeekToBeginning = false
-        viewModel.programSeekToStartHandler = { didSeekToBeginning = true }
+        var didRestartFromBeginning = false
+        var didUseStandaloneSeek = false
+        viewModel.programSeekToStartHandler = { didUseStandaloneSeek = true }
+        viewModel.programRestartFromBeginningHandler = { onReadyToPlay in
+            didRestartFromBeginning = true
+            onReadyToPlay()
+        }
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
         viewModel.avCoordinator.pause()
@@ -37,8 +42,9 @@ final class LiveMediaControlTests: XCTestCase {
 
         viewModel.restartCurrentMediaFromBeginning()
 
-        XCTAssertTrue(didSeekToBeginning)
-        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(didRestartFromBeginning)
+        XCTAssertFalse(didUseStandaloneSeek)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.0)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.0)

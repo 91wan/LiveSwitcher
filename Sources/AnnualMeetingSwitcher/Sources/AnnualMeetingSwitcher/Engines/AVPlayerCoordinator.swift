@@ -158,6 +158,30 @@ final class AVPlayerCoordinator: ObservableObject {
         }
     }
 
+    /// 跳到开头并在 seek 完成后播放，避免从旧时间点抢先出声。
+    func restartFromBeginning(onReadyToPlay: (() -> Void)? = nil) {
+        if player.currentItem == nil {
+            guard let currentURL else {
+                isPlaying = false
+                return
+            }
+            load(url: currentURL)
+        }
+        player.pause()
+        isPlaying = false
+        didPlayToEnd = false
+        player.seek(to: .zero) { [weak self] finished in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.progress = 0.0
+                self.currentTime = 0.0
+                guard finished else { return }
+                self.play()
+                onReadyToPlay?()
+            }
+        }
+    }
+
     /// 跳到末尾（Skip to end）
     func seekToEnd() {
         guard let dur = duration, dur > 0 else { return }
