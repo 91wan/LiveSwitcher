@@ -945,7 +945,7 @@ final class SwitcherViewModel {
             return
         case .media:
             guard let url = item.sourceURL else { return }
-            let isReplacingLoadedMedia = currentProgramItem?.sourceKind == .media && avCoordinator.hasLoadedMedia
+            let isReplacingLoadedMedia = avCoordinator.hasLoadedMedia
             let isReplacingNonMediaProgram = currentProgramItem != nil && currentProgramItem?.sourceKind != .media
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
