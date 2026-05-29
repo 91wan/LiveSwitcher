@@ -6,6 +6,15 @@ enum AVPlayerSeekTargetPolicy {
     static func seekToEndSeconds(duration: Double) -> Double {
         max(0, duration - 0.5)
     }
+
+    static func manualSeekSeconds(seconds: Double, duration: Double?) -> Double {
+        guard seconds.isFinite else { return 0 }
+        let lowerBounded = max(0, seconds)
+        guard let duration, duration.isFinite, duration > 0 else {
+            return lowerBounded
+        }
+        return min(lowerBounded, duration)
+    }
 }
 
 // MARK: - AVPlayer 协调器
@@ -221,8 +230,9 @@ final class AVPlayerCoordinator: ObservableObject {
     /// 跳到指定时间（秒）
     func seek(to seconds: Double) {
         didPlayToEnd = false
-        applyProgressState(for: seconds)
-        let target = CMTime(seconds: seconds, preferredTimescale: 600)
+        let seekSeconds = AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: seconds, duration: duration)
+        applyProgressState(for: seekSeconds)
+        let target = CMTime(seconds: seekSeconds, preferredTimescale: 600)
         player.seek(to: target)
     }
 
