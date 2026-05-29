@@ -1757,6 +1757,9 @@ final class SwitcherViewModel {
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
         bgmTransitionGeneration += 1
+        if panicPlaybackSnapshot?.currentBGMID == item.id {
+            panicPlaybackSnapshot?.wasBGMPlaying = false
+        }
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
