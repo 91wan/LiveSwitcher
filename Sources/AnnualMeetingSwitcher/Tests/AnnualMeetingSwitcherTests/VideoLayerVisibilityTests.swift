@@ -178,6 +178,24 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertEqual(AVPlayerSeekTargetPolicy.seekToEndSeconds(duration: 10), 9.5)
     }
 
+    func testSeekToEndNoopsWhenDurationIsNotFinite() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.duration = .infinity
+        coordinator.didPlayToEnd = true
+        coordinator.progress = 1.0
+        coordinator.currentTime = 12
+
+        coordinator.seekToEnd()
+
+        XCTAssertTrue(coordinator.didPlayToEnd)
+        XCTAssertEqual(coordinator.progress, 1.0)
+        XCTAssertEqual(coordinator.currentTime, 12)
+    }
+
     func testManualSeekTargetIsClampedToPlayableMediaRange() {
         XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: -8, duration: 120), 0)
         XCTAssertEqual(AVPlayerSeekTargetPolicy.manualSeekSeconds(seconds: 32, duration: 120), 32)
