@@ -142,6 +142,7 @@ final class SwitcherViewModel {
         }
     }
     var currentProgramSwitchedAt: Date?
+    private var needsMutedMediaStartupAfterClearedProgram = false
     var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
         didSet {
@@ -947,9 +948,10 @@ final class SwitcherViewModel {
             guard let url = item.sourceURL else { return }
             let isReplacingLoadedMedia = avCoordinator.hasLoadedMedia
             let isReplacingNonMediaProgram = currentProgramItem != nil && currentProgramItem?.sourceKind != .media
+            let needsMutedClearedProgramStartup = needsMutedMediaStartupAfterClearedProgram
             currentHTMLURL = nil              // 清空 HTML 层
             avCoordinator.load(url: url)
-            if isReplacingLoadedMedia || (isReplacingNonMediaProgram && liveAudioFadeDuration > 0) {
+            if liveAudioFadeDuration > 0 && (isReplacingLoadedMedia || isReplacingNonMediaProgram || needsMutedClearedProgramStartup) {
                 // 避免新媒体在 currentProgramItem 更新前继承上一条媒体音量；programChanged 会淡入到目标值。
                 avCoordinator.volume = 0
             }
@@ -958,6 +960,7 @@ final class SwitcherViewModel {
             } else {
                 avCoordinator.play()
             }
+            needsMutedMediaStartupAfterClearedProgram = false
             currentProgramItem = item
         case .keynote:
             guard let url = item.sourceURL else { return }
@@ -1449,6 +1452,7 @@ final class SwitcherViewModel {
     func removeProgramItem(withID id: UUID) {
         programItems.removeAll { $0.id == id }
         if currentProgramItem?.id == id {
+            needsMutedMediaStartupAfterClearedProgram = currentProgramItem?.sourceKind == .media
             currentProgramItem = nil
             currentHTMLURL = nil   // Bug2修复：删除HTML条目时清空大屏
             avCoordinator.stop()
