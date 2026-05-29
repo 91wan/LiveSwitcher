@@ -64,6 +64,14 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         return url
     }
 
+    private func makeTempDirectoryURL(ext: String) throws -> URL {
+        let url = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+        return url
+    }
+
     private func makeWallpaperURL() throws -> URL {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString)
@@ -1144,6 +1152,42 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
         XCTAssertNil(openedURL)
         XCTAssertEqual(invalidDeckAlertURL, invalidPPTXURL)
+    }
+
+    func testSwitchingToDirectoryPPTXDoesNotInterruptCurrentPlayback() throws {
+        let viewModel = makeViewModel()
+        let videoURL = try makeTempFileURL(ext: "mp4")
+        let directoryPPTXURL = try makeTempDirectoryURL(ext: "pptx")
+        defer {
+            try? FileManager.default.removeItem(at: videoURL)
+            try? FileManager.default.removeItem(at: directoryPPTXURL)
+        }
+
+        var openedURL: URL?
+        var invalidDeckAlertURL: URL?
+        viewModel.pptxOpenHandler = { url in
+            openedURL = url
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckAlertURL = url
+        }
+
+        let videoItem = ProgramItem(title: "开场视频", subtitle: "MP4", sourceURL: videoURL)
+        let directoryPPTXItem = ProgramItem(title: "误导入目录", subtitle: "PPTX", sourceURL: directoryPPTXURL)
+
+        viewModel.switchToProgram(videoItem)
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+
+        viewModel.switchToProgram(directoryPPTXItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, videoItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(viewModel.avCoordinator.currentURL, videoURL)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertNil(openedURL)
+        XCTAssertEqual(invalidDeckAlertURL, directoryPPTXURL)
     }
 
     func testSwitchingToPPTXStopsPreviousVideoAndInvokesOpenHandler() throws {
@@ -2788,6 +2832,36 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(presentFrontDeckInvocationCount, 1)
         XCTAssertEqual(stopInvocationCount, 0)
         XCTAssertEqual(invalidDeckURL, invalidPPTXURL)
+    }
+
+    func testDirectoryPPTXDoesNotStopCurrentActiveDeckPresentation() throws {
+        let viewModel = makeViewModel()
+        let directoryPPTXURL = try makeTempDirectoryURL(ext: "pptx")
+        defer { try? FileManager.default.removeItem(at: directoryPPTXURL) }
+
+        let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
+        let directoryPPTXItem = ProgramItem(title: "误导入目录", subtitle: "PPTX", sourceURL: directoryPPTXURL)
+        var presentFrontDeckInvocationCount = 0
+        var stopInvocationCount = 0
+        var invalidDeckURL: URL?
+        viewModel.activeDeckPresentationHandler = {
+            presentFrontDeckInvocationCount += 1
+        }
+        viewModel.deckStopHandler = {
+            stopInvocationCount += 1
+        }
+        viewModel.invalidDeckHandler = { url in
+            invalidDeckURL = url
+        }
+
+        viewModel.switchToProgram(activeDeckItem)
+        viewModel.switchToProgram(directoryPPTXItem)
+
+        XCTAssertEqual(viewModel.currentProgramItem, activeDeckItem)
+        XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertEqual(presentFrontDeckInvocationCount, 1)
+        XCTAssertEqual(stopInvocationCount, 0)
+        XCTAssertEqual(invalidDeckURL, directoryPPTXURL)
     }
 
     func testMultiStepProgramSwitchWhileBroadcastingReusesSingleOutputWindowController() throws {
