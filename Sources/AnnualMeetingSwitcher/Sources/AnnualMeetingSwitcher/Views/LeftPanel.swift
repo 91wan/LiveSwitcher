@@ -378,15 +378,16 @@ struct LeftPanel: View {
         }
     }
 
-    // V21 Fix #5: PPTX 纯入列 - 只添加到播放列表，不立即唤醒 WPS
+    // V21 Fix #5: PowerPoint 纯入列 - 只添加到播放列表，不立即唤醒 WPS
     private func openPPTXPicker() {
         DispatchQueue.main.async {
             let panel = NSOpenPanel()
-            panel.title = "选择 PPTX 文件"
+            panel.title = "选择 PowerPoint 文件"
             panel.allowsMultipleSelection = true
             panel.canChooseDirectories = false
             let pptxType = UTType("org.openxmlformats.presentationml.presentation") ?? .data
-            panel.allowedContentTypes = [pptxType]
+            let legacyPPTType = UTType(filenameExtension: "ppt") ?? .data
+            panel.allowedContentTypes = [pptxType, legacyPPTType]
 
             guard panel.runModal() == .OK else { return }
             let items = panel.urls.map { url in

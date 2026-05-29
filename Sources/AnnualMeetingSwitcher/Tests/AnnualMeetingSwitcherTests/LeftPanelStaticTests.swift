@@ -17,6 +17,12 @@ final class LeftPanelStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("private var sourceList: some View"))
     }
 
+    func testPowerPointPickerAcceptsLegacyPPTFiles() throws {
+        let source = try String(contentsOf: leftPanelURL(), encoding: .utf8)
+
+        XCTAssertTrue(source.contains("filenameExtension: \"ppt\""))
+    }
+
     private func leftPanelURL() throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
