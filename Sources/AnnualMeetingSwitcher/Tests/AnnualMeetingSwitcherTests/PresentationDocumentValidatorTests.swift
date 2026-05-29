@@ -20,16 +20,23 @@ final class PresentationDocumentValidatorTests: XCTestCase {
 
     func testKeynoteAllowsPackageDirectoriesAndNonEmptyFiles() throws {
         let keynotePackage = try makeTempDirectoryURL(ext: "keynote")
+        let emptyKeynotePackage = try makeTempDirectoryURL(ext: "keynote")
         let keynoteFile = try makeTempFileURL(ext: "key", contents: Data("key".utf8))
         let emptyKeynoteFile = try makeTempFileURL(ext: "key", contents: Data())
+        FileManager.default.createFile(
+            atPath: keynotePackage.appendingPathComponent("index.zip").path,
+            contents: Data("package".utf8)
+        )
         defer {
             try? FileManager.default.removeItem(at: keynotePackage)
+            try? FileManager.default.removeItem(at: emptyKeynotePackage)
             try? FileManager.default.removeItem(at: keynoteFile)
             try? FileManager.default.removeItem(at: emptyKeynoteFile)
         }
 
         XCTAssertTrue(PresentationDocumentValidator.isLikelyValid(url: keynotePackage, sourceKind: .keynote))
         XCTAssertTrue(PresentationDocumentValidator.isLikelyValid(url: keynoteFile, sourceKind: .keynote))
+        XCTAssertFalse(PresentationDocumentValidator.isLikelyValid(url: emptyKeynotePackage, sourceKind: .keynote))
         XCTAssertFalse(PresentationDocumentValidator.isLikelyValid(url: emptyKeynoteFile, sourceKind: .keynote))
     }
 
