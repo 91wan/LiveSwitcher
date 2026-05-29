@@ -89,11 +89,11 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertTrue(failures[0].detail.contains("count=100"))
     }
 
-    func testRepeatedAutomationFailuresWithChangingMessagesCoalesceByAction() {
+    func testRepeatedAutomationFailuresWithChangingMessagesStaySeparateByMessage() {
         let viewModel = makeViewModel()
         viewModel.recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
 
-        for index in 0..<100 {
+        for index in 0..<3 {
             viewModel.handleAppleScriptFailure(
                 AppleScriptError.executionFailed(
                     action: "keynote.next-slide",
@@ -105,9 +105,9 @@ final class RuntimeSupportEventTests: XCTestCase {
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStarted })
         let failures = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
-        XCTAssertEqual(failures.count, 1)
-        XCTAssertTrue(failures[0].detail.contains("action=keynote.next-slide"))
-        XCTAssertTrue(failures[0].detail.contains("count=100"))
+        XCTAssertEqual(failures.count, 3)
+        XCTAssertTrue(failures.allSatisfy { $0.detail.contains("action=keynote.next-slide") })
+        XCTAssertFalse(failures.contains { $0.detail.contains("count=") })
     }
 
     func testRepeatedPageInterceptWPSMissingEventsCoalesceWithoutEvictingImportantEvents() {

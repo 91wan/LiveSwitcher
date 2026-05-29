@@ -2106,19 +2106,7 @@ final class SwitcherViewModel {
     }
 
     private func supportEventCoalescingKey(kind: LiveSupportEventKind, detail: String) -> String {
-        let baseDetail = supportEventBaseDetail(detail)
-        guard kind == .appleScriptFailed,
-              let actionRange = baseDetail.range(of: "action=")
-        else {
-            return baseDetail
-        }
-
-        let actionStart = actionRange.lowerBound
-        let afterAction = baseDetail[actionRange.upperBound...]
-        let actionValue = afterAction.split(separator: ",", maxSplits: 1, omittingEmptySubsequences: false).first
-            .map(String.init) ?? ""
-        guard !actionValue.isEmpty else { return baseDetail }
-        return "\(baseDetail[actionStart..<actionRange.upperBound])\(actionValue)"
+        supportEventBaseDetail(detail)
     }
 
     private func supportEventBaseDetail(_ detail: String) -> String {
