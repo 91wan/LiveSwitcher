@@ -74,6 +74,7 @@ final class ViewModelCleanupBag {
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
     var bgmFallbackVolumeFadeTask: Task<Void, Never>?
     var bgmFallbackEndObserver: NSObjectProtocol?
+    var bgmFallbackFailureObserver: NSObjectProtocol?
     var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
     var retiredBGMFallbackPlayers: [UUID: AVPlayer] = [:]
     var panicAudioPauseTask: Task<Void, Never>?
@@ -103,6 +104,10 @@ final class ViewModelCleanupBag {
         if let bgmFallbackEndObserver {
             NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
             self.bgmFallbackEndObserver = nil
+        }
+        if let bgmFallbackFailureObserver {
+            NotificationCenter.default.removeObserver(bgmFallbackFailureObserver)
+            self.bgmFallbackFailureObserver = nil
         }
     }
 
@@ -692,12 +697,30 @@ final class SwitcherViewModel {
                 self.bgmDidFinish()
             }
         }
+        cleanupBag.bgmFallbackFailureObserver = NotificationCenter.default.addObserver(
+            forName: .AVPlayerItemFailedToPlayToEndTime,
+            object: item,
+            queue: .main
+        ) { [weak self, weak item] _ in
+            Task { @MainActor [weak self, weak item] in
+                guard let self,
+                      let item,
+                      self.bgmTransitionGeneration == generation,
+                      self.bgmFallbackPlayer.currentItem === item
+                else { return }
+                self.bgmDidFail()
+            }
+        }
     }
 
     func removeBGMFallbackEndObserver() {
         if let observer = cleanupBag.bgmFallbackEndObserver {
             NotificationCenter.default.removeObserver(observer)
             self.cleanupBag.bgmFallbackEndObserver = nil
+        }
+        if let observer = cleanupBag.bgmFallbackFailureObserver {
+            NotificationCenter.default.removeObserver(observer)
+            self.cleanupBag.bgmFallbackFailureObserver = nil
         }
     }
 
