@@ -11,6 +11,7 @@ final class WPSApplicationMonitor {
     private static let wpsBundleIdentifier = AppConfiguration.wpsBundleIdentifier
 
     private let lock = NSLock()
+    private let notificationCenter: NotificationCenter
     private var cachedProcessIdentifier: pid_t?
     private var notificationTokens: [NSObjectProtocol] = []
 
@@ -18,6 +19,7 @@ final class WPSApplicationMonitor {
         workspace: NSWorkspace = .shared,
         notificationCenter: NotificationCenter = NSWorkspace.shared.notificationCenter
     ) {
+        self.notificationCenter = notificationCenter
         refresh(using: workspace.runningApplications)
 
         let launchToken = notificationCenter.addObserver(
@@ -40,8 +42,7 @@ final class WPSApplicationMonitor {
     }
 
     deinit {
-        let center = NSWorkspace.shared.notificationCenter
-        notificationTokens.forEach(center.removeObserver)
+        notificationTokens.forEach(notificationCenter.removeObserver)
     }
 
     var currentProcessIdentifier: pid_t? {
