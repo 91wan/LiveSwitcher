@@ -491,6 +491,11 @@ final class SwitcherViewModel {
         runtime.dispatch(action)
     }
 
+    func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
+        syncRuntimeStateFromFacade(clearActionLog: false)
+        runtime.dispatch(makeAction(runtime.state.media.generation))
+    }
+
     func syncRuntimeStateFromFacade(clearActionLog: Bool) {
         runtime.replaceStateForFacadeSync(makeRuntimeStateSnapshot(), clearActionLog: clearActionLog)
     }
@@ -1090,7 +1095,10 @@ final class SwitcherViewModel {
     private func setupPlayerCoordinator() {
         avCoordinator.$isPlaying
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] isPlaying in
+                self?.dispatchRuntimeMediaCallback {
+                    .mediaPlaybackChanged(isPlaying: isPlaying, generation: $0)
+                }
                 self?.applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
             }
             .store(in: &cancellables)
@@ -1105,6 +1113,7 @@ final class SwitcherViewModel {
     func switchToProgram(_ item: ProgramItem) {
         guard programSourceIsAvailable(item) else { return }
         guard item.sourceKind.isActivatableProgram else { return }
+        dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
 
         switch item.sourceKind {
         case .agendaMarker, .unsupported:
@@ -1388,6 +1397,7 @@ final class SwitcherViewModel {
 
     /// 当前节目播毕后的最小状态回退。
     func handlePlaybackEnded() {
+        dispatchRuntimeMediaCallback { .mediaReachedEnd(generation: $0) }
         LiveSwitcherTelemetry.playbackReachedEnd()
         recordSupportEvent(kind: .playbackReachedEnd, detail: "state=ended")
 
@@ -1576,6 +1586,7 @@ final class SwitcherViewModel {
 
         guard !isPanicMode else {
             if avCoordinator.isPlaying {
+                dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
                 if panicPlaybackSnapshot?.currentProgramID == item.id {
                     panicPlaybackSnapshot?.wasMediaPlaying = false
                 }
@@ -1586,6 +1597,7 @@ final class SwitcherViewModel {
         }
 
         // 普通视频
+        dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
         if avCoordinator.isPlaying {
             avCoordinator.pause()
             applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
@@ -1626,6 +1638,7 @@ final class SwitcherViewModel {
     func restartCurrentMediaFromBeginning() {
         guard let item = currentProgramItem,
               programItemSupportsSeeking(item) else { return }
+        dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
         if isPanicMode {
             programSeekToStartHandler()
             applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
