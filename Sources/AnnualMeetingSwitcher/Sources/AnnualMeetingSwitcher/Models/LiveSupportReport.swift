@@ -25,6 +25,7 @@ enum LiveSupportEventKind: String, Equatable {
     case systemVolumeSynced = "system.volume.synced"
     case playbackReachedEnd = "playback.reached-end"
     case mediaRestarted = "media.restarted"
+    case consoleModeSwitchSlow = "console-mode.switch.slow"
     case programItemFileMissing = "program.file.missing"
     case bgmFileMissing = "bgm.file.missing"
     case wallpaperFileMissing = "wallpaper.file.missing"
