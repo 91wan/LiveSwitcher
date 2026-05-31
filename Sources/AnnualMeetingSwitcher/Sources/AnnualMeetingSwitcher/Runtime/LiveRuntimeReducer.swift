@@ -263,7 +263,7 @@ enum LiveRuntimeReducer {
             }
             state.support.record(
                 kind: .appleScriptFailed,
-                detail: "action=\(action),message=\(sanitizedMessage)",
+                detail: "action=\(action),error=\(sanitizedMessage)",
                 at: environment.now
             )
 

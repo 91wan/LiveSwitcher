@@ -386,6 +386,7 @@ final class SwitcherViewModel {
 
     func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
         guard enabled != isPageInterceptEnabled else { return }
+        dispatchRuntimeFacadeAction(.operatorToggledPPTMode(source: source))
         recordSupportEvent(
             kind: .pptModeChanged,
             detail: "isOn=\(enabled),source=\(source.rawValue)"
@@ -1283,11 +1284,13 @@ final class SwitcherViewModel {
 
     func handleAppleScriptFailure(_ error: Error, action: String) {
         let message = appleScriptFailureMessage(error)
+        dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
-        showAutomationRuntimeNotice(action: action)
+        automationRuntimeNotice = runtime.state.automation.notice
     }
 
     func dismissAutomationRuntimeNotice() {
+        dispatchRuntimeFacadeAction(.automationNoticeDismissed)
         automationRuntimeNotice = nil
     }
 
@@ -1297,6 +1300,7 @@ final class SwitcherViewModel {
               let expiresAt = notice.expiresAt,
               now >= expiresAt
         else { return }
+        dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
         automationRuntimeNotice = nil
     }
 
@@ -2378,6 +2382,7 @@ final class SwitcherViewModel {
             if let tap = pageInterceptEventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
                 pageInterceptRuntime.updateEventTap(tap)
+                dispatchRuntimeFacadeAction(.pptEventTapStarted)
                 LiveSwitcherTelemetry.pageInterceptEnabled()
                 recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled,existingTap=true")
             }
@@ -2397,6 +2402,7 @@ final class SwitcherViewModel {
             Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                self.dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: "eventTapCreateFailed"))
                 self.isPageInterceptEnabled = false
                 LiveSwitcherTelemetry.pageInterceptDisabled(reason: "eventTapCreateFailed")
                 self.recordSupportEvent(
@@ -2426,6 +2432,7 @@ final class SwitcherViewModel {
         pageInterceptRunLoopSource = src
         pageInterceptSelfRefcon = selfRefcon
         pageInterceptRuntime.updateEventTap(tap)
+        dispatchRuntimeFacadeAction(.pptEventTapStarted)
         LiveSwitcherTelemetry.pageInterceptEnabled()
         recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled")
     }
@@ -2444,6 +2451,7 @@ final class SwitcherViewModel {
         pageInterceptEventTap = nil
         pageInterceptRunLoopSource = nil
         pageInterceptRuntime.updateEventTap(nil)
+        dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: .operatorDisabled))
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: "operator")
         recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=operator")
     }
