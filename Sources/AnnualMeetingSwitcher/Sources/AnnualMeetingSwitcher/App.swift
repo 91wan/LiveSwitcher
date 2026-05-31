@@ -13,10 +13,6 @@ struct LiveSwitcherApp: App {
         let viewModel = Self.makeViewModel()
         _viewModel = State(wrappedValue: viewModel)
         LiveSwitcherAppDelegate.sharedViewModel = viewModel
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 900_000_000)
-            LiveSwitcherAppDelegate.ensureMainWindowIfNeeded(viewModel: viewModel, activate: true)
-        }
     }
 
     var body: some Scene {
