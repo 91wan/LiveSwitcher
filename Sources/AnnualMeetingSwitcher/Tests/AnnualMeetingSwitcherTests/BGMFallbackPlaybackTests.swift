@@ -78,6 +78,27 @@ final class BGMFallbackPlaybackTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testFallbackPlayerFailureNotificationStopsSafely() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let url = try makeTempFileURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let item = BGMItem(title: "Broken Fallback", url: url, category: .warmUp)
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemFailedToPlayToEndTime, object: fallbackItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+        XCTAssertEqual(viewModel.bgmProgress, 0)
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .bgmPlaybackFailed })
+    }
+
     private func makeViewModel() -> SwitcherViewModel {
         let suiteName = "BGMFallbackPlaybackTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
