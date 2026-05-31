@@ -69,6 +69,7 @@ extension SwitcherViewModel {
     func bgmDidFinish() {
         removeBGMFallbackEndObserver()
         guard !isPanicMode else {
+            invalidateBGMTransitionGeneration()
             if panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
                 panicPlaybackSnapshot?.wasBGMPlaying = false
             }
@@ -89,6 +90,7 @@ extension SwitcherViewModel {
 
         // 单曲循环（numberOfLoops == -1）不会触发 delegate
         guard let current = currentBGMItem else {
+            invalidateBGMTransitionGeneration()
             isBGMPlaying = false
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
@@ -105,6 +107,7 @@ extension SwitcherViewModel {
 
         let items = bgmItems.filter { $0.category == current.category }
         guard let index = items.firstIndex(where: { $0.id == current.id }) else {
+            invalidateBGMTransitionGeneration()
             isBGMPlaying = false
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
@@ -135,6 +138,7 @@ extension SwitcherViewModel {
     }
 
     private func finishSequentialBGMPlayback() {
+        invalidateBGMTransitionGeneration()
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
         isBGMPlaying = false
@@ -166,6 +170,7 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFail() {
+        invalidateBGMTransitionGeneration()
         if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
             panicPlaybackSnapshot?.wasBGMPlaying = false
         }

@@ -44,6 +44,64 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmAudioPlayer?.currentTime ?? -1, 0, accuracy: 0.1)
     }
 
+    func testSequentialFinishInvalidatesBGMTransitionGeneration() throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Solo", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+        viewModel.bgmPlayMode = .sequential
+        let generationBeforeFinish = viewModel.bgmTransitionGenerationForTesting
+
+        viewModel.bgmDidFinish()
+
+        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforeFinish)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+        XCTAssertEqual(viewModel.bgmProgress, 0)
+    }
+
+    func testBGMFailureInvalidatesBGMTransitionGeneration() throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Failure Tail", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+        let generationBeforeFailure = viewModel.bgmTransitionGenerationForTesting
+
+        viewModel.bgmDidFail()
+
+        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforeFailure)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmAudioPlayer)
+        XCTAssertEqual(viewModel.bgmProgress, 0)
+    }
+
+    func testPanicBGMStopAndRestoreInvalidateBGMTransitionGeneration() throws {
+        let (directory, audioURL) = try makeAudioFixture()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Panic BGM", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+        let generationBeforePanic = viewModel.bgmTransitionGenerationForTesting
+
+        viewModel.togglePanicMode()
+
+        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforePanic)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+
+        let generationBeforeRestore = viewModel.bgmTransitionGenerationForTesting
+        viewModel.togglePanicMode()
+
+        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforeRestore)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+    }
+
     func testSequentialFinishedFallbackTrackClearsFallbackItemBeforeReplay() throws {
         let (directory, audioURL) = try makeFallbackAudioFixture()
         defer { try? FileManager.default.removeItem(at: directory) }
