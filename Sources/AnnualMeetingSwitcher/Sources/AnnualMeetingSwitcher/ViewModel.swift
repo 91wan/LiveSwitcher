@@ -133,12 +133,11 @@ final class SwitcherViewModel {
 
     var currentProgramItem: ProgramItem? {
         didSet {
-            if currentProgramItem?.id != oldValue?.id {
-                currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
-                applyAudioRoutingForRuntimeChange(reason: .programChanged)
-            } else {
-                applyAudioRoutingForRuntimeChange(reason: .programChanged)
-            }
+            let sourceChanged = currentProgramItem?.sourceURL != oldValue?.sourceURL
+                || currentProgramItem?.sourceKind != oldValue?.sourceKind
+            guard currentProgramItem?.id != oldValue?.id || sourceChanged else { return }
+            currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
+            applyAudioRoutingForRuntimeChange(reason: .programChanged)
         }
     }
     var currentProgramSwitchedAt: Date?
@@ -166,33 +165,52 @@ final class SwitcherViewModel {
 
     /// 主音量 [0.0, 1.0] - 联控 AVPlayer + BGM
     var masterVolume: Double = 0.5 {
-        didSet { applyMasterVolume() }
+        didSet {
+            guard oldValue != masterVolume else { return }
+            applyMasterVolume()
+        }
     }
 
     /// 媒体源音量 [0.0, 1.0]
     var mediaVolume: Double = 1.0 {
-        didSet { applyMasterVolume() }
+        didSet {
+            guard oldValue != mediaVolume else { return }
+            applyMasterVolume()
+        }
     }
 
     /// BGM 音量 [0.0, 1.0]
     var bgmVolume: Double = 0.5 {
-        didSet { applyBGMVolume() }
+        didSet {
+            guard oldValue != bgmVolume else { return }
+            applyBGMVolume()
+        }
     }
 
     /// Live mode mute controls are session-scoped operator actions and are not persisted.
     var isMasterAudioMuted: Bool = false {
-        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
+        didSet {
+            guard oldValue != isMasterAudioMuted else { return }
+            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
+        }
     }
     var isMediaAudioMuted: Bool = false {
-        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
+        didSet {
+            guard oldValue != isMediaAudioMuted else { return }
+            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
+        }
     }
     var isBGMAudioMuted: Bool = false {
-        didSet { applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged) }
+        didSet {
+            guard oldValue != isBGMAudioMuted else { return }
+            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
+        }
     }
 
     /// 音频输出策略。默认保持“混合”，与当前已存在的实际行为一致。
     var audioStrategy: AudioStrategy = .mixed {
         didSet {
+            guard oldValue != audioStrategy else { return }
             applyAudioRoutingForRuntimeChange(reason: .strategyChanged)
             userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         }
