@@ -2,6 +2,7 @@ import AppKit
 
 extension SwitcherViewModel {
     func handleSafeBroadcastToggle() {
+        dispatchRuntimeFacadeAction(.operatorToggledProjection)
         if isBroadcasting {
             broadcastSafetyNotice = nil
             isBroadcasting = false
