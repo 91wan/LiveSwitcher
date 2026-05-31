@@ -921,13 +921,14 @@ final class SwitcherViewModel {
         }
 
         if let paths = userDefaults.stringArray(forKey: UDKeys.wallpapers) {
-            let missingCount = paths.filter { !FileManager.default.fileExists(atPath: $0) }.count
-            if missingCount > 0 {
-                recordSupportEvent(kind: .wallpaperFileMissing, detail: "count=\(missingCount)")
-            }
             backgroundWallpapers = paths.compactMap { path -> URL? in
                 let url = URL(fileURLWithPath: path)
-                return FileManager.default.fileExists(atPath: path) ? url : nil
+                return Self.isRenderableImage(url: url) ? url : nil
+            }
+            let droppedCount = paths.count - backgroundWallpapers.count
+            if droppedCount > 0 {
+                recordSupportEvent(kind: .wallpaperFileMissing, detail: "count=\(droppedCount)")
+                userDefaults.set(backgroundWallpapers.map(\.path), forKey: UDKeys.wallpapers)
             }
             // Bug1修复：loadData后恢复activeWallpaperURL，确保暂停/空闲时大屏显示壁纸而非黑屏
             if activeWallpaperURL == nil {
@@ -937,6 +938,11 @@ final class SwitcherViewModel {
                 } else {
                     activeWallpaperURL = backgroundWallpapers.first
                 }
+            }
+            if let activeWallpaperURL {
+                userDefaults.set(activeWallpaperURL.path, forKey: UDKeys.activeWallpaper)
+            } else {
+                userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
             }
         }
 
@@ -1641,7 +1647,7 @@ final class SwitcherViewModel {
 
     @discardableResult
     func addWallpaper(url: URL) -> Bool {
-        guard isSupportedWallpaperImage(url) else { return false }
+        guard Self.isRenderableImage(url: url) else { return false }
         guard !backgroundWallpapers.contains(url) else { return true }
         backgroundWallpapers.append(url)
         saveData()
