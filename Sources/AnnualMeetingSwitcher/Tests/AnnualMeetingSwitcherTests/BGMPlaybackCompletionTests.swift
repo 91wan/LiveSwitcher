@@ -263,6 +263,40 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testRapidAudioPlayerSwitchesLeaveOnlyLatestTrackActive() async throws {
+        let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
+        let secondURL = directory.appendingPathComponent("second.wav")
+        let thirdURL = directory.appendingPathComponent("third.wav")
+        try writeSineWaveFixture(to: secondURL)
+        try writeSineWaveFixture(to: thirdURL)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
+        let third = BGMItem(title: "Third", url: thirdURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.bgmItems = [first, second, third]
+        viewModel.liveAudioFadeDuration = 0.15
+
+        viewModel.toggleBGM(first)
+        let firstPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        viewModel.toggleBGM(second)
+        let secondPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        viewModel.toggleBGM(third)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, third.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertFalse(viewModel.bgmAudioPlayer === firstPlayer)
+        XCTAssertFalse(viewModel.bgmAudioPlayer === secondPlayer)
+
+        viewModel.bgmDelegate.audioPlayerDidFinishPlaying(firstPlayer, successfully: true)
+        viewModel.bgmDelegate.audioPlayerDidFinishPlaying(secondPlayer, successfully: false)
+        try await Task.sleep(nanoseconds: 250_000_000)
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, third.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmAudioPlayer)
+    }
+
     func testBGMDecodeErrorStopsCurrentPlayback() async throws {
         let (directory, audioURL) = try makeAudioFixture()
         defer { try? FileManager.default.removeItem(at: directory) }
