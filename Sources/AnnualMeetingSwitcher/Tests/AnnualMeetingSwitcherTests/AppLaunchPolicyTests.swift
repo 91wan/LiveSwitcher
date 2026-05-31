@@ -1,4 +1,5 @@
 import XCTest
+@testable import LiveSwitcher
 
 final class AppLaunchPolicyTests: XCTestCase {
     func testSwiftPMEntryPointUsesRegularActivationPolicy() throws {
@@ -46,6 +47,33 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("closeUnusableMainWindow(existingMainWindow)"))
         XCTAssertTrue(source.contains("window.collectionBehavior.insert(.moveToActiveSpace)"))
         XCTAssertFalse(source.contains("if NSApp.windows.contains(where: isMainConsoleWindow) {\n            return\n        }"))
+    }
+
+    func testVisibleOccludedMainWindowIsReusable() {
+        XCTAssertTrue(
+            MainWindowFallbackPolicy.shouldReuseMainWindow(
+                isVisible: true,
+                isMiniaturized: false,
+                isOcclusionVisible: false
+            )
+        )
+    }
+
+    func testHiddenOrMiniaturizedMainWindowIsNotReusableUntilOrderedFront() {
+        XCTAssertFalse(
+            MainWindowFallbackPolicy.shouldReuseMainWindow(
+                isVisible: false,
+                isMiniaturized: false,
+                isOcclusionVisible: false
+            )
+        )
+        XCTAssertFalse(
+            MainWindowFallbackPolicy.shouldReuseMainWindow(
+                isVisible: true,
+                isMiniaturized: true,
+                isOcclusionVisible: true
+            )
+        )
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
