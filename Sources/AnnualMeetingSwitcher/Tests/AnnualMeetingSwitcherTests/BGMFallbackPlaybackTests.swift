@@ -27,6 +27,78 @@ final class BGMFallbackPlaybackTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testFallbackLoopOneRepeatsSameTrackOnEndNotification() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmPlayMode = .loopOne
+        let url = try makeTempFileURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let item = BGMItem(title: "Fallback Loop", url: url, category: .warmUp)
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let firstFallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: firstFallbackItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+        XCTAssertFalse(viewModel.bgmFallbackPlayer.currentItem === firstFallbackItem)
+    }
+
+    func testFallbackSequentialStopsAtLastTrackOnEndNotification() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmPlayMode = .sequential
+        let firstURL = try makeTempFileURL(ext: "mp3")
+        let secondURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "Fallback A", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Fallback B", url: secondURL, category: .warmUp)
+        viewModel.bgmItems = [first, second]
+
+        viewModel.toggleBGM(second)
+        let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: fallbackItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+        XCTAssertEqual(viewModel.bgmProgress, 0)
+    }
+
+    func testFallbackLoopAllWrapsLastTrackToFirstOnEndNotification() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmPlayMode = .loopAll
+        let firstURL = try makeTempFileURL(ext: "mp3")
+        let secondURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+        let first = BGMItem(title: "Fallback A", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Fallback B", url: secondURL, category: .warmUp)
+        viewModel.bgmItems = [first, second]
+
+        viewModel.toggleBGM(second)
+        let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: fallbackItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, first.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
     func testSwitchingFallbackBGMKeepsOldItemLoadedForFadeOut() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0.2
