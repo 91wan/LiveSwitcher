@@ -48,7 +48,7 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(content.contains("viewModel.togglePanicMode()"))
         XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
         XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
-        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: .toolbar)"))
+        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: pptModeToggleSource)"))
         XCTAssertFalse(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
         XCTAssertTrue(toolbar.contains("主持人"))
         XCTAssertTrue(toolbar.contains("PPT"))
@@ -64,7 +64,7 @@ final class ConsoleChromeCleanupTests: XCTestCase {
     func testGlobalShortcutsRespectNativeControlFocus() throws {
         let content = try sourceText("ContentView.swift")
 
-        XCTAssertTrue(content.contains("fr is NSText || fr is NSControl"))
+        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window)"))
     }
 
     func testNonEmergencyGlobalShortcutsIgnoreShiftModifiedKeys() throws {

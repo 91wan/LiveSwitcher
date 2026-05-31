@@ -9,7 +9,7 @@ final class ModeToggleLayoutTests: XCTestCase {
         XCTAssertTrue(toolbar.contains("ToolbarModeButton("))
         XCTAssertTrue(toolbar.contains(".frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)"))
         XCTAssertTrue(toolbar.contains("viewModel.toggleSpeakerMode()"))
-        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: .toolbar)"))
+        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: pptModeToggleSource)"))
         XCTAssertFalse(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
         XCTAssertFalse(toolbar.contains("Toggle(isOn"))
         XCTAssertFalse(liveMode.contains("modeToggleRow("))

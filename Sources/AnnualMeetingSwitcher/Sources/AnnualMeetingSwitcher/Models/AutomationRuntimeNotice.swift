@@ -6,14 +6,14 @@ enum AutomationRuntimeNoticeSeverity: Equatable {
 }
 
 enum AutomationRuntimeNoticeAction: Equatable {
-    case openPreflight
+    case openSafetyCockpit
     case openHelp
     case openSystemSettingsAccessibility
 
     var label: String {
         switch self {
-        case .openPreflight:
-            return "打开检查"
+        case .openSafetyCockpit:
+            return "打开安全台"
         case .openHelp:
             return "查看帮助"
         case .openSystemSettingsAccessibility:
@@ -79,7 +79,7 @@ enum AutomationRuntimeNoticePolicy {
                 "节目文件不存在",
                 "请确认素材仍在原位置，或重新导入该节目。",
                 .warn,
-                .openPreflight,
+                .openSafetyCockpit,
                 10
             )
         }
@@ -89,7 +89,7 @@ enum AutomationRuntimeNoticePolicy {
                 "演示软件未运行",
                 "请先打开 WPS/Keynote 并开始放映。",
                 .fail,
-                .openPreflight,
+                .openSafetyCockpit,
                 14
             )
         }
@@ -99,7 +99,7 @@ enum AutomationRuntimeNoticePolicy {
                 "WPS 打开失败",
                 "请确认 WPS 已安装，或改用 Keynote 文件。",
                 .fail,
-                .openPreflight,
+                .openSafetyCockpit,
                 14
             )
         }
@@ -109,7 +109,7 @@ enum AutomationRuntimeNoticePolicy {
                 "翻页未发送",
                 "请确认演示窗口正在放映，或关闭 PPT 模式。",
                 .warn,
-                .openPreflight,
+                .openSafetyCockpit,
                 10
             )
         }
@@ -119,7 +119,7 @@ enum AutomationRuntimeNoticePolicy {
                 "演示停止失败",
                 "请确认演示软件仍在运行并允许 LiveSwitcher 控制。",
                 .warn,
-                .openPreflight,
+                .openSafetyCockpit,
                 10
             )
         }
@@ -129,7 +129,7 @@ enum AutomationRuntimeNoticePolicy {
                 "演示扫描失败",
                 "请确认 Keynote 已打开并允许 LiveSwitcher 控制。",
                 .warn,
-                .openPreflight,
+                .openSafetyCockpit,
                 10
             )
         }
@@ -139,7 +139,7 @@ enum AutomationRuntimeNoticePolicy {
                 "Keynote 放映失败",
                 "请确认 Keynote 已打开并允许 LiveSwitcher 控制。",
                 .fail,
-                .openPreflight,
+                .openSafetyCockpit,
                 14
             )
         }
@@ -148,7 +148,7 @@ enum AutomationRuntimeNoticePolicy {
             "演示自动化失败",
             "请检查演示软件状态和自动化权限。",
             .warn,
-            .openPreflight,
+            .openSafetyCockpit,
             10
         )
     }

@@ -162,6 +162,10 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
             if isUsablyVisibleMainWindow(existingMainWindow) {
                 return
             }
+            guard let origin = mainWindowOrigin(for: existingMainWindow),
+                  MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: origin) else {
+                return
+            }
             closeUnusableMainWindow(existingMainWindow)
         }
 
@@ -187,7 +191,7 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
             defer: false
         )
         window.title = "LiveSwitcher"
-        window.identifier = NSUserInterfaceItemIdentifier("main-console")
+        window.identifier = NSUserInterfaceItemIdentifier("main-console-fallback")
         window.isReleasedWhenClosed = false
         window.isRestorable = false
         window.minSize = NSSize(width: AppConfiguration.minWindowWidth, height: AppConfiguration.minWindowHeight)
@@ -231,7 +235,10 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func isMainConsoleWindow(_ window: NSWindow) -> Bool {
-        let identifier = window.identifier?.rawValue ?? ""
-        return identifier.hasPrefix("main-console") || window.title == "LiveSwitcher"
+        mainWindowOrigin(for: window) != nil
+    }
+
+    private static func mainWindowOrigin(for window: NSWindow) -> MainWindowFallbackPolicy.Origin? {
+        MainWindowFallbackPolicy.origin(identifier: window.identifier?.rawValue, title: window.title)
     }
 }

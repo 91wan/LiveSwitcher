@@ -64,6 +64,33 @@ final class AudioMeterStoreTests: XCTestCase {
         XCTAssertFalse(coordinator.hasActiveMediaAudioMeterTap)
     }
 
+    func testAVPlayerCoordinatorReplacesMeterTapOnSecondLoadAndClearsOnShutdown() {
+        let coordinator = AVPlayerCoordinator()
+        let firstURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        let secondURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        FileManager.default.createFile(atPath: firstURL.path, contents: Data())
+        FileManager.default.createFile(atPath: secondURL.path, contents: Data())
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+        }
+
+        coordinator.load(url: firstURL)
+        XCTAssertTrue(coordinator.hasActiveMediaAudioMeterTap)
+
+        coordinator.load(url: secondURL)
+        XCTAssertTrue(coordinator.hasActiveMediaAudioMeterTap)
+        XCTAssertEqual(coordinator.currentURL, secondURL)
+
+        coordinator.shutdown()
+        XCTAssertFalse(coordinator.hasActiveMediaAudioMeterTap)
+        XCTAssertFalse(coordinator.hasLoadedMedia)
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

@@ -87,6 +87,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertEqual(failures.count, 1)
         XCTAssertTrue(failures[0].detail.contains("action=keynote.next-slide"))
         XCTAssertTrue(failures[0].detail.contains("count=100"))
+        XCTAssertTrue(failures[0].detail.contains("lastSeen="))
     }
 
     func testRepeatedAutomationFailuresWithChangingMessagesStaySeparateByMessage() {
@@ -126,6 +127,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertEqual(failures.count, 1)
         XCTAssertTrue(failures[0].detail.contains("direction=next"))
         XCTAssertTrue(failures[0].detail.contains("count=100"))
+        XCTAssertTrue(failures[0].detail.contains("lastSeen="))
     }
 
     func testRepeatedPageInterceptForwardedEventsCoalesceWithoutEvictingImportantEvents() {
@@ -144,6 +146,25 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertEqual(forwarded.count, 1)
         XCTAssertTrue(forwarded[0].detail.contains("direction=next"))
         XCTAssertTrue(forwarded[0].detail.contains("count=100"))
+        XCTAssertTrue(forwarded[0].detail.contains("lastSeen="))
+    }
+
+    func testExternalDisplayLostIsIdempotentForSingleDisconnect() {
+        let viewModel = makeViewModel()
+        let outputSpy = OutputWindowControllerSpy()
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
+
+        viewModel.handleBroadcastToggle()
+        XCTAssertTrue(viewModel.isBroadcasting)
+
+        viewModel.handleExternalDisplayLost()
+        viewModel.handleExternalDisplayLost()
+
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertEqual(outputSpy.hideCount, 1)
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionLost }.count, 1)
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionFailClosed }.count, 1)
     }
 
     func testOverlaySupportEventsDoNotRecordOperatorText() {

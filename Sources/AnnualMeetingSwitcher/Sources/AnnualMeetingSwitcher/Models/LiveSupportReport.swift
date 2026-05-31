@@ -5,6 +5,7 @@ enum LiveSupportEventKind: String, Equatable {
     case supportReportCopied = "support.report.copied"
     case supportReportSaved = "support.report.saved"
     case speakerModeChanged = "speaker.mode.changed"
+    case pptModeChanged = "ppt.mode.changed"
     case panicModeChanged = "panic.mode.changed"
     case fadeToBlackChanged = "fade-to-black.changed"
     case bgmPlaybackChanged = "bgm.playback.changed"

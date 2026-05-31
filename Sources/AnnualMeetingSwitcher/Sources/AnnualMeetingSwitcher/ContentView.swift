@@ -354,7 +354,7 @@ struct ContentView: View {
     @MainActor
     private func handleAutomationRuntimeNoticeAction(_ action: AutomationRuntimeNoticeAction) {
         switch action {
-        case .openPreflight:
+        case .openSafetyCockpit:
             openWindow(id: "safety-cockpit")
         case .openHelp:
             viewModel.navigateToSetup(.preview)
@@ -480,6 +480,10 @@ final class KeyMonitorView: NSView {
     }
 
     private func handleKey(event: NSEvent, vm: SwitcherViewModel) -> NSEvent? {
+        guard GlobalShortcutPolicy.shouldHandleEvent(monitorWindow: window, eventWindow: event.window) else {
+            return event
+        }
+
         // MARK: - Tier1: ⌘⌥B -> 紧急切黑 (handled before modifiers guard)
         // B = keyCode 11（QWERTY 键盘上 B 键）
         if GlobalShortcutPolicy.isEmergencyPanicShortcut(
@@ -498,7 +502,7 @@ final class KeyMonitorView: NSView {
         guard !GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags) else { return event }
 
         // 如果当前焦点在文本框或原生控件，不拦截，避免抢走按钮/滑杆的键盘操作
-        if let fr = window?.firstResponder, fr is NSText || fr is NSControl { return event }
+        if GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window) { return event }
 
         let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true
 

@@ -20,4 +20,14 @@ enum GlobalShortcutPolicy {
     static func hasNonEmergencyShortcutModifiers(_ modifierFlags: NSEvent.ModifierFlags) -> Bool {
         !modifierFlags.intersection(nonEmergencyModifierMask).isEmpty
     }
+
+    static func shouldHandleEvent(monitorWindow: NSWindow?, eventWindow: NSWindow?) -> Bool {
+        guard let monitorWindow, let eventWindow else { return false }
+        return monitorWindow === eventWindow
+    }
+
+    static func shouldPassThroughFocusedResponder(in eventWindow: NSWindow?) -> Bool {
+        guard let responder = eventWindow?.firstResponder else { return false }
+        return responder is NSText || responder is NSControl
+    }
 }
