@@ -48,7 +48,8 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(content.contains("viewModel.togglePanicMode()"))
         XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
         XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
-        XCTAssertTrue(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
+        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: .toolbar)"))
+        XCTAssertFalse(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
         XCTAssertTrue(toolbar.contains("主持人"))
         XCTAssertTrue(toolbar.contains("PPT"))
     }
