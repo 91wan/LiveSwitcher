@@ -946,7 +946,12 @@ final class SwitcherViewModel {
         }
         if let logoPath = userDefaults.string(forKey: UDKeys.cornerLogo) {
             let logoURL = URL(fileURLWithPath: logoPath)
-            cornerLogoURL = WallpaperImagePolicy.isSupported(url: logoURL) ? logoURL : nil
+            if Self.isRenderableImage(url: logoURL) {
+                cornerLogoURL = logoURL
+            } else {
+                cornerLogoURL = nil
+                userDefaults.removeObject(forKey: UDKeys.cornerLogo)
+            }
         }
 
         if let storedAudioStrategy = userDefaults.string(forKey: UDKeys.audioStrategy),
@@ -1659,7 +1664,7 @@ final class SwitcherViewModel {
 
     @discardableResult
     func setCornerLogo(url: URL) -> Bool {
-        guard WallpaperImagePolicy.isSupported(url: url) else { return false }
+        guard Self.isRenderableImage(url: url) else { return false }
         cornerLogoURL = url
         saveData()
         return true
@@ -1672,6 +1677,14 @@ final class SwitcherViewModel {
 
     private func isSupportedWallpaperImage(_ url: URL) -> Bool {
         WallpaperImagePolicy.isSupported(url: url)
+    }
+
+    private static func isRenderableImage(url: URL) -> Bool {
+        guard WallpaperImagePolicy.isSupported(url: url),
+              let data = try? Data(contentsOf: url),
+              let image = NSImage(data: data)
+        else { return false }
+        return image.size.width > 0 && image.size.height > 0
     }
 
     // MARK: - BGM 操作

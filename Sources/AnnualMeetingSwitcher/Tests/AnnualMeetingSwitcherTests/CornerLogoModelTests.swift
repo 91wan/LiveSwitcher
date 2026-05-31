@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import LiveSwitcher
 
@@ -40,6 +41,31 @@ final class CornerLogoModelTests: XCTestCase {
 
         XCTAssertNil(restored.cornerLogoURL)
         XCTAssertEqual(restored.cornerLogoPosition, .bottomRight)
+    }
+
+    @MainActor
+    func testRejectsUndecodableCornerLogoImageInsteadOfSavingInvisibleLogo() throws {
+        let defaults = isolatedDefaults()
+        let invalidURL = temporaryInvalidImageURL(named: "broken-logo.png")
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+
+        XCTAssertFalse(viewModel.setCornerLogo(url: invalidURL))
+
+        XCTAssertNil(viewModel.cornerLogoURL)
+        XCTAssertNil(viewModel.cornerLogoImage)
+        XCTAssertNil(defaults.string(forKey: "cornerLogo_path"))
+    }
+
+    @MainActor
+    func testLoadDataDropsPersistedUndecodableCornerLogoImage() throws {
+        let defaults = isolatedDefaults()
+        let invalidURL = temporaryInvalidImageURL(named: "persisted-broken-logo.png")
+        defaults.set(invalidURL.path, forKey: "cornerLogo_path")
+
+        let viewModel = SwitcherViewModel(loadPersistedData: true, enableSystemVolumeObserver: false, userDefaults: defaults)
+
+        XCTAssertNil(viewModel.cornerLogoURL)
+        XCTAssertNil(viewModel.cornerLogoImage)
     }
 
     func testCornerLogoPositionsCoverAllFourCorners() {
@@ -104,7 +130,24 @@ final class CornerLogoModelTests: XCTestCase {
             .appendingPathComponent("LiveSwitcherCornerLogoTests-\(UUID().uuidString)")
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let url = directory.appendingPathComponent(fileName)
-        FileManager.default.createFile(atPath: url.path, contents: Data("fixture".utf8))
+        let image = NSImage(size: NSSize(width: 8, height: 8))
+        image.lockFocus()
+        NSColor.systemBlue.setFill()
+        NSRect(x: 0, y: 0, width: 8, height: 8).fill()
+        image.unlockFocus()
+        let tiffData = image.tiffRepresentation!
+        let bitmap = NSBitmapImageRep(data: tiffData)!
+        let pngData = bitmap.representation(using: .png, properties: [:])!
+        try? pngData.write(to: url)
+        return url
+    }
+
+    private func temporaryInvalidImageURL(named fileName: String) -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("LiveSwitcherCornerLogoTests-\(UUID().uuidString)")
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent(fileName)
+        try? Data("not an image".utf8).write(to: url)
         return url
     }
 
