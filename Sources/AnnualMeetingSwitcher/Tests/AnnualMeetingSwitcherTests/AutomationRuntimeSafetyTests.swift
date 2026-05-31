@@ -51,8 +51,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
         let notice = try XCTUnwrap(viewModel.automationRuntimeNotice)
         XCTAssertEqual(notice.action, "keynote.next-slide")
-        XCTAssertEqual(notice.title, "翻页失败")
-        XCTAssertTrue(notice.message.contains("演示软件正在放映"))
+        XCTAssertEqual(notice.title, "翻页未发送")
+        XCTAssertTrue(notice.message.contains("关闭 PPT 模式"))
         XCTAssertFalse(notice.message.localizedStandardContains("/Users/"))
         XCTAssertFalse(notice.message.localizedStandardContains("Agenda.html"))
     }
@@ -92,6 +92,72 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     @MainActor
+    func testAutomationRuntimeNoticeCarriesSeverityActionAndExpiry() throws {
+        let createdAt = Date(timeIntervalSince1970: 1_000)
+
+        let wpsNotice = AutomationRuntimeNoticePolicy.make(
+            action: "wps.page.next",
+            createdAt: createdAt
+        )
+        XCTAssertEqual(wpsNotice.title, "演示软件未运行")
+        XCTAssertTrue(wpsNotice.message.contains("打开 WPS/Keynote"))
+        XCTAssertEqual(wpsNotice.severity, .fail)
+        XCTAssertEqual(wpsNotice.primaryAction, .openPreflight)
+        XCTAssertEqual(wpsNotice.expiresAt, createdAt.addingTimeInterval(14))
+
+        let pageNotice = AutomationRuntimeNoticePolicy.make(
+            action: "keynote.next-slide",
+            createdAt: createdAt
+        )
+        XCTAssertEqual(pageNotice.title, "翻页未发送")
+        XCTAssertTrue(pageNotice.message.contains("关闭 PPT 模式"))
+        XCTAssertEqual(pageNotice.severity, .warn)
+        XCTAssertEqual(pageNotice.primaryAction, .openPreflight)
+        XCTAssertEqual(pageNotice.expiresAt, createdAt.addingTimeInterval(10))
+    }
+
+    @MainActor
+    func testAutomationRuntimeNoticeExpiresOnlyCurrentNotice() throws {
+        let suiteName = "AutomationRuntimeSafetyTests.noticeExpiry.\(UUID().uuidString)"
+        let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { userDefaults.removePersistentDomain(forName: suiteName) }
+
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: userDefaults
+        )
+
+        let first = AutomationRuntimeNoticePolicy.make(
+            action: "keynote.next-slide",
+            createdAt: Date(timeIntervalSince1970: 1_000)
+        )
+        viewModel.automationRuntimeNotice = first
+        viewModel.expireAutomationRuntimeNotice(
+            id: first.id,
+            now: first.expiresAt!.addingTimeInterval(-0.1)
+        )
+        XCTAssertEqual(viewModel.automationRuntimeNotice, first)
+
+        let second = AutomationRuntimeNoticePolicy.make(
+            action: "wps.open.command",
+            createdAt: Date(timeIntervalSince1970: 2_000)
+        )
+        viewModel.automationRuntimeNotice = second
+        viewModel.expireAutomationRuntimeNotice(
+            id: first.id,
+            now: first.expiresAt!.addingTimeInterval(1)
+        )
+        XCTAssertEqual(viewModel.automationRuntimeNotice, second)
+
+        viewModel.expireAutomationRuntimeNotice(
+            id: second.id,
+            now: second.expiresAt!.addingTimeInterval(1)
+        )
+        XCTAssertNil(viewModel.automationRuntimeNotice)
+    }
+
+    @MainActor
     func testPageInterceptWPSMissingCreatesVisibleNotice() throws {
         let hasRunningWPS = NSWorkspace.shared.runningApplications.contains {
             $0.bundleIdentifier == AppConfiguration.wpsBundleIdentifier
@@ -112,8 +178,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(viewModel.handlePageInterceptKey(keyCode: 121))
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "翻页失败")
-        XCTAssertTrue(viewModel.automationRuntimeNotice?.message.contains("演示软件正在放映") == true)
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.title, "演示软件未运行")
+        XCTAssertTrue(viewModel.automationRuntimeNotice?.message.contains("打开 WPS/Keynote") == true)
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .pageInterceptWPSNotRunning })
     }
 

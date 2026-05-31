@@ -1121,6 +1121,15 @@ final class SwitcherViewModel {
         automationRuntimeNotice = nil
     }
 
+    func expireAutomationRuntimeNotice(id: UUID, now: Date = Date()) {
+        guard let notice = automationRuntimeNotice,
+              notice.id == id,
+              let expiresAt = notice.expiresAt,
+              now >= expiresAt
+        else { return }
+        automationRuntimeNotice = nil
+    }
+
     private func showAutomationRuntimeNotice(action: String, now: Date = Date()) {
         if let suppressionUntil = automationNoticeSuppressionUntilByAction[action],
            now < suppressionUntil {

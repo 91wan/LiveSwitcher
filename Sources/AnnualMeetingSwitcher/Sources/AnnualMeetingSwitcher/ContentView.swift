@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 // MARK: - Main view
@@ -5,6 +6,7 @@ import SwiftUI
 @MainActor
 struct ContentView: View {
     @Environment(SwitcherViewModel.self) var viewModel
+    @Environment(\.openWindow) private var openWindow
     @State private var loadedSetupTabs: Set<MainConsoleTab> = [.preview]
 
     var body: some View {
@@ -302,10 +304,18 @@ struct ContentView: View {
     @ViewBuilder
     private var automationRuntimeNoticeBanner: some View {
         if let notice = viewModel.automationRuntimeNotice {
-            AutomationRuntimeNoticeBanner(notice: notice) {
+            AutomationRuntimeNoticeBanner(
+                notice: notice,
+                onPrimaryAction: { action in
+                    handleAutomationRuntimeNoticeAction(action)
+                }
+            ) {
                 withAnimation(.easeInOut(duration: 0.16)) {
                     viewModel.dismissAutomationRuntimeNotice()
                 }
+            }
+            .task(id: notice.id) {
+                await expireAutomationRuntimeNotice(notice)
             }
             .padding(.horizontal, 18)
             .padding(.vertical, 6)
@@ -313,16 +323,45 @@ struct ContentView: View {
             .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
+
+    @MainActor
+    private func expireAutomationRuntimeNotice(_ notice: AutomationRuntimeNotice) async {
+        guard let expiresAt = notice.expiresAt else { return }
+        let delay = max(0, expiresAt.timeIntervalSinceNow)
+        if delay > 0 {
+            try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+        }
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeInOut(duration: 0.16)) {
+            viewModel.expireAutomationRuntimeNotice(id: notice.id)
+        }
+    }
+
+    @MainActor
+    private func handleAutomationRuntimeNoticeAction(_ action: AutomationRuntimeNoticeAction) {
+        switch action {
+        case .openPreflight:
+            openWindow(id: "safety-cockpit")
+        case .openHelp:
+            viewModel.navigateToSetup(.preview)
+        case .openSystemSettingsAccessibility:
+            if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                NSWorkspace.shared.open(url)
+            }
+        }
+        viewModel.dismissAutomationRuntimeNotice()
+    }
 }
 
 private struct AutomationRuntimeNoticeBanner: View {
     let notice: AutomationRuntimeNotice
+    let onPrimaryAction: (AutomationRuntimeNoticeAction) -> Void
     let onDismiss: () -> Void
 
     var body: some View {
         HStack(alignment: .center, spacing: StudioTheme.spacingS) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(StudioTheme.Tone.warn)
+                .foregroundStyle(toneColor)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
                 Text(notice.title)
@@ -334,6 +373,18 @@ private struct AutomationRuntimeNoticeBanner: View {
                     .lineLimit(1)
             }
             Spacer(minLength: 8)
+            if let primaryAction = notice.primaryAction {
+                Button(primaryAction.label) {
+                    onPrimaryAction(primaryAction)
+                }
+                .buttonStyle(.plain)
+                .font(StudioTheme.TypeScale.label.weight(.black))
+                .foregroundStyle(toneColor)
+                .padding(.horizontal, 10)
+                .frame(height: 28)
+                .background(toneColor.opacity(0.12), in: RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous))
+                .accessibilityLabel(primaryAction.label)
+            }
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(StudioTheme.TypeScale.caption.weight(.black))
@@ -346,13 +397,22 @@ private struct AutomationRuntimeNoticeBanner: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(StudioTheme.Tone.warn.opacity(0.10), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .background(toneColor.opacity(0.10), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(StudioTheme.Tone.warn.opacity(0.24), lineWidth: 1)
+                .stroke(toneColor.opacity(0.24), lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(notice.title)：\(notice.message)")
+    }
+
+    private var toneColor: Color {
+        switch notice.severity {
+        case .warn:
+            return StudioTheme.Tone.warn
+        case .fail:
+            return StudioTheme.Tone.fail
+        }
     }
 }
 
