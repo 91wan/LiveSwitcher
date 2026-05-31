@@ -20,6 +20,16 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("NSHostingView"))
     }
 
+    func testMainWindowFallbackHasSingleDelayedScheduler() throws {
+        let source = try sourceText("App.swift")
+        let delayedFallbackCount = source
+            .components(separatedBy: "try? await Task.sleep(nanoseconds:")
+            .count - 1
+
+        XCTAssertEqual(delayedFallbackCount, 1)
+        XCTAssertFalse(source.contains("900_000_000"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
