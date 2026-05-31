@@ -67,6 +67,7 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFinish() {
+        dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
         removeBGMFallbackEndObserver()
         guard !isPanicMode else {
             invalidateBGMTransitionGeneration()
@@ -170,6 +171,7 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFail() {
+        dispatchRuntimeBGMCallback { .bgmFailed(reason: "playbackFailed", generation: $0) }
         invalidateBGMTransitionGeneration()
         if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
             panicPlaybackSnapshot?.wasBGMPlaying = false
@@ -202,6 +204,7 @@ extension SwitcherViewModel {
         let nextIndex = (index + 1) % items.count
         let nextItem = items[nextIndex]
 
+        dispatchRuntimeFacadeAction(.operatorSelectedNextBGM)
         toggleBGM(nextItem)
     }
 
@@ -214,6 +217,7 @@ extension SwitcherViewModel {
         let prevIndex = (index - 1 + items.count) % items.count
         let prevItem = items[prevIndex]
 
+        dispatchRuntimeFacadeAction(.operatorSelectedPreviousBGM)
         toggleBGM(prevItem)
     }
 }

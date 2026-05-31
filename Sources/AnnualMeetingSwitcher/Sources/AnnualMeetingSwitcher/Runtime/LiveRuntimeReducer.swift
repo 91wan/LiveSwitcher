@@ -111,7 +111,8 @@ enum LiveRuntimeReducer {
             effects += [
                 .prepareBGM(item, generation: state.bgm.generation),
                 .playBGM(generation: state.bgm.generation),
-                .startBGMTimer(generation: state.bgm.generation)
+                .startBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
             recalculateAudio(&state)
 
@@ -120,7 +121,8 @@ enum LiveRuntimeReducer {
             state.bgm.isPlaying = false
             effects += [
                 .stopBGM(fade: 0.5, generation: state.bgm.generation),
-                .stopBGMTimer(generation: state.bgm.generation)
+                .stopBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
             recalculateAudio(&state)
 
@@ -186,12 +188,14 @@ enum LiveRuntimeReducer {
             guard generation == state.bgm.generation else { break }
             state.bgm.isPlaying = isPlaying
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
 
         case .bgmReachedEnd(let generation):
             guard generation == state.bgm.generation else { break }
             state.bgm.isPlaying = false
             effects.append(.stopBGMTimer(generation: generation))
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
 
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
@@ -199,6 +203,7 @@ enum LiveRuntimeReducer {
             state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
             effects.append(.stopBGMTimer(generation: generation))
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
 
         case .bgmProgressUpdated(let time, let duration, let generation):
             guard generation == state.bgm.generation else { break }
@@ -390,7 +395,8 @@ enum LiveRuntimeReducer {
         effects += [
             .prepareBGM(nextItem, generation: state.bgm.generation),
             .playBGM(generation: state.bgm.generation),
-            .startBGMTimer(generation: state.bgm.generation)
+            .startBGMTimer(generation: state.bgm.generation),
+            .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
         recalculateAudio(&state)
     }
