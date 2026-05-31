@@ -175,6 +175,7 @@ final class SwitcherViewModel {
     var masterVolume: Double = 0.5 {
         didSet {
             guard oldValue != masterVolume else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedMasterVolume(masterVolume))
             applyMasterVolume()
         }
     }
@@ -183,6 +184,7 @@ final class SwitcherViewModel {
     var mediaVolume: Double = 1.0 {
         didSet {
             guard oldValue != mediaVolume else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedMediaVolume(mediaVolume))
             applyMasterVolume()
         }
     }
@@ -191,6 +193,7 @@ final class SwitcherViewModel {
     var bgmVolume: Double = 0.5 {
         didSet {
             guard oldValue != bgmVolume else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedBGMVolume(bgmVolume))
             applyBGMVolume()
         }
     }
@@ -199,18 +202,21 @@ final class SwitcherViewModel {
     var isMasterAudioMuted: Bool = false {
         didSet {
             guard oldValue != isMasterAudioMuted else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedMasterMute(isMasterAudioMuted))
             applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
     var isMediaAudioMuted: Bool = false {
         didSet {
             guard oldValue != isMediaAudioMuted else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedMediaMute(isMediaAudioMuted))
             applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
     var isBGMAudioMuted: Bool = false {
         didSet {
             guard oldValue != isBGMAudioMuted else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedBGMMute(isBGMAudioMuted))
             applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
@@ -219,6 +225,7 @@ final class SwitcherViewModel {
     var audioStrategy: AudioStrategy = .mixed {
         didSet {
             guard oldValue != audioStrategy else { return }
+            dispatchRuntimeFacadeAction(.operatorSelectedAudioStrategy(audioStrategy))
             applyAudioRoutingForRuntimeChange(reason: .strategyChanged)
             userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         }
@@ -259,6 +266,7 @@ final class SwitcherViewModel {
     var isBGMAudioTakeoverActive: Bool = false {
         didSet {
             guard oldValue != isBGMAudioTakeoverActive else { return }
+            dispatchRuntimeFacadeAction(.operatorChangedBGMTakeover(isBGMAudioTakeoverActive))
             applyAudioRoutingForRuntimeChange(reason: .limiterChanged)
         }
     }
@@ -274,6 +282,7 @@ final class SwitcherViewModel {
         didSet {
             userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
             guard oldValue != isSpeakerMode else { return }
+            dispatchRuntimeFacadeAction(.operatorSetSpeakerMode(isSpeakerMode))
             applyAudioRoutingForRuntimeChange(reason: .speakerChanged)
         }
     }
@@ -325,6 +334,7 @@ final class SwitcherViewModel {
 
     // MARK: - 引擎
 
+    let runtime = LiveRuntimeStore()
     let keynoteController = KeynoteController()
     let avCoordinator = AVPlayerCoordinator()
 
@@ -463,6 +473,7 @@ final class SwitcherViewModel {
             setupSystemVolumeObserver()
         }
         bgmDelegate.viewModel = self // V21 Fix #1: 绑定 delegate
+        syncRuntimeStateFromFacade(clearActionLog: true)
     }
 
     deinit {
@@ -471,6 +482,64 @@ final class SwitcherViewModel {
 
         cleanupBag.cancelAll()
         avCoordinator.shutdownNonisolated()
+    }
+
+    // MARK: - Runtime facade bridge
+
+    func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
+        syncRuntimeStateFromFacade(clearActionLog: false)
+        runtime.dispatch(action)
+    }
+
+    func syncRuntimeStateFromFacade(clearActionLog: Bool) {
+        runtime.replaceStateForFacadeSync(makeRuntimeStateSnapshot(), clearActionLog: clearActionLog)
+    }
+
+    private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
+        var state = runtime.state
+        state.mode = consoleMode
+        state.program.items = programItems
+        state.program.currentID = currentProgramItem?.id
+        state.program.currentSwitchedAt = currentProgramSwitchedAt
+
+        state.media.loadedURL = avCoordinator.currentURL
+        state.media.isPlaying = avCoordinator.isPlaying
+        state.media.currentTime = avCoordinator.currentTime
+        state.media.duration = avCoordinator.duration
+
+        state.bgm.items = bgmItems
+        state.bgm.currentID = currentBGMItem?.id
+        state.bgm.isPlaying = isBGMPlaying
+        state.bgm.playMode = bgmPlayMode
+        state.bgm.progress = bgmProgress
+        state.bgm.currentTime = bgmCurrentTime
+        state.bgm.duration = bgmDuration
+
+        state.audio.masterVolume = masterVolume
+        state.audio.mediaVolume = mediaVolume
+        state.audio.bgmVolume = bgmVolume
+        state.audio.strategy = audioStrategy
+        state.audio.isMasterMuted = isMasterAudioMuted
+        state.audio.isMediaMuted = isMediaAudioMuted
+        state.audio.isBGMMuted = isBGMAudioMuted
+        state.audio.isSpeakerMode = isSpeakerMode
+        state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
+        state.audio.effectiveMedia = effectiveMediaOutputVolume()
+        state.audio.effectiveBGM = effectiveBGMOutputVolume()
+
+        state.panic.isActive = isPanicMode
+        state.panic.snapshot = panicPlaybackSnapshot
+
+        state.ppt.isRequested = isPageInterceptEnabled
+        state.ppt.isEventTapActive = pageInterceptEventTap != nil
+
+        state.projection.isBroadcasting = isBroadcasting
+        state.projection.hasExternalDisplay = isExternalDisplayAvailable
+        state.projection.safetyNotice = broadcastSafetyNotice
+
+        state.automation.notice = automationRuntimeNotice
+        state.support.events = supportEvents
+        return state
     }
 
     // MARK: - 音量实际应用（Fix Issue #7/#8）

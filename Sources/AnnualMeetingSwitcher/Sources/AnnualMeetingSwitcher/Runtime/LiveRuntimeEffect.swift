@@ -28,6 +28,7 @@ enum LiveRuntimeEffect: Equatable {
     case showAutomationNotice(AutomationRuntimeNotice)
     case expireAutomationNotice(UUID, at: Date)
 
+    case applyAudioRouting(reason: AudioRoutingRuntimeChangeReason)
     case savePersistentState
     case recordSupportEvent(LiveSupportEvent)
 }

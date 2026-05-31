@@ -34,6 +34,7 @@ extension SwitcherViewModel {
     // MARK: - Private
 
     private func activatePanic() {
+        dispatchRuntimeFacadeAction(.operatorSetPanic(true))
         panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
         isPanicMode = true
@@ -42,6 +43,7 @@ extension SwitcherViewModel {
     }
 
     private func deactivatePanic() {
+        dispatchRuntimeFacadeAction(.operatorSetPanic(false))
         panicAudioTransitionGeneration += 1
         cleanupBag.panicAudioPauseTask?.cancel()
         let snapshot = panicPlaybackSnapshot
