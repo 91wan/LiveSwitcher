@@ -58,6 +58,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 
     // MARK: - 屏幕变化监听（screen mirroring 热插拔适配）
     private var screenChangeObserver: NSObjectProtocol?
+    private var displayLossReporter = OutputDisplayLossReporter()
     var onExternalDisplayUnavailable: (() -> Void)?
 
     // MARK: - Init
@@ -115,8 +116,9 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     private func handleScreenChange() {
         guard let w = window, w.isVisible else { return }
         guard let targetScreen = SecondScreenSelector.pickExternal() else {
+            let wasVisible = w.isVisible
             hide()
-            onExternalDisplayUnavailable?()
+            reportExternalDisplayUnavailable(windowIsVisible: wasVisible)
             return
         }
         syncWindowFrame(w, to: targetScreen, display: true)
@@ -160,7 +162,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         // 无副屏时直接隐藏并回调，绝不回落主屏全屏。
         guard let targetScreen = resolveCurrentTargetScreen(preferredScreen: screen) else {
             hide()
-            onExternalDisplayUnavailable?()
+            reportExternalDisplayUnavailable(windowIsVisible: true)
             return
         }
 
@@ -172,6 +174,7 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
 
         // ── 第二重：显示窗口后强制 contentView 使用局部坐标系 ──
         OutputWindowPresentationPolicy.orderFront(w)
+        displayLossReporter.resetAfterSuccessfulShow()
 
         // contentView 的 frame 必须从 (0,0) 开始，大小等于屏幕尺寸
         w.contentView?.frame = NSRect(origin: .zero, size: screenFrame.size)
@@ -211,8 +214,9 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
         display: Bool
     ) {
         guard let targetScreen = resolveCurrentTargetScreen(preferredScreen: preferredScreen) else {
+            let wasVisible = window.isVisible
             hide()
-            onExternalDisplayUnavailable?()
+            reportExternalDisplayUnavailable(windowIsVisible: wasVisible)
             return
         }
         syncWindowFrame(window, to: targetScreen, display: display)
@@ -229,6 +233,11 @@ final class OutputWindowController: NSWindowController, OutputWindowControlling 
     /// 隐藏推流窗口
     func hide() {
         window?.orderOut(nil)
+    }
+
+    private func reportExternalDisplayUnavailable(windowIsVisible: Bool) {
+        guard displayLossReporter.shouldReportDisplayUnavailable(windowIsVisible: windowIsVisible) else { return }
+        onExternalDisplayUnavailable?()
     }
 
     /// 切换显示/隐藏

@@ -96,11 +96,15 @@ struct MainToolbar: View {
                 systemImage: "hand.raised.slash.fill",
                 isActive: viewModel.isPageInterceptEnabled
             ) {
-                viewModel.togglePPTMode(source: .toolbar)
+                viewModel.togglePPTMode(source: pptModeToggleSource)
             }
         }
         .frame(minWidth: ToolbarLayoutMetrics.modeButtonGroupMinWidth)
         .frame(height: ToolbarLayoutMetrics.actionHeight)
+    }
+
+    private var pptModeToggleSource: PPTModeToggleSource {
+        consoleMode == .live ? .liveMode : .setupMode
     }
 
     private var preflightButton: some View {

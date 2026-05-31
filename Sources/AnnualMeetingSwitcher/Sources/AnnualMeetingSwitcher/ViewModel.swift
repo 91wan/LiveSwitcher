@@ -368,14 +368,18 @@ final class SwitcherViewModel {
     var isPageInterceptEnabled: Bool = false {
         didSet { applyPageInterceptState() }
     }
+    @ObservationIgnored var pageInterceptSideEffectsEnabled = true
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
         setPPTMode(PPTModeToggleModel.nextState(isEnabled: isPageInterceptEnabled), source: source)
     }
 
     func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
-        _ = source
         guard enabled != isPageInterceptEnabled else { return }
+        recordSupportEvent(
+            kind: .pptModeChanged,
+            detail: "isOn=\(enabled),source=\(source.rawValue)"
+        )
         isPageInterceptEnabled = enabled
     }
 
@@ -2141,6 +2145,7 @@ final class SwitcherViewModel {
     }
 
     func handleExternalDisplayLost() {
+        guard isBroadcasting else { return }
         isBroadcasting = false
         outputWindowController?.hide()
         broadcastSafetyNotice = "副屏已断开，投射已停止"
@@ -2167,7 +2172,7 @@ final class SwitcherViewModel {
                 LiveSupportEvent(
                     timestamp: timestamp,
                     kind: kind,
-                    detail: "\(event.detail),count=\(count)"
+                    detail: "\(event.detail),count=\(count),lastSeen=\(Int(timestamp.timeIntervalSince1970))"
                 )
             )
         } else {
@@ -2195,18 +2200,16 @@ final class SwitcherViewModel {
         guard let range = detail.range(of: ",count=", options: .backwards) else {
             return detail
         }
-        let suffix = detail[range.upperBound...]
-        guard !suffix.isEmpty, suffix.allSatisfy(\.isNumber) else {
-            return detail
-        }
         return String(detail[..<range.lowerBound])
     }
 
     private func supportEventCoalescedCount(_ detail: String) -> Int {
-        guard let range = detail.range(of: ",count=", options: .backwards),
-              let count = Int(detail[range.upperBound...]) else {
+        guard let range = detail.range(of: ",count=", options: .backwards) else {
             return 1
         }
+        let suffix = detail[range.upperBound...]
+        let digits = suffix.prefix(while: \.isNumber)
+        guard let count = Int(digits) else { return 1 }
         return max(count, 1)
     }
 
@@ -2234,6 +2237,7 @@ final class SwitcherViewModel {
 
     /// 开关翻页拦截（isPageInterceptEnabled didSet 驱动）
     private func applyPageInterceptState() {
+        guard pageInterceptSideEffectsEnabled else { return }
         if isPageInterceptEnabled {
             startPageIntercept()
         } else {

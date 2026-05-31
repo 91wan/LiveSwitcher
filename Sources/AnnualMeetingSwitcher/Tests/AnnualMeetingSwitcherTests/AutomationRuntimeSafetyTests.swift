@@ -102,7 +102,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertEqual(wpsNotice.title, "演示软件未运行")
         XCTAssertTrue(wpsNotice.message.contains("打开 WPS/Keynote"))
         XCTAssertEqual(wpsNotice.severity, .fail)
-        XCTAssertEqual(wpsNotice.primaryAction, .openPreflight)
+        XCTAssertEqual(wpsNotice.primaryAction, .openSafetyCockpit)
+        XCTAssertEqual(wpsNotice.primaryAction?.label, "打开安全台")
         XCTAssertEqual(wpsNotice.expiresAt, createdAt.addingTimeInterval(14))
 
         let pageNotice = AutomationRuntimeNoticePolicy.make(
@@ -112,8 +113,17 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertEqual(pageNotice.title, "翻页未发送")
         XCTAssertTrue(pageNotice.message.contains("关闭 PPT 模式"))
         XCTAssertEqual(pageNotice.severity, .warn)
-        XCTAssertEqual(pageNotice.primaryAction, .openPreflight)
+        XCTAssertEqual(pageNotice.primaryAction, .openSafetyCockpit)
         XCTAssertEqual(pageNotice.expiresAt, createdAt.addingTimeInterval(10))
+    }
+
+    func testAutomationRuntimeNoticeActionNamesSafetyCockpitDestination() throws {
+        let source = try sourceText("ContentView.swift")
+        let handler = try XCTUnwrap(source.functionBody(named: "handleAutomationRuntimeNoticeAction"))
+
+        XCTAssertTrue(handler.contains("case .openSafetyCockpit:"))
+        XCTAssertTrue(handler.contains("openWindow(id: \"safety-cockpit\")"))
+        XCTAssertFalse(source.contains(".openPreflight"))
     }
 
     @MainActor

@@ -264,11 +264,11 @@ final class BGMPlaybackCompletionTests: XCTestCase {
     }
 
     func testRapidAudioPlayerSwitchesLeaveOnlyLatestTrackActive() async throws {
-        let (directory, firstURL) = try makeAudioFixture(named: "first.wav")
+        let (directory, firstURL) = try makeAudioFixture(named: "first.wav", duration: 1.5)
         let secondURL = directory.appendingPathComponent("second.wav")
         let thirdURL = directory.appendingPathComponent("third.wav")
-        try writeSineWaveFixture(to: secondURL)
-        try writeSineWaveFixture(to: thirdURL)
+        try writeSineWaveFixture(to: secondURL, duration: 1.5)
+        try writeSineWaveFixture(to: thirdURL, duration: 1.5)
         defer { try? FileManager.default.removeItem(at: directory) }
         let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
@@ -393,12 +393,12 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         try makeAudioFixture(named: "solo.wav")
     }
 
-    private func makeAudioFixture(named fileName: String) throws -> (directory: URL, audioURL: URL) {
+    private func makeAudioFixture(named fileName: String, duration: Double = 0.25) throws -> (directory: URL, audioURL: URL) {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("LiveSwitcherBGMCompletionTests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let audioURL = directory.appendingPathComponent(fileName)
-        try writeSineWaveFixture(to: audioURL)
+        try writeSineWaveFixture(to: audioURL, duration: duration)
         return (directory, audioURL)
     }
 
@@ -411,9 +411,9 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         return (directory, audioURL)
     }
 
-    private func writeSineWaveFixture(to url: URL) throws {
+    private func writeSineWaveFixture(to url: URL, duration: Double = 0.25) throws {
         let sampleRate = 44_100.0
-        let frameCount = AVAudioFrameCount(sampleRate / 4)
+        let frameCount = AVAudioFrameCount(sampleRate * duration)
         let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
         let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
         buffer.frameLength = frameCount

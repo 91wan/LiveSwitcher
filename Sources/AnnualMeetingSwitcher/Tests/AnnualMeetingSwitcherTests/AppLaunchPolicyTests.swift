@@ -16,7 +16,7 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("applicationShouldHandleReopen"))
         XCTAssertTrue(source.contains("ensureMainWindowIfNeeded"))
         XCTAssertTrue(source.contains("isMainConsoleWindow"))
-        XCTAssertTrue(source.contains("hasPrefix(\"main-console\")"))
+        XCTAssertTrue(source.contains("mainWindowOrigin(for: window)"))
         XCTAssertTrue(source.contains("ContentView()"))
         XCTAssertTrue(source.contains("NSHostingView"))
     }
@@ -44,7 +44,8 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("if let existingMainWindow = NSApp.windows.first(where: isMainConsoleWindow)"))
         XCTAssertTrue(source.contains("bringMainWindowToFront(existingMainWindow, activate: activate)"))
         XCTAssertTrue(source.contains("if isUsablyVisibleMainWindow(existingMainWindow)"))
-        XCTAssertTrue(source.contains("closeUnusableMainWindow(existingMainWindow)"))
+        XCTAssertTrue(source.contains("mainWindowOrigin(for: existingMainWindow)"))
+        XCTAssertTrue(source.contains("MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: origin)"))
         XCTAssertTrue(source.contains("window.collectionBehavior.insert(.moveToActiveSpace)"))
         XCTAssertFalse(source.contains("if NSApp.windows.contains(where: isMainConsoleWindow) {\n            return\n        }"))
     }
@@ -74,6 +75,19 @@ final class AppLaunchPolicyTests: XCTestCase {
                 isOcclusionVisible: true
             )
         )
+    }
+
+    func testOnlyFallbackMainWindowMayBeClosedAfterReorderFails() {
+        XCTAssertFalse(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .windowGroup))
+        XCTAssertFalse(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .legacyTitleMatch))
+        XCTAssertTrue(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .fallback))
+    }
+
+    func testTitleOnlyWindowIsLegacyMatchNotPrimaryMainConsole() {
+        XCTAssertEqual(MainWindowFallbackPolicy.origin(identifier: "main-console-AppWindow-1", title: "LiveSwitcher"), .windowGroup)
+        XCTAssertEqual(MainWindowFallbackPolicy.origin(identifier: "main-console-fallback", title: "LiveSwitcher"), .fallback)
+        XCTAssertEqual(MainWindowFallbackPolicy.origin(identifier: nil, title: "LiveSwitcher"), .legacyTitleMatch)
+        XCTAssertNil(MainWindowFallbackPolicy.origin(identifier: nil, title: "Other Window"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
