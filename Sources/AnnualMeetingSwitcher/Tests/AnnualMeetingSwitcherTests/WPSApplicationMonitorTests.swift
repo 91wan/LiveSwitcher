@@ -49,6 +49,18 @@ final class WPSApplicationMonitorTests: XCTestCase {
         XCTAssertNil(WPSApplicationMonitor.preferredPID(from: snapshots))
     }
 
+    func testDeinitRemovesObserversFromInjectedNotificationCenter() {
+        let notificationCenter = RecordingNotificationCenter()
+        var monitor: WPSApplicationMonitor? = WPSApplicationMonitor(notificationCenter: notificationCenter)
+
+        XCTAssertNotNil(monitor)
+        XCTAssertEqual(notificationCenter.addObserverCount, 2)
+
+        monitor = nil
+
+        XCTAssertEqual(notificationCenter.removeObserverCount, 2)
+    }
+
     func testProductionWPSBundleIdentifierIsCentralizedInAppConfiguration() throws {
         let viewModel = try sourceText("ViewModel.swift")
         let probe = try sourceText("Engines/PresentationReadinessProbe.swift")
@@ -74,5 +86,25 @@ final class WPSApplicationMonitorTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}
+
+private final class RecordingNotificationCenter: NotificationCenter, @unchecked Sendable {
+    private(set) var addObserverCount = 0
+    private(set) var removeObserverCount = 0
+
+    override func addObserver(
+        forName name: NSNotification.Name?,
+        object obj: Any?,
+        queue: OperationQueue?,
+        using block: @escaping @Sendable (Notification) -> Void
+    ) -> NSObjectProtocol {
+        addObserverCount += 1
+        return super.addObserver(forName: name, object: obj, queue: queue, using: block)
+    }
+
+    override func removeObserver(_ observer: Any) {
+        removeObserverCount += 1
+        super.removeObserver(observer)
     }
 }
