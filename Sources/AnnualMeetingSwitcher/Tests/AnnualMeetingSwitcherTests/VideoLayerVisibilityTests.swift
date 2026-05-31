@@ -273,6 +273,41 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertNil(coordinator.currentURL)
     }
 
+    func testPlayWithMissingCurrentItemDoesNotImplicitlyReloadByDefault() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.currentTime = 42
+        coordinator.progress = 0.42
+        coordinator.player.replaceCurrentItem(with: nil)
+
+        coordinator.play()
+
+        XCTAssertFalse(coordinator.isPlaying)
+        XCTAssertNil(coordinator.player.currentItem)
+        XCTAssertEqual(coordinator.currentURL, url)
+        XCTAssertEqual(coordinator.currentTime, 42)
+        XCTAssertEqual(coordinator.progress, 0.42)
+    }
+
+    func testExplicitReloadCanRebuildMissingCurrentItem() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.player.replaceCurrentItem(with: nil)
+
+        coordinator.play(reloadIfNeeded: true)
+
+        XCTAssertTrue(coordinator.isPlaying)
+        XCTAssertNotNil(coordinator.player.currentItem)
+        XCTAssertEqual(coordinator.currentURL, url)
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+    }
+
     func testNonMediaSourceHidesLoadedVideoLayer() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()

@@ -108,9 +108,9 @@ final class AVPlayerCoordinator: ObservableObject {
     }
 
     /// 播放
-    func play() {
+    func play(reloadIfNeeded: Bool = false) {
         if player.currentItem == nil {
-            guard let currentURL else {
+            guard reloadIfNeeded, let currentURL else {
                 isPlaying = false
                 return
             }
