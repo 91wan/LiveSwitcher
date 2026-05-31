@@ -895,7 +895,15 @@ final class SwitcherViewModel {
     }
 
     func refreshExternalDisplayAvailability() {
-        isExternalDisplayAvailable = externalScreenProvider() != nil
+        let isAvailable = externalScreenProvider() != nil
+        guard isAvailable != isExternalDisplayAvailable else { return }
+
+        isExternalDisplayAvailable = isAvailable
+        if isAvailable {
+            dispatchRuntimeFacadeAction(.projectionExternalDisplayAvailable)
+        } else {
+            dispatchRuntimeFacadeAction(.projectionExternalDisplayUnavailable)
+        }
     }
 
     private func setupExternalDisplayObserver() {
