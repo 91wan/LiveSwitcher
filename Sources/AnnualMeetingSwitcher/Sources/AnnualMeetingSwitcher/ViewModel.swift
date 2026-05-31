@@ -73,6 +73,7 @@ final class ViewModelCleanupBag {
     var mediaVolumeFadeTask: Task<Void, Never>?
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
     var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    var bgmProgressTimer: Timer?
     var bgmFallbackEndObserver: NSObjectProtocol?
     var bgmFallbackFailureObserver: NSObjectProtocol?
     var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
@@ -87,6 +88,8 @@ final class ViewModelCleanupBag {
         mediaVolumeFadeTask?.cancel()
         bgmPlayerVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
+        bgmProgressTimer?.invalidate()
+        bgmProgressTimer = nil
         bgmTransitionTasks.values.forEach { $0.cancel() }
         retiredBGMFallbackPlayers.values.forEach { player in
             player.pause()
@@ -355,7 +358,6 @@ final class SwitcherViewModel {
     // MARK: - Combine / Timers
 
     private var cancellables = Set<AnyCancellable>()
-    private var bgmProgressTimer: Timer?
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
     private let supportEventLimit = 80
@@ -592,6 +594,10 @@ final class SwitcherViewModel {
 
     var bgmTransitionGenerationForTesting: Int {
         bgmTransitionGeneration
+    }
+
+    var bgmProgressTimerForTesting: Timer? {
+        cleanupBag.bgmProgressTimer
     }
 
     func invalidateBGMTransitionGeneration() {
@@ -1948,7 +1954,7 @@ final class SwitcherViewModel {
     func startBGMTimer() {
         stopBGMTimer()
         let generation = bgmTransitionGeneration
-        bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
+        cleanupBag.bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self, self.bgmTransitionGeneration == generation else { return }
                 self.updateBGMProgress()
@@ -1957,8 +1963,8 @@ final class SwitcherViewModel {
     }
 
     func stopBGMTimer() {
-        bgmProgressTimer?.invalidate()
-        bgmProgressTimer = nil
+        cleanupBag.bgmProgressTimer?.invalidate()
+        cleanupBag.bgmProgressTimer = nil
     }
 
     private func releaseBGMPlayerAfterFade(_ player: AVAudioPlayer, duration: Double) {
