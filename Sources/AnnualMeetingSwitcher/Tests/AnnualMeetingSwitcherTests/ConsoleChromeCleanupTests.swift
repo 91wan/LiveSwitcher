@@ -69,7 +69,7 @@ final class ConsoleChromeCleanupTests: XCTestCase {
     func testNonEmergencyGlobalShortcutsIgnoreShiftModifiedKeys() throws {
         let content = try sourceText("ContentView.swift")
 
-        XCTAssertTrue(content.contains("event.modifierFlags.intersection([.command, .option, .control, .shift])"))
+        XCTAssertTrue(content.contains("GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags)"))
     }
 
     func testRunQueueDoesNotInstallDuplicateUnmodifiedNumberShortcuts() throws {

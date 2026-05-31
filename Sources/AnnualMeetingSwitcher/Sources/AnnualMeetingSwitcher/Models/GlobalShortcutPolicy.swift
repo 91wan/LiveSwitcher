@@ -1,0 +1,23 @@
+import AppKit
+
+enum GlobalShortcutPolicy {
+    private static let emergencyPanicKeyCode: UInt16 = 11
+    private static let nonEmergencyModifierMask: NSEvent.ModifierFlags = [
+        .command,
+        .option,
+        .control,
+        .shift
+    ]
+
+    static func isEmergencyPanicShortcut(
+        keyCode: UInt16,
+        modifierFlags: NSEvent.ModifierFlags
+    ) -> Bool {
+        keyCode == emergencyPanicKeyCode
+            && modifierFlags.intersection(nonEmergencyModifierMask) == [.command, .option]
+    }
+
+    static func hasNonEmergencyShortcutModifiers(_ modifierFlags: NSEvent.ModifierFlags) -> Bool {
+        !modifierFlags.intersection(nonEmergencyModifierMask).isEmpty
+    }
+}
