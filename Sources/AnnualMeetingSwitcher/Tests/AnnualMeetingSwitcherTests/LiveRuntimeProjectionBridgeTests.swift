@@ -80,6 +80,79 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         XCTAssertTrue(repeated.effects.isEmpty)
     }
 
+    func testProjectionDisplayLossWhileStandbyUpdatesAvailabilityWithoutStopEffect() {
+        var state = LiveRuntimeState()
+        state.projection.isBroadcasting = false
+        state.projection.hasExternalDisplay = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .projectionExternalDisplayLost,
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertNil(mutation.state.projection.lastDisplayLostAt)
+        XCTAssertFalse(mutation.effects.contains(.stopProjection))
+        XCTAssertFalse(mutation.state.support.events.contains { $0.kind == .projectionLost })
+    }
+
+    func testProjectionDisplayAvailableCallbackClearsLostState() {
+        var state = LiveRuntimeState()
+        state.projection.hasExternalDisplay = false
+        state.projection.safetyNotice = "No external display"
+        state.projection.lastDisplayLostAt = Date(timeIntervalSince1970: 50)
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .projectionExternalDisplayAvailable,
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertTrue(mutation.state.projection.hasExternalDisplay)
+        XCTAssertNil(mutation.state.projection.safetyNotice)
+        XCTAssertNil(mutation.state.projection.lastDisplayLostAt)
+    }
+
+    func testProjectionDisplayUnavailableCallbackOnlyUpdatesAvailabilityCache() {
+        var state = LiveRuntimeState()
+        state.projection.isBroadcasting = true
+        state.projection.hasExternalDisplay = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .projectionExternalDisplayUnavailable,
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertTrue(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertFalse(mutation.effects.contains(.stopProjection))
+        XCTAssertFalse(mutation.state.support.events.contains { $0.kind == .projectionLost })
+    }
+
+    func testViewModelExternalDisplayRefreshDispatchesAvailabilityCallbacks() throws {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = makeViewModelWithoutDisplay()
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        viewModel.externalScreenProvider = { screen }
+
+        XCTAssertTrue(viewModel.isExternalDisplayAvailable)
+        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "projectionExternalDisplayAvailable")
+        XCTAssertTrue(viewModel.runtime.state.projection.hasExternalDisplay)
+
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+        viewModel.externalScreenProvider = { nil }
+
+        XCTAssertFalse(viewModel.isExternalDisplayAvailable)
+        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "projectionExternalDisplayUnavailable")
+        XCTAssertFalse(viewModel.runtime.state.projection.hasExternalDisplay)
+    }
+
     func testViewModelBroadcastToggleDispatchesProjectionRuntimeAction() throws {
         let viewModel = try makeViewModelWithDisplay()
         let outputSpy = OutputWindowControllerSpy()
@@ -129,6 +202,15 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
         viewModel.externalScreenProvider = { screen }
+        return viewModel
+    }
+
+    private func makeViewModelWithoutDisplay() -> SwitcherViewModel {
+        let suiteName = "LiveRuntimeProjectionBridgeTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+        viewModel.externalScreenProvider = { nil }
         return viewModel
     }
 }

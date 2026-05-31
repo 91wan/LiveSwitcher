@@ -43,6 +43,7 @@ enum LiveRuntimeAction: Equatable {
     case panicFadeCompleted(generation: Int)
     case projectionExternalDisplayLost
     case projectionExternalDisplayAvailable
+    case projectionExternalDisplayUnavailable
     case pptEventTapStarted
     case pptEventTapFailed(reason: String)
     case pptEventTapStopped(reason: PPTStopReason)
@@ -90,6 +91,7 @@ extension LiveRuntimeAction {
         case .panicFadeCompleted: return "panicFadeCompleted"
         case .projectionExternalDisplayLost: return "projectionExternalDisplayLost"
         case .projectionExternalDisplayAvailable: return "projectionExternalDisplayAvailable"
+        case .projectionExternalDisplayUnavailable: return "projectionExternalDisplayUnavailable"
         case .pptEventTapStarted: return "pptEventTapStarted"
         case .pptEventTapFailed: return "pptEventTapFailed"
         case .pptEventTapStopped: return "pptEventTapStopped"

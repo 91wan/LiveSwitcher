@@ -217,9 +217,10 @@ enum LiveRuntimeReducer {
             break
 
         case .projectionExternalDisplayLost:
-            guard state.projection.isBroadcasting else { break }
+            let wasBroadcasting = state.projection.isBroadcasting
             state.projection.isBroadcasting = false
             state.projection.hasExternalDisplay = false
+            guard wasBroadcasting else { break }
             if state.projection.lastDisplayLostAt == nil {
                 state.projection.lastDisplayLostAt = environment.now
                 state.support.record(kind: .projectionLost, detail: "state=displayLost", at: environment.now)
@@ -230,6 +231,12 @@ enum LiveRuntimeReducer {
             state.projection.hasExternalDisplay = true
             state.projection.safetyNotice = nil
             state.projection.lastDisplayLostAt = nil
+
+        case .projectionExternalDisplayUnavailable:
+            state.projection.hasExternalDisplay = false
+            if !state.projection.isBroadcasting {
+                state.projection.lastDisplayLostAt = nil
+            }
 
         case .pptEventTapStarted:
             state.ppt.isRequested = true
