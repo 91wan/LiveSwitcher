@@ -361,6 +361,17 @@ final class SwitcherViewModel {
     var isPageInterceptEnabled: Bool = false {
         didSet { applyPageInterceptState() }
     }
+
+    func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
+        setPPTMode(PPTModeToggleModel.nextState(isEnabled: isPageInterceptEnabled), source: source)
+    }
+
+    func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
+        _ = source
+        guard enabled != isPageInterceptEnabled else { return }
+        isPageInterceptEnabled = enabled
+    }
+
     private var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?
     private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?

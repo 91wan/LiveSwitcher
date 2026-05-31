@@ -102,7 +102,7 @@ struct LiveSwitcherApp: App {
                 .keyboardShortcut("b", modifiers: [.command, .option])
 
                 Button(viewModel.isPageInterceptEnabled ? "关闭 PPT 模式" : "开启 PPT 模式") {
-                    viewModel.isPageInterceptEnabled.toggle()
+                    viewModel.togglePPTMode(source: .command)
                 }
                 .keyboardShortcut("p", modifiers: [.command, .option])
             }

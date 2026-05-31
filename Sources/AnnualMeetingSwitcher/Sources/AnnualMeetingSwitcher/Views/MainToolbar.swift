@@ -96,7 +96,7 @@ struct MainToolbar: View {
                 systemImage: "hand.raised.slash.fill",
                 isActive: viewModel.isPageInterceptEnabled
             ) {
-                viewModel.isPageInterceptEnabled.toggle()
+                viewModel.togglePPTMode(source: .toolbar)
             }
         }
         .frame(minWidth: ToolbarLayoutMetrics.modeButtonGroupMinWidth)

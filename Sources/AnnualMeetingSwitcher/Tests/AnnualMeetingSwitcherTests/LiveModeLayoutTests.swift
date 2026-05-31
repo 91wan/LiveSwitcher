@@ -130,7 +130,8 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(liveMode.contains("isOn: $viewModel.isSpeakerMode"))
         XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
         XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
-        XCTAssertTrue(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
+        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: .toolbar)"))
+        XCTAssertFalse(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
         XCTAssertTrue(toolbar.contains("主持人"))
         XCTAssertTrue(toolbar.contains("PPT"))
     }
