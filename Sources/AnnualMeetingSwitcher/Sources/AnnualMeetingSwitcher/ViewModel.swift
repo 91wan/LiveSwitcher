@@ -2198,6 +2198,7 @@ final class SwitcherViewModel {
     // MARK: - 推流控制
 
     func handleBroadcastToggle() {
+        dispatchRuntimeFacadeAction(.operatorToggledProjection)
         if !isBroadcasting, !projectionService.hasExternalDisplay {
             broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
             LiveSwitcherTelemetry.projectionFailClosed()
@@ -2246,6 +2247,7 @@ final class SwitcherViewModel {
 
     func handleExternalDisplayLost() {
         guard isBroadcasting else { return }
+        dispatchRuntimeFacadeAction(.projectionExternalDisplayLost)
         isBroadcasting = false
         outputWindowController?.hide()
         broadcastSafetyNotice = "副屏已断开，投射已停止"
