@@ -126,29 +126,7 @@ struct WallpaperGalleryRow: View {
     }
 
     private func persistDroppedWallpaperFile(from sourceURL: URL) -> URL? {
-        let fileManager = FileManager.default
-        guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-
-        let directoryURL = appSupportURL
-            .appendingPathComponent("LiveSwitcher", isDirectory: true)
-            .appendingPathComponent("Wallpapers", isDirectory: true)
-
-        do {
-            try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
-            let fallbackExtension = sourceURL.pathExtension.isEmpty ? "png" : sourceURL.pathExtension
-            let destinationURL = directoryURL
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension(fallbackExtension)
-            if fileManager.fileExists(atPath: destinationURL.path) {
-                try fileManager.removeItem(at: destinationURL)
-            }
-            try fileManager.copyItem(at: sourceURL, to: destinationURL)
-            return destinationURL
-        } catch {
-            return nil
-        }
+        WallpaperDropPersistence.persistDroppedWallpaperFile(from: sourceURL)
     }
 
     private func importWallpaper(_ url: URL) {
