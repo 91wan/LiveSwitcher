@@ -217,6 +217,52 @@ final class AudioRoutingTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.5)
     }
 
+    func testSameAudioStrategyDoesNotCreateNewTransition() {
+        let viewModel = makeViewModel()
+        viewModel.audioStrategy = .followProgram
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.audioStrategy = .followProgram
+
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
+    func testSameProgramIDDoesNotTriggerProgramFade() throws {
+        let viewModel = makeViewModel()
+        let url = try makeTempURL(ext: "mp4")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let item = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: url)
+
+        viewModel.currentProgramItem = item
+        let switchedAt = viewModel.currentProgramSwitchedAt
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.currentProgramItem = item
+
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+        XCTAssertEqual(viewModel.currentProgramSwitchedAt, switchedAt)
+    }
+
+    func testSameFaderAndMuteValuesDoNotCreateTransitions() {
+        let viewModel = makeViewModel()
+        viewModel.masterVolume = 0.7
+        viewModel.mediaVolume = 0.6
+        viewModel.bgmVolume = 0.4
+        viewModel.isMasterAudioMuted = true
+        viewModel.isMediaAudioMuted = true
+        viewModel.isBGMAudioMuted = true
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.masterVolume = 0.7
+        viewModel.mediaVolume = 0.6
+        viewModel.bgmVolume = 0.4
+        viewModel.isMasterAudioMuted = true
+        viewModel.isMediaAudioMuted = true
+        viewModel.isBGMAudioMuted = true
+
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
     func testBGMTakeoverUsesLimiterChangedRoutingReason() {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 1.5
