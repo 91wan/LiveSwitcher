@@ -23,6 +23,7 @@ enum LiveRuntimeReducer {
             state.media.isPlaying.toggle()
             effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .operatorRestartedCurrentMedia:
             guard state.program.currentItem?.supportsSeeking == true else { break }
@@ -31,6 +32,7 @@ enum LiveRuntimeReducer {
             state.media.isPlaying = true
             effects.append(.restartMedia(generation: state.media.generation))
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .operatorSelectedAudioStrategy(let strategy):
             state.audio.strategy = strategy
@@ -164,12 +166,14 @@ enum LiveRuntimeReducer {
             guard generation == state.media.generation else { break }
             state.media.isPlaying = isPlaying
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .mediaReachedEnd(let generation):
             guard generation == state.media.generation else { break }
             state.media.isPlaying = false
             state.media.didPlayToEnd = true
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .mediaSeekCompleted(let time, let generation):
             guard generation == state.media.generation else { break }
