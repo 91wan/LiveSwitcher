@@ -100,6 +100,21 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
         XCTAssertEqual(safetyCockpit.components(separatedBy: "let onAction: @MainActor").count - 1, 2)
     }
 
+    func testProgramMonitorObservesAVPlayerCoordinatorBoundaryDirectly() throws {
+        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let content = try sourceText("ContentView.swift")
+        let liveMode = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("@ObservedObject private var avCoordinator: AVPlayerCoordinator"))
+        XCTAssertTrue(source.contains("init(isLiveMode: Bool = false, avCoordinator: AVPlayerCoordinator)"))
+        XCTAssertFalse(source.contains("viewModel.avCoordinator.isPlaying"))
+        XCTAssertFalse(source.contains("viewModel.avCoordinator.hasLoadedMedia"))
+        XCTAssertTrue(content.contains("ProgramMonitorView(avCoordinator: viewModel.avCoordinator)"))
+        XCTAssertTrue(liveMode.contains("ProgramMonitorView(isLiveMode: true, avCoordinator: viewModel.avCoordinator)"))
+        XCTAssertFalse(source.contains("@State private var viewModel = SwitcherViewModel()"))
+        XCTAssertFalse(source.contains("#Preview {\n    let viewModel = SwitcherViewModel()"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }

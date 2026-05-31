@@ -136,7 +136,7 @@ struct LiveSwitcherApp: App {
 }
 
 final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
-    static weak var sharedViewModel: SwitcherViewModel?
+    static var sharedViewModel: SwitcherViewModel?
     private static var fallbackMainWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -157,16 +157,20 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     static func ensureMainWindowIfNeeded(viewModel: SwitcherViewModel?, activate: Bool) {
-        if NSApp.windows.contains(where: isMainConsoleWindow) {
-            return
+        if let existingMainWindow = NSApp.windows.first(where: isMainConsoleWindow) {
+            bringMainWindowToFront(existingMainWindow, activate: activate)
+            if isUsablyVisibleMainWindow(existingMainWindow) {
+                return
+            }
+            closeUnusableMainWindow(existingMainWindow)
         }
 
-        if let fallbackMainWindow, fallbackMainWindow.isVisible {
-            if activate {
-                fallbackMainWindow.makeKeyAndOrderFront(nil)
-                NSApp.activate(ignoringOtherApps: true)
-            }
+        if let fallbackMainWindow, isUsablyVisibleMainWindow(fallbackMainWindow) {
+            bringMainWindowToFront(fallbackMainWindow, activate: activate)
             return
+        }
+        if let fallbackMainWindow {
+            closeUnusableMainWindow(fallbackMainWindow)
         }
 
         guard let viewModel else { return }
@@ -196,16 +200,33 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
                 )
         )
         window.center()
+        bringMainWindowToFront(window, activate: activate)
+        fallbackMainWindow = window
+    }
+
+    @MainActor
+    private static func bringMainWindowToFront(_ window: NSWindow, activate: Bool) {
+        if window.isMiniaturized {
+            window.deminiaturize(nil)
+        }
+        window.collectionBehavior.insert(.moveToActiveSpace)
         window.makeKeyAndOrderFront(nil)
         window.orderFrontRegardless()
         if activate {
             NSApp.activate(ignoringOtherApps: true)
         }
-        fallbackMainWindow = window
+    }
+
+    private static func isUsablyVisibleMainWindow(_ window: NSWindow) -> Bool {
+        window.isVisible && !window.isMiniaturized && window.occlusionState.contains(.visible)
+    }
+
+    private static func closeUnusableMainWindow(_ window: NSWindow) {
+        window.orderOut(nil)
+        window.close()
     }
 
     private static func isMainConsoleWindow(_ window: NSWindow) -> Bool {
-        guard window.isVisible else { return false }
         let identifier = window.identifier?.rawValue ?? ""
         return identifier.hasPrefix("main-console") || window.title == "LiveSwitcher"
     }

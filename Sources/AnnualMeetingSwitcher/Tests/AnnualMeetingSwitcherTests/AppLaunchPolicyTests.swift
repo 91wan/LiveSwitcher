@@ -30,6 +30,24 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertFalse(source.contains("900_000_000"))
     }
 
+    func testFallbackViewModelReferenceIsStrongUntilWindowExists() throws {
+        let source = try sourceText("App.swift")
+
+        XCTAssertTrue(source.contains("static var sharedViewModel: SwitcherViewModel?"))
+        XCTAssertFalse(source.contains("static weak var sharedViewModel"))
+    }
+
+    func testFallbackReordersRestoredMainWindowInsteadOfReturningInvisible() throws {
+        let source = try sourceText("App.swift")
+
+        XCTAssertTrue(source.contains("if let existingMainWindow = NSApp.windows.first(where: isMainConsoleWindow)"))
+        XCTAssertTrue(source.contains("bringMainWindowToFront(existingMainWindow, activate: activate)"))
+        XCTAssertTrue(source.contains("if isUsablyVisibleMainWindow(existingMainWindow)"))
+        XCTAssertTrue(source.contains("closeUnusableMainWindow(existingMainWindow)"))
+        XCTAssertTrue(source.contains("window.collectionBehavior.insert(.moveToActiveSpace)"))
+        XCTAssertFalse(source.contains("if NSApp.windows.contains(where: isMainConsoleWindow) {\n            return\n        }"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {

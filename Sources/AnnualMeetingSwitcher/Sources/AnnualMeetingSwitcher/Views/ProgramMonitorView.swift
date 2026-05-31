@@ -5,8 +5,14 @@ import SwiftUI
 @MainActor
 struct ProgramMonitorView: View {
     @Environment(SwitcherViewModel.self) var viewModel
+    @ObservedObject private var avCoordinator: AVPlayerCoordinator
     @State private var isHoveringPreviewDeck = false
-    var isLiveMode: Bool = false
+    var isLiveMode: Bool
+
+    init(isLiveMode: Bool = false, avCoordinator: AVPlayerCoordinator) {
+        self.isLiveMode = isLiveMode
+        self._avCoordinator = ObservedObject(wrappedValue: avCoordinator)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: isLiveMode ? 0 : 12) {
@@ -171,7 +177,7 @@ struct ProgramMonitorView: View {
         let current = ProgramMonitorInfoBlockModel.current(
             item: viewModel.currentProgramItem,
             isBroadcasting: viewModel.isBroadcasting,
-            isPlaying: viewModel.avCoordinator.isPlaying,
+            isPlaying: avCoordinator.isPlaying,
             isHTMLLoaded: viewModel.currentHTMLURL != nil
         )
         let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
@@ -219,7 +225,7 @@ struct ProgramMonitorView: View {
         let current = ProgramMonitorInfoBlockModel.current(
             item: viewModel.currentProgramItem,
             isBroadcasting: viewModel.isBroadcasting,
-            isPlaying: viewModel.avCoordinator.isPlaying,
+            isPlaying: avCoordinator.isPlaying,
             isHTMLLoaded: viewModel.currentHTMLURL != nil
         )
         let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
@@ -246,7 +252,7 @@ struct ProgramMonitorView: View {
         let current = ProgramMonitorInfoBlockModel.current(
             item: viewModel.currentProgramItem,
             isBroadcasting: viewModel.isBroadcasting,
-            isPlaying: viewModel.avCoordinator.isPlaying,
+            isPlaying: avCoordinator.isPlaying,
             isHTMLLoaded: viewModel.currentHTMLURL != nil
         )
         let next = ProgramMonitorInfoBlockModel.next(item: nextProgramItem)
@@ -263,7 +269,7 @@ struct ProgramMonitorView: View {
     }
 
     private var isMediaPlaybackActive: Bool {
-        viewModel.currentProgramItem?.supportsSeeking == true && viewModel.avCoordinator.isPlaying
+        viewModel.currentProgramItem?.supportsSeeking == true && avCoordinator.isPlaying
     }
 
     private var monitorUtilitiesStack: some View {
@@ -374,12 +380,12 @@ struct ProgramMonitorView: View {
     private var mediaLayer: some View {
         if VideoLayerVisibilityModel.shouldShowVideoLayer(
             sourceKind: viewModel.currentProgramItem?.sourceKind,
-            hasLoadedMedia: viewModel.avCoordinator.hasLoadedMedia
+            hasLoadedMedia: avCoordinator.hasLoadedMedia
         ) {
-            VideoPlayerView(coordinator: viewModel.avCoordinator)
+            VideoPlayerView(coordinator: avCoordinator)
                 .transition(.opacity)
                 .overlay(alignment: .bottomTrailing) {
-                    if !viewModel.avCoordinator.isPlaying {
+                    if !avCoordinator.isPlaying {
                         Text("暂停")
                             .font(StudioTheme.TypeScale.caption.weight(.black))
                             .foregroundStyle(StudioTheme.monitorText)
@@ -435,10 +441,4 @@ struct ProgramMonitorView: View {
             in: viewModel.programItems
         )
     }
-}
-
-#Preview {
-    ProgramMonitorView()
-        .environment(SwitcherViewModel())
-        .frame(width: 700, height: 620)
 }

@@ -176,7 +176,7 @@ struct ContentView: View {
                 .frame(width: StudioTheme.directorRailWidth)
                 .layoutPriority(1)
 
-            ProgramMonitorView()
+            ProgramMonitorView(avCoordinator: viewModel.avCoordinator)
                 .frame(minWidth: 500, idealWidth: 720, maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(3)
 
