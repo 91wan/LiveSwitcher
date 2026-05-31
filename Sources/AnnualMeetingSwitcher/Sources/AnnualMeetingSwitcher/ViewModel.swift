@@ -923,7 +923,7 @@ final class SwitcherViewModel {
         if let paths = userDefaults.stringArray(forKey: UDKeys.wallpapers) {
             backgroundWallpapers = paths.compactMap { path -> URL? in
                 let url = URL(fileURLWithPath: path)
-                return Self.isRenderableImage(url: url) ? url : nil
+                return WallpaperImagePolicy.isRenderableImage(url: url) ? url : nil
             }
             let droppedCount = paths.count - backgroundWallpapers.count
             if droppedCount > 0 {
@@ -952,7 +952,7 @@ final class SwitcherViewModel {
         }
         if let logoPath = userDefaults.string(forKey: UDKeys.cornerLogo) {
             let logoURL = URL(fileURLWithPath: logoPath)
-            if Self.isRenderableImage(url: logoURL) {
+            if WallpaperImagePolicy.isRenderableImage(url: logoURL) {
                 cornerLogoURL = logoURL
             } else {
                 cornerLogoURL = nil
@@ -1647,7 +1647,7 @@ final class SwitcherViewModel {
 
     @discardableResult
     func addWallpaper(url: URL) -> Bool {
-        guard Self.isRenderableImage(url: url) else { return false }
+        guard WallpaperImagePolicy.isRenderableImage(url: url) else { return false }
         guard !backgroundWallpapers.contains(url) else { return true }
         backgroundWallpapers.append(url)
         saveData()
@@ -1670,7 +1670,7 @@ final class SwitcherViewModel {
 
     @discardableResult
     func setCornerLogo(url: URL) -> Bool {
-        guard Self.isRenderableImage(url: url) else { return false }
+        guard WallpaperImagePolicy.isRenderableImage(url: url) else { return false }
         cornerLogoURL = url
         saveData()
         return true
@@ -1679,18 +1679,6 @@ final class SwitcherViewModel {
     func removeCornerLogo() {
         cornerLogoURL = nil
         saveData()
-    }
-
-    private func isSupportedWallpaperImage(_ url: URL) -> Bool {
-        WallpaperImagePolicy.isSupported(url: url)
-    }
-
-    private static func isRenderableImage(url: URL) -> Bool {
-        guard WallpaperImagePolicy.isSupported(url: url),
-              let data = try? Data(contentsOf: url),
-              let image = NSImage(data: data)
-        else { return false }
-        return image.size.width > 0 && image.size.height > 0
     }
 
     // MARK: - BGM 操作

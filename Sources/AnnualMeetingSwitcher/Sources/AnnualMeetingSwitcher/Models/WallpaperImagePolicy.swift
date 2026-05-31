@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import UniformTypeIdentifiers
 
@@ -25,5 +26,13 @@ enum WallpaperImagePolicy {
             return false
         }
         return extensionType.conforms(to: .image)
+    }
+
+    static func isRenderableImage(url: URL) -> Bool {
+        guard isSupported(url: url),
+              let data = try? Data(contentsOf: url),
+              let image = NSImage(data: data)
+        else { return false }
+        return image.size.width > 0 && image.size.height > 0
     }
 }
