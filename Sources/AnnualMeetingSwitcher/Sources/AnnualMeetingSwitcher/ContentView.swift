@@ -30,11 +30,13 @@ struct ContentView: View {
             markSetupTabLoaded(newTab)
         }
         .onChange(of: viewModel.consoleMode) { _, newMode in
+            let profile = ConsoleModeSwitchProfiler.begin(targetMode: newMode)
             if newMode == .setup {
                 markSetupTabLoaded(viewModel.selectedMainTab)
             } else {
                 trimLoadedSetupTabsForLiveMode()
             }
+            finishConsoleModeSwitch(profile)
         }
     }
 
@@ -135,6 +137,18 @@ struct ContentView: View {
 
     private func trimLoadedSetupTabsForLiveMode() {
         loadedSetupTabs = [viewModel.selectedMainTab]
+    }
+
+    private func finishConsoleModeSwitch(_ profile: ConsoleModeSwitchProfiler.Start) {
+        Task { @MainActor in
+            await Task.yield()
+            guard viewModel.consoleMode == profile.targetMode else { return }
+            let event = ConsoleModeSwitchProfiler.end(profile)
+            ConsoleModeSwitchProfiler.log(event)
+            if let detail = event.supportEventDetail {
+                viewModel.recordSupportEvent(kind: .consoleModeSwitchSlow, detail: detail)
+            }
+        }
     }
 
     @ViewBuilder
