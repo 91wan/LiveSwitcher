@@ -52,6 +52,7 @@ extension SwitcherViewModel {
             avCoordinator.play()
         }
         if shouldResumeBGMAfterPanic(snapshot) {
+            invalidateBGMTransitionGeneration()
             isBGMPlaying = true
             bgmAudioPlayer?.volume = 0
             bgmAudioPlayer?.play()
@@ -105,6 +106,7 @@ extension SwitcherViewModel {
             avCoordinator.pause()
         }
         if shouldPauseBGMForActivePanic(snapshot) {
+            invalidateBGMTransitionGeneration()
             bgmAudioPlayer?.pause()
             bgmFallbackPlayer.pause()
             isBGMPlaying = false

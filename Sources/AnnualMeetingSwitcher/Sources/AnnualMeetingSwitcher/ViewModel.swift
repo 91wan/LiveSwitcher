@@ -585,6 +585,14 @@ final class SwitcherViewModel {
         lastAudioRoutingTransition = nil
     }
 
+    var bgmTransitionGenerationForTesting: Int {
+        bgmTransitionGeneration
+    }
+
+    func invalidateBGMTransitionGeneration() {
+        bgmTransitionGeneration += 1
+    }
+
     private func fadeMediaVolume(to targetVolume: Float, duration: Double) {
         cleanupBag.mediaVolumeFadeTask?.cancel()
         guard duration > 0 else {
