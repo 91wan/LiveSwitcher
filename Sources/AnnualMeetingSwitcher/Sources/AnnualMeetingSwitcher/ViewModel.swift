@@ -496,6 +496,17 @@ final class SwitcherViewModel {
         runtime.dispatch(makeAction(runtime.state.media.generation))
     }
 
+    func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
+        syncRuntimeStateFromFacade(clearActionLog: false)
+        runtime.dispatch(makeAction(runtime.state.bgm.generation))
+    }
+
+    func dispatchRuntimeBGMProgressCallback(time: Double, duration: Double?) {
+        dispatchRuntimeBGMCallback {
+            .bgmProgressUpdated(time: time, duration: duration, generation: $0)
+        }
+    }
+
     func syncRuntimeStateFromFacade(clearActionLog: Bool) {
         runtime.replaceStateForFacadeSync(makeRuntimeStateSnapshot(), clearActionLog: clearActionLog)
     }
@@ -1795,6 +1806,7 @@ final class SwitcherViewModel {
     func removeBGMItem(_ item: BGMItem) {
         bgmItems.removeAll { $0.id == item.id }
         if currentBGMItem?.id == item.id {
+            dispatchRuntimeFacadeAction(.operatorStoppedBGM)
             bgmTransitionGeneration += 1
             let generation = bgmTransitionGeneration
             let fadeDur = liveAudioFadeDuration
@@ -1901,6 +1913,7 @@ final class SwitcherViewModel {
         if currentBGMItem?.id == item.id {
             if isBGMPlaying {
                 // BGM 停止时只解除临时接管，不改变用户选择的混音策略。
+                dispatchRuntimeFacadeAction(.operatorStoppedBGM)
                 bgmTransitionGeneration += 1
                 let generation = bgmTransitionGeneration
                 let fadeDur = liveAudioFadeDuration
@@ -1945,6 +1958,7 @@ final class SwitcherViewModel {
                     return
                 }
                 // BGM 恢复播放只启动音乐通道；实际路由继续由用户选择的 audioStrategy 决定。
+                dispatchRuntimeFacadeAction(.operatorSelectedBGM(item.id))
                 bgmTransitionGeneration += 1
                 rewindBGMIfAtEndBeforeResume()
                 isBGMPlaying = true
@@ -1958,6 +1972,7 @@ final class SwitcherViewModel {
                 recordBGMPlaybackState(isPlaying: true, reason: "operator")
             }
         } else {
+            dispatchRuntimeFacadeAction(.operatorSelectedBGM(item.id))
             stopBGMTimer()
             bgmTransitionGeneration += 1
             let fadeDur = liveAudioFadeDuration
@@ -2007,6 +2022,7 @@ final class SwitcherViewModel {
     }
 
     private func cueBGMDuringPanic(_ item: BGMItem) {
+        dispatchRuntimeFacadeAction(.operatorSelectedBGM(item.id))
         stopBGMTimer()
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
@@ -2133,6 +2149,7 @@ final class SwitcherViewModel {
             let currentTime = player.currentTime
             let duration = player.duration
             bgmProgressStore.update(currentTime: currentTime, duration: duration)
+            dispatchRuntimeBGMProgressCallback(time: currentTime, duration: duration)
             updateBGMRealtimeMeter(from: player)
             finishBGMIfProgressReachedEnd(currentTime: currentTime, duration: duration)
         } else if isBGMPlaying {
@@ -2141,6 +2158,7 @@ final class SwitcherViewModel {
             let fallbackDuration = bgmDuration ?? ((itemDuration ?? 0) > 0 && itemDuration?.isFinite == true ? itemDuration : nil)
             if fallbackTime.isFinite, let fallbackDuration, fallbackDuration > 0 {
                 bgmProgressStore.update(currentTime: fallbackTime, duration: fallbackDuration)
+                dispatchRuntimeBGMProgressCallback(time: fallbackTime, duration: fallbackDuration)
                 finishBGMIfProgressReachedEnd(currentTime: fallbackTime, duration: fallbackDuration)
             }
             resetBGMRealtimeMeter()
