@@ -122,6 +122,21 @@ final class BGMProgressStoreTests: XCTestCase {
         XCTAssertFalse(startBody.contains("Task { @MainActor"))
     }
 
+    func testViewModelDeinitInvalidatesBGMProgressTimer() throws {
+        var viewModel: SwitcherViewModel? = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: isolatedDefaults()
+        )
+        viewModel?.startBGMTimer()
+        let timer = WeakTimerBox(try XCTUnwrap(viewModel).bgmProgressTimerForTesting)
+        XCTAssertTrue(timer.value?.isValid == true)
+
+        viewModel = nil
+
+        XCTAssertFalse(timer.value?.isValid ?? true)
+    }
+
     func testStoppingBGMUsesSingleRoutingFadeBeforePausing() throws {
         let source = try sourceText("ViewModel.swift")
         let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
@@ -167,6 +182,22 @@ final class BGMProgressStoreTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func isolatedDefaults() -> UserDefaults {
+        let suiteName = "LiveSwitcher.BGMProgressStoreTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return defaults
+    }
+
+}
+
+private final class WeakTimerBox {
+    weak var value: Timer?
+
+    init(_ value: Timer?) {
+        self.value = value
     }
 }
 
