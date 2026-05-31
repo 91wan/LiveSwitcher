@@ -14,8 +14,14 @@ enum LiveRuntimeAction: Equatable {
     case operatorChangedMasterVolume(Double)
     case operatorChangedMediaVolume(Double)
     case operatorChangedBGMVolume(Double)
+    case operatorChangedMasterMute(Bool)
+    case operatorChangedMediaMute(Bool)
+    case operatorChangedBGMMute(Bool)
+    case operatorChangedBGMTakeover(Bool)
     case operatorToggledSpeakerMode
+    case operatorSetSpeakerMode(Bool)
     case operatorToggledPanic
+    case operatorSetPanic(Bool)
     case operatorSelectedBGM(UUID)
     case operatorStoppedBGM
     case operatorSelectedNextBGM
@@ -58,8 +64,14 @@ extension LiveRuntimeAction {
         case .operatorChangedMasterVolume: return "operatorChangedMasterVolume"
         case .operatorChangedMediaVolume: return "operatorChangedMediaVolume"
         case .operatorChangedBGMVolume: return "operatorChangedBGMVolume"
+        case .operatorChangedMasterMute: return "operatorChangedMasterMute"
+        case .operatorChangedMediaMute: return "operatorChangedMediaMute"
+        case .operatorChangedBGMMute: return "operatorChangedBGMMute"
+        case .operatorChangedBGMTakeover: return "operatorChangedBGMTakeover"
         case .operatorToggledSpeakerMode: return "operatorToggledSpeakerMode"
+        case .operatorSetSpeakerMode: return "operatorSetSpeakerMode"
         case .operatorToggledPanic: return "operatorToggledPanic"
+        case .operatorSetPanic: return "operatorSetPanic"
         case .operatorSelectedBGM: return "operatorSelectedBGM"
         case .operatorStoppedBGM: return "operatorStoppedBGM"
         case .operatorSelectedNextBGM: return "operatorSelectedNextBGM"

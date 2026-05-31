@@ -52,6 +52,13 @@ final class LiveRuntimeStore {
         self.environment = environment
     }
 
+    func replaceStateForFacadeSync(_ state: LiveRuntimeState, clearActionLog: Bool = false) {
+        self.state = state
+        if clearActionLog {
+            actionLog.removeAll()
+        }
+    }
+
     private static func summary(for state: LiveRuntimeState) -> String {
         [
             "mode=\(state.mode.rawValue)",

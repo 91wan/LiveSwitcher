@@ -35,25 +35,67 @@ enum LiveRuntimeReducer {
         case .operatorSelectedAudioStrategy(let strategy):
             state.audio.strategy = strategy
             recalculateAudio(&state)
-            effects.append(.savePersistentState)
+            effects += [
+                .applyAudioRouting(reason: .strategyChanged),
+                .savePersistentState
+            ]
 
         case .operatorChangedMasterVolume(let volume):
             state.audio.masterVolume = min(max(volume, 0), 1)
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
 
         case .operatorChangedMediaVolume(let volume):
             state.audio.mediaVolume = min(max(volume, 0), 1)
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
 
         case .operatorChangedBGMVolume(let volume):
             state.audio.bgmVolume = min(max(volume, 0), 1)
             recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+
+        case .operatorChangedMasterMute(let isMuted):
+            state.audio.isMasterMuted = isMuted
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+
+        case .operatorChangedMediaMute(let isMuted):
+            state.audio.isMediaMuted = isMuted
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+
+        case .operatorChangedBGMMute(let isMuted):
+            state.audio.isBGMMuted = isMuted
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+
+        case .operatorChangedBGMTakeover(let isActive):
+            state.audio.isBGMTakeoverActive = isActive
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .limiterChanged))
 
         case .operatorToggledSpeakerMode:
             state.audio.isSpeakerMode.toggle()
             recalculateAudio(&state)
+            effects += [
+                .applyAudioRouting(reason: .speakerChanged),
+                .savePersistentState
+            ]
+
+        case .operatorSetSpeakerMode(let isEnabled):
+            state.audio.isSpeakerMode = isEnabled
+            recalculateAudio(&state)
+            effects += [
+                .applyAudioRouting(reason: .speakerChanged),
+                .savePersistentState
+            ]
 
         case .operatorToggledPanic:
+            reducePanicToggle(state: &state, effects: &effects, now: environment.now)
+
+        case .operatorSetPanic(let isActive):
+            guard state.panic.isActive != isActive else { break }
             reducePanicToggle(state: &state, effects: &effects, now: environment.now)
 
         case .operatorSelectedBGM(let id):
@@ -275,6 +317,7 @@ enum LiveRuntimeReducer {
         }
 
         recalculateAudio(&state)
+        effects.append(.applyAudioRouting(reason: .programChanged))
     }
 
     private static func reducePanicToggle(
@@ -320,6 +363,7 @@ enum LiveRuntimeReducer {
             state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
         }
         recalculateAudio(&state)
+        effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
     private static func selectAdjacentBGM(
