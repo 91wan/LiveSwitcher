@@ -408,9 +408,10 @@ final class KeyMonitorView: NSView {
     private func handleKey(event: NSEvent, vm: SwitcherViewModel) -> NSEvent? {
         // MARK: - Tier1: ⌘⌥B -> 紧急切黑 (handled before modifiers guard)
         // B = keyCode 11（QWERTY 键盘上 B 键）
-        if event.modifierFlags.contains([.command, .option]) &&
-           !event.modifierFlags.contains(.control) &&
-           event.keyCode == 11 {
+        if GlobalShortcutPolicy.isEmergencyPanicShortcut(
+            keyCode: event.keyCode,
+            modifierFlags: event.modifierFlags
+        ) {
             Task { @MainActor in
                 withAnimation(.easeInOut(duration: 0.25)) {
                     vm.togglePanicMode()
@@ -420,8 +421,7 @@ final class KeyMonitorView: NSView {
         }
 
         // 跳过有修饰键的组合（避免和系统/菜单冲突）
-        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
-        guard modifiers.isEmpty else { return event }
+        guard !GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags) else { return event }
 
         // 如果当前焦点在文本框或原生控件，不拦截，避免抢走按钮/滑杆的键盘操作
         if let fr = window?.firstResponder, fr is NSText || fr is NSControl { return event }
