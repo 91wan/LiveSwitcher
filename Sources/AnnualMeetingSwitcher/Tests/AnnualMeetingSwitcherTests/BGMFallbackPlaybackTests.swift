@@ -150,6 +150,38 @@ final class BGMFallbackPlaybackTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
+    func testRapidFallbackSwitchesIgnoreStaleEndAndFailureNotifications() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        let firstURL = try makeTempFileURL(ext: "mp3")
+        let secondURL = try makeTempFileURL(ext: "mp3")
+        let thirdURL = try makeTempFileURL(ext: "mp3")
+        defer {
+            try? FileManager.default.removeItem(at: firstURL)
+            try? FileManager.default.removeItem(at: secondURL)
+            try? FileManager.default.removeItem(at: thirdURL)
+        }
+        let first = BGMItem(title: "Fallback A", url: firstURL, category: .warmUp)
+        let second = BGMItem(title: "Fallback B", url: secondURL, category: .warmUp)
+        let third = BGMItem(title: "Fallback C", url: thirdURL, category: .warmUp)
+        viewModel.bgmItems = [first, second, third]
+
+        viewModel.toggleBGM(first)
+        let staleFirstItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+        viewModel.toggleBGM(second)
+        let staleSecondItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
+        viewModel.toggleBGM(third)
+
+        NotificationCenter.default.post(name: .AVPlayerItemDidPlayToEndTime, object: staleFirstItem)
+        NotificationCenter.default.post(name: .AVPlayerItemFailedToPlayToEndTime, object: staleSecondItem)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, third.id)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .bgmPlaybackFailed })
+    }
+
     func testFallbackPlayerFailureNotificationStopsSafely() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
