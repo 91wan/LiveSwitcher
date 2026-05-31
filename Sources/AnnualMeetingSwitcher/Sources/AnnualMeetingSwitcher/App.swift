@@ -218,7 +218,11 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func isUsablyVisibleMainWindow(_ window: NSWindow) -> Bool {
-        window.isVisible && !window.isMiniaturized && window.occlusionState.contains(.visible)
+        MainWindowFallbackPolicy.shouldReuseMainWindow(
+            isVisible: window.isVisible,
+            isMiniaturized: window.isMiniaturized,
+            isOcclusionVisible: window.occlusionState.contains(.visible)
+        )
     }
 
     private static func closeUnusableMainWindow(_ window: NSWindow) {
