@@ -89,6 +89,7 @@ struct AutomationRuntimeState: Equatable {
 }
 
 struct LiveRuntimePreferenceState: Equatable {
+    var themeOverride: ThemeOverride = .dark
     var autoPlayNextVideoOnEnd = false
     var autoAdvanceAtScheduledTime = false
     var showAgendaTimeline = false

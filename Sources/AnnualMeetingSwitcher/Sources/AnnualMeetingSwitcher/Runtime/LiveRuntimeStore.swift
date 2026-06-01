@@ -70,6 +70,7 @@ final class LiveRuntimeStore {
             "projection=\(state.projection.isBroadcasting)",
             "pptRequested=\(state.ppt.isRequested)",
             "pptActive=\(state.ppt.isEventTapActive)",
+            "theme=\(state.preferences.themeOverride.rawValue)",
             "autoNext=\(state.preferences.autoPlayNextVideoOnEnd)",
             "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)",
             "agendaTimeline=\(state.preferences.showAgendaTimeline)",

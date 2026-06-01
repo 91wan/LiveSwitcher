@@ -24,6 +24,16 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
             action: .operatorSetCornerLogoPosition(.bottomLeft),
             environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
         )
+        let consoleMode = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorSetConsoleMode(.live),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+        let themeOverride = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorSetThemeOverride(.system),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
 
         XCTAssertTrue(autoPlay.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(autoPlay.effects.contains(.saveAutoPlayNextVideoOnEnd(true)))
@@ -33,6 +43,10 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         XCTAssertTrue(agendaTimeline.effects.contains(.saveShowAgendaTimeline(true)))
         XCTAssertEqual(logoPosition.state.preferences.cornerLogoPosition, .bottomLeft)
         XCTAssertTrue(logoPosition.effects.contains(.saveCornerLogoPosition(.bottomLeft)))
+        XCTAssertEqual(consoleMode.state.mode, .live)
+        XCTAssertTrue(consoleMode.effects.contains(.saveConsoleMode(.live)))
+        XCTAssertEqual(themeOverride.state.preferences.themeOverride, .system)
+        XCTAssertTrue(themeOverride.effects.contains(.saveThemeOverride(.system)))
     }
 
     func testEffectRunnerInvokesInjectedPreferencePersistencePort() {
@@ -44,7 +58,9 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
                 .saveAutoPlayNextVideoOnEnd(true),
                 .saveAutoAdvanceAtScheduledTime(false),
                 .saveShowAgendaTimeline(true),
-                .saveCornerLogoPosition(.bottomRight)
+                .saveCornerLogoPosition(.bottomRight),
+                .saveConsoleMode(.live),
+                .saveThemeOverride(.light)
             ],
             currentState: { LiveRuntimeState() },
             dispatch: { _ in XCTFail("Preference persistence effects should not dispatch actions") }
@@ -54,6 +70,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [false])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
         XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomRight])
+        XCTAssertEqual(persistence.savedConsoleModes, [.live])
+        XCTAssertEqual(persistence.savedThemeOverrides, [.light])
     }
 
     func testViewModelPreferenceSettersRoutePersistenceThroughRuntimePort() {
@@ -75,19 +93,27 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         viewModel.autoAdvanceAtScheduledTime = true
         viewModel.showAgendaTimeline = true
         viewModel.cornerLogoPosition = .bottomLeft
+        viewModel.consoleMode = .live
+        viewModel.themeOverride = .system
 
         XCTAssertTrue(runtime.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(runtime.state.preferences.autoAdvanceAtScheduledTime)
         XCTAssertTrue(runtime.state.preferences.showAgendaTimeline)
         XCTAssertEqual(runtime.state.preferences.cornerLogoPosition, .bottomLeft)
+        XCTAssertEqual(runtime.state.mode, .live)
+        XCTAssertEqual(runtime.state.preferences.themeOverride, .system)
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [true])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
         XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomLeft])
+        XCTAssertEqual(persistence.savedConsoleModes, [.live])
+        XCTAssertEqual(persistence.savedThemeOverrides, [.system])
         XCTAssertNil(defaults.object(forKey: "autoPlayNextVideoOnEnd"))
         XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
         XCTAssertNil(defaults.object(forKey: "showAgendaTimeline"))
         XCTAssertNil(defaults.object(forKey: "cornerLogo_position"))
+        XCTAssertNil(defaults.object(forKey: "consoleMode"))
+        XCTAssertNil(defaults.object(forKey: "themeOverride"))
     }
 }
 
@@ -97,6 +123,8 @@ private final class PreferencePersistencePortSpy: PersistencePort {
     private(set) var savedAutoAdvanceAtScheduledTime: [Bool] = []
     private(set) var savedShowAgendaTimeline: [Bool] = []
     private(set) var savedCornerLogoPositions: [CornerLogoPosition] = []
+    private(set) var savedConsoleModes: [ConsoleMode] = []
+    private(set) var savedThemeOverrides: [ThemeOverride] = []
 
     func save() {
         saveCount += 1
@@ -116,5 +144,13 @@ private final class PreferencePersistencePortSpy: PersistencePort {
 
     func saveCornerLogoPosition(_ position: CornerLogoPosition) {
         savedCornerLogoPositions.append(position)
+    }
+
+    func saveConsoleMode(_ mode: ConsoleMode) {
+        savedConsoleModes.append(mode)
+    }
+
+    func saveThemeOverride(_ theme: ThemeOverride) {
+        savedThemeOverrides.append(theme)
     }
 }

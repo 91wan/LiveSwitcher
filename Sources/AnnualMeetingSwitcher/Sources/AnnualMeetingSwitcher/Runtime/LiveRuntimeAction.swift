@@ -29,6 +29,8 @@ enum LiveRuntimeAction: Equatable {
     case operatorSelectedPreviousBGM
     case operatorToggledPPTMode(source: PPTModeToggleSource)
     case operatorToggledProjection
+    case operatorSetConsoleMode(ConsoleMode)
+    case operatorSetThemeOverride(ThemeOverride)
     case operatorSetAutoPlayNextVideoOnEnd(Bool)
     case operatorSetAutoAdvanceAtScheduledTime(Bool)
     case operatorSetShowAgendaTimeline(Bool)
@@ -86,6 +88,8 @@ extension LiveRuntimeAction {
         case .operatorSelectedPreviousBGM: return "operatorSelectedPreviousBGM"
         case .operatorToggledPPTMode: return "operatorToggledPPTMode"
         case .operatorToggledProjection: return "operatorToggledProjection"
+        case .operatorSetConsoleMode: return "operatorSetConsoleMode"
+        case .operatorSetThemeOverride: return "operatorSetThemeOverride"
         case .operatorSetAutoPlayNextVideoOnEnd: return "operatorSetAutoPlayNextVideoOnEnd"
         case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
         case .operatorSetShowAgendaTimeline: return "operatorSetShowAgendaTimeline"

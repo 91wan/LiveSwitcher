@@ -163,6 +163,14 @@ enum LiveRuntimeReducer {
                 state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
             }
 
+        case .operatorSetConsoleMode(let mode):
+            state.mode = mode
+            effects.append(.saveConsoleMode(mode))
+
+        case .operatorSetThemeOverride(let theme):
+            state.preferences.themeOverride = theme
+            effects.append(.saveThemeOverride(theme))
+
         case .operatorSetAutoPlayNextVideoOnEnd(let isEnabled):
             state.preferences.autoPlayNextVideoOnEnd = isEnabled
             effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))
