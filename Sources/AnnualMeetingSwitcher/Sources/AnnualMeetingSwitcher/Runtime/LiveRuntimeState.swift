@@ -91,6 +91,7 @@ struct AutomationRuntimeState: Equatable {
 struct LiveRuntimePreferenceState: Equatable {
     var autoPlayNextVideoOnEnd = false
     var autoAdvanceAtScheduledTime = false
+    var showAgendaTimeline = false
 }
 
 struct SupportRuntimeState: Equatable {

@@ -71,7 +71,8 @@ final class LiveRuntimeStore {
             "pptRequested=\(state.ppt.isRequested)",
             "pptActive=\(state.ppt.isEventTapActive)",
             "autoNext=\(state.preferences.autoPlayNextVideoOnEnd)",
-            "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)"
+            "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)",
+            "agendaTimeline=\(state.preferences.showAgendaTimeline)"
         ].joined(separator: ",")
     }
 }

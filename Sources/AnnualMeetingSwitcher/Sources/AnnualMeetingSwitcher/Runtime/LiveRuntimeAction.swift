@@ -31,6 +31,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorToggledProjection
     case operatorSetAutoPlayNextVideoOnEnd(Bool)
     case operatorSetAutoAdvanceAtScheduledTime(Bool)
+    case operatorSetShowAgendaTimeline(Bool)
 
     case mediaLoaded(url: URL, generation: Int)
     case mediaPlaybackChanged(isPlaying: Bool, generation: Int)
@@ -86,6 +87,7 @@ extension LiveRuntimeAction {
         case .operatorToggledProjection: return "operatorToggledProjection"
         case .operatorSetAutoPlayNextVideoOnEnd: return "operatorSetAutoPlayNextVideoOnEnd"
         case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
+        case .operatorSetShowAgendaTimeline: return "operatorSetShowAgendaTimeline"
         case .mediaLoaded: return "mediaLoaded"
         case .mediaPlaybackChanged: return "mediaPlaybackChanged"
         case .mediaReachedEnd: return "mediaReachedEnd"
