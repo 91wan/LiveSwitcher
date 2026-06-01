@@ -23,6 +23,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorToggledPanic
     case operatorSetPanic(Bool)
     case operatorSelectedBGM(UUID)
+    case operatorSelectedBGMPlayMode(BGMPlayMode)
     case operatorStoppedBGM
     case operatorSelectedNextBGM
     case operatorSelectedPreviousBGM
@@ -74,6 +75,7 @@ extension LiveRuntimeAction {
         case .operatorToggledPanic: return "operatorToggledPanic"
         case .operatorSetPanic: return "operatorSetPanic"
         case .operatorSelectedBGM: return "operatorSelectedBGM"
+        case .operatorSelectedBGMPlayMode: return "operatorSelectedBGMPlayMode"
         case .operatorStoppedBGM: return "operatorStoppedBGM"
         case .operatorSelectedNextBGM: return "operatorSelectedNextBGM"
         case .operatorSelectedPreviousBGM: return "operatorSelectedPreviousBGM"

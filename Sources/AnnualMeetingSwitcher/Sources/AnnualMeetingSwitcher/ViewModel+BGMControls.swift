@@ -57,6 +57,7 @@ extension SwitcherViewModel {
             bgmPlayMode = .loopAll
             bgmAudioPlayer?.numberOfLoops = 0
         }
+        dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(bgmPlayMode))
     }
 
     /// V21 Fix #1: 当前曲目播放完毕回调
