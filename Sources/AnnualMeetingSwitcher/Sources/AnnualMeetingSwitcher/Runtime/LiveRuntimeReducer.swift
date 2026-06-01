@@ -38,7 +38,7 @@ enum LiveRuntimeReducer {
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .operatorRestartedCurrentMedia:
-            guard state.program.currentItem?.supportsSeeking == true else { break }
+            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
             state.media.isPlaying = true
@@ -242,6 +242,11 @@ enum LiveRuntimeReducer {
 
         case .facadeCurrentProgramChanged(let id):
             state.program.currentID = id
+            if let id, state.program.items.contains(where: { $0.id == id }) {
+                state.program.currentDetachedItem = nil
+            } else if state.program.currentDetachedItem?.id != id {
+                state.program.currentDetachedItem = nil
+            }
             state.program.currentSwitchedAt = id == nil ? nil : environment.now
             effects.append(.applyAudioRouting(reason: .programChanged))
 
@@ -344,7 +349,10 @@ enum LiveRuntimeReducer {
             state.support.record(kind: event.kind, detail: event.detail, at: event.timestamp)
         }
 
-        return LiveRuntimeMutation(state: state, effects: effects)
+        return LiveRuntimeMutation(
+            state: state,
+            effects: effects.filter { isEffectAllowed($0, in: environment.bridgeMode) }
+        )
     }
 
     private static func reduceSelectedProgram(
@@ -355,8 +363,9 @@ enum LiveRuntimeReducer {
         speakerModeDuckedRatio: Float
     ) {
         guard let item = state.program.items.first(where: { $0.id == id }) else { return }
-        let previousKind = state.program.currentItem?.sourceKind
+        let previousKind = state.program.effectiveCurrentItem?.sourceKind
         state.program.currentID = id
+        state.program.currentDetachedItem = nil
         state.program.currentSwitchedAt = now
 
         if previousKind?.supportsPresentationControl == true, !item.supportsPresentationControl {
@@ -407,7 +416,7 @@ enum LiveRuntimeReducer {
 
             if snapshot?.wasMediaPlaying == true,
                snapshot?.currentProgramID == state.program.currentID,
-               state.program.currentItem?.sourceKind == .media {
+               state.program.effectiveCurrentItem?.sourceKind == .media {
                 state.media.isPlaying = true
                 effects.append(.playMedia(generation: state.media.generation))
             }
@@ -421,7 +430,7 @@ enum LiveRuntimeReducer {
             state.panic.generation += 1
             state.panic.snapshot = PanicPlaybackSnapshot(
                 currentProgramID: state.program.currentID,
-                wasMediaPlaying: state.media.isPlaying && state.program.currentItem?.sourceKind == .media,
+                wasMediaPlaying: state.media.isPlaying && state.program.effectiveCurrentItem?.sourceKind == .media,
                 currentBGMID: state.bgm.currentID,
                 wasBGMPlaying: state.bgm.isPlaying
             )
@@ -578,7 +587,7 @@ enum LiveRuntimeReducer {
                 mediaVolume: state.audio.mediaVolume,
                 bgmVolume: state.bgm.isPlaying ? state.audio.bgmVolume : 0,
                 audioStrategy: state.audio.strategy,
-                isCurrentProgramMediaSource: state.program.currentItem?.sourceKind == .media,
+                isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
                 isMediaPlaying: state.media.isPlaying,
                 isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
                 isSpeakerMode: state.audio.isSpeakerMode,
@@ -591,5 +600,84 @@ enum LiveRuntimeReducer {
         )
         state.audio.effectiveMedia = output.media
         state.audio.effectiveBGM = output.bgm
+    }
+
+    private static func isEffectAllowed(_ effect: LiveRuntimeEffect, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
+        switch bridgeMode {
+        case .fullRuntime:
+            return true
+        case .recordingOnly:
+            return false
+        case .audioOwned:
+            return isAudioOwnedEffect(effect)
+        case .mediaOwned:
+            return isAudioOwnedEffect(effect) || isMediaEffect(effect)
+        case .bgmOwned:
+            return isAudioOwnedEffect(effect) || isBGMEffect(effect)
+        case .projectionOwned:
+            return isAudioOwnedEffect(effect) || isProjectionEffect(effect)
+        }
+    }
+
+    private static func isAudioOwnedEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .applyAudioRouting,
+             .loadBackgroundImage,
+             .loadCornerLogoImage,
+             .saveConsoleMode,
+             .saveThemeOverride,
+             .saveAudioStrategy,
+             .saveSpeakerMode,
+             .saveBGMPlayMode,
+             .saveAutoPlayNextVideoOnEnd,
+             .saveAutoAdvanceAtScheduledTime,
+             .saveShowAgendaTimeline,
+             .saveCornerLogoPosition,
+             .savePersistentState:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isMediaEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .loadMedia,
+             .playMedia,
+             .pauseMedia,
+             .restartMedia,
+             .stopMedia,
+             .setMediaVolume:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isBGMEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .prepareBGM,
+             .playBGM,
+             .pauseBGM,
+             .stopBGM,
+             .setBGMVolume,
+             .startBGMTimer,
+             .stopBGMTimer:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isProjectionEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .startProjection,
+             .stopProjection,
+             .showOutputWindow,
+             .hideOutputWindow:
+            return true
+        default:
+            return false
+        }
     }
 }

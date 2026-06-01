@@ -29,6 +29,10 @@ final class LiveRuntimeStore {
         effectRunner.connectedPortKinds
     }
 
+    var bridgeMode: LiveRuntimeBridgeMode {
+        environment.bridgeMode
+    }
+
     func dispatch(_ action: LiveRuntimeAction) {
         let oldState = state
         let mutation = LiveRuntimeReducer.reduce(
@@ -64,9 +68,18 @@ final class LiveRuntimeStore {
     }
 
     private static func summary(for state: LiveRuntimeState) -> String {
-        [
+        let programSummary: String
+        if let currentID = state.program.currentID {
+            programSummary = state.program.currentItem == nil
+                ? "detached:\(currentID.uuidString)"
+                : currentID.uuidString
+        } else {
+            programSummary = "none"
+        }
+
+        return [
             "mode=\(state.mode.rawValue)",
-            "program=\(state.program.currentID?.uuidString ?? "none")",
+            "program=\(programSummary)",
             "mediaPlaying=\(state.media.isPlaying)",
             "bgm=\(state.bgm.currentID?.uuidString ?? "none")",
             "bgmPlaying=\(state.bgm.isPlaying)",

@@ -74,7 +74,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeRequested" })
         XCTAssertEqual(viewModel.runtime.state.automation.notice?.action, "program.source.missing")
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "program.source.missing")
-        XCTAssertTrue(viewModel.runtime.recordedEffects.contains {
+        XCTAssertFalse(viewModel.runtime.recordedEffects.contains {
             if case .showAutomationNotice(let notice) = $0 {
                 return notice.action == "program.source.missing"
             }

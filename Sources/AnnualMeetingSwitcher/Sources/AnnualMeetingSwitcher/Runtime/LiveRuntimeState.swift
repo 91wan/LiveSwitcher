@@ -1,5 +1,14 @@
 import Foundation
 
+enum LiveRuntimeBridgeMode: String, CaseIterable, Equatable {
+    case recordingOnly
+    case audioOwned
+    case mediaOwned
+    case bgmOwned
+    case projectionOwned
+    case fullRuntime
+}
+
 struct LiveRuntimeState: Equatable {
     var mode: ConsoleMode = .setup
     var program = ProgramRuntimeState()
@@ -17,11 +26,16 @@ struct LiveRuntimeState: Equatable {
 struct ProgramRuntimeState: Equatable {
     var items: [ProgramItem] = []
     var currentID: UUID?
+    var currentDetachedItem: ProgramItem?
     var currentSwitchedAt: Date?
 
     var currentItem: ProgramItem? {
         guard let currentID else { return nil }
         return items.first { $0.id == currentID }
+    }
+
+    var effectiveCurrentItem: ProgramItem? {
+        currentItem ?? currentDetachedItem
     }
 }
 
@@ -177,13 +191,16 @@ struct SupportRuntimeState: Equatable {
 struct LiveRuntimeEnvironment: Equatable {
     var now: Date
     var speakerModeDuckedRatio: Float
+    var bridgeMode: LiveRuntimeBridgeMode
 
     init(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        bridgeMode: LiveRuntimeBridgeMode = .fullRuntime
     ) {
         self.now = now
         self.speakerModeDuckedRatio = speakerModeDuckedRatio
+        self.bridgeMode = bridgeMode
     }
 }
 
