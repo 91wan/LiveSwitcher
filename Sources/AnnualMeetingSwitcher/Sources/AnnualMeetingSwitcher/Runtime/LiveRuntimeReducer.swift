@@ -13,10 +13,22 @@ enum LiveRuntimeReducer {
     ) -> LiveRuntimeMutation {
         var state = state
         var effects: [LiveRuntimeEffect] = []
+        func recalculateAudio(_ state: inout LiveRuntimeState) {
+            Self.recalculateAudio(
+                &state,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+        }
 
         switch action {
         case .operatorSelectedProgram(let id):
-            reduceSelectedProgram(id, state: &state, effects: &effects, now: environment.now)
+            reduceSelectedProgram(
+                id,
+                state: &state,
+                effects: &effects,
+                now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorToggledMediaPlayback:
             guard !state.media.didPlayToEnd else { break }
@@ -94,11 +106,21 @@ enum LiveRuntimeReducer {
             ]
 
         case .operatorToggledPanic:
-            reducePanicToggle(state: &state, effects: &effects, now: environment.now)
+            reducePanicToggle(
+                state: &state,
+                effects: &effects,
+                now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSetPanic(let isActive):
             guard state.panic.isActive != isActive else { break }
-            reducePanicToggle(state: &state, effects: &effects, now: environment.now)
+            reducePanicToggle(
+                state: &state,
+                effects: &effects,
+                now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSelectedBGM(let id):
             guard let item = state.bgm.items.first(where: { $0.id == id }) else { break }
@@ -131,22 +153,23 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
 
         case .operatorSelectedNextBGM:
-            selectAdjacentBGM(offset: 1, state: &state, effects: &effects)
+            selectAdjacentBGM(
+                offset: 1,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSelectedPreviousBGM:
-            selectAdjacentBGM(offset: -1, state: &state, effects: &effects)
+            selectAdjacentBGM(
+                offset: -1,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorToggledPPTMode:
-            if state.ppt.isRequested || state.ppt.isEventTapActive {
-                state.ppt.isRequested = false
-                state.ppt.isEventTapActive = false
-                effects.append(.stopPPTEventTap(reason: .operatorDisabled))
-                state.support.record(kind: .pageInterceptDisabled, detail: "source=runtime", at: environment.now)
-            } else {
-                state.ppt.isRequested = true
-                state.ppt.lastFailureReason = nil
-                effects.append(.startPPTEventTap)
-            }
+            break
 
         case .operatorToggledProjection:
             if state.projection.isBroadcasting {
@@ -233,7 +256,11 @@ enum LiveRuntimeReducer {
 
         case .bgmReachedEnd(let generation):
             guard generation == state.bgm.generation else { break }
-            reduceBGMReachedEnd(state: &state, effects: &effects)
+            reduceBGMReachedEnd(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
@@ -287,7 +314,6 @@ enum LiveRuntimeReducer {
             state.ppt.isEventTapActive = false
             state.ppt.lastFailureReason = reason
             state.support.record(kind: .pageInterceptDisabled, detail: "reason=failed", at: environment.now)
-            effects.append(.stopPPTEventTap(reason: .failed))
 
         case .pptEventTapStopped(let reason):
             state.ppt.isEventTapActive = false
@@ -325,7 +351,8 @@ enum LiveRuntimeReducer {
         _ id: UUID,
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
-        now: Date
+        now: Date,
+        speakerModeDuckedRatio: Float
     ) {
         guard let item = state.program.items.first(where: { $0.id == id }) else { return }
         let previousKind = state.program.currentItem?.sourceKind
@@ -334,7 +361,6 @@ enum LiveRuntimeReducer {
 
         if previousKind?.supportsPresentationControl == true, !item.supportsPresentationControl {
             state.ppt.isEventTapActive = false
-            effects.append(.stopPPTEventTap(reason: .programChanged))
         }
 
         if item.sourceKind == .media, let url = item.sourceURL {
@@ -359,19 +385,19 @@ enum LiveRuntimeReducer {
 
         if item.supportsPresentationControl {
             state.ppt.isRequested = true
-            effects.append(.startPPTEventTap)
         } else if previousKind?.supportsPresentationControl == true {
             state.ppt.isRequested = false
         }
 
-        recalculateAudio(&state)
+        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
 
     private static func reducePanicToggle(
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
-        now: Date
+        now: Date,
+        speakerModeDuckedRatio: Float
     ) {
         if state.panic.isActive {
             let snapshot = state.panic.snapshot
@@ -410,14 +436,15 @@ enum LiveRuntimeReducer {
             }
             state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
         }
-        recalculateAudio(&state)
+        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
     private static func selectAdjacentBGM(
         offset: Int,
         state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect]
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
     ) {
         guard let currentID = state.bgm.currentID,
               let index = state.bgm.items.firstIndex(where: { $0.id == currentID }),
@@ -437,31 +464,55 @@ enum LiveRuntimeReducer {
             .startBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
-        recalculateAudio(&state)
+        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     private static func reduceBGMReachedEnd(
         state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect]
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
     ) {
         guard let currentID = state.bgm.currentID,
               let index = state.bgm.items.firstIndex(where: { $0.id == currentID })
         else {
-            stopFinishedBGM(state: &state, effects: &effects)
+            stopFinishedBGM(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
             return
         }
 
         switch state.bgm.playMode {
         case .loopOne:
-            restartBGM(state.bgm.items[index], state: &state, effects: &effects)
+            restartBGM(
+                state.bgm.items[index],
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
         case .loopAll:
             let nextIndex = (index + 1) % state.bgm.items.count
-            restartBGM(state.bgm.items[nextIndex], state: &state, effects: &effects)
+            restartBGM(
+                state.bgm.items[nextIndex],
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
         case .sequential:
             if index < state.bgm.items.count - 1 {
-                restartBGM(state.bgm.items[index + 1], state: &state, effects: &effects)
+                restartBGM(
+                    state.bgm.items[index + 1],
+                    state: &state,
+                    effects: &effects,
+                    speakerModeDuckedRatio: speakerModeDuckedRatio
+                )
             } else {
-                stopFinishedBGM(state: &state, effects: &effects)
+                stopFinishedBGM(
+                    state: &state,
+                    effects: &effects,
+                    speakerModeDuckedRatio: speakerModeDuckedRatio
+                )
             }
         }
     }
@@ -469,7 +520,8 @@ enum LiveRuntimeReducer {
     private static func restartBGM(
         _ item: BGMItem,
         state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect]
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
     ) {
         state.bgm.generation += 1
         state.bgm.currentID = item.id
@@ -483,17 +535,18 @@ enum LiveRuntimeReducer {
             .startBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
-        recalculateAudio(&state)
+        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     private static func stopFinishedBGM(
         state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect]
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
     ) {
         state.bgm.generation += 1
         state.bgm.isPlaying = false
         effects.append(.stopBGMTimer(generation: state.bgm.generation))
-        recalculateAudio(&state)
+        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
 
@@ -515,7 +568,10 @@ enum LiveRuntimeReducer {
         }
     }
 
-    private static func recalculateAudio(_ state: inout LiveRuntimeState) {
+    private static func recalculateAudio(
+        _ state: inout LiveRuntimeState,
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) {
         let output = AudioRoutingEngine.output(
             for: AudioRoutingInput(
                 masterVolume: state.audio.masterVolume,
@@ -530,7 +586,7 @@ enum LiveRuntimeReducer {
                 isMasterMuted: state.audio.isMasterMuted,
                 isMediaMuted: state.audio.isMediaMuted,
                 isBGMMuted: state.audio.isBGMMuted,
-                speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+                speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         )
         state.audio.effectiveMedia = output.media

@@ -129,8 +129,18 @@ struct SupportRuntimeState: Equatable {
     }
 
     private mutating func trimToLimit() {
-        if events.count > eventLimit {
-            events.removeFirst(events.count - eventLimit)
+        while events.count > eventLimit {
+            guard let indexToRemove = events.indices.min(by: { lhs, rhs in
+                let lhsPriority = LiveSupportEventPriorityPolicy.priority(for: events[lhs].kind)
+                let rhsPriority = LiveSupportEventPriorityPolicy.priority(for: events[rhs].kind)
+                if lhsPriority == rhsPriority {
+                    return events[lhs].timestamp < events[rhs].timestamp
+                }
+                return lhsPriority < rhsPriority
+            }) else {
+                return
+            }
+            events.remove(at: indexToRemove)
         }
     }
 
@@ -166,9 +176,14 @@ struct SupportRuntimeState: Equatable {
 
 struct LiveRuntimeEnvironment: Equatable {
     var now: Date
+    var speakerModeDuckedRatio: Float
 
-    init(now: Date = Date()) {
+    init(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) {
         self.now = now
+        self.speakerModeDuckedRatio = speakerModeDuckedRatio
     }
 }
 

@@ -450,6 +450,10 @@ final class SwitcherViewModel {
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
     var isPageInterceptEnabled: Bool = false
     @ObservationIgnored var pageInterceptSideEffectsEnabled = true
+    @ObservationIgnored var pageInterceptStartOverride: (() -> Bool)?
+    @ObservationIgnored var scanOpenKeynoteFilesForTesting: (() -> [String])?
+    @ObservationIgnored var scanKeynoteWindowNamesForTesting: (() throws -> [String])?
+    @ObservationIgnored var saveDataDidRun: (() -> Void)?
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
         setPPTMode(PPTModeToggleModel.nextState(isEnabled: isPageInterceptEnabled), source: source)
@@ -459,6 +463,11 @@ final class SwitcherViewModel {
         guard enabled != isPageInterceptEnabled else { return }
         dispatchRuntimeFacadeAction(.operatorToggledPPTMode(source: source))
         isPageInterceptEnabled = enabled
+        if enabled {
+            guard requestPageInterceptStartForModeToggle() else { return }
+        } else {
+            requestPageInterceptStopForModeToggle(reason: .operatorDisabled)
+        }
         recordSupportEvent(
             kind: .pptModeChanged,
             detail: "isOn=\(enabled),source=\(source.rawValue)"
@@ -514,12 +523,10 @@ final class SwitcherViewModel {
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
-        let pptPort = ClosurePPTEventTapPort()
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(
                 recordsOnly: false,
-                ppt: pptPort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
@@ -563,14 +570,6 @@ final class SwitcherViewModel {
         }
         persistencePort.saveCornerLogoPositionHandler = { [weak self] position in
             self?.userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
-        }
-        pptPort.startHandler = { [weak self] in
-            guard let self, self.pageInterceptSideEffectsEnabled else { return }
-            self.startPageIntercept()
-        }
-        pptPort.stopHandler = { [weak self] reason in
-            guard let self, self.pageInterceptSideEffectsEnabled else { return }
-            self.stopPageIntercept(reason: reason)
         }
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
@@ -622,6 +621,10 @@ final class SwitcherViewModel {
     func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
         syncRuntimeStateFromFacade(clearActionLog: false)
         runtime.dispatch(action)
+    }
+
+    var runtimeConnectedPortKinds: Set<LiveRuntimeEffectPortKind> {
+        runtime.connectedPortKinds
     }
 
     func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
@@ -1123,6 +1126,7 @@ final class SwitcherViewModel {
         if let tickerPresetData = try? JSONEncoder().encode(tickerPresets) {
             userDefaults.set(tickerPresetData, forKey: UDKeys.tickerPresets)
         }
+        saveDataDidRun?()
     }
 
     func loadData() {
@@ -1677,7 +1681,11 @@ final class SwitcherViewModel {
         )
     }
 
-    func scanAndAddKeynoteWindows() {
+    private func scanKeynoteWindowNames() throws -> [String] {
+        if let scanKeynoteWindowNamesForTesting {
+            return try scanKeynoteWindowNamesForTesting()
+        }
+
         let script = """
         tell application "System Events"
             try
@@ -1692,7 +1700,7 @@ final class SwitcherViewModel {
             result = try AppleScriptRunner.run(script, action: "keynote.scan.windows")
         } catch {
             handleAppleScriptFailure(error, action: "keynote.scan.windows")
-            return
+            throw error
         }
 
         var windowNames: [String] = []
@@ -1705,37 +1713,57 @@ final class SwitcherViewModel {
         } else if let single = result.stringValue, !single.isEmpty {
             windowNames.append(single)
         }
+        return windowNames
+    }
 
-        let docPaths = keynoteController.scanOpenKeynoteFiles()
+    private func scanOpenKeynoteFiles() -> [String] {
+        if let scanOpenKeynoteFilesForTesting {
+            return scanOpenKeynoteFilesForTesting()
+        }
+        return keynoteController.scanOpenKeynoteFiles()
+    }
+
+    func scanAndAddKeynoteWindows() {
+        let windowNames: [String]
+        do {
+            windowNames = try scanKeynoteWindowNames()
+        } catch {
+            return
+        }
+
+        let docPaths = scanOpenKeynoteFiles()
+        var itemsToAdd: [ProgramItem] = []
 
         if !docPaths.isEmpty {
             for path in docPaths {
                 let url = URL(fileURLWithPath: path)
                 let alreadyAdded = programItems.contains { $0.sourceURL == url }
+                    || itemsToAdd.contains { $0.sourceURL == url }
                 if !alreadyAdded {
                     let item = ProgramItem(
                         title: url.deletingPathExtension().lastPathComponent,
                         subtitle: "KEY",
                         sourceURL: url
                     )
-                    addProgramItem(item)
+                    itemsToAdd.append(item)
                 }
             }
         } else if !windowNames.isEmpty {
             for name in windowNames {
                 let cleanName = KeynoteController.cleanedDocumentTitle(from: name)
                 let alreadyAdded = programItems.contains { $0.title == cleanName }
+                    || itemsToAdd.contains { $0.title == cleanName }
                 if !alreadyAdded {
                     let item = ProgramItem(
                         title: cleanName,
                         subtitle: "KEY (活动)",
                         sourceURL: nil
                     )
-                    addProgramItem(item)
+                    itemsToAdd.append(item)
                 }
             }
         }
-        saveData()
+        addProgramItems(itemsToAdd)
     }
 
     func switchToProgram(at index: Int) {
@@ -2444,17 +2472,76 @@ final class SwitcherViewModel {
 
     // MARK: - V25: 翻页拦截器控制
 
-    private func startPageIntercept() {
+    private func requestPageInterceptStartForModeToggle() -> Bool {
+        if let pageInterceptStartOverride {
+            if pageInterceptStartOverride() {
+                completePageInterceptStart(detail: "state=enabled,override=true")
+                return true
+            }
+            completePageInterceptStartFailure(reason: "overrideFailed", presentAlert: false)
+            return false
+        }
+
+        guard pageInterceptSideEffectsEnabled else {
+            completePageInterceptStart(detail: "state=enabled,sideEffects=false")
+            return true
+        }
+
+        return startPageIntercept()
+    }
+
+    private func requestPageInterceptStopForModeToggle(reason: PPTStopReason) {
+        guard pageInterceptSideEffectsEnabled else {
+            dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
+            LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
+            recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=\(reason.rawValue),sideEffects=false")
+            return
+        }
+        stopPageIntercept(reason: reason)
+    }
+
+    private func completePageInterceptStart(detail: String) {
+        dispatchRuntimeFacadeAction(.pptEventTapStarted)
+        LiveSwitcherTelemetry.pageInterceptEnabled()
+        recordSupportEvent(kind: .pageInterceptEnabled, detail: detail)
+    }
+
+    private func completePageInterceptStartFailure(reason: String, presentAlert: Bool) {
+        dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: reason))
+        isPageInterceptEnabled = false
+        LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason)
+        recordSupportEvent(kind: .pageInterceptDisabled, detail: "reason=\(reason)")
+        guard presentAlert else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.presentAutomationAlert(
+                title: "PPT模式无法启动",
+                message: "翻页笔接管需要「辅助功能」权限。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 再开启 PPT模式。",
+                action: "pageIntercept.\(reason)",
+                primaryButton: "打开系统设置",
+                secondaryButton: "稍后处理"
+            ) {
+                if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+        }
+    }
+
+    private func startPageIntercept() -> Bool {
         // 权限预检查：无辅助功能权限时提前提示，避免 tapCreate 静默失败
         let axOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
         if !AXIsProcessTrustedWithOptions(axOptions) {
+            dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: "accessibilityPermission"))
+            isPageInterceptEnabled = false
+            LiveSwitcherTelemetry.pageInterceptDisabled(reason: "accessibilityPermission")
+            recordSupportEvent(
+                kind: .pageInterceptDisabled,
+                detail: "reason=accessibilityPermission"
+            )
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.isPageInterceptEnabled = false
-                self.recordSupportEvent(
-                    kind: .pageInterceptDisabled,
-                    detail: "reason=accessibilityPermission"
-                )
                 self.presentAutomationAlert(
                     title: "PPT模式需要辅助功能权限",
                     message: "翻页笔接管需要「辅助功能」权限才能工作。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 即可使用 PPT模式。",
@@ -2467,7 +2554,7 @@ final class SwitcherViewModel {
                     }
                 }
             }
-            return
+            return false
         }
 
         guard pageInterceptEventTap == nil else {
@@ -2475,11 +2562,9 @@ final class SwitcherViewModel {
             if let tap = pageInterceptEventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
                 pageInterceptRuntime.updateEventTap(tap)
-                dispatchRuntimeFacadeAction(.pptEventTapStarted)
-                LiveSwitcherTelemetry.pageInterceptEnabled()
-                recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled,existingTap=true")
+                completePageInterceptStart(detail: "state=enabled,existingTap=true")
             }
-            return
+            return true
         }
 
         let eventMask = CGEventMask(1 << CGEventType.keyDown.rawValue)
@@ -2493,28 +2578,8 @@ final class SwitcherViewModel {
             userInfo: selfRefcon
         ) else {
             Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                self.dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: "eventTapCreateFailed"))
-                self.isPageInterceptEnabled = false
-                LiveSwitcherTelemetry.pageInterceptDisabled(reason: "eventTapCreateFailed")
-                self.recordSupportEvent(
-                    kind: .pageInterceptDisabled,
-                    detail: "reason=eventTapCreateFailed"
-                )
-                self.presentAutomationAlert(
-                    title: "PPT模式无法启动",
-                    message: "翻页笔接管需要「辅助功能」权限。\n\n请前往：系统设置 → 隐私与安全性 → 辅助功能，找到\"LiveSwitcher\"并打开开关。\n\n设置完成后，重新启动 App 再开启 PPT模式。",
-                    action: "pageIntercept.eventTapCreateFailed",
-                    primaryButton: "打开系统设置",
-                    secondaryButton: "稍后处理"
-                ) {
-                    if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
-                        NSWorkspace.shared.open(url)
-                    }
-                }
-            }
-            return
+            completePageInterceptStartFailure(reason: "eventTapCreateFailed", presentAlert: true)
+            return false
         }
 
         let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
@@ -2525,9 +2590,8 @@ final class SwitcherViewModel {
         pageInterceptRunLoopSource = src
         pageInterceptSelfRefcon = selfRefcon
         pageInterceptRuntime.updateEventTap(tap)
-        dispatchRuntimeFacadeAction(.pptEventTapStarted)
-        LiveSwitcherTelemetry.pageInterceptEnabled()
-        recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled")
+        completePageInterceptStart(detail: "state=enabled")
+        return true
     }
 
     private func stopPageIntercept(reason: PPTStopReason = .operatorDisabled) {

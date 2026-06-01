@@ -23,7 +23,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
     }
 
-    func testPPTModeSideEffectsRouteThroughInjectedRuntimePort() throws {
+    func testPPTModeSideEffectsDoNotRouteThroughRuntimePortUntilMigration() throws {
         let ppt = PPTEventTapPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt)
@@ -34,7 +34,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         viewModel.setPPTMode(true, source: .liveMode)
         viewModel.setPPTMode(false, source: .liveMode)
 
-        XCTAssertEqual(ppt.calls, ["start", "stop:operatorDisabled"])
+        XCTAssertTrue(ppt.calls.isEmpty)
     }
 
     func testPPTModeStateDoesNotOwnEventTapSideEffectsInDidSet() throws {
