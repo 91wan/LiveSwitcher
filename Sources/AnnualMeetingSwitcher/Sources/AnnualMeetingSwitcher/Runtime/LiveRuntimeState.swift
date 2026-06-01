@@ -10,6 +10,7 @@ struct LiveRuntimeState: Equatable {
     var ppt = PPTRuntimeState()
     var projection = ProjectionRuntimeState()
     var automation = AutomationRuntimeState()
+    var preferences = LiveRuntimePreferenceState()
     var support = SupportRuntimeState()
 }
 
@@ -85,6 +86,11 @@ struct ProjectionRuntimeState: Equatable {
 struct AutomationRuntimeState: Equatable {
     var notice: AutomationRuntimeNotice?
     var suppressionUntilByAction: [String: Date] = [:]
+}
+
+struct LiveRuntimePreferenceState: Equatable {
+    var autoPlayNextVideoOnEnd = false
+    var autoAdvanceAtScheduledTime = false
 }
 
 struct SupportRuntimeState: Equatable {

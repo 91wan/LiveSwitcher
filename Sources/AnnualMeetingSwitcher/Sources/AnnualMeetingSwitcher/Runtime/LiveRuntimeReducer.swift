@@ -163,6 +163,14 @@ enum LiveRuntimeReducer {
                 state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
             }
 
+        case .operatorSetAutoPlayNextVideoOnEnd(let isEnabled):
+            state.preferences.autoPlayNextVideoOnEnd = isEnabled
+            effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))
+
+        case .operatorSetAutoAdvanceAtScheduledTime(let isEnabled):
+            state.preferences.autoAdvanceAtScheduledTime = isEnabled
+            effects.append(.saveAutoAdvanceAtScheduledTime(isEnabled))
+
         case .mediaLoaded(let url, let generation):
             guard generation == state.media.generation else { break }
             state.media.loadedURL = url

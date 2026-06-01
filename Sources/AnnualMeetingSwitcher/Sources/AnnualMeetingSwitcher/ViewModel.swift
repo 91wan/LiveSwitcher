@@ -82,6 +82,8 @@ private final class ClosurePersistencePort: PersistencePort {
     var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
     var saveSpeakerModeHandler: ((Bool) -> Void)?
     var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
+    var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
+    var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
 
     func save() {
         saveHandler?()
@@ -97,6 +99,14 @@ private final class ClosurePersistencePort: PersistencePort {
 
     func saveBGMPlayMode(_ playMode: BGMPlayMode) {
         saveBGMPlayModeHandler?(playMode)
+    }
+
+    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {
+        saveAutoPlayNextVideoOnEndHandler?(isEnabled)
+    }
+
+    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
+        saveAutoAdvanceAtScheduledTimeHandler?(isEnabled)
     }
 }
 
@@ -319,12 +329,14 @@ final class SwitcherViewModel {
     /// 视频播毕后仅自动播放队列里的紧邻下一条视频；默认关闭，避免现场自动打开演示文件。
     var autoPlayNextVideoOnEnd: Bool = false {
         didSet {
-            userDefaults.set(autoPlayNextVideoOnEnd, forKey: UDKeys.autoPlayNextVideoOnEnd)
+            guard oldValue != autoPlayNextVideoOnEnd else { return }
+            dispatchRuntimeFacadeAction(.operatorSetAutoPlayNextVideoOnEnd(autoPlayNextVideoOnEnd))
         }
     }
     var autoAdvanceAtScheduledTime: Bool = false {
         didSet {
-            userDefaults.set(autoAdvanceAtScheduledTime, forKey: UDKeys.autoAdvanceAtScheduledTime)
+            guard oldValue != autoAdvanceAtScheduledTime else { return }
+            dispatchRuntimeFacadeAction(.operatorSetAutoAdvanceAtScheduledTime(autoAdvanceAtScheduledTime))
         }
     }
 
@@ -491,6 +503,12 @@ final class SwitcherViewModel {
         persistencePort.saveBGMPlayModeHandler = { [weak self] playMode in
             self?.userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
         }
+        persistencePort.saveAutoPlayNextVideoOnEndHandler = { [weak self] isEnabled in
+            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoPlayNextVideoOnEnd)
+        }
+        persistencePort.saveAutoAdvanceAtScheduledTimeHandler = { [weak self] isEnabled in
+            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
+        }
         pptPort.startHandler = { [weak self] in
             guard let self, self.pageInterceptSideEffectsEnabled else { return }
             self.startPageIntercept()
@@ -608,6 +626,8 @@ final class SwitcherViewModel {
 
         state.ppt.isRequested = isPageInterceptEnabled
         state.ppt.isEventTapActive = pageInterceptEventTap != nil
+        state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
+        state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
 
         state.projection.isBroadcasting = isBroadcasting
         state.projection.hasExternalDisplay = isExternalDisplayAvailable

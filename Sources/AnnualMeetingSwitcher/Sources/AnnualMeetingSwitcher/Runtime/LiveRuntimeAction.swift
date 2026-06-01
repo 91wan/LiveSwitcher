@@ -29,6 +29,8 @@ enum LiveRuntimeAction: Equatable {
     case operatorSelectedPreviousBGM
     case operatorToggledPPTMode(source: PPTModeToggleSource)
     case operatorToggledProjection
+    case operatorSetAutoPlayNextVideoOnEnd(Bool)
+    case operatorSetAutoAdvanceAtScheduledTime(Bool)
 
     case mediaLoaded(url: URL, generation: Int)
     case mediaPlaybackChanged(isPlaying: Bool, generation: Int)
@@ -82,6 +84,8 @@ extension LiveRuntimeAction {
         case .operatorSelectedPreviousBGM: return "operatorSelectedPreviousBGM"
         case .operatorToggledPPTMode: return "operatorToggledPPTMode"
         case .operatorToggledProjection: return "operatorToggledProjection"
+        case .operatorSetAutoPlayNextVideoOnEnd: return "operatorSetAutoPlayNextVideoOnEnd"
+        case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
         case .mediaLoaded: return "mediaLoaded"
         case .mediaPlaybackChanged: return "mediaPlaybackChanged"
         case .mediaReachedEnd: return "mediaReachedEnd"
