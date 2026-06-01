@@ -69,6 +69,14 @@ private struct LiveMasterMeterCandidate {
     }
 }
 
+private final class ClosureAudioRoutingPort: AudioRoutingPort {
+    var applyHandler: ((AudioRoutingRuntimeChangeReason, LiveRuntimeState) -> Void)?
+
+    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
+        applyHandler?(reason, state)
+    }
+}
+
 final class ViewModelCleanupBag {
     var mediaVolumeFadeTask: Task<Void, Never>?
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
@@ -176,7 +184,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != masterVolume else { return }
             dispatchRuntimeFacadeAction(.operatorChangedMasterVolume(masterVolume))
-            applyMasterVolume()
         }
     }
 
@@ -185,7 +192,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != mediaVolume else { return }
             dispatchRuntimeFacadeAction(.operatorChangedMediaVolume(mediaVolume))
-            applyMasterVolume()
         }
     }
 
@@ -194,7 +200,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != bgmVolume else { return }
             dispatchRuntimeFacadeAction(.operatorChangedBGMVolume(bgmVolume))
-            applyBGMVolume()
         }
     }
 
@@ -203,21 +208,18 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != isMasterAudioMuted else { return }
             dispatchRuntimeFacadeAction(.operatorChangedMasterMute(isMasterAudioMuted))
-            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
     var isMediaAudioMuted: Bool = false {
         didSet {
             guard oldValue != isMediaAudioMuted else { return }
             dispatchRuntimeFacadeAction(.operatorChangedMediaMute(isMediaAudioMuted))
-            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
     var isBGMAudioMuted: Bool = false {
         didSet {
             guard oldValue != isBGMAudioMuted else { return }
             dispatchRuntimeFacadeAction(.operatorChangedBGMMute(isBGMAudioMuted))
-            applyAudioRoutingForRuntimeChange(reason: .operatorFaderChanged)
         }
     }
 
@@ -226,7 +228,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != audioStrategy else { return }
             dispatchRuntimeFacadeAction(.operatorSelectedAudioStrategy(audioStrategy))
-            applyAudioRoutingForRuntimeChange(reason: .strategyChanged)
             userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         }
     }
@@ -267,7 +268,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != isBGMAudioTakeoverActive else { return }
             dispatchRuntimeFacadeAction(.operatorChangedBGMTakeover(isBGMAudioTakeoverActive))
-            applyAudioRoutingForRuntimeChange(reason: .limiterChanged)
         }
     }
     var bgmPlayMode: BGMPlayMode = .loopAll {
@@ -283,7 +283,6 @@ final class SwitcherViewModel {
             userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
             guard oldValue != isSpeakerMode else { return }
             dispatchRuntimeFacadeAction(.operatorSetSpeakerMode(isSpeakerMode))
-            applyAudioRoutingForRuntimeChange(reason: .speakerChanged)
         }
     }
 
@@ -437,8 +436,17 @@ final class SwitcherViewModel {
         userDefaults: UserDefaults = .standard,
         runtime: LiveRuntimeStore? = nil
     ) {
+        let audioRoutingPort = ClosureAudioRoutingPort()
         self.userDefaults = userDefaults
-        self.runtime = runtime ?? LiveRuntimeStore()
+        self.runtime = runtime ?? LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                audioRouting: audioRoutingPort
+            )
+        )
+        audioRoutingPort.applyHandler = { [weak self] reason, _ in
+            self?.applyAudioRoutingForRuntimeChange(reason: reason)
+        }
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
         }
