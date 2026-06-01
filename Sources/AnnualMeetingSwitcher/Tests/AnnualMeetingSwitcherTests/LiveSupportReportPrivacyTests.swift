@@ -124,6 +124,30 @@ final class LiveSupportReportPrivacyTests: XCTestCase {
         XCTAssertFalse(report.localizedStandardContains("Deck.key"))
     }
 
+    func testSupportReportIncludesSanitizedRuntimeActionTimeline() {
+        let report = LiveSupportReport.makePlainText(
+            snapshot: diagnosticsSnapshot(),
+            checks: [],
+            events: [],
+            actionLog: [
+                LiveRuntimeActionLogEntry(
+                    timestamp: Date(timeIntervalSince1970: 1_790_000_000),
+                    actionName: "operatorSelectedProgram",
+                    oldStateSummary: "program=none,mediaPlaying=false",
+                    newStateSummary: "program=/tmp/Private Opening.mov,mediaPlaying=true"
+                )
+            ],
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_001)
+        )
+
+        XCTAssertTrue(report.contains("[Recent Runtime Actions]"))
+        XCTAssertTrue(report.contains("operatorSelectedProgram"))
+        XCTAssertTrue(report.contains("program=none,mediaPlaying=false"))
+        XCTAssertTrue(report.contains("program=[path redacted],mediaPlaying=true"))
+        XCTAssertFalse(report.localizedStandardContains("/tmp/"))
+        XCTAssertFalse(report.localizedStandardContains("Private Opening.mov"))
+    }
+
     private func diagnosticsSnapshot(currentProgramTitle: String? = nil) -> LiveDiagnosticsSnapshot {
         LiveDiagnosticsSnapshot(
             appVersion: "0.4.0",

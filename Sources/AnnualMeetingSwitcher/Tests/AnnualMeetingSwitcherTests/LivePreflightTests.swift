@@ -633,6 +633,22 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertEqual(viewModel.backgroundWallpapers.count, beforeWallpaperCount)
     }
 
+    func testViewModelSupportReportIncludesRuntimeActionTimeline() {
+        let viewModel = makeViewModel()
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        viewModel.togglePanicMode()
+
+        let report = viewModel.liveSupportReportText(
+            generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
+        )
+
+        XCTAssertTrue(report.contains("[Recent Runtime Actions]"))
+        XCTAssertTrue(report.contains("operatorSetPanic"))
+        XCTAssertFalse(report.localizedStandardContains("/Users/"))
+        XCTAssertFalse(report.localizedStandardContains("file://"))
+    }
+
     func testSafetyCockpitOrdersFailWarnPassChecksForOperatorAttention() {
         var snapshot = readySnapshot()
         snapshot.hasExternalDisplay = false
