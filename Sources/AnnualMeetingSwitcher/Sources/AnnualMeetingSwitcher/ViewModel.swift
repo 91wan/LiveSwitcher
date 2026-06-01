@@ -1262,7 +1262,6 @@ final class SwitcherViewModel {
                 self?.dispatchRuntimeMediaCallback {
                     .mediaPlaybackChanged(isPlaying: isPlaying, generation: $0)
                 }
-                self?.applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
             }
             .store(in: &cancellables)
 
