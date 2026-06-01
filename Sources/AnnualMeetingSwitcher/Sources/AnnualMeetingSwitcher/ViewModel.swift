@@ -77,6 +77,19 @@ private final class ClosureAudioRoutingPort: AudioRoutingPort {
     }
 }
 
+private final class ClosureImageAssetPort: ImageAssetPort {
+    var loadBackgroundImageHandler: ((URL?) -> Void)?
+    var loadCornerLogoImageHandler: ((URL?) -> Void)?
+
+    func loadBackgroundImage(from url: URL?) {
+        loadBackgroundImageHandler?(url)
+    }
+
+    func loadCornerLogoImage(from url: URL?) {
+        loadCornerLogoImageHandler?(url)
+    }
+}
+
 private final class ClosurePersistencePort: PersistencePort {
     var saveHandler: (() -> Void)?
     var saveConsoleModeHandler: ((ConsoleMode) -> Void)?
@@ -310,12 +323,12 @@ final class SwitcherViewModel {
     var backgroundImage: NSImage?
     var activeWallpaperURL: URL? {
         didSet {
-            loadBackgroundImage(from: activeWallpaperURL)
+            dispatchRuntimeFacadeAction(.operatorSetActiveWallpaperURL(activeWallpaperURL))
         }
     }
     var cornerLogoURL: URL? {
         didSet {
-            loadCornerLogoImage(from: cornerLogoURL)
+            dispatchRuntimeFacadeAction(.operatorSetCornerLogoURL(cornerLogoURL))
         }
     }
     var cornerLogoImage: NSImage?
@@ -499,6 +512,7 @@ final class SwitcherViewModel {
         runtime: LiveRuntimeStore? = nil
     ) {
         let audioRoutingPort = ClosureAudioRoutingPort()
+        let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
         let pptPort = ClosurePPTEventTapPort()
         self.userDefaults = userDefaults
@@ -507,11 +521,18 @@ final class SwitcherViewModel {
                 recordsOnly: false,
                 ppt: pptPort,
                 audioRouting: audioRoutingPort,
+                imageAssets: imageAssetPort,
                 persistence: persistencePort
             )
         )
         audioRoutingPort.applyHandler = { [weak self] reason, _ in
             self?.applyAudioRoutingForRuntimeChange(reason: reason)
+        }
+        imageAssetPort.loadBackgroundImageHandler = { [weak self] url in
+            self?.loadBackgroundImage(from: url)
+        }
+        imageAssetPort.loadCornerLogoImageHandler = { [weak self] url in
+            self?.loadCornerLogoImage(from: url)
         }
         persistencePort.saveHandler = { [weak self] in
             self?.saveData()
@@ -661,6 +682,8 @@ final class SwitcherViewModel {
         state.ppt.isRequested = isPageInterceptEnabled
         state.ppt.isEventTapActive = pageInterceptEventTap != nil
         state.preferences.themeOverride = themeOverride
+        state.preferences.activeWallpaperURL = activeWallpaperURL
+        state.preferences.cornerLogoURL = cornerLogoURL
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
         state.preferences.showAgendaTimeline = showAgendaTimeline

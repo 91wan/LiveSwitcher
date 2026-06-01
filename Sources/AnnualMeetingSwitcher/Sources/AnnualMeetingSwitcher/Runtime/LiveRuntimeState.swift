@@ -90,6 +90,8 @@ struct AutomationRuntimeState: Equatable {
 
 struct LiveRuntimePreferenceState: Equatable {
     var themeOverride: ThemeOverride = .dark
+    var activeWallpaperURL: URL?
+    var cornerLogoURL: URL?
     var autoPlayNextVideoOnEnd = false
     var autoAdvanceAtScheduledTime = false
     var showAgendaTimeline = false
