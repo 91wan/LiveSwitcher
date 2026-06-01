@@ -370,7 +370,8 @@ final class BGMPlaybackCompletionTests: XCTestCase {
             enableSystemVolumeObserver: false,
             userDefaults: defaults
         )
-        first.bgmPlayMode = .loopOne
+        first.toggleLoopMode()
+        XCTAssertEqual(first.bgmPlayMode, .loopOne)
 
         let second = SwitcherViewModel(
             loadPersistedData: true,

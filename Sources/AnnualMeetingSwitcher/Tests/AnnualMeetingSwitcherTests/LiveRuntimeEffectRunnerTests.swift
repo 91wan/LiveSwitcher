@@ -67,6 +67,7 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
                 .applyAudioRouting(reason: .panicChanged),
                 .saveAudioStrategy(.followSource),
                 .saveSpeakerMode(true),
+                .saveBGMPlayMode(.sequential),
                 .savePersistentState,
                 .recordSupportEvent(event)
             ],
@@ -101,9 +102,10 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         XCTAssertEqual(audioRouting.panicStates, [true])
         XCTAssertEqual(persistence.savedAudioStrategies, [.followSource])
         XCTAssertEqual(persistence.savedSpeakerModes, [true])
+        XCTAssertEqual(persistence.savedBGMPlayModes, [.sequential])
         XCTAssertEqual(persistence.saveCount, 1)
         XCTAssertEqual(support.events, [event])
-        XCTAssertEqual(runner.recordedEffects.count, 27)
+        XCTAssertEqual(runner.recordedEffects.count, 28)
     }
 
     func testRecordingRunnerDoesNotInvokeInjectedPorts() {
@@ -252,6 +254,7 @@ private final class PersistencePortSpy: PersistencePort {
     private(set) var saveCount = 0
     private(set) var savedAudioStrategies: [AudioStrategy] = []
     private(set) var savedSpeakerModes: [Bool] = []
+    private(set) var savedBGMPlayModes: [BGMPlayMode] = []
 
     func save() {
         saveCount += 1
@@ -263,6 +266,10 @@ private final class PersistencePortSpy: PersistencePort {
 
     func saveSpeakerMode(_ isEnabled: Bool) {
         savedSpeakerModes.append(isEnabled)
+    }
+
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
+        savedBGMPlayModes.append(playMode)
     }
 }
 

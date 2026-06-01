@@ -93,7 +93,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         )
 
         XCTAssertEqual(mutation.state.bgm.playMode, .sequential)
-        XCTAssertTrue(mutation.effects.contains(.savePersistentState))
+        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.sequential)))
     }
 
     func testRuntimeLoopOneEndRestartsSameTrackWithNewGeneration() {
@@ -228,6 +228,29 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedBGMPlayMode" })
     }
 
+    func testViewModelLoopModeToggleRoutesPersistenceThroughRuntimePort() {
+        let suiteName = "LiveRuntimeBGMBridgeTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let persistence = PersistencePortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults,
+            runtime: runtime
+        )
+
+        viewModel.toggleLoopMode()
+
+        XCTAssertEqual(runtime.state.bgm.playMode, .loopOne)
+        XCTAssertEqual(persistence.saveCount, 1)
+        XCTAssertEqual(persistence.savedBGMPlayModes, [.loopOne])
+        XCTAssertNil(defaults.string(forKey: "bgmPlayMode"))
+    }
+
     private func bgmItem(title: String) -> BGMItem {
         BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"))
     }
@@ -245,5 +268,19 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         return SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+    }
+}
+
+private final class PersistencePortSpy: PersistencePort {
+    private(set) var saveCount = 0
+    private(set) var savedBGMPlayModes: [BGMPlayMode] = []
+
+    func save() {
+        saveCount += 1
+    }
+
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
+        saveCount += 1
+        savedBGMPlayModes.append(playMode)
     }
 }

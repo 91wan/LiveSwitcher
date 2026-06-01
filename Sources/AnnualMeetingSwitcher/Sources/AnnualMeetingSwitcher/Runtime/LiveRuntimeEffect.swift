@@ -31,6 +31,7 @@ enum LiveRuntimeEffect: Equatable {
     case applyAudioRouting(reason: AudioRoutingRuntimeChangeReason)
     case saveAudioStrategy(AudioStrategy)
     case saveSpeakerMode(Bool)
+    case saveBGMPlayMode(BGMPlayMode)
     case savePersistentState
     case recordSupportEvent(LiveSupportEvent)
 }
@@ -97,6 +98,7 @@ protocol PersistencePort {
     func save()
     func saveAudioStrategy(_ strategy: AudioStrategy)
     func saveSpeakerMode(_ isEnabled: Bool)
+    func saveBGMPlayMode(_ playMode: BGMPlayMode)
 }
 
 extension PersistencePort {
@@ -105,6 +107,10 @@ extension PersistencePort {
     }
 
     func saveSpeakerMode(_ isEnabled: Bool) {
+        save()
+    }
+
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
         save()
     }
 }
@@ -225,6 +231,8 @@ final class LiveRuntimeEffectRunner {
             persistence?.saveAudioStrategy(strategy)
         case .saveSpeakerMode(let isEnabled):
             persistence?.saveSpeakerMode(isEnabled)
+        case .saveBGMPlayMode(let playMode):
+            persistence?.saveBGMPlayMode(playMode)
         case .savePersistentState:
             persistence?.save()
         case .recordSupportEvent(let event):
