@@ -363,8 +363,6 @@ final class SwitcherViewModel {
     private var isPresentingAutomationAlert = false
     private let automationAlertSuppressionWindow: TimeInterval = 15
     private var automationAlertSuppressionUntilByAction: [String: Date] = [:]
-    private let automationNoticeSuppressionWindow: TimeInterval = 15
-    private var automationNoticeSuppressionUntilByAction: [String: Date] = [:]
     // MARK: - Combine / Timers
 
     private var cancellables = Set<AnyCancellable>()
@@ -1313,15 +1311,9 @@ final class SwitcherViewModel {
         automationRuntimeNotice = nil
     }
 
-    private func showAutomationRuntimeNotice(action: String, now: Date = Date()) {
-        if let suppressionUntil = automationNoticeSuppressionUntilByAction[action],
-           now < suppressionUntil {
-            return
-        }
-
-        automationRuntimeNotice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: now)
-        automationNoticeSuppressionUntilByAction[action] = now
-            .addingTimeInterval(automationNoticeSuppressionWindow)
+    private func showAutomationRuntimeNotice(action: String) {
+        dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))
+        automationRuntimeNotice = runtime.state.automation.notice
     }
 
     private func presentAutomationAlert(

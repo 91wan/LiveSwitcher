@@ -259,21 +259,15 @@ enum LiveRuntimeReducer {
             }
 
         case .automationFailed(let action, let sanitizedMessage):
-            let notice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: environment.now)
-            let suppressionUntil = state.automation.suppressionUntilByAction[action] ?? .distantPast
-            if suppressionUntil <= environment.now {
-                state.automation.notice = notice
-                state.automation.suppressionUntilByAction[action] = environment.now.addingTimeInterval(15)
-                effects.append(.showAutomationNotice(notice))
-                if let expiresAt = notice.expiresAt {
-                    effects.append(.expireAutomationNotice(notice.id, at: expiresAt))
-                }
-            }
+            requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
             state.support.record(
                 kind: .appleScriptFailed,
                 detail: "action=\(action),error=\(sanitizedMessage)",
                 at: environment.now
             )
+
+        case .automationNoticeRequested(let action):
+            requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
 
         case .automationNoticeExpired(let id):
             if state.automation.notice?.id == id {
@@ -464,6 +458,24 @@ enum LiveRuntimeReducer {
         effects.append(.stopBGMTimer(generation: state.bgm.generation))
         recalculateAudio(&state)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
+    }
+
+    private static func requestAutomationNotice(
+        action: String,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect],
+        now: Date
+    ) {
+        let notice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: now)
+        let suppressionUntil = state.automation.suppressionUntilByAction[action] ?? .distantPast
+        guard suppressionUntil <= now else { return }
+
+        state.automation.notice = notice
+        state.automation.suppressionUntilByAction[action] = now.addingTimeInterval(15)
+        effects.append(.showAutomationNotice(notice))
+        if let expiresAt = notice.expiresAt {
+            effects.append(.expireAutomationNotice(notice.id, at: expiresAt))
+        }
     }
 
     private static func recalculateAudio(_ state: inout LiveRuntimeState) {
