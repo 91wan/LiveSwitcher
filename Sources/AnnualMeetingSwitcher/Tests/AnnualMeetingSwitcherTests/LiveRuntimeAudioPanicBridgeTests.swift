@@ -23,7 +23,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
 
         XCTAssertEqual(mutation.state.audio.strategy, AudioStrategy.bgmOnly)
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .strategyChanged)))
-        XCTAssertTrue(mutation.effects.contains(.savePersistentState))
+        XCTAssertTrue(mutation.effects.contains(.saveAudioStrategy(.bgmOnly)))
     }
 
     func testSpeakerActionProducesSpeakerRoutingAndPersistenceEffects() {
@@ -35,7 +35,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
 
         XCTAssertTrue(mutation.state.audio.isSpeakerMode)
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .speakerChanged)))
-        XCTAssertTrue(mutation.effects.contains(.savePersistentState))
+        XCTAssertTrue(mutation.effects.contains(.saveSpeakerMode(true)))
     }
 
     func testLimiterActionsProduceLimiterOrFaderRoutingEffects() {
@@ -128,6 +128,31 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
 
+    func testViewModelAudioPreferenceSettersRoutePersistenceThroughRuntimePort() {
+        let suiteName = "LiveRuntimeAudioPanicBridgeTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let persistence = PersistencePortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults,
+            runtime: runtime
+        )
+
+        viewModel.audioStrategy = .followSource
+        viewModel.isSpeakerMode = true
+
+        XCTAssertEqual(runtime.state.audio.strategy, .followSource)
+        XCTAssertTrue(runtime.state.audio.isSpeakerMode)
+        XCTAssertEqual(persistence.saveCount, 2)
+        XCTAssertNil(defaults.string(forKey: "audioStrategy"))
+        XCTAssertNil(defaults.object(forKey: "speakerMode"))
+    }
+
     func testViewModelPanicToggleDispatchesRuntimeActionAndAppliesRuntimeTransition() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
@@ -147,5 +172,13 @@ private final class AudioRoutingPortSpy: AudioRoutingPort {
     func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
         reasons.append(reason)
         masterMutedStates.append(state.audio.isMasterMuted)
+    }
+}
+
+private final class PersistencePortSpy: PersistencePort {
+    private(set) var saveCount = 0
+
+    func save() {
+        saveCount += 1
     }
 }

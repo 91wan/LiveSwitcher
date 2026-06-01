@@ -65,6 +65,8 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
                 .showAutomationNotice(notice),
                 .expireAutomationNotice(notice.id, at: noticeExpiresAt),
                 .applyAudioRouting(reason: .panicChanged),
+                .saveAudioStrategy(.followSource),
+                .saveSpeakerMode(true),
                 .savePersistentState,
                 .recordSupportEvent(event)
             ],
@@ -97,9 +99,11 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         ])
         XCTAssertEqual(audioRouting.reasons, [.panicChanged])
         XCTAssertEqual(audioRouting.panicStates, [true])
+        XCTAssertEqual(persistence.savedAudioStrategies, [.followSource])
+        XCTAssertEqual(persistence.savedSpeakerModes, [true])
         XCTAssertEqual(persistence.saveCount, 1)
         XCTAssertEqual(support.events, [event])
-        XCTAssertEqual(runner.recordedEffects.count, 25)
+        XCTAssertEqual(runner.recordedEffects.count, 27)
     }
 
     func testRecordingRunnerDoesNotInvokeInjectedPorts() {
@@ -246,9 +250,19 @@ private final class AudioRoutingPortSpy: AudioRoutingPort {
 
 private final class PersistencePortSpy: PersistencePort {
     private(set) var saveCount = 0
+    private(set) var savedAudioStrategies: [AudioStrategy] = []
+    private(set) var savedSpeakerModes: [Bool] = []
 
     func save() {
         saveCount += 1
+    }
+
+    func saveAudioStrategy(_ strategy: AudioStrategy) {
+        savedAudioStrategies.append(strategy)
+    }
+
+    func saveSpeakerMode(_ isEnabled: Bool) {
+        savedSpeakerModes.append(isEnabled)
     }
 }
 
