@@ -38,6 +38,7 @@ protocol MediaPlaybackPort {
     func play(generation: Int)
     func pause(generation: Int)
     func restart(generation: Int)
+    func stop(generation: Int)
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int)
 }
 
@@ -51,8 +52,20 @@ protocol BGMPlaybackPort {
 
 protocol ProjectionPort {
     var hasExternalDisplay: Bool { get }
+    func start()
+    func stop()
     func show()
     func hide()
+}
+
+extension ProjectionPort {
+    func start() {
+        show()
+    }
+
+    func stop() {
+        hide()
+    }
 }
 
 protocol PPTEventTapPort {
@@ -75,9 +88,32 @@ protocol SupportEventPort {
 final class LiveRuntimeEffectRunner {
     private(set) var recordedEffects: [LiveRuntimeEffect] = []
     private let recordsOnly: Bool
+    private let media: MediaPlaybackPort?
+    private let bgm: BGMPlaybackPort?
+    private let projection: ProjectionPort?
+    private let ppt: PPTEventTapPort?
+    private let automation: AutomationPort?
+    private let persistence: PersistencePort?
+    private let support: SupportEventPort?
 
-    init(recordsOnly: Bool = true) {
+    init(
+        recordsOnly: Bool = true,
+        media: MediaPlaybackPort? = nil,
+        bgm: BGMPlaybackPort? = nil,
+        projection: ProjectionPort? = nil,
+        ppt: PPTEventTapPort? = nil,
+        automation: AutomationPort? = nil,
+        persistence: PersistencePort? = nil,
+        support: SupportEventPort? = nil
+    ) {
         self.recordsOnly = recordsOnly
+        self.media = media
+        self.bgm = bgm
+        self.projection = projection
+        self.ppt = ppt
+        self.automation = automation
+        self.persistence = persistence
+        self.support = support
     }
 
     static func recording() -> LiveRuntimeEffectRunner {
@@ -93,5 +129,62 @@ final class LiveRuntimeEffectRunner {
         guard !recordsOnly else { return }
         _ = currentState
         _ = dispatch
+        effects.forEach(run)
+    }
+
+    private func run(_ effect: LiveRuntimeEffect) {
+        switch effect {
+        case .loadMedia(let url, let generation):
+            media?.load(url: url, generation: generation)
+        case .playMedia(let generation):
+            media?.play(generation: generation)
+        case .pauseMedia(let generation):
+            media?.pause(generation: generation)
+        case .restartMedia(let generation):
+            media?.restart(generation: generation)
+        case .stopMedia(let generation):
+            media?.stop(generation: generation)
+        case .setMediaVolume(let volume, let fade, let generation):
+            media?.setVolume(volume, fade: fade, generation: generation)
+
+        case .prepareBGM(let item, let generation):
+            bgm?.prepare(item: item, generation: generation)
+        case .playBGM(let generation):
+            bgm?.play(generation: generation)
+        case .pauseBGM(let generation):
+            bgm?.pause(generation: generation)
+        case .stopBGM(let fade, let generation):
+            bgm?.stop(fade: fade, generation: generation)
+        case .setBGMVolume(let volume, let fade, let generation):
+            bgm?.setVolume(volume, fade: fade, generation: generation)
+        case .startBGMTimer, .stopBGMTimer:
+            break
+
+        case .startProjection:
+            projection?.start()
+        case .stopProjection:
+            projection?.stop()
+        case .showOutputWindow:
+            projection?.show()
+        case .hideOutputWindow:
+            projection?.hide()
+
+        case .startPPTEventTap:
+            ppt?.start()
+        case .stopPPTEventTap(let reason):
+            ppt?.stop(reason: reason)
+
+        case .runAppleScript(let script, let action):
+            automation?.run(script: script, action: action)
+        case .showAutomationNotice, .expireAutomationNotice:
+            break
+
+        case .applyAudioRouting:
+            break
+        case .savePersistentState:
+            persistence?.save()
+        case .recordSupportEvent(let event):
+            support?.record(event)
+        }
     }
 }
