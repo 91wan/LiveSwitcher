@@ -54,6 +54,24 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorToggledMediaPlayback" })
     }
 
+    func testViewModelDispatchesThroughInjectedRuntimeStore() {
+        let runtime = LiveRuntimeStore(effectRunner: .recording())
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        let item = mediaProgram()
+        viewModel.programItems = [item]
+        viewModel.currentProgramItem = item
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertTrue(viewModel.runtime === runtime)
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorToggledMediaPlayback" })
+        XCTAssertTrue(runtime.recordedEffects.contains(.playMedia(generation: runtime.state.media.generation)))
+    }
+
     func testViewModelRestartDispatchesRuntimeRestartAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()

@@ -334,7 +334,7 @@ final class SwitcherViewModel {
 
     // MARK: - 引擎
 
-    let runtime = LiveRuntimeStore()
+    let runtime: LiveRuntimeStore
     let keynoteController = KeynoteController()
     let avCoordinator = AVPlayerCoordinator()
 
@@ -436,9 +436,11 @@ final class SwitcherViewModel {
     init(
         loadPersistedData: Bool = true,
         enableSystemVolumeObserver: Bool = true,
-        userDefaults: UserDefaults = .standard
+        userDefaults: UserDefaults = .standard,
+        runtime: LiveRuntimeStore? = nil
     ) {
         self.userDefaults = userDefaults
+        self.runtime = runtime ?? LiveRuntimeStore()
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
         }
