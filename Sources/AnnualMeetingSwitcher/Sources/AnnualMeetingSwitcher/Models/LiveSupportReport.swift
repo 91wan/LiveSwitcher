@@ -57,6 +57,7 @@ enum LiveSupportReport {
         snapshot: LiveDiagnosticsSnapshot,
         checks: [LivePreflightCheck],
         events: [LiveSupportEvent],
+        actionLog: [LiveRuntimeActionLogEntry] = [],
         generatedAt: Date = Date()
     ) -> String {
         let safePreflight = supportSafeSnapshot(snapshot.preflight)
@@ -91,6 +92,18 @@ enum LiveSupportReport {
         } else {
             lines.append(contentsOf: events.map { event in
                 "- \(isoString(event.timestamp)) \(event.kind.rawValue): \(event.detail)"
+            })
+        }
+
+        lines += [
+            "",
+            "[Recent Runtime Actions]"
+        ]
+        if actionLog.isEmpty {
+            lines.append("- No recent runtime actions.")
+        } else {
+            lines.append(contentsOf: actionLog.suffix(40).map { entry in
+                "- \(isoString(entry.timestamp)) \(entry.actionName): \(entry.oldStateSummary) -> \(entry.newStateSummary)"
             })
         }
 

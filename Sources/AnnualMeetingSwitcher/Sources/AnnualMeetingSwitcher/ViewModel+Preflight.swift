@@ -77,6 +77,7 @@ extension SwitcherViewModel {
             snapshot: snapshot,
             checks: LivePreflightCheck.build(from: snapshot.preflight),
             events: supportEvents,
+            actionLog: runtime.actionLog,
             generatedAt: generatedAt
         )
     }
