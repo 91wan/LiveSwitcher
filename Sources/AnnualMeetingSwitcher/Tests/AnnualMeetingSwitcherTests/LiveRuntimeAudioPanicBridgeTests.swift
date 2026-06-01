@@ -74,7 +74,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .panicChanged)))
     }
 
-    func testViewModelAudioSettersDispatchRuntimeActionsAndKeepLegacyTransition() {
+    func testViewModelAudioSettersDispatchRuntimeActionsAndApplyRuntimeTransition() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         viewModel.masterVolume = 0.73
@@ -84,7 +84,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .operatorFaderChanged)
     }
 
-    func testViewModelSpeakerToggleDispatchesRuntimeActionAndKeepsLegacyTransition() {
+    func testViewModelSpeakerToggleDispatchesRuntimeActionAndAppliesRuntimeTransition() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         viewModel.toggleSpeakerMode()
@@ -109,7 +109,26 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .limiterChanged)
     }
 
-    func testViewModelPanicToggleDispatchesRuntimeActionAndKeepsLegacyTransition() {
+    func testViewModelAudioSettersRouteSideEffectsThroughRuntimePort() {
+        let audioRouting = AudioRoutingPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+
+        viewModel.isMasterAudioMuted = true
+
+        XCTAssertTrue(runtime.state.audio.isMasterMuted)
+        XCTAssertEqual(audioRouting.reasons, [.operatorFaderChanged])
+        XCTAssertEqual(audioRouting.masterMutedStates, [true])
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
+    func testViewModelPanicToggleDispatchesRuntimeActionAndAppliesRuntimeTransition() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         viewModel.togglePanicMode()
@@ -118,5 +137,15 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPanic" })
         XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .panicChanged)
+    }
+}
+
+private final class AudioRoutingPortSpy: AudioRoutingPort {
+    private(set) var reasons: [AudioRoutingRuntimeChangeReason] = []
+    private(set) var masterMutedStates: [Bool] = []
+
+    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
+        reasons.append(reason)
+        masterMutedStates.append(state.audio.isMasterMuted)
     }
 }
