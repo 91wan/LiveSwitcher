@@ -370,7 +370,6 @@ final class SwitcherViewModel {
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
-    private let supportEventLimit = 80
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -387,11 +386,11 @@ final class SwitcherViewModel {
     func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
         guard enabled != isPageInterceptEnabled else { return }
         dispatchRuntimeFacadeAction(.operatorToggledPPTMode(source: source))
+        isPageInterceptEnabled = enabled
         recordSupportEvent(
             kind: .pptModeChanged,
             detail: "isOn=\(enabled),source=\(source.rawValue)"
         )
-        isPageInterceptEnabled = enabled
     }
 
     private var pageInterceptEventTap: CFMachPort?
@@ -1293,7 +1292,7 @@ final class SwitcherViewModel {
     func handleAppleScriptFailure(_ error: Error, action: String) {
         let message = appleScriptFailureMessage(error)
         dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
-        recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
+        supportEvents = runtime.state.support.events
         automationRuntimeNotice = runtime.state.automation.notice
     }
 
@@ -2274,57 +2273,8 @@ final class SwitcherViewModel {
         timestamp: Date = Date()
     ) {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
-        if shouldCoalesceSupportEvent(kind),
-           let existingIndex = supportEvents.lastIndex(where: {
-               $0.kind == kind
-                   && supportEventCoalescingKey(kind: kind, detail: $0.detail)
-                   == supportEventCoalescingKey(kind: kind, detail: event.detail)
-           }) {
-            let existing = supportEvents.remove(at: existingIndex)
-            let count = supportEventCoalescedCount(existing.detail) + 1
-            supportEvents.append(
-                LiveSupportEvent(
-                    timestamp: timestamp,
-                    kind: kind,
-                    detail: "\(event.detail),count=\(count),lastSeen=\(Int(timestamp.timeIntervalSince1970))"
-                )
-            )
-        } else {
-            supportEvents.append(event)
-        }
-        if supportEvents.count > supportEventLimit {
-            supportEvents.removeFirst(supportEvents.count - supportEventLimit)
-        }
-    }
-
-    private func shouldCoalesceSupportEvent(_ kind: LiveSupportEventKind) -> Bool {
-        switch kind {
-        case .appleScriptFailed, .pageInterceptWPSNotRunning, .pageInterceptForwardedToWPS:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private func supportEventCoalescingKey(kind: LiveSupportEventKind, detail: String) -> String {
-        supportEventBaseDetail(detail)
-    }
-
-    private func supportEventBaseDetail(_ detail: String) -> String {
-        guard let range = detail.range(of: ",count=", options: .backwards) else {
-            return detail
-        }
-        return String(detail[..<range.lowerBound])
-    }
-
-    private func supportEventCoalescedCount(_ detail: String) -> Int {
-        guard let range = detail.range(of: ",count=", options: .backwards) else {
-            return 1
-        }
-        let suffix = detail[range.upperBound...]
-        let digits = suffix.prefix(while: \.isNumber)
-        guard let count = Int(digits) else { return 1 }
-        return max(count, 1)
+        dispatchRuntimeFacadeAction(.supportEventRecorded(event))
+        supportEvents = runtime.state.support.events
     }
 
     // MARK: - System Volume Observer

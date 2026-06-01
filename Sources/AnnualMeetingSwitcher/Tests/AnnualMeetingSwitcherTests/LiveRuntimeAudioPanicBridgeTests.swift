@@ -90,7 +90,8 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         viewModel.toggleSpeakerMode()
 
         XCTAssertTrue(viewModel.runtime.state.audio.isSpeakerMode)
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "operatorSetSpeakerMode")
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetSpeakerMode" })
+        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .speakerChanged)
     }
 
@@ -114,7 +115,8 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.runtime.state.panic.isActive)
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "operatorSetPanic")
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPanic" })
+        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .panicChanged)
     }
 }

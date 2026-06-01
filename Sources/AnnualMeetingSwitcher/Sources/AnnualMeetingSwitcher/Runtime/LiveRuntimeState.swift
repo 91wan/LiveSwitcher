@@ -95,21 +95,40 @@ struct SupportRuntimeState: Equatable {
     mutating func record(kind: LiveSupportEventKind, detail: String, at date: Date) {
         let baseDetail = LiveSupportRedactor.safeEventDetail(detail)
         let key = "\(kind.rawValue)|\(baseDetail)"
-        let nextCount = (coalescedCounts[key] ?? 0) + 1
-        coalescedCounts[key] = nextCount
 
-        if let index = events.firstIndex(where: { $0.kind == kind && supportEventBaseDetail($0.detail) == baseDetail }) {
-            events[index] = LiveSupportEvent(
-                timestamp: date,
-                kind: kind,
-                detail: "\(baseDetail),count=\(nextCount),lastSeen=\(Self.isoString(date))"
+        if shouldCoalesce(kind),
+           let index = events.firstIndex(where: { $0.kind == kind && supportEventBaseDetail($0.detail) == baseDetail }) {
+            let existing = events.remove(at: index)
+            let nextCount = supportEventCoalescedCount(existing.detail) + 1
+            coalescedCounts[key] = nextCount
+            events.append(
+                LiveSupportEvent(
+                    timestamp: date,
+                    kind: kind,
+                    detail: "\(baseDetail),count=\(nextCount),lastSeen=\(Self.isoString(date))"
+                )
             )
+            trimToLimit()
             return
         }
 
+        coalescedCounts[key] = 1
         events.append(LiveSupportEvent(timestamp: date, kind: kind, detail: baseDetail))
+        trimToLimit()
+    }
+
+    private mutating func trimToLimit() {
         if events.count > eventLimit {
             events.removeFirst(events.count - eventLimit)
+        }
+    }
+
+    private func shouldCoalesce(_ kind: LiveSupportEventKind) -> Bool {
+        switch kind {
+        case .appleScriptFailed, .pageInterceptWPSNotRunning, .pageInterceptForwardedToWPS:
+            return true
+        default:
+            return false
         }
     }
 
@@ -118,6 +137,15 @@ struct SupportRuntimeState: Equatable {
             return detail
         }
         return String(detail[..<countRange.lowerBound])
+    }
+
+    private func supportEventCoalescedCount(_ detail: String) -> Int {
+        guard let countRange = detail.range(of: ",count=") else {
+            return 1
+        }
+        let countStart = countRange.upperBound
+        let countEnd = detail[countStart...].firstIndex(of: ",") ?? detail.endIndex
+        return Int(detail[countStart..<countEnd]) ?? 1
     }
 
     private static func isoString(_ date: Date) -> String {

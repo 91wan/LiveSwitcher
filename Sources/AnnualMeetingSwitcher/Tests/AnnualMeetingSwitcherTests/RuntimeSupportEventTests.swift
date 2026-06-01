@@ -149,6 +149,49 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertTrue(forwarded[0].detail.contains("lastSeen="))
     }
 
+    func testViewModelSupportEventsDispatchRuntimeActionsAndMirrorFacadeState() {
+        let viewModel = makeViewModel()
+
+        viewModel.recordSupportEvent(
+            kind: .projectionStarted,
+            detail: "isBroadcasting=true",
+            timestamp: Date(timeIntervalSince1970: 1_790_000_000)
+        )
+
+        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertEqual(viewModel.runtime.state.support.events, viewModel.supportEvents)
+        XCTAssertEqual(viewModel.supportEvents.last?.kind, .projectionStarted)
+    }
+
+    func testSupportRuntimeCoalescingSurvivesFacadeSync() {
+        let viewModel = makeViewModel()
+
+        for index in 0..<3 {
+            viewModel.recordSupportEvent(
+                kind: .pageInterceptWPSNotRunning,
+                detail: "direction=next,state=notRunning",
+                timestamp: Date(timeIntervalSince1970: TimeInterval(1_790_000_000 + index))
+            )
+        }
+
+        XCTAssertEqual(viewModel.runtime.actionLog.filter { $0.actionName == "supportEventRecorded" }.count, 3)
+        XCTAssertEqual(viewModel.runtime.state.support.events, viewModel.supportEvents)
+        let event = try? XCTUnwrap(viewModel.supportEvents.last)
+        XCTAssertEqual(event?.kind, .pageInterceptWPSNotRunning)
+        XCTAssertTrue(event?.detail.contains("count=3") == true)
+        XCTAssertTrue(event?.detail.contains("lastSeen=") == true)
+    }
+
+    func testSupportRuntimeKeepsNonCoalescedRepeatedEventsSeparate() {
+        let viewModel = makeViewModel()
+
+        viewModel.recordSupportEvent(kind: .preflightAction, detail: "action=manualReview")
+        viewModel.recordSupportEvent(kind: .preflightAction, detail: "action=manualReview")
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .preflightAction }.count, 2)
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.contains("count=") })
+    }
+
     func testExternalDisplayLostIsIdempotentForSingleDisconnect() {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
