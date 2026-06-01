@@ -315,7 +315,7 @@ final class SwitcherViewModel {
 
     var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = 2.0
-    private let speakerModeDuckedRatio: Float = 0.07
+    private let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
 
     // MARK: - 背景壁纸（多张）
 
@@ -525,8 +525,8 @@ final class SwitcherViewModel {
                 persistence: persistencePort
             )
         )
-        audioRoutingPort.applyHandler = { [weak self] reason, _ in
-            self?.applyAudioRoutingForRuntimeChange(reason: reason)
+        audioRoutingPort.applyHandler = { [weak self] reason, state in
+            self?.applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: state)
         }
         imageAssetPort.loadBackgroundImageHandler = { [weak self] url in
             self?.loadBackgroundImage(from: url)
@@ -678,7 +678,7 @@ final class SwitcherViewModel {
         state.audio.isSpeakerMode = isSpeakerMode
         state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
         state.audio.effectiveMedia = effectiveMediaOutputVolume()
-        state.audio.effectiveBGM = effectiveBGMOutputVolume()
+        state.audio.effectiveBGM = appliedBGMOutputVolume()
 
         state.panic.isActive = isPanicMode
         state.panic.snapshot = panicPlaybackSnapshot
@@ -780,8 +780,13 @@ final class SwitcherViewModel {
         )
     }
 
-    func applyAudioRouting(mediaFadeDuration: Double? = nil, bgmFadeDuration: Double? = nil) {
-        let effectiveMedia = effectiveMediaOutputVolume()
+    func applyAudioRouting(
+        mediaFadeDuration: Double? = nil,
+        bgmFadeDuration: Double? = nil,
+        effectiveMedia: Float? = nil,
+        effectiveBGM: Float? = nil
+    ) {
+        let effectiveMedia = effectiveMedia ?? effectiveMediaOutputVolume()
         if let mediaFadeDuration {
             fadeMediaVolume(to: effectiveMedia, duration: mediaFadeDuration)
         } else {
@@ -789,7 +794,7 @@ final class SwitcherViewModel {
             avCoordinator.volume = effectiveMedia
         }
 
-        let effectiveBGM = appliedBGMOutputVolume()
+        let effectiveBGM = effectiveBGM ?? appliedBGMOutputVolume()
         if let bgmFadeDuration, bgmAudioPlayer != nil {
             fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration)
         } else {
@@ -809,7 +814,10 @@ final class SwitcherViewModel {
         isBGMPlaying ? effectiveBGMOutputVolume() : 0
     }
 
-    func applyAudioRoutingForRuntimeChange(reason: AudioRoutingRuntimeChangeReason) {
+    func applyAudioRoutingForRuntimeChange(
+        reason: AudioRoutingRuntimeChangeReason,
+        runtimeState: LiveRuntimeState? = nil
+    ) {
         let transition = AudioRoutingTransitionPolicy.transition(
             for: reason,
             liveAudioFadeDuration: liveAudioFadeDuration
@@ -817,7 +825,9 @@ final class SwitcherViewModel {
         lastAudioRoutingTransition = transition
         applyAudioRouting(
             mediaFadeDuration: transition.mediaFadeDuration,
-            bgmFadeDuration: transition.bgmFadeDuration
+            bgmFadeDuration: transition.bgmFadeDuration,
+            effectiveMedia: runtimeState?.audio.effectiveMedia,
+            effectiveBGM: runtimeState?.audio.effectiveBGM
         )
     }
 
