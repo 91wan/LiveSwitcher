@@ -100,6 +100,19 @@ private final class ClosurePersistencePort: PersistencePort {
     }
 }
 
+private final class ClosurePPTEventTapPort: PPTEventTapPort {
+    var startHandler: (() -> Void)?
+    var stopHandler: ((PPTStopReason) -> Void)?
+
+    func start() {
+        startHandler?()
+    }
+
+    func stop(reason: PPTStopReason) {
+        stopHandler?(reason)
+    }
+}
+
 final class ViewModelCleanupBag {
     var mediaVolumeFadeTask: Task<Void, Never>?
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
@@ -388,9 +401,7 @@ final class SwitcherViewModel {
 
     // MARK: - V25: 翻页拦截器状态
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
-    var isPageInterceptEnabled: Bool = false {
-        didSet { applyPageInterceptState() }
-    }
+    var isPageInterceptEnabled: Bool = false
     @ObservationIgnored var pageInterceptSideEffectsEnabled = true
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
@@ -455,10 +466,12 @@ final class SwitcherViewModel {
     ) {
         let audioRoutingPort = ClosureAudioRoutingPort()
         let persistencePort = ClosurePersistencePort()
+        let pptPort = ClosurePPTEventTapPort()
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(
                 recordsOnly: false,
+                ppt: pptPort,
                 audioRouting: audioRoutingPort,
                 persistence: persistencePort
             )
@@ -477,6 +490,14 @@ final class SwitcherViewModel {
         }
         persistencePort.saveBGMPlayModeHandler = { [weak self] playMode in
             self?.userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
+        }
+        pptPort.startHandler = { [weak self] in
+            guard let self, self.pageInterceptSideEffectsEnabled else { return }
+            self.startPageIntercept()
+        }
+        pptPort.stopHandler = { [weak self] reason in
+            guard let self, self.pageInterceptSideEffectsEnabled else { return }
+            self.stopPageIntercept(reason: reason)
         }
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
@@ -2336,16 +2357,6 @@ final class SwitcherViewModel {
 
     // MARK: - V25: 翻页拦截器控制
 
-    /// 开关翻页拦截（isPageInterceptEnabled didSet 驱动）
-    private func applyPageInterceptState() {
-        guard pageInterceptSideEffectsEnabled else { return }
-        if isPageInterceptEnabled {
-            startPageIntercept()
-        } else {
-            stopPageIntercept()
-        }
-    }
-
     private func startPageIntercept() {
         // 权限预检查：无辅助功能权限时提前提示，避免 tapCreate 静默失败
         let axOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
@@ -2432,7 +2443,7 @@ final class SwitcherViewModel {
         recordSupportEvent(kind: .pageInterceptEnabled, detail: "state=enabled")
     }
 
-    private func stopPageIntercept() {
+    private func stopPageIntercept(reason: PPTStopReason = .operatorDisabled) {
         if let tap = pageInterceptEventTap {
             CGEvent.tapEnable(tap: tap, enable: false)
         }
@@ -2446,9 +2457,9 @@ final class SwitcherViewModel {
         pageInterceptEventTap = nil
         pageInterceptRunLoopSource = nil
         pageInterceptRuntime.updateEventTap(nil)
-        dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: .operatorDisabled))
-        LiveSwitcherTelemetry.pageInterceptDisabled(reason: "operator")
-        recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=operator")
+        dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
+        LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
+        recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=\(reason.rawValue)")
     }
 
     nonisolated func reenablePageIntercept(reason: PageInterceptReenableReason) {

@@ -23,6 +23,26 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
     }
 
+    func testPPTModeSideEffectsRouteThroughInjectedRuntimePort() throws {
+        let ppt = PPTEventTapPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt)
+        )
+        let viewModel = makeViewModel(runtime: runtime)
+        viewModel.pageInterceptSideEffectsEnabled = false
+
+        viewModel.setPPTMode(true, source: .liveMode)
+        viewModel.setPPTMode(false, source: .liveMode)
+
+        XCTAssertEqual(ppt.calls, ["start", "stop:operatorDisabled"])
+    }
+
+    func testPPTModeStateDoesNotOwnEventTapSideEffectsInDidSet() throws {
+        let source = try sourceText("ViewModel.swift")
+
+        XCTAssertFalse(source.contains("didSet { applyPageInterceptState() }"))
+    }
+
     func testAppleScriptFailureDispatchesRuntimeAutomationFailure() throws {
         let viewModel = makeViewModel()
         let error = AppleScriptError.executionFailed(
@@ -111,14 +131,45 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         XCTAssertTrue(runtimeFailures[0].detail.contains("count=2"))
     }
 
-    private func makeViewModel() -> SwitcherViewModel {
+    private func makeViewModel(runtime: LiveRuntimeStore? = nil) -> SwitcherViewModel {
         let suiteName = "LiveRuntimePPTAutomationBridgeTests.\(UUID().uuidString)"
         let userDefaults = UserDefaults(suiteName: suiteName)!
         userDefaults.removePersistentDomain(forName: suiteName)
         return SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: userDefaults
+            userDefaults: userDefaults,
+            runtime: runtime
         )
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func sourceURL(_ relativePath: String) throws -> URL {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}
+
+private final class PPTEventTapPortSpy: PPTEventTapPort {
+    private(set) var calls: [String] = []
+
+    func start() {
+        calls.append("start")
+    }
+
+    func stop(reason: PPTStopReason) {
+        calls.append("stop:\(reason.rawValue)")
     }
 }
