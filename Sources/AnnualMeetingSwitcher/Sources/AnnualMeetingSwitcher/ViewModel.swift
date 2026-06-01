@@ -232,7 +232,7 @@ final class SwitcherViewModel {
                 || currentProgramItem?.sourceKind != oldValue?.sourceKind
             guard currentProgramItem?.id != oldValue?.id || sourceChanged else { return }
             currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
-            applyAudioRoutingForRuntimeChange(reason: .programChanged)
+            dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))
         }
     }
     var currentProgramSwitchedAt: Date?

@@ -32,6 +32,50 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
     }
 
+    func testFacadeCurrentProgramChangeProducesProgramRoutingEffect() {
+        let item = mediaProgram()
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+        let now = Date(timeIntervalSince1970: 100)
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeCurrentProgramChanged(item.id),
+            environment: LiveRuntimeEnvironment(now: now)
+        )
+
+        XCTAssertEqual(mutation.state.program.currentID, item.id)
+        XCTAssertEqual(mutation.state.program.currentSwitchedAt, now)
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .programChanged)))
+    }
+
+    func testViewModelCurrentProgramItemDidSetRoutesProgramRoutingThroughRuntime() {
+        let audioRouting = MediaBridgeAudioRoutingPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        let item = mediaProgram()
+        viewModel.programItems = [item]
+
+        viewModel.currentProgramItem = item
+
+        XCTAssertEqual(runtime.state.program.currentID, item.id)
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
+        XCTAssertEqual(audioRouting.reasons, [.programChanged])
+    }
+
+    func testCurrentProgramItemDidSetDoesNotApplyAudioRoutingDirectly() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/ViewModel.swift")
+
+        XCTAssertFalse(source.contains("applyAudioRoutingForRuntimeChange(reason: .programChanged)"))
+        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))"))
+    }
+
     func testViewModelProgramSwitchDispatchesRuntimeProgramAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
@@ -104,5 +148,19 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             subtitle: "VIDEO",
             sourceURL: url
         )
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        var root = URL(fileURLWithPath: #filePath)
+        for _ in 0..<3 { root.deleteLastPathComponent() }
+        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+    }
+}
+
+private final class MediaBridgeAudioRoutingPortSpy: AudioRoutingPort {
+    private(set) var reasons: [AudioRoutingRuntimeChangeReason] = []
+
+    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
+        reasons.append(reason)
     }
 }
