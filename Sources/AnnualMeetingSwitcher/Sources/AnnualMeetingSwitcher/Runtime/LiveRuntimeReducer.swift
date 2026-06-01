@@ -217,6 +217,11 @@ enum LiveRuntimeReducer {
             guard generation == state.media.generation else { break }
             state.media.currentTime = max(0, time)
 
+        case .facadeCurrentProgramChanged(let id):
+            state.program.currentID = id
+            state.program.currentSwitchedAt = id == nil ? nil : environment.now
+            effects.append(.applyAudioRouting(reason: .programChanged))
+
         case .bgmPrepared(let id, let generation):
             guard generation == state.bgm.generation, id == state.bgm.currentID else { break }
 
