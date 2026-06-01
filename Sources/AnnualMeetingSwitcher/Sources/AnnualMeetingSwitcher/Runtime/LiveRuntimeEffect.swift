@@ -44,6 +44,20 @@ enum LiveRuntimeEffect: Equatable {
     case recordSupportEvent(LiveSupportEvent)
 }
 
+enum LiveRuntimeEffectPortKind: String, CaseIterable {
+    case media
+    case bgm
+    case projection
+    case ppt
+    case automation
+    case bgmTimer
+    case automationNotice
+    case audioRouting
+    case imageAssets
+    case persistence
+    case support
+}
+
 protocol MediaPlaybackPort {
     func load(url: URL, generation: Int)
     func play(generation: Int)
@@ -207,6 +221,22 @@ final class LiveRuntimeEffectRunner {
 
     static func recording() -> LiveRuntimeEffectRunner {
         LiveRuntimeEffectRunner(recordsOnly: true)
+    }
+
+    var connectedPortKinds: Set<LiveRuntimeEffectPortKind> {
+        var kinds = Set<LiveRuntimeEffectPortKind>()
+        if media != nil { kinds.insert(.media) }
+        if bgm != nil { kinds.insert(.bgm) }
+        if projection != nil { kinds.insert(.projection) }
+        if ppt != nil { kinds.insert(.ppt) }
+        if automation != nil { kinds.insert(.automation) }
+        if bgmTimer != nil { kinds.insert(.bgmTimer) }
+        if automationNotice != nil { kinds.insert(.automationNotice) }
+        if audioRouting != nil { kinds.insert(.audioRouting) }
+        if imageAssets != nil { kinds.insert(.imageAssets) }
+        if persistence != nil { kinds.insert(.persistence) }
+        if support != nil { kinds.insert(.support) }
+        return kinds
     }
 
     func run(

@@ -25,6 +25,10 @@ final class LiveRuntimeStore {
         effectRunner.recordedEffects
     }
 
+    var connectedPortKinds: Set<LiveRuntimeEffectPortKind> {
+        effectRunner.connectedPortKinds
+    }
+
     func dispatch(_ action: LiveRuntimeAction) {
         let oldState = state
         let mutation = LiveRuntimeReducer.reduce(

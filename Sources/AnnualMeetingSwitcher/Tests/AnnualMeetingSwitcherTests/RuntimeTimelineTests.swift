@@ -92,6 +92,8 @@ final class RuntimeTimelineTests: XCTestCase {
         XCTAssertFalse(store.state.ppt.isEventTapActive)
         XCTAssertEqual(store.state.ppt.lastFailureReason, "tap-unavailable")
         XCTAssertFalse(store.state.support.events.contains { $0.kind == .pageInterceptEnabled })
+        XCTAssertFalse(store.recordedEffects.contains(.startPPTEventTap))
+        XCTAssertFalse(store.recordedEffects.contains(.stopPPTEventTap(reason: .failed)))
     }
 
     func testAutomationFailureTimelineCreatesNoticeAndCoalescesRepeatedSupportEvents() {
@@ -125,11 +127,11 @@ final class RuntimeTimelineTests: XCTestCase {
         store.dispatch(.operatorSelectedProgram(deck.id))
         XCTAssertFalse(store.state.media.isPlaying)
         XCTAssertTrue(store.recordedEffects.contains(.stopMedia(generation: store.state.media.generation)))
-        XCTAssertTrue(store.recordedEffects.contains(.startPPTEventTap))
+        XCTAssertFalse(store.recordedEffects.contains(.startPPTEventTap))
 
         store.dispatch(.operatorSelectedProgram(html.id))
         XCTAssertEqual(store.state.program.currentID, html.id)
-        XCTAssertTrue(store.recordedEffects.contains(.stopPPTEventTap(reason: .programChanged)))
+        XCTAssertFalse(store.recordedEffects.contains(.stopPPTEventTap(reason: .programChanged)))
     }
 
     func testRestartMediaTimelineRequiresExplicitRestartAfterEnd() {
