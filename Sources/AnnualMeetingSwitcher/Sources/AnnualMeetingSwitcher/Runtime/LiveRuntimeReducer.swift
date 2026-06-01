@@ -39,7 +39,7 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
             effects += [
                 .applyAudioRouting(reason: .strategyChanged),
-                .savePersistentState
+                .saveAudioStrategy(strategy)
             ]
 
         case .operatorChangedMasterVolume(let volume):
@@ -82,7 +82,7 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
             effects += [
                 .applyAudioRouting(reason: .speakerChanged),
-                .savePersistentState
+                .saveSpeakerMode(state.audio.isSpeakerMode)
             ]
 
         case .operatorSetSpeakerMode(let isEnabled):
@@ -90,7 +90,7 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
             effects += [
                 .applyAudioRouting(reason: .speakerChanged),
-                .savePersistentState
+                .saveSpeakerMode(isEnabled)
             ]
 
         case .operatorToggledPanic:

@@ -77,6 +77,24 @@ private final class ClosureAudioRoutingPort: AudioRoutingPort {
     }
 }
 
+private final class ClosurePersistencePort: PersistencePort {
+    var saveHandler: (() -> Void)?
+    var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
+    var saveSpeakerModeHandler: ((Bool) -> Void)?
+
+    func save() {
+        saveHandler?()
+    }
+
+    func saveAudioStrategy(_ strategy: AudioStrategy) {
+        saveAudioStrategyHandler?(strategy)
+    }
+
+    func saveSpeakerMode(_ isEnabled: Bool) {
+        saveSpeakerModeHandler?(isEnabled)
+    }
+}
+
 final class ViewModelCleanupBag {
     var mediaVolumeFadeTask: Task<Void, Never>?
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
@@ -228,7 +246,6 @@ final class SwitcherViewModel {
         didSet {
             guard oldValue != audioStrategy else { return }
             dispatchRuntimeFacadeAction(.operatorSelectedAudioStrategy(audioStrategy))
-            userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         }
     }
 
@@ -280,7 +297,6 @@ final class SwitcherViewModel {
     /// V26.3: 主讲人模式（一键压限 BGM）
     var isSpeakerMode: Bool = false {
         didSet {
-            userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
             guard oldValue != isSpeakerMode else { return }
             dispatchRuntimeFacadeAction(.operatorSetSpeakerMode(isSpeakerMode))
         }
@@ -437,15 +453,26 @@ final class SwitcherViewModel {
         runtime: LiveRuntimeStore? = nil
     ) {
         let audioRoutingPort = ClosureAudioRoutingPort()
+        let persistencePort = ClosurePersistencePort()
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(
                 recordsOnly: false,
-                audioRouting: audioRoutingPort
+                audioRouting: audioRoutingPort,
+                persistence: persistencePort
             )
         )
         audioRoutingPort.applyHandler = { [weak self] reason, _ in
             self?.applyAudioRoutingForRuntimeChange(reason: reason)
+        }
+        persistencePort.saveHandler = { [weak self] in
+            self?.saveData()
+        }
+        persistencePort.saveAudioStrategyHandler = { [weak self] strategy in
+            self?.userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
+        }
+        persistencePort.saveSpeakerModeHandler = { [weak self] isEnabled in
+            self?.userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
         }
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
@@ -929,6 +956,9 @@ final class SwitcherViewModel {
     // MARK: - 持久化
 
     func saveData() {
+        userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
+        userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
+
         let persistentProgramItems = ProgramQueueStore.persistentProgramItems(from: programItems)
         let pushPaths = persistentProgramItems.map { $0.sourceURL?.path ?? "" }
         let pushSubtitles = persistentProgramItems.map { $0.subtitle }
