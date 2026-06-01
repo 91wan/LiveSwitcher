@@ -41,6 +41,28 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         })
     }
 
+    func testUnavailableProgramSourceRequestsRuntimeAutomationNotice() throws {
+        let viewModel = makeViewModel()
+        let missingURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        let item = ProgramItem(title: "Missing Video", subtitle: "VIDEO", sourceURL: missingURL)
+        viewModel.programItems = [item]
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeRequested" })
+        XCTAssertEqual(viewModel.runtime.state.automation.notice?.action, "program.source.missing")
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "program.source.missing")
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains {
+            if case .showAutomationNotice(let notice) = $0 {
+                return notice.action == "program.source.missing"
+            }
+            return false
+        })
+        XCTAssertTrue(viewModel.runtime.state.support.events.contains { $0.kind == .programItemFileMissing })
+    }
+
     func testAutomationNoticeDismissalAndExpiryDispatchRuntimeActions() throws {
         let viewModel = makeViewModel()
         let notice = AutomationRuntimeNoticePolicy.make(
