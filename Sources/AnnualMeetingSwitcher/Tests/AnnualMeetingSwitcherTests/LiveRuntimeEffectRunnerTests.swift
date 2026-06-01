@@ -8,6 +8,9 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         let projection = ProjectionPortSpy()
         let ppt = PPTEventTapPortSpy()
         let automation = AutomationPortSpy()
+        let bgmTimer = BGMTimerPortSpy()
+        let automationNotice = AutomationNoticePortSpy()
+        let audioRouting = AudioRoutingPortSpy()
         let persistence = PersistencePortSpy()
         let support = SupportEventPortSpy()
         let runner = LiveRuntimeEffectRunner(
@@ -17,15 +20,25 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
             projection: projection,
             ppt: ppt,
             automation: automation,
+            bgmTimer: bgmTimer,
+            automationNotice: automationNotice,
+            audioRouting: audioRouting,
             persistence: persistence,
             support: support
         )
         let bgmItem = BGMItem(title: "Walk In", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
+        let notice = AutomationRuntimeNoticePolicy.make(
+            action: "keynote.next-slide",
+            createdAt: Date(timeIntervalSince1970: 1_790_000_100)
+        )
+        let noticeExpiresAt = Date(timeIntervalSince1970: 1_790_000_130)
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 1_790_000_000),
             kind: .panicModeChanged,
             detail: "isOn=true"
         )
+        var state = LiveRuntimeState()
+        state.panic.isActive = true
 
         runner.run(
             [
@@ -40,6 +53,8 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
                 .pauseBGM(generation: 3),
                 .stopBGM(fade: 0.5, generation: 3),
                 .setBGMVolume(0.6, fade: 0.25, generation: 3),
+                .startBGMTimer(generation: 3),
+                .stopBGMTimer(generation: 3),
                 .startProjection,
                 .showOutputWindow,
                 .stopProjection,
@@ -47,10 +62,13 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
                 .startPPTEventTap,
                 .stopPPTEventTap(reason: .failed),
                 .runAppleScript(script: "tell app", action: "keynote.next-slide"),
+                .showAutomationNotice(notice),
+                .expireAutomationNotice(notice.id, at: noticeExpiresAt),
+                .applyAudioRouting(reason: .panicChanged),
                 .savePersistentState,
                 .recordSupportEvent(event)
             ],
-            currentState: { LiveRuntimeState() },
+            currentState: { state },
             dispatch: { _ in XCTFail("Effect runner should not dispatch for these synchronous effects") }
         )
 
@@ -72,9 +90,16 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         XCTAssertEqual(projection.calls, ["start", "show", "stop", "hide"])
         XCTAssertEqual(ppt.calls, ["start", "stop:failed"])
         XCTAssertEqual(automation.calls, ["run:keynote.next-slide:tell app"])
+        XCTAssertEqual(bgmTimer.calls, ["start:3", "stop:3"])
+        XCTAssertEqual(automationNotice.calls, [
+            "show:keynote.next-slide",
+            "expire:\(notice.id.uuidString):\(noticeExpiresAt.timeIntervalSince1970)"
+        ])
+        XCTAssertEqual(audioRouting.reasons, [.panicChanged])
+        XCTAssertEqual(audioRouting.panicStates, [true])
         XCTAssertEqual(persistence.saveCount, 1)
         XCTAssertEqual(support.events, [event])
-        XCTAssertEqual(runner.recordedEffects.count, 20)
+        XCTAssertEqual(runner.recordedEffects.count, 25)
     }
 
     func testRecordingRunnerDoesNotInvokeInjectedPorts() {
@@ -182,6 +207,40 @@ private final class AutomationPortSpy: AutomationPort {
 
     func run(script: String, action: String) {
         calls.append("run:\(action):\(script)")
+    }
+}
+
+private final class BGMTimerPortSpy: BGMTimerPort {
+    private(set) var calls: [String] = []
+
+    func start(generation: Int) {
+        calls.append("start:\(generation)")
+    }
+
+    func stop(generation: Int) {
+        calls.append("stop:\(generation)")
+    }
+}
+
+private final class AutomationNoticePortSpy: AutomationNoticePort {
+    private(set) var calls: [String] = []
+
+    func show(_ notice: AutomationRuntimeNotice) {
+        calls.append("show:\(notice.action)")
+    }
+
+    func expire(id: UUID, at date: Date) {
+        calls.append("expire:\(id.uuidString):\(date.timeIntervalSince1970)")
+    }
+}
+
+private final class AudioRoutingPortSpy: AudioRoutingPort {
+    private(set) var reasons: [AudioRoutingRuntimeChangeReason] = []
+    private(set) var panicStates: [Bool] = []
+
+    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
+        reasons.append(reason)
+        panicStates.append(state.panic.isActive)
     }
 }
 

@@ -77,6 +77,20 @@ protocol AutomationPort {
     func run(script: String, action: String)
 }
 
+protocol BGMTimerPort {
+    func start(generation: Int)
+    func stop(generation: Int)
+}
+
+protocol AutomationNoticePort {
+    func show(_ notice: AutomationRuntimeNotice)
+    func expire(id: UUID, at date: Date)
+}
+
+protocol AudioRoutingPort {
+    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState)
+}
+
 protocol PersistencePort {
     func save()
 }
@@ -93,6 +107,9 @@ final class LiveRuntimeEffectRunner {
     private let projection: ProjectionPort?
     private let ppt: PPTEventTapPort?
     private let automation: AutomationPort?
+    private let bgmTimer: BGMTimerPort?
+    private let automationNotice: AutomationNoticePort?
+    private let audioRouting: AudioRoutingPort?
     private let persistence: PersistencePort?
     private let support: SupportEventPort?
 
@@ -103,6 +120,9 @@ final class LiveRuntimeEffectRunner {
         projection: ProjectionPort? = nil,
         ppt: PPTEventTapPort? = nil,
         automation: AutomationPort? = nil,
+        bgmTimer: BGMTimerPort? = nil,
+        automationNotice: AutomationNoticePort? = nil,
+        audioRouting: AudioRoutingPort? = nil,
         persistence: PersistencePort? = nil,
         support: SupportEventPort? = nil
     ) {
@@ -112,6 +132,9 @@ final class LiveRuntimeEffectRunner {
         self.projection = projection
         self.ppt = ppt
         self.automation = automation
+        self.bgmTimer = bgmTimer
+        self.automationNotice = automationNotice
+        self.audioRouting = audioRouting
         self.persistence = persistence
         self.support = support
     }
@@ -127,12 +150,11 @@ final class LiveRuntimeEffectRunner {
     ) {
         recordedEffects.append(contentsOf: effects)
         guard !recordsOnly else { return }
-        _ = currentState
         _ = dispatch
-        effects.forEach(run)
+        effects.forEach { run($0, currentState: currentState) }
     }
 
-    private func run(_ effect: LiveRuntimeEffect) {
+    private func run(_ effect: LiveRuntimeEffect, currentState: () -> LiveRuntimeState) {
         switch effect {
         case .loadMedia(let url, let generation):
             media?.load(url: url, generation: generation)
@@ -157,8 +179,10 @@ final class LiveRuntimeEffectRunner {
             bgm?.stop(fade: fade, generation: generation)
         case .setBGMVolume(let volume, let fade, let generation):
             bgm?.setVolume(volume, fade: fade, generation: generation)
-        case .startBGMTimer, .stopBGMTimer:
-            break
+        case .startBGMTimer(let generation):
+            bgmTimer?.start(generation: generation)
+        case .stopBGMTimer(let generation):
+            bgmTimer?.stop(generation: generation)
 
         case .startProjection:
             projection?.start()
@@ -176,11 +200,13 @@ final class LiveRuntimeEffectRunner {
 
         case .runAppleScript(let script, let action):
             automation?.run(script: script, action: action)
-        case .showAutomationNotice, .expireAutomationNotice:
-            break
+        case .showAutomationNotice(let notice):
+            automationNotice?.show(notice)
+        case .expireAutomationNotice(let id, let date):
+            automationNotice?.expire(id: id, at: date)
 
-        case .applyAudioRouting:
-            break
+        case .applyAudioRouting(let reason):
+            audioRouting?.apply(reason: reason, state: currentState())
         case .savePersistentState:
             persistence?.save()
         case .recordSupportEvent(let event):
