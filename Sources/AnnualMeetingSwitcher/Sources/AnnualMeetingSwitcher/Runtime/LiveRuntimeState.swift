@@ -92,6 +92,7 @@ struct LiveRuntimePreferenceState: Equatable {
     var autoPlayNextVideoOnEnd = false
     var autoAdvanceAtScheduledTime = false
     var showAgendaTimeline = false
+    var cornerLogoPosition: CornerLogoPosition = .topRight
 }
 
 struct SupportRuntimeState: Equatable {

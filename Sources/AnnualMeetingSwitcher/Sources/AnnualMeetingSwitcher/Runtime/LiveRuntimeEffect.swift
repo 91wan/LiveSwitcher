@@ -35,6 +35,7 @@ enum LiveRuntimeEffect: Equatable {
     case saveAutoPlayNextVideoOnEnd(Bool)
     case saveAutoAdvanceAtScheduledTime(Bool)
     case saveShowAgendaTimeline(Bool)
+    case saveCornerLogoPosition(CornerLogoPosition)
     case savePersistentState
     case recordSupportEvent(LiveSupportEvent)
 }
@@ -105,6 +106,7 @@ protocol PersistencePort {
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool)
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool)
     func saveShowAgendaTimeline(_ isEnabled: Bool)
+    func saveCornerLogoPosition(_ position: CornerLogoPosition)
 }
 
 extension PersistencePort {
@@ -129,6 +131,10 @@ extension PersistencePort {
     }
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
+        save()
+    }
+
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {
         save()
     }
 }
@@ -257,6 +263,8 @@ final class LiveRuntimeEffectRunner {
             persistence?.saveAutoAdvanceAtScheduledTime(isEnabled)
         case .saveShowAgendaTimeline(let isEnabled):
             persistence?.saveShowAgendaTimeline(isEnabled)
+        case .saveCornerLogoPosition(let position):
+            persistence?.saveCornerLogoPosition(position)
         case .savePersistentState:
             persistence?.save()
         case .recordSupportEvent(let event):
