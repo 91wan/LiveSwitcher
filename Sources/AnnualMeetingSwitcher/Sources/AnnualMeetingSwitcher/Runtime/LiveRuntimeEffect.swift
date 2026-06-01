@@ -29,6 +29,8 @@ enum LiveRuntimeEffect: Equatable {
     case expireAutomationNotice(UUID, at: Date)
 
     case applyAudioRouting(reason: AudioRoutingRuntimeChangeReason)
+    case saveConsoleMode(ConsoleMode)
+    case saveThemeOverride(ThemeOverride)
     case saveAudioStrategy(AudioStrategy)
     case saveSpeakerMode(Bool)
     case saveBGMPlayMode(BGMPlayMode)
@@ -100,6 +102,8 @@ protocol AudioRoutingPort {
 
 protocol PersistencePort {
     func save()
+    func saveConsoleMode(_ mode: ConsoleMode)
+    func saveThemeOverride(_ theme: ThemeOverride)
     func saveAudioStrategy(_ strategy: AudioStrategy)
     func saveSpeakerMode(_ isEnabled: Bool)
     func saveBGMPlayMode(_ playMode: BGMPlayMode)
@@ -110,6 +114,14 @@ protocol PersistencePort {
 }
 
 extension PersistencePort {
+    func saveConsoleMode(_ mode: ConsoleMode) {
+        save()
+    }
+
+    func saveThemeOverride(_ theme: ThemeOverride) {
+        save()
+    }
+
     func saveAudioStrategy(_ strategy: AudioStrategy) {
         save()
     }
@@ -251,6 +263,10 @@ final class LiveRuntimeEffectRunner {
 
         case .applyAudioRouting(let reason):
             audioRouting?.apply(reason: reason, state: currentState())
+        case .saveConsoleMode(let mode):
+            persistence?.saveConsoleMode(mode)
+        case .saveThemeOverride(let theme):
+            persistence?.saveThemeOverride(theme)
         case .saveAudioStrategy(let strategy):
             persistence?.saveAudioStrategy(strategy)
         case .saveSpeakerMode(let isEnabled):

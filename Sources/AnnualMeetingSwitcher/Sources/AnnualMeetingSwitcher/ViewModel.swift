@@ -79,6 +79,8 @@ private final class ClosureAudioRoutingPort: AudioRoutingPort {
 
 private final class ClosurePersistencePort: PersistencePort {
     var saveHandler: (() -> Void)?
+    var saveConsoleModeHandler: ((ConsoleMode) -> Void)?
+    var saveThemeOverrideHandler: ((ThemeOverride) -> Void)?
     var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
     var saveSpeakerModeHandler: ((Bool) -> Void)?
     var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
@@ -89,6 +91,14 @@ private final class ClosurePersistencePort: PersistencePort {
 
     func save() {
         saveHandler?()
+    }
+
+    func saveConsoleMode(_ mode: ConsoleMode) {
+        saveConsoleModeHandler?(mode)
+    }
+
+    func saveThemeOverride(_ theme: ThemeOverride) {
+        saveThemeOverrideHandler?(theme)
     }
 
     func saveAudioStrategy(_ strategy: AudioStrategy) {
@@ -192,12 +202,12 @@ final class SwitcherViewModel {
     var selectedMainTab: MainConsoleTab = .preview
     var consoleMode: ConsoleMode = .setup {
         didSet {
-            userDefaults.set(consoleMode.rawValue, forKey: UDKeys.consoleMode)
+            dispatchRuntimeFacadeAction(.operatorSetConsoleMode(consoleMode))
         }
     }
     var themeOverride: ThemeOverride = .dark {
         didSet {
-            userDefaults.set(themeOverride.rawValue, forKey: UDKeys.themeOverride)
+            dispatchRuntimeFacadeAction(.operatorSetThemeOverride(themeOverride))
         }
     }
 
@@ -506,6 +516,12 @@ final class SwitcherViewModel {
         persistencePort.saveHandler = { [weak self] in
             self?.saveData()
         }
+        persistencePort.saveConsoleModeHandler = { [weak self] mode in
+            self?.userDefaults.set(mode.rawValue, forKey: UDKeys.consoleMode)
+        }
+        persistencePort.saveThemeOverrideHandler = { [weak self] theme in
+            self?.userDefaults.set(theme.rawValue, forKey: UDKeys.themeOverride)
+        }
         persistencePort.saveAudioStrategyHandler = { [weak self] strategy in
             self?.userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
         }
@@ -644,6 +660,7 @@ final class SwitcherViewModel {
 
         state.ppt.isRequested = isPageInterceptEnabled
         state.ppt.isEventTapActive = pageInterceptEventTap != nil
+        state.preferences.themeOverride = themeOverride
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
         state.preferences.showAgendaTimeline = showAgendaTimeline
