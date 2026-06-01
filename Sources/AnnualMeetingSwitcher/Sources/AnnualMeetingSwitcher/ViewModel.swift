@@ -648,6 +648,10 @@ final class SwitcherViewModel {
         var state = runtime.state
         state.mode = consoleMode
         state.program.items = programItems
+        if let currentProgramItem,
+           !state.program.items.contains(where: { $0.id == currentProgramItem.id }) {
+            state.program.items.append(currentProgramItem)
+        }
         state.program.currentID = currentProgramItem?.id
         state.program.currentSwitchedAt = currentProgramSwitchedAt
 
@@ -1797,11 +1801,8 @@ final class SwitcherViewModel {
         dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
         if isPanicMode {
             programSeekToStartHandler()
-            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         } else {
-            programRestartFromBeginningHandler { [weak self] in
-                self?.applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
-            }
+            programRestartFromBeginningHandler {}
         }
         recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }

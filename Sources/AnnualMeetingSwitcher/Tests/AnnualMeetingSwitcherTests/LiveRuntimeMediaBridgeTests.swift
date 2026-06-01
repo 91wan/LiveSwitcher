@@ -126,6 +126,33 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
 
+    func testRestartCurrentMediaRoutesAudioThroughRuntimeOnly() {
+        let audioRouting = MediaBridgeAudioRoutingPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        let item = mediaProgram()
+        viewModel.programItems = [item]
+        viewModel.currentProgramItem = item
+        viewModel.programRestartFromBeginningHandler = { onReadyToPlay in
+            onReadyToPlay()
+        }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        audioRouting.reset()
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
+        XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
     func testViewModelProgramSwitchDispatchesRuntimeProgramAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
