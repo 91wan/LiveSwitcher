@@ -84,6 +84,7 @@ private final class ClosurePersistencePort: PersistencePort {
     var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
     var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
     var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
+    var saveShowAgendaTimelineHandler: ((Bool) -> Void)?
 
     func save() {
         saveHandler?()
@@ -107,6 +108,10 @@ private final class ClosurePersistencePort: PersistencePort {
 
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
         saveAutoAdvanceAtScheduledTimeHandler?(isEnabled)
+    }
+
+    func saveShowAgendaTimeline(_ isEnabled: Bool) {
+        saveShowAgendaTimelineHandler?(isEnabled)
     }
 }
 
@@ -207,7 +212,8 @@ final class SwitcherViewModel {
     var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
         didSet {
-            userDefaults.set(showAgendaTimeline, forKey: UDKeys.showAgendaTimeline)
+            guard oldValue != showAgendaTimeline else { return }
+            dispatchRuntimeFacadeAction(.operatorSetShowAgendaTimeline(showAgendaTimeline))
         }
     }
 
@@ -509,6 +515,9 @@ final class SwitcherViewModel {
         persistencePort.saveAutoAdvanceAtScheduledTimeHandler = { [weak self] isEnabled in
             self?.userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
         }
+        persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
+            self?.userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
+        }
         pptPort.startHandler = { [weak self] in
             guard let self, self.pageInterceptSideEffectsEnabled else { return }
             self.startPageIntercept()
@@ -628,6 +637,7 @@ final class SwitcherViewModel {
         state.ppt.isEventTapActive = pageInterceptEventTap != nil
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
+        state.preferences.showAgendaTimeline = showAgendaTimeline
 
         state.projection.isBroadcasting = isBroadcasting
         state.projection.hasExternalDisplay = isExternalDisplayAvailable

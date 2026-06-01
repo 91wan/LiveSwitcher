@@ -14,11 +14,18 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
             action: .operatorSetAutoAdvanceAtScheduledTime(true),
             environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
         )
+        let agendaTimeline = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorSetShowAgendaTimeline(true),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
 
         XCTAssertTrue(autoPlay.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(autoPlay.effects.contains(.saveAutoPlayNextVideoOnEnd(true)))
         XCTAssertTrue(scheduledAdvance.state.preferences.autoAdvanceAtScheduledTime)
         XCTAssertTrue(scheduledAdvance.effects.contains(.saveAutoAdvanceAtScheduledTime(true)))
+        XCTAssertTrue(agendaTimeline.state.preferences.showAgendaTimeline)
+        XCTAssertTrue(agendaTimeline.effects.contains(.saveShowAgendaTimeline(true)))
     }
 
     func testEffectRunnerInvokesInjectedPreferencePersistencePort() {
@@ -28,7 +35,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         runner.run(
             [
                 .saveAutoPlayNextVideoOnEnd(true),
-                .saveAutoAdvanceAtScheduledTime(false)
+                .saveAutoAdvanceAtScheduledTime(false),
+                .saveShowAgendaTimeline(true)
             ],
             currentState: { LiveRuntimeState() },
             dispatch: { _ in XCTFail("Preference persistence effects should not dispatch actions") }
@@ -36,6 +44,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
 
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [false])
+        XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
     }
 
     func testViewModelPreferenceSettersRoutePersistenceThroughRuntimePort() {
@@ -55,13 +64,17 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
 
         viewModel.autoPlayNextVideoOnEnd = true
         viewModel.autoAdvanceAtScheduledTime = true
+        viewModel.showAgendaTimeline = true
 
         XCTAssertTrue(runtime.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(runtime.state.preferences.showAgendaTimeline)
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [true])
+        XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
         XCTAssertNil(defaults.object(forKey: "autoPlayNextVideoOnEnd"))
         XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
+        XCTAssertNil(defaults.object(forKey: "showAgendaTimeline"))
     }
 }
 
@@ -69,6 +82,7 @@ private final class PreferencePersistencePortSpy: PersistencePort {
     private(set) var saveCount = 0
     private(set) var savedAutoPlayNextVideoOnEnd: [Bool] = []
     private(set) var savedAutoAdvanceAtScheduledTime: [Bool] = []
+    private(set) var savedShowAgendaTimeline: [Bool] = []
 
     func save() {
         saveCount += 1
@@ -80,5 +94,9 @@ private final class PreferencePersistencePortSpy: PersistencePort {
 
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
         savedAutoAdvanceAtScheduledTime.append(isEnabled)
+    }
+
+    func saveShowAgendaTimeline(_ isEnabled: Bool) {
+        savedShowAgendaTimeline.append(isEnabled)
     }
 }

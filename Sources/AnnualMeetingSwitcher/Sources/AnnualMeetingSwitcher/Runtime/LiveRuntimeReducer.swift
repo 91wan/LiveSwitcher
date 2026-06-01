@@ -171,6 +171,10 @@ enum LiveRuntimeReducer {
             state.preferences.autoAdvanceAtScheduledTime = isEnabled
             effects.append(.saveAutoAdvanceAtScheduledTime(isEnabled))
 
+        case .operatorSetShowAgendaTimeline(let isEnabled):
+            state.preferences.showAgendaTimeline = isEnabled
+            effects.append(.saveShowAgendaTimeline(isEnabled))
+
         case .mediaLoaded(let url, let generation):
             guard generation == state.media.generation else { break }
             state.media.loadedURL = url
