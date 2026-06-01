@@ -69,7 +69,9 @@ final class LiveRuntimeStore {
             "panic=\(state.panic.isActive)",
             "projection=\(state.projection.isBroadcasting)",
             "pptRequested=\(state.ppt.isRequested)",
-            "pptActive=\(state.ppt.isEventTapActive)"
+            "pptActive=\(state.ppt.isEventTapActive)",
+            "autoNext=\(state.preferences.autoPlayNextVideoOnEnd)",
+            "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)"
         ].joined(separator: ",")
     }
 }
