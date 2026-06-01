@@ -530,7 +530,8 @@ final class SwitcherViewModel {
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
-            )
+            ),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
         )
         audioRoutingPort.applyHandler = { [weak self] reason, state in
             self?.applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: state)
@@ -627,6 +628,10 @@ final class SwitcherViewModel {
         runtime.connectedPortKinds
     }
 
+    var runtimeBridgeMode: LiveRuntimeBridgeMode {
+        runtime.bridgeMode
+    }
+
     func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
         syncRuntimeStateFromFacade(clearActionLog: false)
         runtime.dispatch(makeAction(runtime.state.media.generation))
@@ -652,8 +657,10 @@ final class SwitcherViewModel {
         state.mode = consoleMode
         state.program.items = programItems
         if let currentProgramItem,
-           !state.program.items.contains(where: { $0.id == currentProgramItem.id }) {
-            state.program.items.append(currentProgramItem)
+           !programItems.contains(where: { $0.id == currentProgramItem.id }) {
+            state.program.currentDetachedItem = currentProgramItem
+        } else {
+            state.program.currentDetachedItem = nil
         }
         state.program.currentID = currentProgramItem?.id
         state.program.currentSwitchedAt = currentProgramSwitchedAt
@@ -680,8 +687,9 @@ final class SwitcherViewModel {
         state.audio.isBGMMuted = isBGMAudioMuted
         state.audio.isSpeakerMode = isSpeakerMode
         state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
-        state.audio.effectiveMedia = effectiveMediaOutputVolume()
-        state.audio.effectiveBGM = appliedBGMOutputVolume()
+        let localAudioOutput = audioRoutingOutput
+        state.audio.effectiveMedia = localAudioOutput.media
+        state.audio.effectiveBGM = isBGMPlaying ? localAudioOutput.bgm : 0
 
         state.panic.isActive = isPanicMode
         state.panic.snapshot = panicPlaybackSnapshot

@@ -4,6 +4,17 @@ This document is the current ownership map for the LiveSwitcher runtime facade.
 Runtime authoritative: no. The runtime is still a migration boundary for most
 live-console domains, not the single source of truth for the full app.
 
+## Production Bridge Mode
+
+Production uses `LiveRuntimeBridgeMode.audioOwned`.
+
+In this mode the reducer may update runtime mirrors for media, BGM, projection,
+PPT, automation, and support state, but it may only emit executable effects for
+the domains that are actually wired in production: audio routing, image assets,
+and persistence. Media, BGM, projection, PPT, automation, timers, notice, and
+support ports remain blocked until their domains become explicitly owned by the
+runtime.
+
 ## Domain Ownership
 
 | Domain | Current owner | Runtime role | Migration state | Notes |

@@ -12,6 +12,12 @@ final class RuntimeEffectWiringTests: XCTestCase {
         )
     }
 
+    func testProductionRuntimeBridgeModeIsAudioOwned() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .audioOwned)
+    }
+
     func testUnconnectedProductionPortsAreNotTreatedAsMigrated() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
