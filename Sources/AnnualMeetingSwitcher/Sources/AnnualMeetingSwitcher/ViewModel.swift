@@ -85,6 +85,7 @@ private final class ClosurePersistencePort: PersistencePort {
     var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
     var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
     var saveShowAgendaTimelineHandler: ((Bool) -> Void)?
+    var saveCornerLogoPositionHandler: ((CornerLogoPosition) -> Void)?
 
     func save() {
         saveHandler?()
@@ -112,6 +113,10 @@ private final class ClosurePersistencePort: PersistencePort {
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
         saveShowAgendaTimelineHandler?(isEnabled)
+    }
+
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {
+        saveCornerLogoPositionHandler?(position)
     }
 }
 
@@ -306,7 +311,8 @@ final class SwitcherViewModel {
     var cornerLogoImage: NSImage?
     var cornerLogoPosition: CornerLogoPosition = .topRight {
         didSet {
-            userDefaults.set(cornerLogoPosition.rawValue, forKey: UDKeys.cornerLogoPosition)
+            guard oldValue != cornerLogoPosition else { return }
+            dispatchRuntimeFacadeAction(.operatorSetCornerLogoPosition(cornerLogoPosition))
         }
     }
 
@@ -518,6 +524,9 @@ final class SwitcherViewModel {
         persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
             self?.userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
         }
+        persistencePort.saveCornerLogoPositionHandler = { [weak self] position in
+            self?.userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
+        }
         pptPort.startHandler = { [weak self] in
             guard let self, self.pageInterceptSideEffectsEnabled else { return }
             self.startPageIntercept()
@@ -638,6 +647,7 @@ final class SwitcherViewModel {
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
         state.preferences.showAgendaTimeline = showAgendaTimeline
+        state.preferences.cornerLogoPosition = cornerLogoPosition
 
         state.projection.isBroadcasting = isBroadcasting
         state.projection.hasExternalDisplay = isExternalDisplayAvailable

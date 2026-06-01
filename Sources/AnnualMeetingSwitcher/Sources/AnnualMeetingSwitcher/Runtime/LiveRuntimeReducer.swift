@@ -175,6 +175,10 @@ enum LiveRuntimeReducer {
             state.preferences.showAgendaTimeline = isEnabled
             effects.append(.saveShowAgendaTimeline(isEnabled))
 
+        case .operatorSetCornerLogoPosition(let position):
+            state.preferences.cornerLogoPosition = position
+            effects.append(.saveCornerLogoPosition(position))
+
         case .mediaLoaded(let url, let generation):
             guard generation == state.media.generation else { break }
             state.media.loadedURL = url

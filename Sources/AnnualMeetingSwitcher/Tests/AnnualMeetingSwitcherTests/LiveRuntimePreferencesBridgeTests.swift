@@ -19,6 +19,11 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
             action: .operatorSetShowAgendaTimeline(true),
             environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
         )
+        let logoPosition = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorSetCornerLogoPosition(.bottomLeft),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
 
         XCTAssertTrue(autoPlay.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(autoPlay.effects.contains(.saveAutoPlayNextVideoOnEnd(true)))
@@ -26,6 +31,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         XCTAssertTrue(scheduledAdvance.effects.contains(.saveAutoAdvanceAtScheduledTime(true)))
         XCTAssertTrue(agendaTimeline.state.preferences.showAgendaTimeline)
         XCTAssertTrue(agendaTimeline.effects.contains(.saveShowAgendaTimeline(true)))
+        XCTAssertEqual(logoPosition.state.preferences.cornerLogoPosition, .bottomLeft)
+        XCTAssertTrue(logoPosition.effects.contains(.saveCornerLogoPosition(.bottomLeft)))
     }
 
     func testEffectRunnerInvokesInjectedPreferencePersistencePort() {
@@ -36,7 +43,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
             [
                 .saveAutoPlayNextVideoOnEnd(true),
                 .saveAutoAdvanceAtScheduledTime(false),
-                .saveShowAgendaTimeline(true)
+                .saveShowAgendaTimeline(true),
+                .saveCornerLogoPosition(.bottomRight)
             ],
             currentState: { LiveRuntimeState() },
             dispatch: { _ in XCTFail("Preference persistence effects should not dispatch actions") }
@@ -45,6 +53,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [false])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
+        XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomRight])
     }
 
     func testViewModelPreferenceSettersRoutePersistenceThroughRuntimePort() {
@@ -65,16 +74,20 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         viewModel.autoPlayNextVideoOnEnd = true
         viewModel.autoAdvanceAtScheduledTime = true
         viewModel.showAgendaTimeline = true
+        viewModel.cornerLogoPosition = .bottomLeft
 
         XCTAssertTrue(runtime.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(runtime.state.preferences.autoAdvanceAtScheduledTime)
         XCTAssertTrue(runtime.state.preferences.showAgendaTimeline)
+        XCTAssertEqual(runtime.state.preferences.cornerLogoPosition, .bottomLeft)
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
         XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [true])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
+        XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomLeft])
         XCTAssertNil(defaults.object(forKey: "autoPlayNextVideoOnEnd"))
         XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
         XCTAssertNil(defaults.object(forKey: "showAgendaTimeline"))
+        XCTAssertNil(defaults.object(forKey: "cornerLogo_position"))
     }
 }
 
@@ -83,6 +96,7 @@ private final class PreferencePersistencePortSpy: PersistencePort {
     private(set) var savedAutoPlayNextVideoOnEnd: [Bool] = []
     private(set) var savedAutoAdvanceAtScheduledTime: [Bool] = []
     private(set) var savedShowAgendaTimeline: [Bool] = []
+    private(set) var savedCornerLogoPositions: [CornerLogoPosition] = []
 
     func save() {
         saveCount += 1
@@ -98,5 +112,9 @@ private final class PreferencePersistencePortSpy: PersistencePort {
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
         savedShowAgendaTimeline.append(isEnabled)
+    }
+
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {
+        savedCornerLogoPositions.append(position)
     }
 }
