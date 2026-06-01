@@ -38,6 +38,56 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.saveSpeakerMode(true)))
     }
 
+    func testRuntimeAudioStateUsesRoutingEngineForStrategyAndSpeakerMode() {
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+        let video = ProgramItem(
+            title: "Opening",
+            subtitle: "VIDEO",
+            sourceURL: temporaryDirectory.appendingPathComponent("opening.mp4")
+        )
+        let bgm = BGMItem(
+            title: "Walk In",
+            url: temporaryDirectory.appendingPathComponent("walk-in.mp3"),
+            category: .warmUp
+        )
+        var state = LiveRuntimeState()
+        state.program.items = [video]
+        state.program.currentID = video.id
+        state.media.loadedURL = video.sourceURL
+        state.media.isPlaying = true
+        state.bgm.items = [bgm]
+        state.bgm.currentID = bgm.id
+        state.bgm.isPlaying = true
+        state.audio.masterVolume = 0.8
+        state.audio.mediaVolume = 0.5
+        state.audio.bgmVolume = 0.25
+        state.audio.strategy = .mixed
+
+        let speaker = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSetSpeakerMode(true),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+        XCTAssertEqual(speaker.state.audio.effectiveMedia, 0.056, accuracy: 0.0001)
+        XCTAssertEqual(speaker.state.audio.effectiveBGM, 0.056, accuracy: 0.0001)
+
+        let followProgram = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSelectedAudioStrategy(.followProgram),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+        XCTAssertEqual(followProgram.state.audio.effectiveMedia, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(followProgram.state.audio.effectiveBGM, 0, accuracy: 0.0001)
+
+        let bgmOnly = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSelectedAudioStrategy(.bgmOnly),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+        XCTAssertEqual(bgmOnly.state.audio.effectiveMedia, 0, accuracy: 0.0001)
+        XCTAssertEqual(bgmOnly.state.audio.effectiveBGM, 0.2, accuracy: 0.0001)
+    }
+
     func testLimiterActionsProduceLimiterOrFaderRoutingEffects() {
         let muted = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
@@ -161,6 +211,29 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.state.panic.isActive)
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPanic" })
         XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .panicChanged)
+    }
+
+    func testRuntimeAudioRoutingPortAppliesReducedRuntimeState() throws {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.liveAudioFadeDuration = 0
+        let mediaURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        defer { try? FileManager.default.removeItem(at: mediaURL) }
+        try Data("fixture".utf8).write(to: mediaURL)
+        let item = ProgramItem(title: "Opening", subtitle: "VIDEO", sourceURL: mediaURL)
+        viewModel.programItems = [item]
+        viewModel.currentProgramItem = item
+        viewModel.avCoordinator.load(url: mediaURL)
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.avCoordinator.volume = 1
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.dispatchRuntimeFacadeAction(.operatorSetPanic(true))
+
+        XCTAssertEqual(viewModel.runtime.state.audio.effectiveMedia, 0)
+        XCTAssertEqual(viewModel.avCoordinator.volume, 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .panicChanged)
     }
 }

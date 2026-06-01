@@ -516,16 +516,24 @@ enum LiveRuntimeReducer {
     }
 
     private static func recalculateAudio(_ state: inout LiveRuntimeState) {
-        guard !state.panic.isActive else {
-            state.audio.effectiveMedia = 0
-            state.audio.effectiveBGM = 0
-            return
-        }
-
-        let master = state.audio.isMasterMuted ? 0 : state.audio.masterVolume
-        let media = state.audio.isMediaMuted || !state.media.isPlaying ? 0 : state.audio.mediaVolume
-        let bgm = state.audio.isBGMMuted || !state.bgm.isPlaying ? 0 : state.audio.bgmVolume
-        state.audio.effectiveMedia = Float(master * media)
-        state.audio.effectiveBGM = Float(master * bgm)
+        let output = AudioRoutingEngine.output(
+            for: AudioRoutingInput(
+                masterVolume: state.audio.masterVolume,
+                mediaVolume: state.audio.mediaVolume,
+                bgmVolume: state.bgm.isPlaying ? state.audio.bgmVolume : 0,
+                audioStrategy: state.audio.strategy,
+                isCurrentProgramMediaSource: state.program.currentItem?.sourceKind == .media,
+                isMediaPlaying: state.media.isPlaying,
+                isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
+                isSpeakerMode: state.audio.isSpeakerMode,
+                isPanicMode: state.panic.isActive,
+                isMasterMuted: state.audio.isMasterMuted,
+                isMediaMuted: state.audio.isMediaMuted,
+                isBGMMuted: state.audio.isBGMMuted,
+                speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+            )
+        )
+        state.audio.effectiveMedia = output.media
+        state.audio.effectiveBGM = output.bgm
     }
 }

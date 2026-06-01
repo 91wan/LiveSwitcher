@@ -1,5 +1,9 @@
 import Foundation
 
+enum AudioRoutingDefaults {
+    static let speakerModeDuckedRatio: Float = 0.07
+}
+
 struct AudioRoutingInput: Equatable {
     var masterVolume: Double
     var mediaVolume: Double
