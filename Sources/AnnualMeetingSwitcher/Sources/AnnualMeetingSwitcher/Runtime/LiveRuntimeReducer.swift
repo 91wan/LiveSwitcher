@@ -116,6 +116,10 @@ enum LiveRuntimeReducer {
             ]
             recalculateAudio(&state)
 
+        case .operatorSelectedBGMPlayMode(let playMode):
+            state.bgm.playMode = playMode
+            effects.append(.savePersistentState)
+
         case .operatorStoppedBGM:
             state.bgm.generation += 1
             state.bgm.isPlaying = false
@@ -192,10 +196,7 @@ enum LiveRuntimeReducer {
 
         case .bgmReachedEnd(let generation):
             guard generation == state.bgm.generation else { break }
-            state.bgm.isPlaying = false
-            effects.append(.stopBGMTimer(generation: generation))
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
+            reduceBGMReachedEnd(state: &state, effects: &effects)
 
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
@@ -406,6 +407,63 @@ enum LiveRuntimeReducer {
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
         recalculateAudio(&state)
+    }
+
+    private static func reduceBGMReachedEnd(
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        guard let currentID = state.bgm.currentID,
+              let index = state.bgm.items.firstIndex(where: { $0.id == currentID })
+        else {
+            stopFinishedBGM(state: &state, effects: &effects)
+            return
+        }
+
+        switch state.bgm.playMode {
+        case .loopOne:
+            restartBGM(state.bgm.items[index], state: &state, effects: &effects)
+        case .loopAll:
+            let nextIndex = (index + 1) % state.bgm.items.count
+            restartBGM(state.bgm.items[nextIndex], state: &state, effects: &effects)
+        case .sequential:
+            if index < state.bgm.items.count - 1 {
+                restartBGM(state.bgm.items[index + 1], state: &state, effects: &effects)
+            } else {
+                stopFinishedBGM(state: &state, effects: &effects)
+            }
+        }
+    }
+
+    private static func restartBGM(
+        _ item: BGMItem,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        state.bgm.generation += 1
+        state.bgm.currentID = item.id
+        state.bgm.isPlaying = true
+        state.bgm.progress = 0
+        state.bgm.currentTime = 0
+        state.bgm.duration = nil
+        effects += [
+            .prepareBGM(item, generation: state.bgm.generation),
+            .playBGM(generation: state.bgm.generation),
+            .startBGMTimer(generation: state.bgm.generation),
+            .applyAudioRouting(reason: .bgmPlaybackChanged)
+        ]
+        recalculateAudio(&state)
+    }
+
+    private static func stopFinishedBGM(
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        state.bgm.generation += 1
+        state.bgm.isPlaying = false
+        effects.append(.stopBGMTimer(generation: state.bgm.generation))
+        recalculateAudio(&state)
+        effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
 
     private static func recalculateAudio(_ state: inout LiveRuntimeState) {

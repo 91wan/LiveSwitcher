@@ -85,6 +85,87 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         XCTAssertEqual(current.state.bgm.progress, 0.9, accuracy: 0.0001)
     }
 
+    func testRuntimeBGMPlayModeSelectionUpdatesRuntimeStateAndRequestsPersistence() {
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorSelectedBGMPlayMode(.sequential),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(mutation.state.bgm.playMode, .sequential)
+        XCTAssertTrue(mutation.effects.contains(.savePersistentState))
+    }
+
+    func testRuntimeLoopOneEndRestartsSameTrackWithNewGeneration() {
+        let item = bgmItem(title: "Loop One")
+        var state = LiveRuntimeState()
+        state.bgm.items = [item]
+        state.bgm.currentID = item.id
+        state.bgm.isPlaying = true
+        state.bgm.playMode = .loopOne
+        state.bgm.generation = 4
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmReachedEnd(generation: 4),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(mutation.state.bgm.currentID, item.id)
+        XCTAssertTrue(mutation.state.bgm.isPlaying)
+        XCTAssertEqual(mutation.state.bgm.generation, 5)
+        XCTAssertEqual(mutation.state.bgm.progress, 0)
+        XCTAssertTrue(mutation.effects.contains(.prepareBGM(item, generation: 5)))
+        XCTAssertTrue(mutation.effects.contains(.playBGM(generation: 5)))
+        XCTAssertTrue(mutation.effects.contains(.startBGMTimer(generation: 5)))
+    }
+
+    func testRuntimeLoopAllEndAdvancesToNextTrack() {
+        let first = bgmItem(title: "First")
+        let second = bgmItem(title: "Second")
+        var state = LiveRuntimeState()
+        state.bgm.items = [first, second]
+        state.bgm.currentID = first.id
+        state.bgm.isPlaying = true
+        state.bgm.playMode = .loopAll
+        state.bgm.generation = 7
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmReachedEnd(generation: 7),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(mutation.state.bgm.currentID, second.id)
+        XCTAssertTrue(mutation.state.bgm.isPlaying)
+        XCTAssertEqual(mutation.state.bgm.generation, 8)
+        XCTAssertTrue(mutation.effects.contains(.prepareBGM(second, generation: 8)))
+        XCTAssertTrue(mutation.effects.contains(.playBGM(generation: 8)))
+    }
+
+    func testRuntimeSequentialEndStopsAtLastTrack() {
+        let first = bgmItem(title: "First")
+        let second = bgmItem(title: "Second")
+        var state = LiveRuntimeState()
+        state.bgm.items = [first, second]
+        state.bgm.currentID = second.id
+        state.bgm.isPlaying = true
+        state.bgm.playMode = .sequential
+        state.bgm.generation = 9
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmReachedEnd(generation: 9),
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(mutation.state.bgm.currentID, second.id)
+        XCTAssertFalse(mutation.state.bgm.isPlaying)
+        XCTAssertEqual(mutation.state.bgm.generation, 10)
+        XCTAssertTrue(mutation.effects.contains(.stopBGMTimer(generation: 10)))
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .bgmPlaybackChanged)))
+    }
+
     func testViewModelBGMSelectionDispatchesRuntimeAction() throws {
         let viewModel = makeViewModel()
         let item = try temporaryBGMItem(title: "Select")
@@ -136,6 +217,15 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
 
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "bgmProgressUpdated" })
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "bgmFailed" })
+    }
+
+    func testViewModelLoopModeToggleDispatchesRuntimeAction() {
+        let viewModel = makeViewModel()
+
+        viewModel.toggleLoopMode()
+
+        XCTAssertEqual(viewModel.runtime.state.bgm.playMode, .loopOne)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedBGMPlayMode" })
     }
 
     private func bgmItem(title: String) -> BGMItem {
