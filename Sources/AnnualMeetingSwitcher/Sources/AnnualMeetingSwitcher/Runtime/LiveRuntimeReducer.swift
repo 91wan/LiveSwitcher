@@ -171,6 +171,14 @@ enum LiveRuntimeReducer {
             state.preferences.themeOverride = theme
             effects.append(.saveThemeOverride(theme))
 
+        case .operatorSetActiveWallpaperURL(let url):
+            state.preferences.activeWallpaperURL = url
+            effects.append(.loadBackgroundImage(url))
+
+        case .operatorSetCornerLogoURL(let url):
+            state.preferences.cornerLogoURL = url
+            effects.append(.loadCornerLogoImage(url))
+
         case .operatorSetAutoPlayNextVideoOnEnd(let isEnabled):
             state.preferences.autoPlayNextVideoOnEnd = isEnabled
             effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))

@@ -29,6 +29,8 @@ enum LiveRuntimeEffect: Equatable {
     case expireAutomationNotice(UUID, at: Date)
 
     case applyAudioRouting(reason: AudioRoutingRuntimeChangeReason)
+    case loadBackgroundImage(URL?)
+    case loadCornerLogoImage(URL?)
     case saveConsoleMode(ConsoleMode)
     case saveThemeOverride(ThemeOverride)
     case saveAudioStrategy(AudioStrategy)
@@ -100,6 +102,11 @@ protocol AudioRoutingPort {
     func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState)
 }
 
+protocol ImageAssetPort {
+    func loadBackgroundImage(from url: URL?)
+    func loadCornerLogoImage(from url: URL?)
+}
+
 protocol PersistencePort {
     func save()
     func saveConsoleMode(_ mode: ConsoleMode)
@@ -166,6 +173,7 @@ final class LiveRuntimeEffectRunner {
     private let bgmTimer: BGMTimerPort?
     private let automationNotice: AutomationNoticePort?
     private let audioRouting: AudioRoutingPort?
+    private let imageAssets: ImageAssetPort?
     private let persistence: PersistencePort?
     private let support: SupportEventPort?
 
@@ -179,6 +187,7 @@ final class LiveRuntimeEffectRunner {
         bgmTimer: BGMTimerPort? = nil,
         automationNotice: AutomationNoticePort? = nil,
         audioRouting: AudioRoutingPort? = nil,
+        imageAssets: ImageAssetPort? = nil,
         persistence: PersistencePort? = nil,
         support: SupportEventPort? = nil
     ) {
@@ -191,6 +200,7 @@ final class LiveRuntimeEffectRunner {
         self.bgmTimer = bgmTimer
         self.automationNotice = automationNotice
         self.audioRouting = audioRouting
+        self.imageAssets = imageAssets
         self.persistence = persistence
         self.support = support
     }
@@ -263,6 +273,10 @@ final class LiveRuntimeEffectRunner {
 
         case .applyAudioRouting(let reason):
             audioRouting?.apply(reason: reason, state: currentState())
+        case .loadBackgroundImage(let url):
+            imageAssets?.loadBackgroundImage(from: url)
+        case .loadCornerLogoImage(let url):
+            imageAssets?.loadCornerLogoImage(from: url)
         case .saveConsoleMode(let mode):
             persistence?.saveConsoleMode(mode)
         case .saveThemeOverride(let theme):
