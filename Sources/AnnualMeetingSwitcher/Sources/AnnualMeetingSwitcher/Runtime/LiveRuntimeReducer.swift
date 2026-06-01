@@ -118,7 +118,7 @@ enum LiveRuntimeReducer {
 
         case .operatorSelectedBGMPlayMode(let playMode):
             state.bgm.playMode = playMode
-            effects.append(.savePersistentState)
+            effects.append(.saveBGMPlayMode(playMode))
 
         case .operatorStoppedBGM:
             state.bgm.generation += 1

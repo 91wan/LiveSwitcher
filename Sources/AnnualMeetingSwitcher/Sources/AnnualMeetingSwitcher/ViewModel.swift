@@ -81,6 +81,7 @@ private final class ClosurePersistencePort: PersistencePort {
     var saveHandler: (() -> Void)?
     var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
     var saveSpeakerModeHandler: ((Bool) -> Void)?
+    var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
 
     func save() {
         saveHandler?()
@@ -92,6 +93,10 @@ private final class ClosurePersistencePort: PersistencePort {
 
     func saveSpeakerMode(_ isEnabled: Bool) {
         saveSpeakerModeHandler?(isEnabled)
+    }
+
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
+        saveBGMPlayModeHandler?(playMode)
     }
 }
 
@@ -287,11 +292,7 @@ final class SwitcherViewModel {
             dispatchRuntimeFacadeAction(.operatorChangedBGMTakeover(isBGMAudioTakeoverActive))
         }
     }
-    var bgmPlayMode: BGMPlayMode = .loopAll {
-        didSet {
-            userDefaults.set(bgmPlayMode.rawValue, forKey: UDKeys.bgmPlayMode)
-        }
-    }
+    var bgmPlayMode: BGMPlayMode = .loopAll
     private(set) var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
@@ -473,6 +474,9 @@ final class SwitcherViewModel {
         }
         persistencePort.saveSpeakerModeHandler = { [weak self] isEnabled in
             self?.userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
+        }
+        persistencePort.saveBGMPlayModeHandler = { [weak self] playMode in
+            self?.userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
         }
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
@@ -958,6 +962,7 @@ final class SwitcherViewModel {
     func saveData() {
         userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
         userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
+        userDefaults.set(bgmPlayMode.rawValue, forKey: UDKeys.bgmPlayMode)
 
         let persistentProgramItems = ProgramQueueStore.persistentProgramItems(from: programItems)
         let pushPaths = persistentProgramItems.map { $0.sourceURL?.path ?? "" }
