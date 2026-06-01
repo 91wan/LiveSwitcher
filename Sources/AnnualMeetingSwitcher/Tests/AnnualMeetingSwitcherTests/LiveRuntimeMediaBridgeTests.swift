@@ -76,6 +76,28 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))"))
     }
 
+    func testMediaPlaybackCallbackRoutesAudioThroughRuntimeOnly() {
+        let audioRouting = MediaBridgeAudioRoutingPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        audioRouting.reset()
+        viewModel.resetLastAudioRoutingTransitionForTesting()
+
+        viewModel.avCoordinator.isPlaying = true
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
+        XCTAssertEqual(audioRouting.reasons, [.mediaPlaybackChanged])
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+    }
+
     func testViewModelProgramSwitchDispatchesRuntimeProgramAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
@@ -162,5 +184,9 @@ private final class MediaBridgeAudioRoutingPortSpy: AudioRoutingPort {
 
     func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
         reasons.append(reason)
+    }
+
+    func reset() {
+        reasons = []
     }
 }
