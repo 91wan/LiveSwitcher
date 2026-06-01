@@ -1750,7 +1750,6 @@ final class SwitcherViewModel {
                     panicPlaybackSnapshot?.wasMediaPlaying = false
                 }
                 avCoordinator.pause()
-                applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
             }
             return
         }
@@ -1759,10 +1758,8 @@ final class SwitcherViewModel {
         dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
         if avCoordinator.isPlaying {
             avCoordinator.pause()
-            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         } else {
             avCoordinator.play()
-            applyAudioRoutingForRuntimeChange(reason: .mediaPlaybackChanged)
         }
     }
 
