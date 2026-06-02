@@ -620,7 +620,10 @@ final class SwitcherViewModel {
     // MARK: - Runtime facade bridge
 
     func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
-        syncRuntimeStateFromFacade(clearActionLog: false)
+        syncRuntimeStateFromFacade(
+            clearActionLog: false,
+            dispatchAudioInputsChanged: shouldDispatchAudioInputsBeforeRuntimeAction(action)
+        )
         runtime.dispatch(action)
     }
 
@@ -633,12 +636,12 @@ final class SwitcherViewModel {
     }
 
     func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
-        syncRuntimeStateFromFacade(clearActionLog: false)
+        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
         runtime.dispatch(makeAction(runtime.state.media.generation))
     }
 
     func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
-        syncRuntimeStateFromFacade(clearActionLog: false)
+        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
         runtime.dispatch(makeAction(runtime.state.bgm.generation))
     }
 
@@ -649,13 +652,24 @@ final class SwitcherViewModel {
     }
 
     func syncRuntimeStateFromFacade(clearActionLog: Bool) {
-        runtime.replaceStateForFacadeSync(makeRuntimeStateSnapshot(), clearActionLog: clearActionLog)
+        syncRuntimeStateFromFacade(clearActionLog: clearActionLog, dispatchAudioInputsChanged: true)
+    }
+
+    private func syncRuntimeStateFromFacade(
+        clearActionLog: Bool,
+        dispatchAudioInputsChanged: Bool
+    ) {
+        let snapshot = makeRuntimeStateSnapshot()
+        let audioInputsChanged = dispatchAudioInputsChanged && !runtimeAudioInputsMatch(runtime.state, snapshot)
+        let audioSnapshot = audioFacadeSnapshot()
+        runtime.replaceStateForFacadeSync(snapshot, clearActionLog: clearActionLog)
+        if audioInputsChanged {
+            runtime.dispatch(.facadeAudioInputsChanged(audioSnapshot))
+        }
     }
 
     private func syncRuntimeStateIfAudioInputsDriftedFromFacade() {
-        let snapshot = makeRuntimeStateSnapshot()
-        guard !runtimeAudioInputsMatch(runtime.state, snapshot) else { return }
-        runtime.replaceStateForFacadeSync(snapshot, clearActionLog: false)
+        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: true)
     }
 
     private func runtimeAudioInputsMatch(_ lhs: LiveRuntimeState, _ rhs: LiveRuntimeState) -> Bool {
@@ -673,6 +687,48 @@ final class SwitcherViewModel {
             && lhs.audio.isSpeakerMode == rhs.audio.isSpeakerMode
             && lhs.audio.isBGMTakeoverActive == rhs.audio.isBGMTakeoverActive
             && lhs.panic.isActive == rhs.panic.isActive
+    }
+
+    private func shouldDispatchAudioInputsBeforeRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorSelectedAudioStrategy,
+             .operatorChangedMasterVolume,
+             .operatorChangedMediaVolume,
+             .operatorChangedBGMVolume,
+             .operatorChangedMasterMute,
+             .operatorChangedMediaMute,
+             .operatorChangedBGMMute,
+             .operatorChangedBGMTakeover,
+             .operatorToggledSpeakerMode,
+             .operatorSetSpeakerMode,
+             .mediaPlaybackChanged,
+             .mediaReachedEnd,
+             .bgmPlaybackChanged,
+             .bgmReachedEnd,
+             .bgmFailed,
+             .facadeAudioInputsChanged:
+            return false
+        default:
+            return true
+        }
+    }
+
+    private func audioFacadeSnapshot() -> AudioFacadeSnapshot {
+        AudioFacadeSnapshot(
+            masterVolume: masterVolume,
+            mediaVolume: mediaVolume,
+            bgmVolume: bgmVolume,
+            strategy: audioStrategy,
+            isMasterMuted: isMasterAudioMuted,
+            isMediaMuted: isMediaAudioMuted,
+            isBGMMuted: isBGMAudioMuted,
+            isSpeakerMode: isSpeakerMode,
+            isBGMTakeoverActive: isBGMAudioTakeoverActive,
+            isPanicMode: isPanicMode,
+            isCurrentProgramMediaSource: currentProgramIsMediaSource,
+            isMediaPlaying: avCoordinator.isPlaying,
+            isBGMPlaying: isBGMPlaying
+        )
     }
 
     private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
@@ -710,9 +766,6 @@ final class SwitcherViewModel {
         state.audio.isBGMMuted = isBGMAudioMuted
         state.audio.isSpeakerMode = isSpeakerMode
         state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
-        let localAudioOutput = legacyAudioRoutingOutputForSnapshotOnly
-        state.audio.effectiveMedia = localAudioOutput.media
-        state.audio.effectiveBGM = localAudioOutput.bgm
 
         state.panic.isActive = isPanicMode
         state.panic.snapshot = panicPlaybackSnapshot

@@ -33,6 +33,8 @@ final class RuntimeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(document.localizedStandardContains("A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed"))
         XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
+        XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio ownership tests pass"))
+        XCTAssertTrue(document.localizedStandardContains("production effective audio output remains runtime-owned"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {

@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class AudioRuntimeOwnershipTests: XCTestCase {
-    func testAudioDidSetDispatchesRuntimeActionAndAppliesRuntimeComputedRouting() {
+    func testAudioFacadeMutationDispatchesRuntimeActionOnly() {
         let audioRouting = AudioRuntimeOwnershipPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
@@ -46,7 +46,75 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(runtime.state.audio.effectiveBGM, viewModel.effectiveBGMOutputVolume())
     }
 
-    func testEffectiveOutputVolumesReadRuntimeState() {
+    func testFacadeAudioInputsChangedRecalculatesRuntimeAudio() {
+        let snapshot = AudioFacadeSnapshot(
+            masterVolume: 0.5,
+            mediaVolume: 0.8,
+            bgmVolume: 0.2,
+            strategy: .mixed,
+            isMasterMuted: false,
+            isMediaMuted: false,
+            isBGMMuted: false,
+            isSpeakerMode: false,
+            isBGMTakeoverActive: false,
+            isPanicMode: false,
+            isCurrentProgramMediaSource: true,
+            isMediaPlaying: true,
+            isBGMPlaying: true
+        )
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .facadeAudioInputsChanged(snapshot),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(mutation.state.audio.masterVolume, 0.5)
+        XCTAssertEqual(mutation.state.audio.mediaVolume, 0.8)
+        XCTAssertEqual(mutation.state.audio.bgmVolume, 0.2)
+        XCTAssertEqual(mutation.state.audio.strategy, .mixed)
+        XCTAssertEqual(mutation.state.media.isPlaying, true)
+        XCTAssertEqual(mutation.state.bgm.isPlaying, true)
+        XCTAssertEqual(mutation.state.panic.isActive, false)
+        XCTAssertEqual(mutation.state.audio.effectiveMedia, 0.4, accuracy: 0.0001)
+        XCTAssertEqual(mutation.state.audio.effectiveBGM, 0.1, accuracy: 0.0001)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testFacadeSyncDoesNotWriteLegacyEffectiveAudioValues() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try XCTUnwrap(source.functionBody(named: "makeRuntimeStateSnapshot"))
+
+        XCTAssertFalse(body.contains("legacyAudioRoutingOutputForSnapshotOnly"))
+        XCTAssertFalse(body.contains("state.audio.effectiveMedia"))
+        XCTAssertFalse(body.contains("state.audio.effectiveBGM"))
+    }
+
+    func testEffectiveOutputSyncDispatchesFacadeAudioInputsChanged() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        viewModel.masterVolume = 0.5
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.currentProgramItem = ProgramItem(
+            title: "Video",
+            subtitle: "VIDEO",
+            sourceURL: URL(fileURLWithPath: "/tmp/video.mp4")
+        )
+        _ = viewModel.effectiveMediaOutputVolume()
+
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "facadeAudioInputsChanged" })
+    }
+
+    func testEffectiveMediaOutputReadsRuntimeStateWithoutLegacyRecompute() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),
             environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
@@ -62,10 +130,27 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         runtime.replaceStateForFacadeSync(runtimeState)
 
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.17, accuracy: 0.0001)
+    }
+
+    func testEffectiveBGMOutputReadsRuntimeStateWithoutLegacyRecompute() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        var runtimeState = runtime.state
+        runtimeState.audio.effectiveMedia = 0.17
+        runtimeState.audio.effectiveBGM = 0.23
+        runtime.replaceStateForFacadeSync(runtimeState)
+
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.23, accuracy: 0.0001)
     }
 
-    func testProductionAudioRoutingRuntimeChangeRequiresRuntimeState() throws {
+    func testApplyAudioRoutingRequiresRuntimeStateInProduction() throws {
         let source = try sourceText("ViewModel.swift")
         let body = try XCTUnwrap(source.functionBody(named: "applyAudioRoutingForRuntimeChange"))
 
@@ -75,6 +160,23 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(source.contains("runtimeState: LiveRuntimeState"))
         XCTAssertTrue(source.contains("applyCurrentRuntimeAudioRouting"))
         XCTAssertTrue(body.contains("effectiveMedia: runtimeState.audio.effectiveMedia"))
+    }
+
+    func testUIModelsUseRuntimeBackedEffectiveValues() throws {
+        let preflightSource = try sourceText("ViewModel+Preflight.swift")
+        let setupAudioDockSource = try sourceText("Views/SetupAudioDock.swift")
+
+        XCTAssertTrue(preflightSource.contains("effectiveMediaVolume: effectiveMediaOutputVolume()"))
+        XCTAssertTrue(preflightSource.contains("effectiveBGMVolume: effectiveBGMOutputVolume()"))
+        XCTAssertTrue(setupAudioDockSource.contains("effectiveMediaVolume: viewModel.effectiveMediaOutputVolume()"))
+        XCTAssertTrue(setupAudioDockSource.contains("effectiveBGMVolume: viewModel.effectiveBGMOutputVolume()"))
+    }
+
+    func testLegacyAudioRoutingOutputOnlyUsedForSnapshotOrTests() throws {
+        let source = try sourceText("ViewModel.swift")
+        let uses = source.components(separatedBy: "legacyAudioRoutingOutputForSnapshotOnly").count - 1
+
+        XCTAssertEqual(uses, 1)
     }
 
     func testAudioDidSetsDoNotApplyRoutingDirectly() throws {

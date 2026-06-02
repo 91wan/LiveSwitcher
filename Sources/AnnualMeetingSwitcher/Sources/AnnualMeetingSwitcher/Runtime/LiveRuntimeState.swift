@@ -78,6 +78,22 @@ struct AudioRuntimeState: Equatable {
     var effectiveBGM: Float = 0
 }
 
+struct AudioFacadeSnapshot: Equatable {
+    var masterVolume: Double
+    var mediaVolume: Double
+    var bgmVolume: Double
+    var strategy: AudioStrategy
+    var isMasterMuted: Bool
+    var isMediaMuted: Bool
+    var isBGMMuted: Bool
+    var isSpeakerMode: Bool
+    var isBGMTakeoverActive: Bool
+    var isPanicMode: Bool
+    var isCurrentProgramMediaSource: Bool
+    var isMediaPlaying: Bool
+    var isBGMPlaying: Bool
+}
+
 struct PanicRuntimeState: Equatable {
     var isActive = false
     var snapshot: PanicPlaybackSnapshot?

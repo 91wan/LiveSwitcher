@@ -43,6 +43,7 @@ enum LiveRuntimeAction: Equatable {
     case mediaReachedEnd(generation: Int)
     case mediaSeekCompleted(time: Double, generation: Int)
     case facadeCurrentProgramChanged(UUID?)
+    case facadeAudioInputsChanged(AudioFacadeSnapshot)
 
     case bgmPrepared(id: UUID, generation: Int)
     case bgmPlaybackChanged(isPlaying: Bool, generation: Int)
@@ -104,6 +105,7 @@ extension LiveRuntimeAction {
         case .mediaReachedEnd: return "mediaReachedEnd"
         case .mediaSeekCompleted: return "mediaSeekCompleted"
         case .facadeCurrentProgramChanged: return "facadeCurrentProgramChanged"
+        case .facadeAudioInputsChanged: return "facadeAudioInputsChanged"
         case .bgmPrepared: return "bgmPrepared"
         case .bgmPlaybackChanged: return "bgmPlaybackChanged"
         case .bgmReachedEnd: return "bgmReachedEnd"

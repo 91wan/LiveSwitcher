@@ -267,7 +267,15 @@ enum LiveRuntimeReducer {
                 state.program.currentDetachedItem = nil
             }
             state.program.currentSwitchedAt = id == nil ? nil : environment.now
+            recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .programChanged))
+
+        case .facadeAudioInputsChanged(let snapshot):
+            applyAudioFacadeSnapshot(
+                snapshot,
+                to: &state,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .bgmPrepared(let id, let generation):
             guard generation == state.bgm.generation, id == state.bgm.currentID else { break }
@@ -627,6 +635,45 @@ enum LiveRuntimeReducer {
                 isMasterMuted: state.audio.isMasterMuted,
                 isMediaMuted: state.audio.isMediaMuted,
                 isBGMMuted: state.audio.isBGMMuted,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
+        )
+        state.audio.effectiveMedia = output.media
+        state.audio.effectiveBGM = output.bgm
+    }
+
+    private static func applyAudioFacadeSnapshot(
+        _ snapshot: AudioFacadeSnapshot,
+        to state: inout LiveRuntimeState,
+        speakerModeDuckedRatio: Float
+    ) {
+        state.audio.masterVolume = min(max(snapshot.masterVolume, 0), 1)
+        state.audio.mediaVolume = min(max(snapshot.mediaVolume, 0), 1)
+        state.audio.bgmVolume = min(max(snapshot.bgmVolume, 0), 1)
+        state.audio.strategy = snapshot.strategy
+        state.audio.isMasterMuted = snapshot.isMasterMuted
+        state.audio.isMediaMuted = snapshot.isMediaMuted
+        state.audio.isBGMMuted = snapshot.isBGMMuted
+        state.audio.isSpeakerMode = snapshot.isSpeakerMode
+        state.audio.isBGMTakeoverActive = snapshot.isBGMTakeoverActive
+        state.media.isPlaying = snapshot.isMediaPlaying
+        state.bgm.isPlaying = snapshot.isBGMPlaying
+        state.panic.isActive = snapshot.isPanicMode
+
+        let output = AudioRoutingEngine.output(
+            for: AudioRoutingInput(
+                masterVolume: state.audio.masterVolume,
+                mediaVolume: state.audio.mediaVolume,
+                bgmVolume: state.audio.bgmVolume,
+                audioStrategy: state.audio.strategy,
+                isCurrentProgramMediaSource: snapshot.isCurrentProgramMediaSource,
+                isMediaPlaying: snapshot.isMediaPlaying,
+                isBGMAudioTakeoverActive: snapshot.isBGMTakeoverActive,
+                isSpeakerMode: snapshot.isSpeakerMode,
+                isPanicMode: snapshot.isPanicMode,
+                isMasterMuted: snapshot.isMasterMuted,
+                isMediaMuted: snapshot.isMediaMuted,
+                isBGMMuted: snapshot.isBGMMuted,
                 speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         )
