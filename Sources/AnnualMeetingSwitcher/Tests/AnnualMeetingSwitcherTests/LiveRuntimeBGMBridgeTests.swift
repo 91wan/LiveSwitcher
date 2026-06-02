@@ -11,7 +11,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedBGM(item.id),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.bgm.currentID, item.id)
@@ -33,7 +33,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorStoppedBGM,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertFalse(mutation.state.bgm.isPlaying)
@@ -50,12 +50,12 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let stale = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmPlaybackChanged(isPlaying: false, generation: 5),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let current = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmPlaybackChanged(isPlaying: false, generation: 6),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(stale.state.bgm.isPlaying)
@@ -71,12 +71,12 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let stale = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmProgressUpdated(time: 9, duration: 10, generation: 2),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let current = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmProgressUpdated(time: 9, duration: 10, generation: 3),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(stale.state.bgm.currentTime, 0)
@@ -89,7 +89,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSelectedBGMPlayMode(.sequential),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.bgm.playMode, .sequential)
@@ -108,7 +108,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmReachedEnd(generation: 4),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.bgm.currentID, item.id)
@@ -133,7 +133,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmReachedEnd(generation: 7),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.bgm.currentID, second.id)
@@ -156,7 +156,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .bgmReachedEnd(generation: 9),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.bgm.currentID, second.id)

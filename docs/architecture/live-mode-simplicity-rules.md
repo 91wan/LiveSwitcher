@@ -37,6 +37,8 @@ product boundary.
 
 ## Policy model
 
+- Live mode simplicity is independent of runtime migration.
+- Runtime migration PRs must not add live controls.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
   actions, primary action count, and forbidden configuration surfaces.
 - `LiveModeSimplicityPolicy` is the code-level gate for live-mode limits,

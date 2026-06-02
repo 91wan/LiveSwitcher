@@ -84,10 +84,7 @@ final class SupportIngressTests: XCTestCase {
         LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: action,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: bridgeMode
-            )
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: bridgeMode)
         )
     }
 }

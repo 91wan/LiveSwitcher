@@ -61,6 +61,21 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
+    func testDocsStateFullRuntimeIsTestOnlyUntilMigration() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` is test-only until a domain migration PR explicitly promotes it"))
+        XCTAssertTrue(document.localizedStandardContains("Media/BGM/Projection/PPT migration is blocked until its ports are wired and ownership PR is approved"))
+    }
+
+    func testDocsRequireExplicitBridgeModeInTests() throws {
+        let document = try runtimeOwnershipDocument()
+        let environmentDefaultText = "`LiveRuntime" + "Environment()` must not imply production-unsafe full runtime"
+
+        XCTAssertTrue(document.localizedStandardContains("Tests must use explicit bridge mode"))
+        XCTAssertTrue(document.localizedStandardContains(environmentDefaultText))
+    }
+
     private func runtimeOwnershipDocument() throws -> String {
         let url = try repositoryRoot()
             .appendingPathComponent("docs/architecture/runtime-ownership.md")

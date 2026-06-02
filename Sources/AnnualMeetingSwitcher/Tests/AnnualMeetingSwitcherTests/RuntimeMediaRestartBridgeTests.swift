@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class RuntimeMediaRestartBridgeTests: XCTestCase {
-    func testRestartRoutesAudioThroughRuntimeButPlaybackExecutionStaysInViewModel() {
+    func testRestartKeepsRuntimeAudioRoutingOutOfProductionMediaPlayback() {
         let audioRouting = RuntimeMediaRestartAudioPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
@@ -28,7 +28,7 @@ final class RuntimeMediaRestartBridgeTests: XCTestCase {
 
         XCTAssertEqual(viewModelRestartCount, 1)
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
-        XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
+        XCTAssertFalse(audioRouting.reasons.contains(.mediaPlaybackChanged))
         XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.media))
     }
 

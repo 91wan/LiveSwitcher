@@ -6,9 +6,8 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
@@ -20,9 +19,8 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledPanic,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
@@ -51,18 +49,16 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         let projectionMutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .fullRuntime
+            environment: .fullRuntimeForTests(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
         let panicMutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledPanic,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .fullRuntime
+            environment: .fullRuntimeForTests(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
@@ -74,17 +70,15 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         let first = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
         let second = LiveRuntimeReducer.reduce(
             state: first.state,
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 101),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 101)
             )
         )
 

@@ -25,9 +25,8 @@ final class RuntimeBridgeModeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
@@ -53,6 +52,23 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertEqual(mutation.state.audio.masterVolume, 0.25)
         XCTAssertEqual(mutation.state.audio.effectiveMedia, 0.25, accuracy: 0.0001)
         XCTAssertEqual(mutation.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+    }
+
+    func testAudioOwnedStillBlocksUnownedEffects() {
+        var state = LiveRuntimeState()
+        state.media.loadedURL = mediaProgram().sourceURL
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledMediaPlayback,
+            environment: .productionAudioOwned()
+        )
+
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertFalse(mutation.effects.contains { effect in
+            if case .playMedia = effect { return true }
+            return false
+        })
     }
 
     func testAudioOwnedModeStoresFacadeRoutingInputsInsideAudioState() {
@@ -105,15 +121,36 @@ final class RuntimeBridgeModeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .fullRuntime
+            environment: .fullRuntimeForTests(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
         XCTAssertTrue(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
         XCTAssertTrue(mutation.effects.contains(.playMedia(generation: 1)))
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .programChanged)))
+    }
+
+    func testFullRuntimeEffectsRequireExplicitEnvironment() {
+        var state = LiveRuntimeState()
+        state.media.loadedURL = mediaProgram().sourceURL
+
+        let productionDefault = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledMediaPlayback,
+            environment: .productionAudioOwned()
+        )
+        let explicitFullRuntime = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledMediaPlayback,
+            environment: .fullRuntimeForTests()
+        )
+
+        XCTAssertTrue(productionDefault.effects.isEmpty)
+        XCTAssertTrue(explicitFullRuntime.effects.contains { effect in
+            if case .playMedia = effect { return true }
+            return false
+        })
     }
 
     private func mediaProgram() -> ProgramItem {

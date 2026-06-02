@@ -13,6 +13,11 @@ ViewModel has not already synchronized into the runtime snapshot.
 ## Production Bridge Mode
 
 Production uses `LiveRuntimeBridgeMode.audioOwned`.
+Production bridge mode is `.audioOwned`.
+`.fullRuntime` is test-only until a domain migration PR explicitly promotes it.
+Tests must use explicit bridge mode; full-runtime behavior must use the named
+full-runtime test factory or `.fullRuntimeForTests(...)`.
+`LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
 
 In this mode the runtime reducer owns `state.audio` and may execute the wired
 ports needed for current production behavior. Connected production ports: `audioRouting`, `imageAssets`, and `persistence`. The audio routing port is wired.
@@ -37,6 +42,7 @@ Operator actions for mirror-only domains must not mutate real runtime domain sta
 No next domain may be migrated until the Audio ownership tests pass and
 production effective audio output remains runtime-owned.
 No Media/BGM/Projection/PPT migration until Audio ownership hardening tests pass.
+Media/BGM/Projection/PPT migration is blocked until its ports are wired and ownership PR is approved.
 
 ## Domain Ownership
 
@@ -71,3 +77,10 @@ No Media/BGM/Projection/PPT migration until Audio ownership hardening tests pass
 ## Restart Boundary
 
 Media restart is still split. The media restart effect is not executed by runtime yet; ViewModel still executes media restart through `programRestartFromBeginningHandler`. Runtime audio routing uses the synchronized audio routing context and the authoritative runtime audio state.
+
+## Next Migration Gate
+
+The next migration may be Media only after Audio ownership tests pass, bridge
+mode explicitness tests pass, no implicit full runtime remains, the Media port
+is connected in a dedicated PR, AVPlayer callbacks dispatch Runtime actions,
+and ViewModel no longer owns media play/pause/restart in that future PR.
