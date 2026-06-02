@@ -16,7 +16,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
             state.audio.strategy = strategy
             state.audio.isSpeakerMode = speakerMode
 
-            let environment = LiveRuntimeEnvironment(
+            let environment = LiveRuntimeEnvironment.fullRuntimeForTests(
                 now: Date(timeIntervalSince1970: 100),
                 speakerModeDuckedRatio: 0.11
             )
@@ -37,7 +37,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
         let panic = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSetPanic(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         XCTAssertEqual(panic.state.audio.effectiveMedia, 0, accuracy: 0.0001)
         XCTAssertEqual(panic.state.audio.effectiveBGM, 0, accuracy: 0.0001)
@@ -46,7 +46,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
         let takeover = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorChangedBGMTakeover(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let expected = AudioRoutingEngine.output(for: audioInput(from: takeover.state))
         XCTAssertEqual(takeover.state.audio.effectiveMedia, expected.media, accuracy: 0.0001)
@@ -62,7 +62,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSetSpeakerMode(true),
-            environment: LiveRuntimeEnvironment(
+            environment: .fullRuntimeForTests(
                 now: Date(timeIntervalSince1970: 100),
                 speakerModeDuckedRatio: 0.2
             )

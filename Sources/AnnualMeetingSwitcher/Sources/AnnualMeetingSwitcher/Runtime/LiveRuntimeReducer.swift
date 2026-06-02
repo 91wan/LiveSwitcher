@@ -9,7 +9,7 @@ enum LiveRuntimeReducer {
     static func reduce(
         state: LiveRuntimeState,
         action: LiveRuntimeAction,
-        environment: LiveRuntimeEnvironment = LiveRuntimeEnvironment()
+        environment: LiveRuntimeEnvironment
     ) -> LiveRuntimeMutation {
         var state = state
         var effects: [LiveRuntimeEffect] = []

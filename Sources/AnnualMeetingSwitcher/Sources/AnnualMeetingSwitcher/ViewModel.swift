@@ -531,7 +531,7 @@ final class SwitcherViewModel {
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
             ),
-            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+            environment: .productionAudioOwned()
         )
         audioRoutingPort.applyHandler = { [weak self] reason, state in
             self?.applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: state)

@@ -14,7 +14,7 @@ final class LiveRuntimeStore {
     init(
         initialState: LiveRuntimeState = LiveRuntimeState(),
         effectRunner: LiveRuntimeEffectRunner = .recording(),
-        environment: LiveRuntimeEnvironment = LiveRuntimeEnvironment()
+        environment: LiveRuntimeEnvironment = .productionAudioOwned()
     ) {
         self.state = initialState
         self.effectRunner = effectRunner

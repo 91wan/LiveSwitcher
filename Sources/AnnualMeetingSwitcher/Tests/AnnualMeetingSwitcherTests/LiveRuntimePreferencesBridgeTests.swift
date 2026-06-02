@@ -7,32 +7,32 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         let autoPlay = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetAutoPlayNextVideoOnEnd(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let scheduledAdvance = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetAutoAdvanceAtScheduledTime(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let agendaTimeline = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetShowAgendaTimeline(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let logoPosition = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetCornerLogoPosition(.bottomLeft),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let consoleMode = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetConsoleMode(.live),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let themeOverride = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetThemeOverride(.system),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(autoPlay.state.preferences.autoPlayNextVideoOnEnd)

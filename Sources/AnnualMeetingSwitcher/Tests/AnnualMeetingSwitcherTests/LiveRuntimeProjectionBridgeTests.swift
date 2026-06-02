@@ -31,7 +31,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.projection.isBroadcasting)
@@ -45,7 +45,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertFalse(mutation.state.projection.isBroadcasting)
@@ -63,12 +63,12 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .projectionExternalDisplayLost,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let repeated = LiveRuntimeReducer.reduce(
             state: mutation.state,
             action: .projectionExternalDisplayLost,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 101))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 101))
         )
 
         XCTAssertFalse(mutation.state.projection.isBroadcasting)
@@ -88,7 +88,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .projectionExternalDisplayLost,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertFalse(mutation.state.projection.isBroadcasting)
@@ -107,7 +107,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .projectionExternalDisplayAvailable,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.projection.hasExternalDisplay)
@@ -123,7 +123,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .projectionExternalDisplayUnavailable,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.projection.isBroadcasting)

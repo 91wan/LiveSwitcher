@@ -7,7 +7,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorChangedMasterVolume(0.82),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.audio.masterVolume, 0.82, accuracy: 0.0001)
@@ -18,7 +18,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSelectedAudioStrategy(.bgmOnly),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(mutation.state.audio.strategy, AudioStrategy.bgmOnly)
@@ -30,7 +30,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetSpeakerMode(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.audio.isSpeakerMode)
@@ -66,7 +66,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let speaker = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSetSpeakerMode(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         XCTAssertEqual(speaker.state.audio.effectiveMedia, 0.056, accuracy: 0.0001)
         XCTAssertEqual(speaker.state.audio.effectiveBGM, 0.056, accuracy: 0.0001)
@@ -74,7 +74,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let followProgram = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedAudioStrategy(.followProgram),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         XCTAssertEqual(followProgram.state.audio.effectiveMedia, 0.4, accuracy: 0.0001)
         XCTAssertEqual(followProgram.state.audio.effectiveBGM, 0, accuracy: 0.0001)
@@ -82,7 +82,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let bgmOnly = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedAudioStrategy(.bgmOnly),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         XCTAssertEqual(bgmOnly.state.audio.effectiveMedia, 0, accuracy: 0.0001)
         XCTAssertEqual(bgmOnly.state.audio.effectiveBGM, 0.2, accuracy: 0.0001)
@@ -92,12 +92,12 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let muted = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorChangedMediaMute(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let takeover = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorChangedBGMTakeover(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(muted.state.audio.isMediaMuted)
@@ -115,7 +115,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSetPanic(true),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.panic.isActive)

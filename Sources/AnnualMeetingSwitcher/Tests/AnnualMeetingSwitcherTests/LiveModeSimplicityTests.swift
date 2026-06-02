@@ -16,6 +16,8 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Mirror-only live domains"))
         XCTAssertTrue(document.contains("code-level gate"))
         XCTAssertTrue(document.contains("Live Mode remains an execution surface"))
+        XCTAssertTrue(document.contains("Live mode simplicity is independent of runtime migration"))
+        XCTAssertTrue(document.contains("Runtime migration PRs must not add live controls"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {

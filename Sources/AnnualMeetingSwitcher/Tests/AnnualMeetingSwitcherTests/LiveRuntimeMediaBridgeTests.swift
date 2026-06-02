@@ -10,12 +10,40 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorToggledMediaPlayback,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.media.isPlaying)
         XCTAssertTrue(mutation.effects.contains(.playMedia(generation: state.media.generation)))
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testFullRuntimeMediaEffectsUseExplicitFullRuntimeEnvironment() {
+        var state = LiveRuntimeState()
+        state.media.loadedURL = URL(fileURLWithPath: "/tmp/video.mp4")
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledMediaPlayback,
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertTrue(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.effects.contains(.playMedia(generation: state.media.generation)))
+    }
+
+    func testProductionAudioOwnedMediaIntentDoesNotEmitMediaEffects() {
+        var state = LiveRuntimeState()
+        state.media.loadedURL = URL(fileURLWithPath: "/tmp/video.mp4")
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledMediaPlayback,
+            environment: .productionAudioOwned(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
     func testMediaPlaybackCallbackProducesRoutingEffectForCurrentGeneration() {
@@ -25,7 +53,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .mediaPlaybackChanged(isPlaying: true, generation: 4),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertTrue(mutation.state.media.isPlaying)
@@ -41,7 +69,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .facadeCurrentProgramChanged(item.id),
-            environment: LiveRuntimeEnvironment(now: now)
+            environment: .fullRuntimeForTests(now: now)
         )
 
         XCTAssertEqual(mutation.state.program.currentID, item.id)
@@ -122,11 +150,10 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
 
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorToggledMediaPlayback" })
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
-        XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
     }
 
-    func testRestartCurrentMediaRoutesAudioThroughRuntimeOnly() {
+    func testRestartCurrentMediaDoesNotEmitRuntimeMediaEffectsInProductionAudioOwned() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
@@ -145,11 +172,20 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         audioRouting.reset()
         viewModel.resetLastAudioRoutingTransitionForTesting()
+        let recordedEffectCount = runtime.recordedEffects.count
 
         viewModel.restartCurrentMediaFromBeginning()
+        let restartEffects = Array(runtime.recordedEffects.dropFirst(recordedEffectCount))
 
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
-        XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
+        XCTAssertFalse(restartEffects.contains { effect in
+            if case .restartMedia = effect { return true }
+            return false
+        })
+        XCTAssertFalse(restartEffects.contains { effect in
+            if case .playMedia = effect { return true }
+            return false
+        })
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
     }
 
@@ -176,7 +212,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     }
 
     func testViewModelDispatchesThroughInjectedRuntimeStore() {
-        let runtime = LiveRuntimeStore(effectRunner: .recording())
+        let runtime = RuntimeTestFactory.fullRuntimeStore()
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,

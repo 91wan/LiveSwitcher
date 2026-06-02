@@ -10,12 +10,12 @@ final class LiveRuntimeAssetBridgeTests: XCTestCase {
         let wallpaper = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetActiveWallpaperURL(wallpaperURL),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let logo = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorSetCornerLogoURL(logoURL),
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100))
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
         XCTAssertEqual(wallpaper.state.preferences.activeWallpaperURL, wallpaperURL)

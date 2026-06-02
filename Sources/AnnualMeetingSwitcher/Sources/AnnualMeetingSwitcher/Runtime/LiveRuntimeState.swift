@@ -220,11 +220,44 @@ struct LiveRuntimeEnvironment: Equatable {
     init(
         now: Date = Date(),
         speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
-        bridgeMode: LiveRuntimeBridgeMode = .fullRuntime
+        bridgeMode: LiveRuntimeBridgeMode
     ) {
         self.now = now
         self.speakerModeDuckedRatio = speakerModeDuckedRatio
         self.bridgeMode = bridgeMode
+    }
+
+    static func productionAudioOwned(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            bridgeMode: .audioOwned
+        )
+    }
+
+    static func fullRuntimeForTests(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            bridgeMode: .fullRuntime
+        )
+    }
+
+    static func recordingOnlyForTests(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            bridgeMode: .recordingOnly
+        )
     }
 }
 

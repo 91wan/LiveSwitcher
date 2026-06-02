@@ -17,7 +17,8 @@ final class RuntimeTimelineTests: XCTestCase {
                 mediaPlaying: true,
                 bgmPlaying: true
             ),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
 
         store.dispatch(.operatorToggledPanic)
@@ -45,7 +46,8 @@ final class RuntimeTimelineTests: XCTestCase {
         let c = bgm("C")
         let store = LiveRuntimeStore(
             initialState: .fixture(bgmItems: [a, b, c]),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
 
         store.dispatch(.operatorSelectedBGM(a.id))
@@ -68,7 +70,8 @@ final class RuntimeTimelineTests: XCTestCase {
     func testProjectionLostTimelineRecordsOnceAndStopsBroadcasting() {
         let store = LiveRuntimeStore(
             initialState: .fixture(hasExternalDisplay: true),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
 
         store.dispatch(.operatorToggledProjection)
@@ -83,7 +86,7 @@ final class RuntimeTimelineTests: XCTestCase {
     }
 
     func testPPTFailureTimelineClearsRequestedAndDoesNotRecordEnabledSuccess() {
-        let store = LiveRuntimeStore(initialState: .fixture(), effectRunner: .recording())
+        let store = LiveRuntimeStore(initialState: .fixture(), effectRunner: .recording(), environment: .fullRuntimeForTests())
 
         store.dispatch(.operatorToggledPPTMode(source: .liveMode))
         store.dispatch(.pptEventTapFailed(reason: "tap-unavailable"))
@@ -97,7 +100,7 @@ final class RuntimeTimelineTests: XCTestCase {
     }
 
     func testAutomationFailureTimelineCreatesNoticeAndCoalescesRepeatedSupportEvents() {
-        let store = LiveRuntimeStore(initialState: .fixture(), effectRunner: .recording())
+        let store = LiveRuntimeStore(initialState: .fixture(), effectRunner: .recording(), environment: .fullRuntimeForTests())
 
         store.dispatch(.operatorToggledPanic)
         for _ in 0..<100 {
@@ -117,7 +120,8 @@ final class RuntimeTimelineTests: XCTestCase {
         let html = program("HTML", kind: "HTML", url: fixtureURL("index.html"))
         let store = LiveRuntimeStore(
             initialState: .fixture(programs: [video, deck, html]),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
 
         store.dispatch(.operatorSelectedProgram(video.id))
@@ -143,7 +147,8 @@ final class RuntimeTimelineTests: XCTestCase {
                 mediaURL: video.sourceURL,
                 mediaPlaying: false
             ),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
         store.dispatch(.mediaReachedEnd(generation: store.state.media.generation))
 
@@ -163,7 +168,8 @@ final class RuntimeTimelineTests: XCTestCase {
         let video = program("Video", kind: "VIDEO", url: fixtureURL("private-video.mp4"))
         let store = LiveRuntimeStore(
             initialState: .fixture(programs: [video]),
-            effectRunner: .recording()
+            effectRunner: .recording(),
+            environment: .fullRuntimeForTests()
         )
 
         store.dispatch(.operatorSelectedProgram(video.id))

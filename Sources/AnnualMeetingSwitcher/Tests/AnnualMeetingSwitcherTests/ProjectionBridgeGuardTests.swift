@@ -10,9 +10,8 @@ final class ProjectionBridgeGuardTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
@@ -29,9 +28,8 @@ final class ProjectionBridgeGuardTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .projectionExternalDisplayLost,
-            environment: LiveRuntimeEnvironment(
-                now: Date(timeIntervalSince1970: 100),
-                bridgeMode: .audioOwned
+            environment: .productionAudioOwned(
+                now: Date(timeIntervalSince1970: 100)
             )
         )
 
