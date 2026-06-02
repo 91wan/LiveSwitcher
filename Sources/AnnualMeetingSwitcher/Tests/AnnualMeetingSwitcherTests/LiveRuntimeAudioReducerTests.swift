@@ -104,7 +104,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
         AudioRoutingInput(
             masterVolume: state.audio.masterVolume,
             mediaVolume: state.audio.mediaVolume,
-            bgmVolume: state.bgm.isPlaying ? state.audio.bgmVolume : 0,
+            bgmVolume: state.audio.bgmVolume,
             audioStrategy: state.audio.strategy,
             isCurrentProgramMediaSource: state.program.currentItem?.sourceKind == .media,
             isMediaPlaying: state.media.isPlaying,

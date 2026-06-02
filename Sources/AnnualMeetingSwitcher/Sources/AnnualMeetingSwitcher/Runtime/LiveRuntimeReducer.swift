@@ -13,6 +13,7 @@ enum LiveRuntimeReducer {
     ) -> LiveRuntimeMutation {
         var state = state
         var effects: [LiveRuntimeEffect] = []
+        let bridgeMode = environment.bridgeMode
         func recalculateAudio(_ state: inout LiveRuntimeState) {
             Self.recalculateAudio(
                 &state,
@@ -22,6 +23,7 @@ enum LiveRuntimeReducer {
 
         switch action {
         case .operatorSelectedProgram(let id):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             reduceSelectedProgram(
                 id,
                 state: &state,
@@ -31,6 +33,7 @@ enum LiveRuntimeReducer {
             )
 
         case .operatorToggledMediaPlayback:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             guard !state.media.didPlayToEnd else { break }
             state.media.isPlaying.toggle()
             effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
@@ -38,6 +41,7 @@ enum LiveRuntimeReducer {
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
         case .operatorRestartedCurrentMedia:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
@@ -106,23 +110,28 @@ enum LiveRuntimeReducer {
             ]
 
         case .operatorToggledPanic:
+            guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
             reducePanicToggle(
                 state: &state,
                 effects: &effects,
                 now: environment.now,
+                canWriteSupport: canWriteReducerSupport(in: bridgeMode),
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
         case .operatorSetPanic(let isActive):
+            guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
             guard state.panic.isActive != isActive else { break }
             reducePanicToggle(
                 state: &state,
                 effects: &effects,
                 now: environment.now,
+                canWriteSupport: canWriteReducerSupport(in: bridgeMode),
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
         case .operatorSelectedBGM(let id):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             guard let item = state.bgm.items.first(where: { $0.id == id }) else { break }
             state.bgm.generation += 1
             state.bgm.currentID = id
@@ -143,6 +152,7 @@ enum LiveRuntimeReducer {
             effects.append(.saveBGMPlayMode(playMode))
 
         case .operatorStoppedBGM:
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             state.bgm.generation += 1
             state.bgm.isPlaying = false
             effects += [
@@ -153,6 +163,7 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
 
         case .operatorSelectedNextBGM:
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             selectAdjacentBGM(
                 offset: 1,
                 state: &state,
@@ -161,6 +172,7 @@ enum LiveRuntimeReducer {
             )
 
         case .operatorSelectedPreviousBGM:
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             selectAdjacentBGM(
                 offset: -1,
                 state: &state,
@@ -172,18 +184,25 @@ enum LiveRuntimeReducer {
             break
 
         case .operatorToggledProjection:
+            guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
             if state.projection.isBroadcasting {
                 state.projection.isBroadcasting = false
                 effects += [.stopProjection, .hideOutputWindow]
-                state.support.record(kind: .projectionStopped, detail: "source=runtime", at: environment.now)
+                if canWriteReducerSupport(in: bridgeMode) {
+                    state.support.record(kind: .projectionStopped, detail: "source=runtime", at: environment.now)
+                }
             } else if state.projection.hasExternalDisplay {
                 state.projection.isBroadcasting = true
                 state.projection.safetyNotice = nil
                 effects += [.startProjection, .showOutputWindow]
-                state.support.record(kind: .projectionStarted, detail: "source=runtime", at: environment.now)
+                if canWriteReducerSupport(in: bridgeMode) {
+                    state.support.record(kind: .projectionStarted, detail: "source=runtime", at: environment.now)
+                }
             } else {
                 state.projection.safetyNotice = "No external display"
-                state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
+                if canWriteReducerSupport(in: bridgeMode) {
+                    state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
+                }
             }
 
         case .operatorSetConsoleMode(let mode):
@@ -270,7 +289,9 @@ enum LiveRuntimeReducer {
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
             state.bgm.isPlaying = false
-            state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
+            if canWriteReducerSupport(in: bridgeMode) {
+                state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
+            }
             effects.append(.stopBGMTimer(generation: generation))
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
@@ -293,7 +314,9 @@ enum LiveRuntimeReducer {
             guard wasBroadcasting else { break }
             if state.projection.lastDisplayLostAt == nil {
                 state.projection.lastDisplayLostAt = environment.now
-                state.support.record(kind: .projectionLost, detail: "state=displayLost", at: environment.now)
+                if canWriteReducerSupport(in: bridgeMode) {
+                    state.support.record(kind: .projectionLost, detail: "state=displayLost", at: environment.now)
+                }
             }
             effects.append(.stopProjection)
 
@@ -312,13 +335,17 @@ enum LiveRuntimeReducer {
             state.ppt.isRequested = true
             state.ppt.isEventTapActive = true
             state.ppt.lastFailureReason = nil
-            state.support.record(kind: .pageInterceptEnabled, detail: "source=runtime", at: environment.now)
+            if canWriteReducerSupport(in: bridgeMode) {
+                state.support.record(kind: .pageInterceptEnabled, detail: "source=runtime", at: environment.now)
+            }
 
         case .pptEventTapFailed(let reason):
             state.ppt.isRequested = false
             state.ppt.isEventTapActive = false
             state.ppt.lastFailureReason = reason
-            state.support.record(kind: .pageInterceptDisabled, detail: "reason=failed", at: environment.now)
+            if canWriteReducerSupport(in: bridgeMode) {
+                state.support.record(kind: .pageInterceptDisabled, detail: "reason=failed", at: environment.now)
+            }
 
         case .pptEventTapStopped(let reason):
             state.ppt.isEventTapActive = false
@@ -328,11 +355,13 @@ enum LiveRuntimeReducer {
 
         case .automationFailed(let action, let sanitizedMessage):
             requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
-            state.support.record(
-                kind: .appleScriptFailed,
-                detail: "action=\(action),error=\(sanitizedMessage)",
-                at: environment.now
-            )
+            if canWriteReducerSupport(in: bridgeMode) {
+                state.support.record(
+                    kind: .appleScriptFailed,
+                    detail: "action=\(action),error=\(sanitizedMessage)",
+                    at: environment.now
+                )
+            }
 
         case .automationNoticeRequested(let action):
             requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
@@ -406,6 +435,7 @@ enum LiveRuntimeReducer {
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
         now: Date,
+        canWriteSupport: Bool,
         speakerModeDuckedRatio: Float
     ) {
         if state.panic.isActive {
@@ -443,7 +473,9 @@ enum LiveRuntimeReducer {
                 state.bgm.isPlaying = false
                 effects.append(.pauseBGM(generation: state.bgm.generation))
             }
-            state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
+            if canWriteSupport {
+                state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
+            }
         }
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
@@ -585,7 +617,7 @@ enum LiveRuntimeReducer {
             for: AudioRoutingInput(
                 masterVolume: state.audio.masterVolume,
                 mediaVolume: state.audio.mediaVolume,
-                bgmVolume: state.bgm.isPlaying ? state.audio.bgmVolume : 0,
+                bgmVolume: state.audio.bgmVolume,
                 audioStrategy: state.audio.strategy,
                 isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
                 isMediaPlaying: state.media.isPlaying,
@@ -616,6 +648,40 @@ enum LiveRuntimeReducer {
             return isAudioOwnedEffect(effect) || isBGMEffect(effect)
         case .projectionOwned:
             return isAudioOwnedEffect(effect) || isProjectionEffect(effect)
+        }
+    }
+
+    private enum RuntimeDomain {
+        case audio
+        case media
+        case bgm
+        case projection
+        case panic
+    }
+
+    private static func isRuntimeOwned(_ domain: RuntimeDomain, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
+        switch bridgeMode {
+        case .recordingOnly:
+            return false
+        case .audioOwned:
+            return domain == .audio
+        case .mediaOwned:
+            return domain == .audio || domain == .media
+        case .bgmOwned:
+            return domain == .audio || domain == .bgm
+        case .projectionOwned:
+            return domain == .audio || domain == .projection
+        case .fullRuntime:
+            return true
+        }
+    }
+
+    private static func canWriteReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
+        switch bridgeMode {
+        case .fullRuntime, .mediaOwned, .bgmOwned, .projectionOwned:
+            return true
+        case .recordingOnly, .audioOwned:
+            return false
         }
     }
 

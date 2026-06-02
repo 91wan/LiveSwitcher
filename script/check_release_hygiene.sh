@@ -97,6 +97,7 @@ search_pattern() {
       --exclude-dir=.git \
       --exclude-dir=.build \
       --exclude-dir=dist \
+      --exclude=.git \
       --exclude='*.icns' \
       --exclude='*.png' \
       --exclude='*.zip' \

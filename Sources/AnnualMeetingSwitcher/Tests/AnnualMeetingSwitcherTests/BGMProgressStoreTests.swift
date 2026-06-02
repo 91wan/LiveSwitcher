@@ -142,7 +142,7 @@ final class BGMProgressStoreTests: XCTestCase {
         let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
 
         XCTAssertTrue(source.contains("fadeBGMPlayerVolume"))
-        XCTAssertTrue(toggleBody.contains("applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)"))
+        XCTAssertTrue(toggleBody.contains("applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)"))
         XCTAssertTrue(toggleBody.contains("BGMFadeCompletionPolicy.pauseDelay"))
         XCTAssertFalse(toggleBody.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(toggleBody.contains("bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)"))

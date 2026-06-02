@@ -12,6 +12,8 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Toggle main media playback"))
         XCTAssertTrue(document.contains("Toggle projection"))
         XCTAssertTrue(document.contains("Restart current media"))
+        XCTAssertTrue(document.contains("Current authoritative runtime domain: Audio only"))
+        XCTAssertTrue(document.contains("Mirror-only live domains"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {

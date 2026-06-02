@@ -3,6 +3,50 @@ import XCTest
 
 @MainActor
 final class PPTModeOwnershipTests: XCTestCase {
+    func testAudioOwnedOperatorToggleDoesNotMutatePPTState() {
+        var state = LiveRuntimeState()
+        state.ppt.isRequested = true
+        state.ppt.isEventTapActive = true
+        state.ppt.lastFailureReason = "existing"
+        let originalPPT = state.ppt
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledPPTMode(source: .liveMode),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(mutation.state.ppt, originalPPT)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testAudioOwnedPPTCallbacksUpdateMirrorState() {
+        let started = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .pptEventTapStarted,
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        XCTAssertTrue(started.state.ppt.isRequested)
+        XCTAssertTrue(started.state.ppt.isEventTapActive)
+
+        let failed = LiveRuntimeReducer.reduce(
+            state: started.state,
+            action: .pptEventTapFailed(reason: "permissionDenied"),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        XCTAssertFalse(failed.state.ppt.isRequested)
+        XCTAssertFalse(failed.state.ppt.isEventTapActive)
+        XCTAssertEqual(failed.state.ppt.lastFailureReason, "permissionDenied")
+
+        let stopped = LiveRuntimeReducer.reduce(
+            state: started.state,
+            action: .pptEventTapStopped(reason: .operatorDisabled),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        XCTAssertFalse(stopped.state.ppt.isRequested)
+        XCTAssertFalse(stopped.state.ppt.isEventTapActive)
+    }
+
     func testEnableFailureRecordsFailureButNoSuccessEvent() throws {
         let viewModel = makeViewModel()
         viewModel.pageInterceptStartOverride = { false }

@@ -20,29 +20,19 @@ final class RuntimeOwnershipTests: XCTestCase {
         }
     }
 
-    func testMixedOwnershipDomainsAreMarkedBridgeInProgress() throws {
+    func testOnlyAudioIsDeclaredRuntimeAuthoritative() throws {
         let document = try runtimeOwnershipDocument()
 
-        [
-            "Media playback",
-            "Audio routing",
-            "Panic",
-            "Automation notice",
-            "Persistence"
-        ].forEach { domain in
-            XCTAssertTrue(
-                document.contains("| \(domain) |") && document.contains("bridge in progress"),
-                "\(domain) must be explicitly marked bridge in progress."
-            )
-        }
+        XCTAssertTrue(document.localizedStandardContains("Current authoritative runtime domain: Audio only"))
+        XCTAssertTrue(document.localizedStandardContains("Program, Media, BGM, Panic, PPT, Projection, and Automation are mirror-only"))
+        XCTAssertFalse(document.localizedStandardContains("Runtime authoritative: no"))
     }
 
     func testDocumentDoesNotClaimRuntimeAuthorityBeforeEffectsAreFullyWired() throws {
         let document = try runtimeOwnershipDocument()
 
-        XCTAssertFalse(document.localizedStandardContains("Runtime authoritative: yes"))
-        XCTAssertTrue(document.localizedStandardContains("Runtime authoritative: no"))
-        XCTAssertTrue(document.localizedStandardContains("Runtime action log only"))
+        XCTAssertTrue(document.localizedStandardContains("A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed"))
+        XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {
@@ -56,13 +46,13 @@ final class RuntimeOwnershipTests: XCTestCase {
             "`automation` | not migrated",
             "`automationNotice` | recording only",
             "`bgmTimer` | not migrated",
-            "`support` | not migrated"
+            "`support` | runtime storage, ViewModel ingress"
         ].forEach { expected in
             XCTAssertTrue(document.contains(expected), "Missing effect wiring status: \(expected)")
         }
 
-        XCTAssertTrue(document.localizedStandardContains("media restart effect is not executed by runtime yet"))
-        XCTAssertTrue(document.localizedStandardContains("ViewModel still executes media restart"))
+        XCTAssertTrue(document.localizedStandardContains("Connected production ports: `audioRouting`, `imageAssets`, and `persistence`"))
+        XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
     private func runtimeOwnershipDocument() throws -> String {

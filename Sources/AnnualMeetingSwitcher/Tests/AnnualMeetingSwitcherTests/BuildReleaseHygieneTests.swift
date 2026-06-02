@@ -10,6 +10,13 @@ final class BuildReleaseHygieneTests: XCTestCase {
         XCTAssertTrue(script.contains("release-hygiene-v*.md"))
     }
 
+    func testReleaseHygieneFallbackIgnoresWorktreeGitPointerFile() throws {
+        let script = try repoText("script/check_release_hygiene.sh")
+
+        XCTAssertTrue(script.contains("--exclude=.git"))
+        XCTAssertTrue(script.contains("--exclude-dir=.git"))
+    }
+
     func testBuildScriptsShareTCCUsageDescriptionKeys() throws {
         let buildAndRun = try repoText("script/build_and_run.sh")
         let releaseBuild = try repoText("Sources/AnnualMeetingSwitcher/build_v33.sh")
