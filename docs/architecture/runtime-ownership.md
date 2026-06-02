@@ -29,6 +29,8 @@ events are blocked except for the explicit `.supportEventRecorded` action.
 
 A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed.
 Operator actions for mirror-only domains must not mutate real runtime domain state.
+No next domain may be migrated until the Audio ownership tests pass and
+production effective audio output remains runtime-owned.
 
 ## Domain Ownership
 

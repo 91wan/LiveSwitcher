@@ -8,12 +8,19 @@ product boundary.
 ## Allowed live actions
 
 - Switch source.
+- Take next.
 - Toggle main media playback.
 - Restart current media.
 - Toggle projection.
-- Toggle panic or fade-to-black state.
+- Toggle panic.
+- Toggle fade-to-black.
+- Toggle speaker mode.
+- Toggle PPT mode.
 - Adjust master, media, and BGM audio controls.
-- Select and transport existing BGM items.
+- Play or pause existing BGM.
+- Select previous BGM.
+- Select next BGM.
+- Select existing BGM.
 - Select existing standby wallpapers.
 - Trigger existing overlay presets.
 
@@ -23,9 +30,19 @@ product boundary.
 - Editing the program queue structure.
 - Editing BGM library metadata.
 - Editing overlay preset definitions.
-- Editing automation, auto-advance, or auto-next preferences.
+- Editing automation settings.
+- Editing auto-advance or auto-next preferences.
 - Editing release, build, debug, or developer settings.
 - Adding new setup-only panels to the live rail.
+
+## Policy model
+
+- `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
+  actions, primary action count, and forbidden configuration surfaces.
+- Any new live action must update `LiveModeActionKind` and this document.
+- Any new live control must be reviewed against `LiveModeSimplicityPolicy`.
+- Configuration surfaces are forbidden in Live mode even when the same action is
+  available in Setup mode.
 
 ## Review checklist
 
