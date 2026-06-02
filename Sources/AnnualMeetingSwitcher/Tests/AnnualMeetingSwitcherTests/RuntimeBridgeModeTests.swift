@@ -55,6 +55,48 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertEqual(mutation.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
     }
 
+    func testAudioOwnedModeStoresFacadeRoutingInputsInsideAudioState() {
+        var state = LiveRuntimeState()
+        state.media.isPlaying = false
+        state.bgm.isPlaying = false
+        state.panic.isActive = false
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeAudioInputsChanged(
+                AudioFacadeSnapshot(
+                    masterVolume: 0.5,
+                    mediaVolume: 1,
+                    bgmVolume: 0.5,
+                    strategy: .mixed,
+                    isMasterMuted: false,
+                    isMediaMuted: false,
+                    isBGMMuted: false,
+                    isSpeakerMode: false,
+                    isBGMTakeoverActive: false,
+                    isPanicMode: true,
+                    isCurrentProgramMediaSource: true,
+                    isMediaPlaying: true,
+                    isBGMPlaying: true
+                )
+            ),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(
+            mutation.state.audio.routingContext,
+            AudioRoutingContext(
+                isCurrentProgramMediaSource: true,
+                isMediaPlaying: true,
+                isBGMPlaying: true,
+                isPanicMode: true
+            )
+        )
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertFalse(mutation.state.bgm.isPlaying)
+        XCTAssertFalse(mutation.state.panic.isActive)
+    }
+
     func testFullRuntimeModeStillEmitsExecutableMediaEffects() {
         let item = mediaProgram()
         var state = LiveRuntimeState()

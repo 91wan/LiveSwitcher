@@ -25,6 +25,8 @@ final class LiveModeSimplicityPolicyTests: XCTestCase {
     func testPrimaryActionLimitIsSmall() {
         XCTAssertLessThanOrEqual(LiveModeSimplicityPolicy.maxPrimaryActionCount, 12)
         XCTAssertLessThanOrEqual(LiveModeSimplicityPolicy.primaryActions.count, LiveModeSimplicityPolicy.maxPrimaryActionCount)
+        XCTAssertLessThanOrEqual(LiveModeSimplicityPolicy.maxLiveRailCardCount, 4)
+        XCTAssertLessThanOrEqual(LiveModeSimplicityPolicy.maxVisibleBGMRows, 5)
         XCTAssertTrue(Set(LiveModeSimplicityPolicy.primaryActions).isSubset(of: Set(LiveModeSimplicityPolicy.allowedActions)))
     }
 
@@ -46,6 +48,27 @@ final class LiveModeSimplicityPolicyTests: XCTestCase {
             XCTAssertTrue(
                 document.localizedStandardContains(surface.documentationLabel),
                 "Missing forbidden configuration surface documentation for \(surface.rawValue)"
+            )
+        }
+    }
+
+    func testNoForbiddenConfigurationSurfaceCanBeAllowed() {
+        let actionRawValues = Set(LiveModeActionKind.allCases.map(\.rawValue))
+
+        for surface in LiveModeConfigurationSurface.allCases {
+            XCTAssertFalse(actionRawValues.contains(surface.rawValue))
+            XCTAssertTrue(LiveModeSimplicityPolicy.isForbidden(surface))
+        }
+    }
+
+    func testNewLiveActionRequiresPolicyAndDocumentation() throws {
+        let document = try repositoryText("docs/architecture/live-mode-simplicity-rules.md")
+
+        XCTAssertEqual(Set(LiveModeSimplicityPolicy.allowedActions), Set(LiveModeActionKind.allCases))
+        for action in LiveModeSimplicityPolicy.allowedActions {
+            XCTAssertTrue(
+                document.localizedStandardContains(action.documentationLabel),
+                "Missing documentation for allowed live action \(action.rawValue)"
             )
         }
     }

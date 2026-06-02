@@ -266,10 +266,12 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         )
 
         viewModel.avCoordinator.isPlaying = false
+        viewModel.syncRuntimeAudioInputsFromFacade(reason: nil)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
 
         viewModel.avCoordinator.isPlaying = true
+        viewModel.syncRuntimeAudioInputsFromFacade(reason: nil)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
     }

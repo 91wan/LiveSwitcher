@@ -41,14 +41,16 @@ final class LiveRuntimeStore {
             environment: environment
         )
         state = mutation.state
-        actionLog.append(
-            LiveRuntimeActionLogEntry(
-                timestamp: environment.now,
-                actionName: action.redactedName,
-                oldStateSummary: Self.summary(for: oldState),
-                newStateSummary: Self.summary(for: state)
+        if LiveRuntimeActionLogPolicy.shouldLog(action) {
+            actionLog.append(
+                LiveRuntimeActionLogEntry(
+                    timestamp: environment.now,
+                    actionName: action.redactedName,
+                    oldStateSummary: Self.summary(for: oldState),
+                    newStateSummary: Self.summary(for: state)
+                )
             )
-        )
+        }
         effectRunner.run(
             mutation.effects,
             currentState: { [weak self] in self?.state ?? LiveRuntimeState() },
@@ -93,5 +95,18 @@ final class LiveRuntimeStore {
             "agendaTimeline=\(state.preferences.showAgendaTimeline)",
             "cornerLogo=\(state.preferences.cornerLogoPosition.rawValue)"
         ].joined(separator: ",")
+    }
+}
+
+enum LiveRuntimeActionLogPolicy {
+    static func shouldLog(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .facadeAudioInputsChanged,
+             .bgmProgressUpdated,
+             .mediaSeekCompleted:
+            return false
+        default:
+            return true
+        }
     }
 }

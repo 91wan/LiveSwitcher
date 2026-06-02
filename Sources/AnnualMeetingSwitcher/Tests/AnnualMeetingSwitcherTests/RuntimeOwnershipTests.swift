@@ -35,6 +35,10 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
         XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio ownership tests pass"))
         XCTAssertTrue(document.localizedStandardContains("production effective audio output remains runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
+        XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not Media/BGM/Panic mirror state"))
+        XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
+        XCTAssertTrue(document.localizedStandardContains("No Media/BGM/Projection/PPT migration until Audio ownership hardening tests pass"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {

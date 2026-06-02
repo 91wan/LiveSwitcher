@@ -16,6 +16,9 @@ Production uses `LiveRuntimeBridgeMode.audioOwned`.
 
 In this mode the runtime reducer owns `state.audio` and may execute the wired
 ports needed for current production behavior. Connected production ports: `audioRouting`, `imageAssets`, and `persistence`. The audio routing port is wired.
+Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
+from mirror-only domains can be used without making Media, BGM, or Panic
+runtime-owned.
 
 The reducer may record operator intent in the action log, but operator actions
 for mirror-only domains must not change Media, BGM, Projection, PPT, Panic,
@@ -26,11 +29,14 @@ playback callbacks and PPT event-tap callbacks.
 Support storage uses runtime state, but production ingress is
 `ViewModel.recordSupportEvent`. In `.audioOwned`, reducer-generated support
 events are blocked except for the explicit `.supportEventRecorded` action.
+`facadeAudioInputsChanged` updates audio routing context, not Media/BGM/Panic mirror state.
+Effective audio output getters are pure Runtime state reads.
 
 A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed.
 Operator actions for mirror-only domains must not mutate real runtime domain state.
 No next domain may be migrated until the Audio ownership tests pass and
 production effective audio output remains runtime-owned.
+No Media/BGM/Projection/PPT migration until Audio ownership hardening tests pass.
 
 ## Domain Ownership
 
@@ -39,7 +45,7 @@ production effective audio output remains runtime-owned.
 | Program queue | ViewModel owner | Mirror-only snapshot and action log | not migrated | Operator program selection is logged, but runtime must not predict the current program in `.audioOwned`. |
 | Media playback | ViewModel owner | Mirror-only snapshot/callback state | not migrated | Runtime may receive media callbacks, but operator playback/restart actions must not mutate media state in `.audioOwned`. |
 | BGM | ViewModel owner | Mirror-only snapshot/callback state plus persisted play-mode preference | not migrated | Concrete playback, current track, progress, and timer ownership remain in ViewModel. |
-| Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, and effective output are runtime-owned. |
+| Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot | not migrated | Panic shutdown/restore and support ingress remain ViewModel-owned in `.audioOwned`. |
 | PPT mode | ViewModel owner | Mirror-only callback state and action log | recording only | Operator toggles do not mutate PPT state; event-tap started/failed/stopped callbacks may update the mirror. |
 | Projection | ViewModel owner | Mirror-only snapshot/callback state | not migrated | Output windows and display safety remain ViewModel-owned. |
@@ -64,4 +70,4 @@ production effective audio output remains runtime-owned.
 
 ## Restart Boundary
 
-Media restart is still split. The media restart effect is not executed by runtime yet; ViewModel still executes media restart through `programRestartFromBeginningHandler`. Runtime audio routing uses the synchronized snapshot and the authoritative runtime audio state.
+Media restart is still split. The media restart effect is not executed by runtime yet; ViewModel still executes media restart through `programRestartFromBeginningHandler`. Runtime audio routing uses the synchronized audio routing context and the authoritative runtime audio state.

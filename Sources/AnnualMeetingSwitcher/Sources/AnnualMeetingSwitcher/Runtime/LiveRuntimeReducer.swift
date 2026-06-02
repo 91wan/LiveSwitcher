@@ -36,6 +36,7 @@ enum LiveRuntimeReducer {
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             guard !state.media.didPlayToEnd else { break }
             state.media.isPlaying.toggle()
+            syncAudioRoutingContextFromMirrorState(&state)
             effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
@@ -46,6 +47,7 @@ enum LiveRuntimeReducer {
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
             state.media.isPlaying = true
+            syncAudioRoutingContextFromMirrorState(&state)
             effects.append(.restartMedia(generation: state.media.generation))
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
@@ -145,6 +147,7 @@ enum LiveRuntimeReducer {
                 .startBGMTimer(generation: state.bgm.generation),
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
+            syncAudioRoutingContextFromMirrorState(&state)
             recalculateAudio(&state)
 
         case .operatorSelectedBGMPlayMode(let playMode):
@@ -160,6 +163,7 @@ enum LiveRuntimeReducer {
                 .stopBGMTimer(generation: state.bgm.generation),
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
+            syncAudioRoutingContextFromMirrorState(&state)
             recalculateAudio(&state)
 
         case .operatorSelectedNextBGM:
@@ -245,6 +249,7 @@ enum LiveRuntimeReducer {
         case .mediaPlaybackChanged(let isPlaying, let generation):
             guard generation == state.media.generation else { break }
             state.media.isPlaying = isPlaying
+            state.audio.routingContext.isMediaPlaying = isPlaying
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
@@ -252,6 +257,7 @@ enum LiveRuntimeReducer {
             guard generation == state.media.generation else { break }
             state.media.isPlaying = false
             state.media.didPlayToEnd = true
+            state.audio.routingContext.isMediaPlaying = false
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
@@ -267,6 +273,7 @@ enum LiveRuntimeReducer {
                 state.program.currentDetachedItem = nil
             }
             state.program.currentSwitchedAt = id == nil ? nil : environment.now
+            state.audio.routingContext.isCurrentProgramMediaSource = state.program.effectiveCurrentItem?.sourceKind == .media
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .programChanged))
 
@@ -283,6 +290,7 @@ enum LiveRuntimeReducer {
         case .bgmPlaybackChanged(let isPlaying, let generation):
             guard generation == state.bgm.generation else { break }
             state.bgm.isPlaying = isPlaying
+            state.audio.routingContext.isBGMPlaying = isPlaying
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
 
@@ -297,6 +305,7 @@ enum LiveRuntimeReducer {
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
             state.bgm.isPlaying = false
+            state.audio.routingContext.isBGMPlaying = false
             if canWriteReducerSupport(in: bridgeMode) {
                 state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
             }
@@ -435,6 +444,7 @@ enum LiveRuntimeReducer {
             state.ppt.isRequested = false
         }
 
+        syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
@@ -485,6 +495,7 @@ enum LiveRuntimeReducer {
                 state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
             }
         }
+        syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
@@ -513,6 +524,7 @@ enum LiveRuntimeReducer {
             .startBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
+        syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
@@ -584,6 +596,7 @@ enum LiveRuntimeReducer {
             .startBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
+        syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
@@ -595,6 +608,7 @@ enum LiveRuntimeReducer {
         state.bgm.generation += 1
         state.bgm.isPlaying = false
         effects.append(.stopBGMTimer(generation: state.bgm.generation))
+        syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
@@ -621,17 +635,19 @@ enum LiveRuntimeReducer {
         _ state: inout LiveRuntimeState,
         speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
     ) {
+        initializeAudioRoutingContextIfNeeded(&state)
+        let context = state.audio.routingContext
         let output = AudioRoutingEngine.output(
             for: AudioRoutingInput(
                 masterVolume: state.audio.masterVolume,
                 mediaVolume: state.audio.mediaVolume,
                 bgmVolume: state.audio.bgmVolume,
                 audioStrategy: state.audio.strategy,
-                isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
-                isMediaPlaying: state.media.isPlaying,
+                isCurrentProgramMediaSource: context.isCurrentProgramMediaSource,
+                isMediaPlaying: context.isMediaPlaying,
                 isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
                 isSpeakerMode: state.audio.isSpeakerMode,
-                isPanicMode: state.panic.isActive,
+                isPanicMode: context.isPanicMode,
                 isMasterMuted: state.audio.isMasterMuted,
                 isMediaMuted: state.audio.isMediaMuted,
                 isBGMMuted: state.audio.isBGMMuted,
@@ -640,6 +656,25 @@ enum LiveRuntimeReducer {
         )
         state.audio.effectiveMedia = output.media
         state.audio.effectiveBGM = output.bgm
+    }
+
+    private static func initializeAudioRoutingContextIfNeeded(_ state: inout LiveRuntimeState) {
+        guard state.audio.routingContext == AudioRoutingContext(),
+              state.program.effectiveCurrentItem?.sourceKind == .media
+                || state.media.isPlaying
+                || state.bgm.isPlaying
+                || state.panic.isActive
+        else { return }
+        syncAudioRoutingContextFromMirrorState(&state)
+    }
+
+    private static func syncAudioRoutingContextFromMirrorState(_ state: inout LiveRuntimeState) {
+        state.audio.routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
+            isMediaPlaying: state.media.isPlaying,
+            isBGMPlaying: state.bgm.isPlaying,
+            isPanicMode: state.panic.isActive
+        )
     }
 
     private static func applyAudioFacadeSnapshot(
@@ -656,24 +691,28 @@ enum LiveRuntimeReducer {
         state.audio.isBGMMuted = snapshot.isBGMMuted
         state.audio.isSpeakerMode = snapshot.isSpeakerMode
         state.audio.isBGMTakeoverActive = snapshot.isBGMTakeoverActive
-        state.media.isPlaying = snapshot.isMediaPlaying
-        state.bgm.isPlaying = snapshot.isBGMPlaying
-        state.panic.isActive = snapshot.isPanicMode
+        state.audio.routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: snapshot.isCurrentProgramMediaSource,
+            isMediaPlaying: snapshot.isMediaPlaying,
+            isBGMPlaying: snapshot.isBGMPlaying,
+            isPanicMode: snapshot.isPanicMode
+        )
 
+        let context = state.audio.routingContext
         let output = AudioRoutingEngine.output(
             for: AudioRoutingInput(
                 masterVolume: state.audio.masterVolume,
                 mediaVolume: state.audio.mediaVolume,
                 bgmVolume: state.audio.bgmVolume,
                 audioStrategy: state.audio.strategy,
-                isCurrentProgramMediaSource: snapshot.isCurrentProgramMediaSource,
-                isMediaPlaying: snapshot.isMediaPlaying,
-                isBGMAudioTakeoverActive: snapshot.isBGMTakeoverActive,
-                isSpeakerMode: snapshot.isSpeakerMode,
-                isPanicMode: snapshot.isPanicMode,
-                isMasterMuted: snapshot.isMasterMuted,
-                isMediaMuted: snapshot.isMediaMuted,
-                isBGMMuted: snapshot.isBGMMuted,
+                isCurrentProgramMediaSource: context.isCurrentProgramMediaSource,
+                isMediaPlaying: context.isMediaPlaying,
+                isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
+                isSpeakerMode: state.audio.isSpeakerMode,
+                isPanicMode: context.isPanicMode,
+                isMasterMuted: state.audio.isMasterMuted,
+                isMediaMuted: state.audio.isMediaMuted,
+                isBGMMuted: state.audio.isBGMMuted,
                 speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         )
