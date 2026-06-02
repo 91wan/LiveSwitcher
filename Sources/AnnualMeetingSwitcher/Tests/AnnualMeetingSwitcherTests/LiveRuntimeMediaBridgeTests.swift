@@ -123,7 +123,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorToggledMediaPlayback" })
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
         XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
-        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
     }
 
     func testRestartCurrentMediaRoutesAudioThroughRuntimeOnly() {
@@ -150,7 +150,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
 
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
         XCTAssertTrue(audioRouting.reasons.contains(.mediaPlaybackChanged))
-        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
     }
 
     func testViewModelProgramSwitchDispatchesRuntimeProgramAction() {

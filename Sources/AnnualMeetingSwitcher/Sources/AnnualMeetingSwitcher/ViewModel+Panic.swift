@@ -38,7 +38,7 @@ extension SwitcherViewModel {
         panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
         isPanicMode = true
-        applyAudioRoutingForRuntimeChange(reason: .panicChanged)
+        applyCurrentRuntimeAudioRouting(reason: .panicChanged)
         pausePlaybackForActivePanic(generation: panicAudioTransitionGeneration)
     }
 
@@ -62,7 +62,7 @@ extension SwitcherViewModel {
             bgmFallbackPlayer.play()
             startBGMTimer()
         }
-        applyAudioRoutingForRuntimeChange(reason: .panicChanged)
+        applyCurrentRuntimeAudioRouting(reason: .panicChanged)
     }
 
     private func capturePanicPlaybackSnapshot() {

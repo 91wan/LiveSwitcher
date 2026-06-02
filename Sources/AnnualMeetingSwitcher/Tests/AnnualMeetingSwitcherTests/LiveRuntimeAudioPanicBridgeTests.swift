@@ -216,6 +216,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
 
     func testRuntimeAudioRoutingPortAppliesReducedRuntimeState() throws {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.runtime.updateEnvironment(LiveRuntimeEnvironment(bridgeMode: .fullRuntime))
         viewModel.liveAudioFadeDuration = 0
         let mediaURL = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)

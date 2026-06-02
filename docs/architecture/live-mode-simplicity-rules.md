@@ -35,6 +35,10 @@ product boundary.
   media restart/playback, audio, and BGM transport.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
+- Current authoritative runtime domain: Audio only.
+- Mirror-only live domains are Program, Media, BGM, Panic, PPT, Projection,
+  and Automation. Live controls for those domains must use ViewModel-owned
+  flows and must not rely on runtime operator actions to mutate real state.
 - Runtime-backed actions must respect the production `.audioOwned` bridge mode:
   audio routing, image assets, and persistence may execute; unowned media, BGM,
   projection, PPT, automation, timer, notice, and support effects must not.

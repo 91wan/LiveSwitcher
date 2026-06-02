@@ -85,7 +85,7 @@ extension SwitcherViewModel {
             bgmCurrentTime = 0
             bgmDuration = nil
             recordBGMPlaybackState(isPlaying: false, reason: "finishedDuringPanic")
-            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -97,7 +97,7 @@ extension SwitcherViewModel {
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "finished")
-            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -114,7 +114,7 @@ extension SwitcherViewModel {
             clearBGMTakeoverIfNeeded()
             resetBGMRealtimeMeter()
             recordBGMPlaybackState(isPlaying: false, reason: "missingCurrent")
-            applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
             stopBGMTimer()
             return
         }
@@ -147,7 +147,7 @@ extension SwitcherViewModel {
         clearBGMTakeoverIfNeeded()
         resetBGMRealtimeMeter()
         recordBGMPlaybackState(isPlaying: false, reason: "finished")
-        applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+        applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
         stopBGMTimer()
         removeBGMFallbackEndObserver()
         bgmFallbackPlayer.seek(to: .zero)
@@ -193,7 +193,7 @@ extension SwitcherViewModel {
         bgmDuration = nil
         LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
         recordSupportEvent(kind: .bgmPlaybackFailed, detail: "state=stopped")
-        applyAudioRoutingForRuntimeChange(reason: .bgmPlaybackChanged)
+        applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
     }
 
     func playNextBGM() {

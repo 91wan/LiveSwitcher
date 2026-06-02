@@ -2,9 +2,10 @@ import XCTest
 @testable import LiveSwitcher
 
 final class ProjectionBridgeGuardTests: XCTestCase {
-    func testAudioOwnedProjectionToggleUpdatesMirrorButBlocksProjectionEffects() {
+    func testAudioOwnedProjectionToggleDoesNotMutateProjectionStateOrWriteSupport() {
         var state = LiveRuntimeState()
         state.projection.hasExternalDisplay = true
+        let originalProjection = state.projection
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
@@ -15,7 +16,8 @@ final class ProjectionBridgeGuardTests: XCTestCase {
             )
         )
 
-        XCTAssertTrue(mutation.state.projection.isBroadcasting)
+        XCTAssertEqual(mutation.state.projection, originalProjection)
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 

@@ -2,10 +2,11 @@ import XCTest
 @testable import LiveSwitcher
 
 final class BGMBridgeGuardTests: XCTestCase {
-    func testAudioOwnedBGMSelectionUpdatesMirrorButBlocksBGMAndTimerEffects() {
+    func testAudioOwnedBGMSelectionDoesNotMutateBGMStateOrEmitEffects() {
         let item = bgmItem(title: "Walk-in")
         var state = LiveRuntimeState()
         state.bgm.items = [item]
+        let originalBGM = state.bgm
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
@@ -13,17 +14,17 @@ final class BGMBridgeGuardTests: XCTestCase {
             environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
         )
 
-        XCTAssertEqual(mutation.state.bgm.currentID, item.id)
-        XCTAssertTrue(mutation.state.bgm.isPlaying)
-        XCTAssertEqual(mutation.effects, [.applyAudioRouting(reason: .bgmPlaybackChanged)])
+        XCTAssertEqual(mutation.state.bgm, originalBGM)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAudioOwnedBGMStopUpdatesMirrorButBlocksBGMAndTimerEffects() {
+    func testAudioOwnedBGMStopDoesNotMutateBGMStateOrEmitEffects() {
         let item = bgmItem(title: "Stop")
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
         state.bgm.isPlaying = true
+        let originalBGM = state.bgm
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
@@ -31,8 +32,8 @@ final class BGMBridgeGuardTests: XCTestCase {
             environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
         )
 
-        XCTAssertFalse(mutation.state.bgm.isPlaying)
-        XCTAssertEqual(mutation.effects, [.applyAudioRouting(reason: .bgmPlaybackChanged)])
+        XCTAssertEqual(mutation.state.bgm, originalBGM)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
     func testBGMOwningModeAllowsBGMAndTimerEffects() {

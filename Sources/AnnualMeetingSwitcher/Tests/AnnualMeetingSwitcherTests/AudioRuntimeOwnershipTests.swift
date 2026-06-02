@@ -46,6 +46,37 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(runtime.state.audio.effectiveBGM, viewModel.effectiveBGMOutputVolume())
     }
 
+    func testEffectiveOutputVolumesReadRuntimeState() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        var runtimeState = runtime.state
+        runtimeState.audio.effectiveMedia = 0.17
+        runtimeState.audio.effectiveBGM = 0.23
+        runtime.replaceStateForFacadeSync(runtimeState)
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.17, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.23, accuracy: 0.0001)
+    }
+
+    func testProductionAudioRoutingRuntimeChangeRequiresRuntimeState() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try XCTUnwrap(source.functionBody(named: "applyAudioRoutingForRuntimeChange"))
+
+        XCTAssertFalse(source.contains("runtimeState: LiveRuntimeState? = nil"))
+        XCTAssertTrue(source.contains("legacyAudioRoutingOutputForSnapshotOnly"))
+        XCTAssertFalse(source.contains("private var audioRoutingOutput"))
+        XCTAssertTrue(source.contains("runtimeState: LiveRuntimeState"))
+        XCTAssertTrue(source.contains("applyCurrentRuntimeAudioRouting"))
+        XCTAssertTrue(body.contains("effectiveMedia: runtimeState.audio.effectiveMedia"))
+    }
+
     func testAudioDidSetsDoNotApplyRoutingDirectly() throws {
         let source = try sourceText("ViewModel.swift")
         let audioBlock = try XCTUnwrap(
@@ -75,6 +106,29 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+}
+
+private extension String {
+    func functionBody(named functionName: String) -> String? {
+        guard let nameRange = range(of: "func \(functionName)") else { return nil }
+        guard let openingBrace = self[nameRange.lowerBound...].firstIndex(of: "{") else { return nil }
+
+        var depth = 0
+        var index = openingBrace
+        while index < endIndex {
+            let character = self[index]
+            if character == "{" {
+                depth += 1
+            } else if character == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(self[openingBrace...index])
+                }
+            }
+            index = self.index(after: index)
+        }
+        return nil
     }
 }
 
