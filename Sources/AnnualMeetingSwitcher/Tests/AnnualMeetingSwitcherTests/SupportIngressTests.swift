@@ -48,6 +48,15 @@ final class SupportIngressTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
+    func testAudioOwnedAutomationFailureDoesNotWriteSupportEvent() {
+        let mutation = reduce(
+            .automationFailed(action: "keynote.open", sanitizedMessage: "failed"),
+            bridgeMode: .audioOwned
+        )
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+    }
+
     func testSupportEventRecordedWritesRuntimeSupportEvent() throws {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 10),

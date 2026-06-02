@@ -43,6 +43,21 @@ final class PPTMirrorTests: XCTestCase {
         XCTAssertFalse(mutation.state.ppt.isEventTapActive)
     }
 
+    func testPPTCallbacksDoNotChangeAudioRoutingContext() {
+        var state = LiveRuntimeState()
+        state.audio.routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: true,
+            isMediaPlaying: true,
+            isBGMPlaying: true,
+            isPanicMode: false
+        )
+        let originalAudio = state.audio
+
+        let mutation = reduce(state, .pptEventTapStarted, bridgeMode: .audioOwned)
+
+        XCTAssertEqual(mutation.state.audio, originalAudio)
+    }
+
     func testViewModelFailureDoesNotRecordSuccess() {
         let viewModel = makeViewModel()
         viewModel.pageInterceptStartOverride = { false }

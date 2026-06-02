@@ -64,6 +64,13 @@ struct BGMRuntimeState: Equatable {
     }
 }
 
+struct AudioRoutingContext: Equatable {
+    var isCurrentProgramMediaSource = false
+    var isMediaPlaying = false
+    var isBGMPlaying = false
+    var isPanicMode = false
+}
+
 struct AudioRuntimeState: Equatable {
     var masterVolume: Double = 0.5
     var mediaVolume: Double = 1
@@ -74,6 +81,7 @@ struct AudioRuntimeState: Equatable {
     var isBGMMuted = false
     var isSpeakerMode = false
     var isBGMTakeoverActive = false
+    var routingContext = AudioRoutingContext()
     var effectiveMedia: Float = 0
     var effectiveBGM: Float = 0
 }

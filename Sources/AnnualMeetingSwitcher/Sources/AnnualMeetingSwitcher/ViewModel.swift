@@ -655,6 +655,13 @@ final class SwitcherViewModel {
         syncRuntimeStateFromFacade(clearActionLog: clearActionLog, dispatchAudioInputsChanged: true)
     }
 
+    func syncRuntimeAudioInputsFromFacade(reason: AudioRoutingRuntimeChangeReason?) {
+        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: true)
+        if let reason {
+            applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: runtime.state)
+        }
+    }
+
     private func syncRuntimeStateFromFacade(
         clearActionLog: Bool,
         dispatchAudioInputsChanged: Bool
@@ -668,16 +675,8 @@ final class SwitcherViewModel {
         }
     }
 
-    private func syncRuntimeStateIfAudioInputsDriftedFromFacade() {
-        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: true)
-    }
-
     private func runtimeAudioInputsMatch(_ lhs: LiveRuntimeState, _ rhs: LiveRuntimeState) -> Bool {
-        lhs.program.effectiveCurrentItem?.sourceKind == rhs.program.effectiveCurrentItem?.sourceKind
-            && lhs.media.isPlaying == rhs.media.isPlaying
-            && lhs.bgm.currentID == rhs.bgm.currentID
-            && lhs.bgm.isPlaying == rhs.bgm.isPlaying
-            && lhs.audio.masterVolume == rhs.audio.masterVolume
+        lhs.audio.masterVolume == rhs.audio.masterVolume
             && lhs.audio.mediaVolume == rhs.audio.mediaVolume
             && lhs.audio.bgmVolume == rhs.audio.bgmVolume
             && lhs.audio.strategy == rhs.audio.strategy
@@ -686,7 +685,7 @@ final class SwitcherViewModel {
             && lhs.audio.isBGMMuted == rhs.audio.isBGMMuted
             && lhs.audio.isSpeakerMode == rhs.audio.isSpeakerMode
             && lhs.audio.isBGMTakeoverActive == rhs.audio.isBGMTakeoverActive
-            && lhs.panic.isActive == rhs.panic.isActive
+            && lhs.audio.routingContext == rhs.audio.routingContext
     }
 
     private func shouldDispatchAudioInputsBeforeRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
@@ -766,6 +765,12 @@ final class SwitcherViewModel {
         state.audio.isBGMMuted = isBGMAudioMuted
         state.audio.isSpeakerMode = isSpeakerMode
         state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
+        state.audio.routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: currentProgramIsMediaSource,
+            isMediaPlaying: avCoordinator.isPlaying,
+            isBGMPlaying: isBGMPlaying,
+            isPanicMode: isPanicMode
+        )
 
         state.panic.isActive = isPanicMode
         state.panic.snapshot = panicPlaybackSnapshot
@@ -800,13 +805,11 @@ final class SwitcherViewModel {
     }
 
     func effectiveMediaOutputVolume() -> Float {
-        syncRuntimeStateIfAudioInputsDriftedFromFacade()
-        return runtime.state.audio.effectiveMedia
+        runtime.state.audio.effectiveMedia
     }
 
     func effectiveBGMOutputVolume() -> Float {
-        syncRuntimeStateIfAudioInputsDriftedFromFacade()
-        return runtime.state.audio.effectiveBGM
+        runtime.state.audio.effectiveBGM
     }
 
     func liveMasterMeterRealtimeDB() -> Float? {
@@ -875,9 +878,6 @@ final class SwitcherViewModel {
         effectiveMedia: Float? = nil,
         effectiveBGM: Float? = nil
     ) {
-        if effectiveMedia == nil || effectiveBGM == nil {
-            syncRuntimeStateIfAudioInputsDriftedFromFacade()
-        }
         let effectiveMedia = effectiveMedia ?? effectiveMediaOutputVolume()
         if let mediaFadeDuration {
             fadeMediaVolume(to: effectiveMedia, duration: mediaFadeDuration)
@@ -925,8 +925,7 @@ final class SwitcherViewModel {
     }
 
     func applyCurrentRuntimeAudioRouting(reason: AudioRoutingRuntimeChangeReason) {
-        syncRuntimeStateFromFacade(clearActionLog: false)
-        applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: runtime.state)
+        syncRuntimeAudioInputsFromFacade(reason: reason)
     }
 
     func resetLastAudioRoutingTransitionForTesting() {

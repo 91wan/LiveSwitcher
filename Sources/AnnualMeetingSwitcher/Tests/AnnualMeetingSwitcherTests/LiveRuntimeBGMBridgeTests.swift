@@ -215,7 +215,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         viewModel.dispatchRuntimeBGMProgressCallback(time: 2, duration: 10)
         viewModel.bgmDidFail()
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "bgmProgressUpdated" })
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "bgmProgressUpdated" })
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "bgmFailed" })
     }
 

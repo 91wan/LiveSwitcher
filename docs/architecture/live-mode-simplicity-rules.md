@@ -39,10 +39,15 @@ product boundary.
 
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
   actions, primary action count, and forbidden configuration surfaces.
+- `LiveModeSimplicityPolicy` is the code-level gate for live-mode limits,
+  including primary action count, live rail card count, and visible BGM rows.
 - Any new live action must update `LiveModeActionKind` and this document.
 - Any new live control must be reviewed against `LiveModeSimplicityPolicy`.
 - Configuration surfaces are forbidden in Live mode even when the same action is
   available in Setup mode.
+- Any new live configuration surface is forbidden unless architecture review
+  changes the policy.
+- Live Mode remains an execution surface, not a setup/configuration surface.
 
 ## Review checklist
 

@@ -84,6 +84,8 @@ enum LiveModeConfigurationSurface: String, CaseIterable {
 
 enum LiveModeSimplicityPolicy {
     static let maxPrimaryActionCount = 12
+    static let maxLiveRailCardCount = 4
+    static let maxVisibleBGMRows = 5
 
     static let allowedActions: [LiveModeActionKind] = LiveModeActionKind.allCases
 

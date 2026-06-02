@@ -102,6 +102,41 @@ final class RuntimeBridgeStateMutationTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
+    func testAudioOwnedCallbackMayUpdateMediaMirror() {
+        var state = LiveRuntimeState()
+        state.media.generation = 2
+
+        let mutation = reduce(state, .mediaPlaybackChanged(isPlaying: true, generation: 2), bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testAudioOwnedCallbackMayUpdateBGMMirror() {
+        var state = LiveRuntimeState()
+        state.bgm.generation = 3
+
+        let mutation = reduce(state, .bgmPlaybackChanged(isPlaying: true, generation: 3), bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.state.bgm.isPlaying)
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .bgmPlaybackChanged)))
+    }
+
+    func testAudioOwnedCallbackMayUpdatePPTMirror() {
+        let mutation = reduce(LiveRuntimeState(), .pptEventTapStarted, bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.state.ppt.isRequested)
+        XCTAssertTrue(mutation.state.ppt.isEventTapActive)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testAudioOwnedCallbackMayUpdateProjectionMirror() {
+        let mutation = reduce(LiveRuntimeState(), .projectionExternalDisplayAvailable, bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.state.projection.hasExternalDisplay)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
     func testFullRuntimeStillMutatesOwnedDomains() {
         let item = mediaProgram()
         var state = LiveRuntimeState()

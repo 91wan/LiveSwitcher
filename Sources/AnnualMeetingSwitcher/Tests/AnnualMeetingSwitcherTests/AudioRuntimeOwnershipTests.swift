@@ -46,7 +46,122 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(runtime.state.audio.effectiveBGM, viewModel.effectiveBGMOutputVolume())
     }
 
-    func testFacadeAudioInputsChangedRecalculatesRuntimeAudio() {
+    func testFacadeAudioInputsChangedUpdatesAudioRoutingContextOnly() {
+        var state = LiveRuntimeState()
+        state.media.isPlaying = false
+        state.bgm.isPlaying = false
+        state.panic.isActive = false
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeAudioInputsChanged(audioSnapshot(mediaPlaying: true, bgmPlaying: true, panic: true)),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(
+            mutation.state.audio.routingContext,
+            AudioRoutingContext(
+                isCurrentProgramMediaSource: true,
+                isMediaPlaying: true,
+                isBGMPlaying: true,
+                isPanicMode: true
+            )
+        )
+        XCTAssertEqual(mutation.state.media, state.media)
+        XCTAssertEqual(mutation.state.bgm, state.bgm)
+        XCTAssertEqual(mutation.state.panic, state.panic)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testFacadeAudioInputsChangedDoesNotMutateMediaState() {
+        var state = LiveRuntimeState()
+        state.media.loadedURL = URL(fileURLWithPath: "/tmp/current.mp4")
+        state.media.isPlaying = false
+        state.media.didPlayToEnd = true
+        state.media.currentTime = 12
+        let originalMedia = state.media
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeAudioInputsChanged(audioSnapshot(mediaPlaying: true)),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(mutation.state.media, originalMedia)
+    }
+
+    func testFacadeAudioInputsChangedDoesNotMutateBGMState() {
+        var state = LiveRuntimeState()
+        state.bgm.currentID = UUID()
+        state.bgm.isPlaying = false
+        state.bgm.progress = 0.4
+        let originalBGM = state.bgm
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeAudioInputsChanged(audioSnapshot(bgmPlaying: true)),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(mutation.state.bgm, originalBGM)
+    }
+
+    func testFacadeAudioInputsChangedDoesNotMutatePanicState() {
+        var state = LiveRuntimeState()
+        state.panic.isActive = false
+        state.panic.generation = 4
+        let originalPanic = state.panic
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .facadeAudioInputsChanged(audioSnapshot(panic: true)),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertEqual(mutation.state.panic, originalPanic)
+    }
+
+    func testAudioRoutingUsesAudioRoutingContext() {
+        var state = LiveRuntimeState()
+        state.audio.routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: true,
+            isMediaPlaying: true,
+            isBGMPlaying: true,
+            isPanicMode: false
+        )
+        state.media.isPlaying = false
+        state.bgm.isPlaying = false
+        state.panic.isActive = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorChangedMasterVolume(0.5),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        let expected = AudioRoutingEngine.output(
+            for: AudioRoutingInput(
+                masterVolume: 0.5,
+                mediaVolume: state.audio.mediaVolume,
+                bgmVolume: state.audio.bgmVolume,
+                audioStrategy: state.audio.strategy,
+                isCurrentProgramMediaSource: true,
+                isMediaPlaying: true,
+                isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
+                isSpeakerMode: state.audio.isSpeakerMode,
+                isPanicMode: false,
+                isMasterMuted: state.audio.isMasterMuted,
+                isMediaMuted: state.audio.isMediaMuted,
+                isBGMMuted: state.audio.isBGMMuted,
+                speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+            )
+        )
+
+        XCTAssertEqual(mutation.state.audio.effectiveMedia, expected.media, accuracy: 0.0001)
+        XCTAssertEqual(mutation.state.audio.effectiveBGM, expected.bgm, accuracy: 0.0001)
+    }
+
+    func testRuntimeAudioOutputStillMatchesAudioRoutingEngine() {
         let snapshot = AudioFacadeSnapshot(
             masterVolume: 0.5,
             mediaVolume: 0.8,
@@ -73,9 +188,6 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(mutation.state.audio.mediaVolume, 0.8)
         XCTAssertEqual(mutation.state.audio.bgmVolume, 0.2)
         XCTAssertEqual(mutation.state.audio.strategy, .mixed)
-        XCTAssertEqual(mutation.state.media.isPlaying, true)
-        XCTAssertEqual(mutation.state.bgm.isPlaying, true)
-        XCTAssertEqual(mutation.state.panic.isActive, false)
         XCTAssertEqual(mutation.state.audio.effectiveMedia, 0.4, accuracy: 0.0001)
         XCTAssertEqual(mutation.state.audio.effectiveBGM, 0.1, accuracy: 0.0001)
         XCTAssertTrue(mutation.effects.isEmpty)
@@ -90,7 +202,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertFalse(body.contains("state.audio.effectiveBGM"))
     }
 
-    func testEffectiveOutputSyncDispatchesFacadeAudioInputsChanged() {
+    func testEffectiveMediaOutputGetterDoesNotDispatchAction() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),
             environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
@@ -100,18 +212,121 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
-        viewModel.masterVolume = 0.5
+        var runtimeState = runtime.state
+        runtimeState.audio.masterVolume = 0.1
+        runtimeState.audio.effectiveMedia = 0.42
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
+
+        XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.42, accuracy: 0.0001)
+        XCTAssertTrue(runtime.actionLog.isEmpty)
+    }
+
+    func testEffectiveBGMOutputGetterDoesNotDispatchAction() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        var runtimeState = runtime.state
+        runtimeState.audio.bgmVolume = 0.1
+        runtimeState.audio.effectiveBGM = 0.31
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
+
+        XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.31, accuracy: 0.0001)
+        XCTAssertTrue(runtime.actionLog.isEmpty)
+    }
+
+    func testEffectiveOutputGetterDoesNotChangeActionLogCount() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        var runtimeState = runtime.state
+        runtimeState.audio.masterVolume = 0.1
+        runtimeState.audio.effectiveMedia = 0.42
+        runtimeState.audio.effectiveBGM = 0.31
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
+
+        let initialCount = runtime.actionLog.count
+
+        _ = viewModel.effectiveMediaOutputVolume()
+        _ = viewModel.effectiveBGMOutputVolume()
+
+        XCTAssertEqual(runtime.actionLog.count, initialCount)
+    }
+
+    func testAudioMutationSyncsRuntimeBeforeRouting() {
+        let audioRouting = AudioRuntimeOwnershipPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        viewModel.currentProgramItem = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.isBGMPlaying = true
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
-        viewModel.avCoordinator.isPlaying = true
-        viewModel.currentProgramItem = ProgramItem(
-            title: "Video",
-            subtitle: "VIDEO",
-            sourceURL: URL(fileURLWithPath: "/tmp/video.mp4")
-        )
-        _ = viewModel.effectiveMediaOutputVolume()
+        viewModel.masterVolume = 0.25
 
-        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "facadeAudioInputsChanged" })
+        XCTAssertEqual(audioRouting.states.last?.audio.routingContext.isCurrentProgramMediaSource, true)
+        XCTAssertEqual(audioRouting.states.last?.audio.routingContext.isMediaPlaying, true)
+        XCTAssertEqual(audioRouting.states.last?.audio.routingContext.isBGMPlaying, true)
+    }
+
+    func testMediaCallbackSyncsRuntimeAudioInputs() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        viewModel.currentProgramItem = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        viewModel.dispatchRuntimeMediaCallback {
+            .mediaPlaybackChanged(isPlaying: true, generation: $0)
+        }
+
+        XCTAssertTrue(runtime.state.media.isPlaying)
+        XCTAssertTrue(runtime.state.audio.routingContext.isMediaPlaying)
+        XCTAssertTrue(runtime.state.audio.routingContext.isCurrentProgramMediaSource)
+    }
+
+    func testBGMCallbackSyncsRuntimeAudioInputs() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        viewModel.dispatchRuntimeBGMCallback {
+            .bgmPlaybackChanged(isPlaying: true, generation: $0)
+        }
+
+        XCTAssertTrue(runtime.state.bgm.isPlaying)
+        XCTAssertTrue(runtime.state.audio.routingContext.isBGMPlaying)
     }
 
     func testEffectiveMediaOutputReadsRuntimeStateWithoutLegacyRecompute() {
@@ -208,6 +423,28 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func audioSnapshot(
+        mediaPlaying: Bool = false,
+        bgmPlaying: Bool = false,
+        panic: Bool = false
+    ) -> AudioFacadeSnapshot {
+        AudioFacadeSnapshot(
+            masterVolume: 0.5,
+            mediaVolume: 0.8,
+            bgmVolume: 0.2,
+            strategy: .mixed,
+            isMasterMuted: false,
+            isMediaMuted: false,
+            isBGMMuted: false,
+            isSpeakerMode: false,
+            isBGMTakeoverActive: false,
+            isPanicMode: panic,
+            isCurrentProgramMediaSource: true,
+            isMediaPlaying: mediaPlaying,
+            isBGMPlaying: bgmPlaying
+        )
     }
 }
 
