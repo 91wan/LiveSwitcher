@@ -33,7 +33,7 @@ final class RuntimeOwnershipTests: XCTestCase {
     func testDocsStateBGMProjectionPPTRemainMirrorOnly() throws {
         let document = try runtimeOwnershipDocument()
 
-        XCTAssertTrue(document.localizedStandardContains("Program queue, BGM, Panic, PPT, Projection, and Automation are mirror-only"))
+        XCTAssertTrue(document.localizedStandardContains("Program queue, BGM, Panic, PPT, Projection, and Automation are not runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("| BGM | ViewModel owner |"))
         XCTAssertTrue(document.localizedStandardContains("| PPT mode | ViewModel owner |"))
         XCTAssertTrue(document.localizedStandardContains("| Projection | ViewModel owner |"))

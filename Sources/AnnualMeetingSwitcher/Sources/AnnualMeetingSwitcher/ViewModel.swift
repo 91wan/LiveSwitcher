@@ -82,6 +82,8 @@ private final class ClosureMediaPlaybackPort: MediaPlaybackPort {
     var playHandler: ((Int) -> Void)?
     var pauseHandler: ((Int) -> Void)?
     var restartHandler: ((Int) -> Void)?
+    var seekToStartHandler: ((Int) -> Void)?
+    var seekToEndHandler: ((Int) -> Void)?
     var stopHandler: ((Int) -> Void)?
     var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
 
@@ -99,6 +101,14 @@ private final class ClosureMediaPlaybackPort: MediaPlaybackPort {
 
     func restart(generation: Int) {
         restartHandler?(generation)
+    }
+
+    func seekToStart(generation: Int) {
+        seekToStartHandler?(generation)
+    }
+
+    func seekToEnd(generation: Int) {
+        seekToEndHandler?(generation)
     }
 
     func stop(generation: Int) {
@@ -265,10 +275,14 @@ final class SwitcherViewModel {
                 || currentProgramItem?.sourceKind != oldValue?.sourceKind
             guard currentProgramItem?.id != oldValue?.id || sourceChanged else { return }
             currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
+            guard !suppressCurrentProgramFacadeDispatch else { return }
             dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))
         }
     }
     var currentProgramSwitchedAt: Date?
+    @ObservationIgnored private var suppressCurrentProgramFacadeDispatch = false
+    @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
+    @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
     private var needsMutedMediaStartupAfterClearedProgram = false
     var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
@@ -568,7 +582,9 @@ final class SwitcherViewModel {
             ),
             environment: .productionMediaOwned()
         )
-        mediaPlaybackPort.loadHandler = { [weak self] url, _ in
+        mediaPlaybackPort.loadHandler = { [weak self] url, generation in
+            self?.activeRuntimeMediaGenerationForCallbacks = generation
+            self?.activeRuntimeMediaURLForCallbacks = url
             self?.avCoordinator.load(url: url)
         }
         mediaPlaybackPort.playHandler = { [weak self] _ in
@@ -580,7 +596,17 @@ final class SwitcherViewModel {
         mediaPlaybackPort.restartHandler = { [weak self] _ in
             self?.avCoordinator.restartFromBeginning()
         }
-        mediaPlaybackPort.stopHandler = { [weak self] _ in
+        mediaPlaybackPort.seekToStartHandler = { [weak self] _ in
+            self?.avCoordinator.seekToBeginning()
+        }
+        mediaPlaybackPort.seekToEndHandler = { [weak self] _ in
+            self?.avCoordinator.seekToEnd()
+        }
+        mediaPlaybackPort.stopHandler = { [weak self] generation in
+            if self?.activeRuntimeMediaGenerationForCallbacks == generation {
+                self?.activeRuntimeMediaGenerationForCallbacks = nil
+                self?.activeRuntimeMediaURLForCallbacks = nil
+            }
             self?.avCoordinator.stop()
         }
         mediaPlaybackPort.setVolumeHandler = { [weak self] volume, fade, _ in
@@ -690,7 +716,10 @@ final class SwitcherViewModel {
 
     func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        runtime.dispatch(makeAction(runtime.state.media.generation))
+        guard let generation = activeRuntimeMediaGenerationForCallbacks else { return }
+        guard currentProgramItem?.sourceKind == .media else { return }
+        guard avCoordinator.currentURL == activeRuntimeMediaURLForCallbacks else { return }
+        runtime.dispatch(makeAction(generation))
     }
 
     func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
@@ -1449,7 +1478,7 @@ final class SwitcherViewModel {
             dispatchRuntimeProgramSelection(for: item)
             currentHTMLURL = nil              // 清空 HTML 层
             needsMutedMediaStartupAfterClearedProgram = false
-            currentProgramItem = item
+            setCurrentProgramFromOperatorSelection(item)
         case .keynote:
             guard let url = item.sourceURL else { return }
             if !isLikelyValidDeckDocument(url: url, sourceKind: .keynote) {
@@ -1458,7 +1487,7 @@ final class SwitcherViewModel {
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
-            currentProgramItem = item
+            setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil              // 清空 HTML 层
             keynotePresentationHandler(url)
         case .pptx:
@@ -1469,22 +1498,28 @@ final class SwitcherViewModel {
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
-            currentProgramItem = item
+            setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil              // 清空 HTML 层
             pptxOpenHandler(url)
         case .html:
             guard let url = item.sourceURL else { return }
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
-            currentProgramItem = item
+            setCurrentProgramFromOperatorSelection(item)
             openHTMLInOutputWindow(url: url)
         case .activeDeck:
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
-            currentProgramItem = item
+            setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil
             activeDeckPresentationHandler()
         }
+    }
+
+    private func setCurrentProgramFromOperatorSelection(_ item: ProgramItem?) {
+        suppressCurrentProgramFacadeDispatch = true
+        defer { suppressCurrentProgramFacadeDispatch = false }
+        currentProgramItem = item
     }
 
     private func dispatchRuntimeProgramSelection(for item: ProgramItem) {
@@ -1961,7 +1996,7 @@ final class SwitcherViewModel {
 
     func seekProgramItemToStart(_ item: ProgramItem) {
         if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
-            dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
+            dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToStart)
         }
     }
 
@@ -1974,8 +2009,7 @@ final class SwitcherViewModel {
 
     func seekProgramItemToEnd(_ item: ProgramItem) {
         if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
-            // Seek-to-end is not migrated yet because MediaPlaybackPort intentionally has no seek endpoint in this PR.
-            programSeekToEndHandler()
+            dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToEnd)
         }
     }
 

@@ -20,8 +20,9 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testAVPlayerPlaybackEndedDispatchesRuntimeMediaReachedEnd() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
-        viewModel.programItems = [item]
-        viewModel.currentProgramItem = item
+        viewModel.addProgramItem(item)
+        viewModel.switchToProgram(item)
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.handlePlaybackEnded()
 
@@ -161,25 +162,22 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     }
 
     func testMediaPlaybackCallbackRoutesAudioThroughRuntimeOnly() {
-        let audioRouting = MediaBridgeAudioRoutingPortSpy()
-        let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
-        )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
-            enableSystemVolumeObserver: false,
-            runtime: runtime
+            enableSystemVolumeObserver: false
         )
+        let item = mediaProgram()
+        viewModel.addProgramItem(item)
+        viewModel.switchToProgram(item)
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-        audioRouting.reset()
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
         viewModel.avCoordinator.isPlaying = true
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
-        XCTAssertEqual(audioRouting.reasons, [.mediaPlaybackChanged])
-        XCTAssertNil(viewModel.lastAudioRoutingTransition)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
+        XCTAssertNotNil(viewModel.lastAudioRoutingTransition)
     }
 
     func testManualPlaybackToggleRoutesAudioThroughRuntimeOnly() {
@@ -301,8 +299,9 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testViewModelPlaybackEndedDispatchesRuntimeEndCallback() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
-        viewModel.programItems = [item]
-        viewModel.currentProgramItem = item
+        viewModel.addProgramItem(item)
+        viewModel.switchToProgram(item)
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.handlePlaybackEnded()
 

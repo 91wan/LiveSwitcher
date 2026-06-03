@@ -143,6 +143,14 @@ private final class MediaPortSpy: MediaPlaybackPort {
         calls.append("restart:\(generation)")
     }
 
+    func seekToStart(generation: Int) {
+        calls.append("seekToStart:\(generation)")
+    }
+
+    func seekToEnd(generation: Int) {
+        calls.append("seekToEnd:\(generation)")
+    }
+
     func stop(generation: Int) {
         calls.append("stop:\(generation)")
     }

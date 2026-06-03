@@ -288,25 +288,28 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     }
 
     func testMediaCallbackSyncsRuntimeAudioInputs() {
-        let runtime = LiveRuntimeStore(
-            effectRunner: .recording(),
-            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
-        )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
-            enableSystemVolumeObserver: false,
-            runtime: runtime
+            enableSystemVolumeObserver: false
         )
-        viewModel.currentProgramItem = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
-        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension("mp4")
+        try? Data("fixture".utf8).write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
+        let item = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: url)
+        viewModel.addProgramItem(item)
+        viewModel.switchToProgram(item)
+        viewModel.runtime.updateEnvironment(LiveRuntimeEnvironment(bridgeMode: .audioOwned))
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.dispatchRuntimeMediaCallback {
             .mediaPlaybackChanged(isPlaying: true, generation: $0)
         }
 
-        XCTAssertTrue(runtime.state.media.isPlaying)
-        XCTAssertTrue(runtime.state.audio.routingContext.isMediaPlaying)
-        XCTAssertTrue(runtime.state.audio.routingContext.isCurrentProgramMediaSource)
+        XCTAssertTrue(viewModel.runtime.state.media.isPlaying)
+        XCTAssertTrue(viewModel.runtime.state.audio.routingContext.isMediaPlaying)
+        XCTAssertTrue(viewModel.runtime.state.audio.routingContext.isCurrentProgramMediaSource)
     }
 
     func testBGMCallbackSyncsRuntimeAudioInputs() {

@@ -2138,7 +2138,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(seekToStartCount, 0)
         XCTAssertTrue(
             viewModel.runtime.actionLog.dropFirst(actionLogCount).contains {
-                $0.actionName == "operatorRestartedCurrentMedia"
+                $0.actionName == "operatorSeekedCurrentMediaToStart"
             }
         )
         XCTAssertEqual(viewModel.currentProgramItem, currentItem)
@@ -2155,6 +2155,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
         let otherItem = ProgramItem(title: "其他节目", subtitle: "MP4", sourceURL: otherURL)
+        let actionLogCount = viewModel.runtime.actionLog.count
         var seekToEndCount = 0
         viewModel.programSeekToEndHandler = {
             seekToEndCount += 1
@@ -2165,7 +2166,12 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(seekToEndCount, 0)
 
         viewModel.seekProgramItemToEnd(currentItem)
-        XCTAssertEqual(seekToEndCount, 1)
+        XCTAssertEqual(seekToEndCount, 0)
+        XCTAssertTrue(
+            viewModel.runtime.actionLog.dropFirst(actionLogCount).contains {
+                $0.actionName == "operatorSeekedCurrentMediaToEnd"
+            }
+        )
         XCTAssertEqual(viewModel.currentProgramItem, currentItem)
     }
 

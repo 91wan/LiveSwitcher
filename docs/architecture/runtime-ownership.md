@@ -6,15 +6,14 @@ Current authoritative runtime domains:
 - Audio
 - Media playback
 
-Program queue, BGM, Panic, PPT, Projection, and Automation are mirror-only.
-Their runtime state is a snapshot of ViewModel-owned reality or a callback from
-an already-executed facade path. Operator actions for mirror-only domains must
-not mutate real runtime domain state or infer playback/output state that the
-ViewModel has not already synchronized into the runtime snapshot.
+Program queue, BGM, Panic, PPT, Projection, and Automation are not runtime-owned.
+Their runtime state is either a ViewModel-owned snapshot or an explicit callback
+from an already-executed facade path. Operator actions for unowned domains must
+not mutate real domain state or infer playback/output state that the ViewModel
+has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production uses `LiveRuntimeBridgeMode.mediaOwned`.
 Production bridge mode is `.mediaOwned`.
 `.fullRuntime` remains test-only; production media ownership is expressed by `.mediaOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
@@ -48,8 +47,8 @@ BGM/Projection/PPT migration is blocked until its ports are wired and an ownersh
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | ViewModel owner | Mirror-only snapshot and action log | not migrated | ViewModel owns queue mutation and source validation; runtime may mirror current selection for media playback. |
-| Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
+| Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation. Runtime may mirror current selection only to drive media playback. |
+| Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | ViewModel owner | Mirror-only snapshot/callback state plus persisted play-mode preference | not migrated | Concrete playback, current track, progress, and timer ownership remain in ViewModel. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media pause/resume actions | not migrated | Panic orchestration and BGM behavior remain ViewModel-owned; media pause/resume goes through Runtime. |
@@ -78,14 +77,26 @@ BGM/Projection/PPT migration is blocked until its ports are wired and an ownersh
 
 Media playback is runtime-owned. ViewModel validates sources, owns the program
 queue, and sets UI-facing current program state, but media load/play/pause/
-restart/stop effects execute through `MediaPlaybackPort`. Media startup sets
-media volume to zero before loading so the Runtime audio routing fade can bring
-the channel to the target level without a one-frame burst. AVPlayer callbacks
-dispatch Runtime actions and stale media effects are ignored by generation.
+restart/stop/seek effects execute through `MediaPlaybackPort`. Seek-to-start and
+seek-to-end are distinct runtime actions; restart remains the only migrated
+operator action that seeks to the beginning and starts playback.
+
+Media startup sets media volume to zero before loading so the Runtime audio
+routing fade can bring the channel to the target level without a one-frame
+burst. Runtime media callbacks are accepted only when the ViewModel still has an
+active runtime media generation, the current program is media, and
+`AVPlayerCoordinator.currentURL` matches the active runtime media URL. Accepted
+callbacks dispatch runtime actions with the active generation. Stale effects are
+also ignored by generation in the effect runner.
+
+Media-owned program selection must not mutate PPT mirror state and must not own
+non-media activation. PPT mirror state changes only through
+`pptEventTapStarted`, `pptEventTapFailed`, and `pptEventTapStopped`.
 
 ## Next Migration Gate
 
-The next migration may be BGM, Projection, or PPT only after Audio and Media
+BGM, Projection, PPT, Program queue, Automation, and Support ingress migration
+remain blocked. The next migration may proceed only after Audio and Media
 ownership tests pass, bridge mode explicitness tests pass, no implicit full
 runtime remains, the target domain port is connected in a dedicated PR, and
 ViewModel no longer owns that target domain's migrated side effects in that
