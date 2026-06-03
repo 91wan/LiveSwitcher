@@ -71,6 +71,37 @@ final class RuntimeBridgeModeTests: XCTestCase {
         })
     }
 
+    func testMediaOwnedAllowsMediaButStillBlocksOtherDomainEffects() {
+        let item = mediaProgram()
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+        state.bgm.items = [BGMItem(title: "BGM", url: URL(fileURLWithPath: "/tmp/bgm.mp3"))]
+        state.projection.hasExternalDisplay = true
+
+        let mediaMutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSelectedProgram(item.id),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+        let bgmMutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSelectedBGM(state.bgm.items[0].id),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+        let projectionMutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledProjection,
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+
+        XCTAssertTrue(mediaMutation.effects.contains {
+            if case .loadMedia = $0 { return true }
+            return false
+        })
+        XCTAssertTrue(bgmMutation.effects.isEmpty)
+        XCTAssertTrue(projectionMutation.effects.isEmpty)
+    }
+
     func testAudioOwnedModeStoresFacadeRoutingInputsInsideAudioState() {
         var state = LiveRuntimeState()
         state.media.isPlaying = false

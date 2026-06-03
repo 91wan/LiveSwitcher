@@ -38,6 +38,7 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
             detail: "isOn=true"
         )
         var state = LiveRuntimeState()
+        state.media.generation = 7
         state.panic.isActive = true
 
         runner.run(

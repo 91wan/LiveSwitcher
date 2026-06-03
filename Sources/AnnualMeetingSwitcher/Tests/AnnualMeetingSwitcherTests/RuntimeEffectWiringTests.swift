@@ -8,23 +8,29 @@ final class RuntimeEffectWiringTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.audioRouting, .imageAssets, .persistence]
+            [.media, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionRuntimeBridgeModeIsAudioOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsMediaOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .audioOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .mediaOwned)
     }
 
-    func testUnconnectedProductionPortsAreNotTreatedAsMigrated() {
+    func testProductionRuntimeWiresMediaAndAudioPorts() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
+    }
+
+    func testProductionRuntimeDoesNotWireBGMProjectionPPTAutomationSupport() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         [
-            LiveRuntimeEffectPortKind.media,
-            .bgm,
+            LiveRuntimeEffectPortKind.bgm,
             .projection,
             .ppt,
             .automation,

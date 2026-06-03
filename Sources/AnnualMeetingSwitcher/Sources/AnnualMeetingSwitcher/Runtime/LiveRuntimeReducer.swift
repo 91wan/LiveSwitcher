@@ -24,8 +24,19 @@ enum LiveRuntimeReducer {
         switch action {
         case .operatorSelectedProgram(let id):
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            guard let item = selectedProgramItem(id, in: state) else { break }
             reduceSelectedProgram(
-                id,
+                item,
+                state: &state,
+                effects: &effects,
+                now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
+        case .operatorSelectedDetachedProgram(let item):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            reduceSelectedProgram(
+                item,
                 state: &state,
                 effects: &effects,
                 now: environment.now,
@@ -46,11 +57,53 @@ enum LiveRuntimeReducer {
             guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
-            state.media.isPlaying = true
+            state.media.isPlaying = !state.panic.isActive
             syncAudioRoutingContextFromMirrorState(&state)
             effects.append(.restartMedia(generation: state.media.generation))
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+
+        case .operatorStoppedCurrentMedia:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            guard state.media.loadedURL != nil
+                    || state.media.isPlaying
+                    || state.program.effectiveCurrentItem?.sourceKind == .media
+            else { break }
+            state.media.generation += 1
+            state.media.loadedURL = nil
+            state.media.isPlaying = false
+            state.media.didPlayToEnd = false
+            state.media.currentTime = 0
+            state.media.duration = nil
+            syncAudioRoutingContextFromMirrorState(&state)
+            effects.append(.stopMedia(generation: state.media.generation))
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+
+        case .operatorPausedMediaForPanic(let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            let targetGeneration = generation ?? state.media.generation
+            guard targetGeneration == state.media.generation else { break }
+            guard state.media.isPlaying else { break }
+            state.media.isPlaying = false
+            syncAudioRoutingContextFromMirrorState(&state)
+            effects.append(.pauseMedia(generation: targetGeneration))
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .panicChanged))
+
+        case .operatorResumedMediaAfterPanic(let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            let targetGeneration = generation ?? state.media.generation
+            guard targetGeneration == state.media.generation else { break }
+            state.media.isPlaying = true
+            state.media.didPlayToEnd = false
+            syncAudioRoutingContextFromMirrorState(&state)
+            effects += [
+                .setMediaVolume(0, fade: 0, generation: targetGeneration),
+                .playMedia(generation: targetGeneration)
+            ]
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .panicChanged))
 
         case .operatorSelectedAudioStrategy(let strategy):
             state.audio.strategy = strategy
@@ -402,16 +455,15 @@ enum LiveRuntimeReducer {
     }
 
     private static func reduceSelectedProgram(
-        _ id: UUID,
+        _ item: ProgramItem,
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
         now: Date,
         speakerModeDuckedRatio: Float
     ) {
-        guard let item = state.program.items.first(where: { $0.id == id }) else { return }
         let previousKind = state.program.effectiveCurrentItem?.sourceKind
-        state.program.currentID = id
-        state.program.currentDetachedItem = nil
+        state.program.currentID = item.id
+        state.program.currentDetachedItem = state.program.items.contains { $0.id == item.id } ? nil : item
         state.program.currentSwitchedAt = now
 
         if previousKind?.supportsPresentationControl == true, !item.supportsPresentationControl {
@@ -421,13 +473,14 @@ enum LiveRuntimeReducer {
         if item.sourceKind == .media, let url = item.sourceURL {
             state.media.generation += 1
             state.media.loadedURL = url
-            state.media.isPlaying = true
+            state.media.isPlaying = !state.panic.isActive
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
-            effects += [
-                .loadMedia(url, generation: state.media.generation),
-                .playMedia(generation: state.media.generation)
-            ]
+            effects.append(.setMediaVolume(0, fade: 0, generation: state.media.generation))
+            effects.append(.loadMedia(url, generation: state.media.generation))
+            if !state.panic.isActive {
+                effects.append(.playMedia(generation: state.media.generation))
+            }
         } else {
             if state.media.loadedURL != nil || state.media.isPlaying {
                 state.media.generation += 1
@@ -447,6 +500,16 @@ enum LiveRuntimeReducer {
         syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
+    }
+
+    private static func selectedProgramItem(_ id: UUID, in state: LiveRuntimeState) -> ProgramItem? {
+        if let item = state.program.items.first(where: { $0.id == id }) {
+            return item
+        }
+        if state.program.currentDetachedItem?.id == id {
+            return state.program.currentDetachedItem
+        }
+        return nil
     }
 
     private static func reducePanicToggle(
@@ -764,9 +827,9 @@ enum LiveRuntimeReducer {
 
     private static func canWriteReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
         switch bridgeMode {
-        case .fullRuntime, .mediaOwned, .bgmOwned, .projectionOwned:
+        case .fullRuntime, .bgmOwned, .projectionOwned:
             return true
-        case .recordingOnly, .audioOwned:
+        case .recordingOnly, .audioOwned, .mediaOwned:
             return false
         }
     }

@@ -79,7 +79,7 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
     }
 
-    func testPanicWaitsForAudioFadeBeforePausingPlayback() async throws {
+    func testPanicPausesMediaImmediatelyButWaitsForAudioFadeBeforePausingBGM() async throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0.5
         let videoURL = try makeTempURL(ext: "mp4")
@@ -97,7 +97,7 @@ final class PanicTransitionTests: XCTestCase {
         viewModel.togglePanicMode()
         try await Task.sleep(nanoseconds: 300_000_000)
 
-        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
         XCTAssertTrue(viewModel.isBGMPlaying)
 
         try await Task.sleep(nanoseconds: 350_000_000)
@@ -205,7 +205,7 @@ final class PanicTransitionTests: XCTestCase {
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
     }
 
-    func testManualMediaPauseDuringPanicPreventsAutomaticResume() throws {
+    func testRuntimeMediaPauseDuringPanicDoesNotClearResumeSnapshot() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 1
         let videoURL = try makeTempURL(ext: "mp4")
@@ -216,7 +216,7 @@ final class PanicTransitionTests: XCTestCase {
 
         viewModel.togglePanicMode()
         XCTAssertTrue(viewModel.isPanicMode)
-        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
 
         viewModel.toggleMainVideoPlayback()
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
@@ -224,7 +224,7 @@ final class PanicTransitionTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertFalse(viewModel.isPanicMode)
-        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
     }
 
     func testPlaybackEndedDuringPanicDoesNotAutoAdvanceQueue() throws {

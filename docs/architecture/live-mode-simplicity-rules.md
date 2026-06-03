@@ -39,6 +39,7 @@ product boundary.
 
 - Live mode simplicity is independent of runtime migration.
 - Runtime migration PRs must not add live controls.
+- No live-mode UI controls were added for the Media runtime migration; it only changes media ownership and execution path.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
   actions, primary action count, and forbidden configuration surfaces.
 - `LiveModeSimplicityPolicy` is the code-level gate for live-mode limits,
@@ -59,12 +60,12 @@ product boundary.
   media restart/playback, audio, and BGM transport.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
-- Current authoritative runtime domain: Audio only.
-- Mirror-only live domains are Program, Media, BGM, Panic, PPT, Projection,
+- Current authoritative runtime domains: Audio and Media playback.
+- Mirror-only live domains are Program queue, BGM, Panic, PPT, Projection,
   and Automation. Live controls for those domains must use ViewModel-owned
   flows and must not rely on runtime operator actions to mutate real state.
-- Runtime-backed actions must respect the production `.audioOwned` bridge mode:
-  audio routing, image assets, and persistence may execute; unowned media, BGM,
+- Runtime-backed actions must respect the production `.mediaOwned` bridge mode:
+  media playback, audio routing, image assets, and persistence may execute; unowned BGM,
   projection, PPT, automation, timer, notice, and support effects must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

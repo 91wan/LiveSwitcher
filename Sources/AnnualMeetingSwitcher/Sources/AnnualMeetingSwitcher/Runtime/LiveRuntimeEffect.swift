@@ -253,16 +253,22 @@ final class LiveRuntimeEffectRunner {
     private func run(_ effect: LiveRuntimeEffect, currentState: () -> LiveRuntimeState) {
         switch effect {
         case .loadMedia(let url, let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.load(url: url, generation: generation)
         case .playMedia(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.play(generation: generation)
         case .pauseMedia(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.pause(generation: generation)
         case .restartMedia(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.restart(generation: generation)
         case .stopMedia(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.stop(generation: generation)
         case .setMediaVolume(let volume, let fade, let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.setVolume(volume, fade: fade, generation: generation)
 
         case .prepareBGM(let item, let generation):
@@ -330,5 +336,9 @@ final class LiveRuntimeEffectRunner {
         case .recordSupportEvent(let event):
             support?.record(event)
         }
+    }
+
+    private func isCurrentMediaGeneration(_ generation: Int, currentState: () -> LiveRuntimeState) -> Bool {
+        currentState().media.generation == generation
     }
 }
