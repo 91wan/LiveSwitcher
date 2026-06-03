@@ -39,6 +39,7 @@ product boundary.
 
 - Live mode simplicity is independent of runtime migration.
 - Runtime migration PRs must not add live controls.
+- BGM migration, when it happens, must not add live controls.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
   actions, primary action count, and forbidden configuration surfaces.

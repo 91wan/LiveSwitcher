@@ -20,6 +20,22 @@ Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
 
+Bridge modes are cumulative migration stages, not isolated domain selectors.
+Each stage includes all domains migrated in earlier stages:
+
+| Bridge mode | Runtime-owned domains |
+| --- | --- |
+| `recordingOnly` | none |
+| `audioOwned` | Audio |
+| `mediaOwned` | Audio, Media playback |
+| `bgmOwned` | Audio, Media playback, BGM |
+| `projectionOwned` | Audio, Media playback, BGM, Projection |
+| `fullRuntime` | all runtime domains, test-only until deliberately approved |
+
+`.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
+means Audio + Media + BGM + Projection. BGM migration must not start until the
+cumulative bridge ownership and effect-filtering tests pass.
+
 In this mode the runtime reducer owns `state.audio` and `state.media`, and may execute the wired
 ports needed for current production behavior. Connected production ports: `media`, `audioRouting`, `imageAssets`, and `persistence`. The audio routing port is wired.
 Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
@@ -31,9 +47,11 @@ Program, or Automation state. Mirror state changes for those domains must come
 from facade synchronization or explicit callback actions such as media/BGM
 playback callbacks and PPT event-tap callbacks.
 
-Support storage uses runtime state, but production ingress is
-`ViewModel.recordSupportEvent`. In `.mediaOwned`, reducer-generated support
-events are blocked except for the explicit `.supportEventRecorded` action.
+Support storage uses runtime state, but production ingress remains
+`ViewModel.recordSupportEvent` until a dedicated Support migration PR. In every
+production bridge stage before explicit Support ownership, reducer-generated
+support events are blocked except for the explicit `.supportEventRecorded`
+action.
 `facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state.
 Effective audio output getters are pure Runtime state reads.
 
@@ -97,7 +115,7 @@ non-media activation. PPT mirror state changes only through
 
 BGM, Projection, PPT, Program queue, Automation, and Support ingress migration
 remain blocked. The next migration may proceed only after Audio and Media
-ownership tests pass, bridge mode explicitness tests pass, no implicit full
-runtime remains, the target domain port is connected in a dedicated PR, and
-ViewModel no longer owns that target domain's migrated side effects in that
-future PR.
+ownership tests pass, cumulative bridge tests pass, bridge mode explicitness
+tests pass, no implicit full runtime remains, the target domain port is
+connected in a dedicated PR, and ViewModel no longer owns that target domain's
+migrated side effects in that future PR.

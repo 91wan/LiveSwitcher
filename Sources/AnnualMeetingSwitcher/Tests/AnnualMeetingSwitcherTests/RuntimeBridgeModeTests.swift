@@ -16,6 +16,14 @@ final class RuntimeBridgeModeTests: XCTestCase {
         )
     }
 
+    func testBridgeModeDomainOwnershipIsCumulative() {
+        XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.audio))
+        XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))
+        XCTAssertTrue(LiveRuntimeBridgeMode.bgmOwned.owns(.media))
+        XCTAssertTrue(LiveRuntimeBridgeMode.projectionOwned.owns(.bgm))
+        XCTAssertFalse(LiveRuntimeBridgeMode.projectionOwned.owns(.support))
+    }
+
     func testAudioOwnedModeDoesNotPredictProgramOrMediaStateFromOperatorIntent() {
         let item = mediaProgram()
         var state = LiveRuntimeState()
