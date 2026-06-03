@@ -792,28 +792,7 @@ enum LiveRuntimeReducer {
         if bridgeMode == .fullRuntime { return true }
         if bridgeMode == .recordingOnly { return false }
 
-        if isAudioOwnedEffect(effect) {
-            return bridgeMode.owns(.audio)
-        }
-        if isMediaEffect(effect) {
-            return bridgeMode.owns(.media)
-        }
-        if isBGMEffect(effect) {
-            return bridgeMode.owns(.bgm)
-        }
-        if isProjectionEffect(effect) {
-            return bridgeMode.owns(.projection)
-        }
-        if isPPTEffect(effect) {
-            return bridgeMode.owns(.ppt)
-        }
-        if isAutomationEffect(effect) {
-            return bridgeMode.owns(.automation)
-        }
-        if case .recordSupportEvent = effect {
-            return bridgeMode.owns(.support)
-        }
-        return false
+        return bridgeMode.owns(effect.requiredBridgeDomain)
     }
 
     private static func isRuntimeOwned(_ domain: LiveRuntimeDomain, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
@@ -822,90 +801,5 @@ enum LiveRuntimeReducer {
 
     private static func canWriteReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
         bridgeMode.owns(.support)
-    }
-
-    private static func isAudioOwnedEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .applyAudioRouting,
-             .loadBackgroundImage,
-             .loadCornerLogoImage,
-             .saveConsoleMode,
-             .saveThemeOverride,
-             .saveAudioStrategy,
-             .saveSpeakerMode,
-             .saveBGMPlayMode,
-             .saveAutoPlayNextVideoOnEnd,
-             .saveAutoAdvanceAtScheduledTime,
-             .saveShowAgendaTimeline,
-             .saveCornerLogoPosition,
-             .savePersistentState:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private static func isMediaEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .loadMedia,
-             .playMedia,
-             .pauseMedia,
-             .restartMedia,
-             .seekMediaToStart,
-             .seekMediaToEnd,
-             .stopMedia,
-             .setMediaVolume:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private static func isBGMEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .prepareBGM,
-             .playBGM,
-             .pauseBGM,
-             .stopBGM,
-             .setBGMVolume,
-             .startBGMTimer,
-             .stopBGMTimer:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private static func isProjectionEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .startProjection,
-             .stopProjection,
-             .showOutputWindow,
-             .hideOutputWindow:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private static func isPPTEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .startPPTEventTap,
-             .stopPPTEventTap:
-            return true
-        default:
-            return false
-        }
-    }
-
-    private static func isAutomationEffect(_ effect: LiveRuntimeEffect) -> Bool {
-        switch effect {
-        case .runAppleScript,
-             .showAutomationNotice,
-             .expireAutomationNotice:
-            return true
-        default:
-            return false
-        }
     }
 }
