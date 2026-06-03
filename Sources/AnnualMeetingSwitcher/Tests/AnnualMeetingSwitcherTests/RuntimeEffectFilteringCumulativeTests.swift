@@ -2,6 +2,32 @@ import XCTest
 @testable import LiveSwitcher
 
 final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
+    func testBGMPlaybackEffectsRequireBGMOwnedDomainBeforeMigration() {
+        let item = bgmItem()
+
+        [
+            LiveRuntimeEffect.prepareBGM(item, generation: 1),
+            .playBGM(generation: 1),
+            .pauseBGM(generation: 1),
+            .stopBGM(fade: 0.5, generation: 1),
+            .setBGMVolume(0.4, fade: 0.2, generation: 1),
+            .startBGMTimer(generation: 1),
+            .stopBGMTimer(generation: 1)
+        ].forEach { effect in
+            XCTAssertEqual(effect.requiredBridgeDomain, .bgm)
+        }
+    }
+
+    func testMediaAndBGMEffectDomainsStaySeparated() {
+        let mediaURL = URL(fileURLWithPath: "/tmp/runtime-effect-domain-video.mp4")
+        let bgm = bgmItem()
+
+        XCTAssertEqual(LiveRuntimeEffect.loadMedia(mediaURL, generation: 1).requiredBridgeDomain, .media)
+        XCTAssertEqual(LiveRuntimeEffect.playMedia(generation: 1).requiredBridgeDomain, .media)
+        XCTAssertEqual(LiveRuntimeEffect.prepareBGM(bgm, generation: 1).requiredBridgeDomain, .bgm)
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .audio)
+    }
+
     func testBGMOwningModeStillAllowsMediaEffects() {
         let item = mediaProgram()
         var state = LiveRuntimeState()

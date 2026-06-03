@@ -46,6 +46,64 @@ enum LiveRuntimeEffect: Equatable {
     case recordSupportEvent(LiveSupportEvent)
 }
 
+extension LiveRuntimeEffect {
+    var requiredBridgeDomain: LiveRuntimeDomain {
+        switch self {
+        case .applyAudioRouting,
+             .loadBackgroundImage,
+             .loadCornerLogoImage,
+             .saveConsoleMode,
+             .saveThemeOverride,
+             .saveAudioStrategy,
+             .saveSpeakerMode,
+             .saveBGMPlayMode,
+             .saveAutoPlayNextVideoOnEnd,
+             .saveAutoAdvanceAtScheduledTime,
+             .saveShowAgendaTimeline,
+             .saveCornerLogoPosition,
+             .savePersistentState:
+            return .audio
+
+        case .loadMedia,
+             .playMedia,
+             .pauseMedia,
+             .restartMedia,
+             .seekMediaToStart,
+             .seekMediaToEnd,
+             .stopMedia,
+             .setMediaVolume:
+            return .media
+
+        case .prepareBGM,
+             .playBGM,
+             .pauseBGM,
+             .stopBGM,
+             .setBGMVolume,
+             .startBGMTimer,
+             .stopBGMTimer:
+            return .bgm
+
+        case .startProjection,
+             .stopProjection,
+             .showOutputWindow,
+             .hideOutputWindow:
+            return .projection
+
+        case .startPPTEventTap,
+             .stopPPTEventTap:
+            return .ppt
+
+        case .runAppleScript,
+             .showAutomationNotice,
+             .expireAutomationNotice:
+            return .automation
+
+        case .recordSupportEvent:
+            return .support
+        }
+    }
+}
+
 enum LiveRuntimeEffectPortKind: String, CaseIterable {
     case media
     case bgm
