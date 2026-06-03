@@ -41,7 +41,10 @@ final class LiveMediaControlTests: XCTestCase {
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
         viewModel.restartCurrentMediaFromBeginning()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        let deadline = Date().addingTimeInterval(1.0)
+        while !viewModel.avCoordinator.isPlaying, Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        }
 
         XCTAssertFalse(didRestartFromBeginning)
         XCTAssertFalse(didUseStandaloneSeek)
