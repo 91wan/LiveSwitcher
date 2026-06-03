@@ -42,6 +42,15 @@ final class RuntimeEffectWiringTests: XCTestCase {
         }
     }
 
+    func testBGMOwningModeIsNotProductionYet() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertNotEqual(viewModel.runtimeBridgeMode, .bgmOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .mediaOwned)
+        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.bgm))
+        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
+    }
+
     func testCustomEffectRunnerReportsInjectedPorts() {
         let runner = LiveRuntimeEffectRunner(
             recordsOnly: false,

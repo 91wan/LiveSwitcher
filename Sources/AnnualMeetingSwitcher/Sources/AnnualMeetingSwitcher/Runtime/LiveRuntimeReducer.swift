@@ -789,54 +789,39 @@ enum LiveRuntimeReducer {
     }
 
     private static func isEffectAllowed(_ effect: LiveRuntimeEffect, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
-        switch bridgeMode {
-        case .fullRuntime:
-            return true
-        case .recordingOnly:
-            return false
-        case .audioOwned:
-            return isAudioOwnedEffect(effect)
-        case .mediaOwned:
-            return isAudioOwnedEffect(effect) || isMediaEffect(effect)
-        case .bgmOwned:
-            return isAudioOwnedEffect(effect) || isBGMEffect(effect)
-        case .projectionOwned:
-            return isAudioOwnedEffect(effect) || isProjectionEffect(effect)
+        if bridgeMode == .fullRuntime { return true }
+        if bridgeMode == .recordingOnly { return false }
+
+        if isAudioOwnedEffect(effect) {
+            return bridgeMode.owns(.audio)
         }
+        if isMediaEffect(effect) {
+            return bridgeMode.owns(.media)
+        }
+        if isBGMEffect(effect) {
+            return bridgeMode.owns(.bgm)
+        }
+        if isProjectionEffect(effect) {
+            return bridgeMode.owns(.projection)
+        }
+        if isPPTEffect(effect) {
+            return bridgeMode.owns(.ppt)
+        }
+        if isAutomationEffect(effect) {
+            return bridgeMode.owns(.automation)
+        }
+        if case .recordSupportEvent = effect {
+            return bridgeMode.owns(.support)
+        }
+        return false
     }
 
-    private enum RuntimeDomain {
-        case audio
-        case media
-        case bgm
-        case projection
-        case panic
-    }
-
-    private static func isRuntimeOwned(_ domain: RuntimeDomain, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
-        switch bridgeMode {
-        case .recordingOnly:
-            return false
-        case .audioOwned:
-            return domain == .audio
-        case .mediaOwned:
-            return domain == .audio || domain == .media
-        case .bgmOwned:
-            return domain == .audio || domain == .bgm
-        case .projectionOwned:
-            return domain == .audio || domain == .projection
-        case .fullRuntime:
-            return true
-        }
+    private static func isRuntimeOwned(_ domain: LiveRuntimeDomain, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
+        bridgeMode.owns(domain)
     }
 
     private static func canWriteReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
-        switch bridgeMode {
-        case .fullRuntime, .bgmOwned, .projectionOwned:
-            return true
-        case .recordingOnly, .audioOwned, .mediaOwned:
-            return false
-        }
+        bridgeMode.owns(.support)
     }
 
     private static func isAudioOwnedEffect(_ effect: LiveRuntimeEffect) -> Bool {
@@ -897,6 +882,27 @@ enum LiveRuntimeReducer {
              .stopProjection,
              .showOutputWindow,
              .hideOutputWindow:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isPPTEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .startPPTEventTap,
+             .stopPPTEventTap:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func isAutomationEffect(_ effect: LiveRuntimeEffect) -> Bool {
+        switch effect {
+        case .runAppleScript,
+             .showAutomationNotice,
+             .expireAutomationNotice:
             return true
         default:
             return false

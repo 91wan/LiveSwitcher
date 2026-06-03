@@ -50,6 +50,10 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
         XCTAssertTrue(document.localizedStandardContains("BGM/Projection/PPT migration is blocked until its ports are wired and an ownership PR is approved"))
+        XCTAssertTrue(document.localizedStandardContains("Bridge modes are cumulative migration stages"))
+        XCTAssertTrue(document.localizedStandardContains("`.bgmOwned` means Audio + Media + BGM, not Audio + BGM"))
+        XCTAssertTrue(document.localizedStandardContains("means Audio + Media + BGM + Projection"))
+        XCTAssertTrue(document.localizedStandardContains("cumulative bridge ownership and effect-filtering tests pass"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {
@@ -78,6 +82,8 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
         XCTAssertTrue(document.localizedStandardContains("production media ownership is expressed by `.mediaOwned`"))
         XCTAssertTrue(document.localizedStandardContains("BGM/Projection/PPT migration is blocked until its ports are wired and an ownership PR is approved"))
+        XCTAssertTrue(document.localizedStandardContains("Support storage uses runtime state, but production ingress remains"))
+        XCTAssertTrue(document.localizedStandardContains("until a dedicated Support migration PR"))
     }
 
     func testDocsRequireExplicitBridgeModeInTests() throws {

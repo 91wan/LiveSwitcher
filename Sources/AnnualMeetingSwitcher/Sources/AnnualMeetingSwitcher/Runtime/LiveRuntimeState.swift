@@ -9,6 +9,40 @@ enum LiveRuntimeBridgeMode: String, CaseIterable, Equatable {
     case fullRuntime
 }
 
+enum LiveRuntimeDomain: String, CaseIterable, Equatable {
+    case audio
+    case media
+    case bgm
+    case projection
+    case panic
+    case ppt
+    case automation
+    case support
+}
+
+extension LiveRuntimeBridgeMode {
+    var ownedDomains: Set<LiveRuntimeDomain> {
+        switch self {
+        case .recordingOnly:
+            return []
+        case .audioOwned:
+            return [.audio]
+        case .mediaOwned:
+            return [.audio, .media]
+        case .bgmOwned:
+            return [.audio, .media, .bgm]
+        case .projectionOwned:
+            return [.audio, .media, .bgm, .projection]
+        case .fullRuntime:
+            return Set(LiveRuntimeDomain.allCases)
+        }
+    }
+
+    func owns(_ domain: LiveRuntimeDomain) -> Bool {
+        ownedDomains.contains(domain)
+    }
+}
+
 struct LiveRuntimeState: Equatable {
     var mode: ConsoleMode = .setup
     var program = ProgramRuntimeState()
