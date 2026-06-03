@@ -22,7 +22,7 @@ final class OutputProjectionConvergenceTests: XCTestCase {
         XCTAssertEqual(before, after)
     }
 
-    func testSwitchingToMediaDoesNotRouteFollowProgramThroughZeroBeforePlaybackStarts() throws {
+    func testSwitchingToMediaStartsMutedBeforeRuntimeFadeIn() throws {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.masterVolume = 1
         viewModel.mediaVolume = 1
@@ -52,7 +52,7 @@ final class OutputProjectionConvergenceTests: XCTestCase {
 
         XCTAssertEqual(viewModel.currentProgramItem, item)
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
-        XCTAssertFalse(observedVolumes.contains(0), "Media route should not be muted during media startup.")
+        XCTAssertTrue(observedVolumes.contains(0), "Media startup should mute before the runtime fade-in.")
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .programChanged)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, viewModel.liveAudioFadeDuration)
     }

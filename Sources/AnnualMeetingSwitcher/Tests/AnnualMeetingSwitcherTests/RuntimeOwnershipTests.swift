@@ -20,12 +20,23 @@ final class RuntimeOwnershipTests: XCTestCase {
         }
     }
 
-    func testOnlyAudioIsDeclaredRuntimeAuthoritative() throws {
+    func testDocsStateAudioAndMediaAreAuthoritative() throws {
         let document = try runtimeOwnershipDocument()
 
-        XCTAssertTrue(document.localizedStandardContains("Current authoritative runtime domain: Audio only"))
-        XCTAssertTrue(document.localizedStandardContains("Program, Media, BGM, Panic, PPT, Projection, and Automation are mirror-only"))
+        XCTAssertTrue(document.localizedStandardContains("Current authoritative runtime domains"))
+        XCTAssertTrue(document.localizedStandardContains("Audio"))
+        XCTAssertTrue(document.localizedStandardContains("Media playback"))
+        XCTAssertTrue(document.localizedStandardContains("| Media playback | Runtime owner |"))
         XCTAssertFalse(document.localizedStandardContains("Runtime authoritative: no"))
+    }
+
+    func testDocsStateBGMProjectionPPTRemainMirrorOnly() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Program queue, BGM, Panic, PPT, Projection, and Automation are mirror-only"))
+        XCTAssertTrue(document.localizedStandardContains("| BGM | ViewModel owner |"))
+        XCTAssertTrue(document.localizedStandardContains("| PPT mode | ViewModel owner |"))
+        XCTAssertTrue(document.localizedStandardContains("| Projection | ViewModel owner |"))
     }
 
     func testDocumentDoesNotClaimRuntimeAuthorityBeforeEffectsAreFullyWired() throws {
@@ -33,19 +44,19 @@ final class RuntimeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(document.localizedStandardContains("A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed"))
         XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
-        XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio ownership tests pass"))
-        XCTAssertTrue(document.localizedStandardContains("production effective audio output remains runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio and Media ownership tests pass"))
+        XCTAssertTrue(document.localizedStandardContains("production effective audio output and media playback output remain runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
-        XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not Media/BGM/Panic mirror state"))
+        XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
-        XCTAssertTrue(document.localizedStandardContains("No Media/BGM/Projection/PPT migration until Audio ownership hardening tests pass"))
+        XCTAssertTrue(document.localizedStandardContains("BGM/Projection/PPT migration is blocked until its ports are wired and an ownership PR is approved"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {
         let document = try runtimeOwnershipDocument()
 
         [
-            "`media` | not migrated",
+            "`media` | wired",
             "`bgm` | not migrated",
             "`projection` | not migrated",
             "`ppt` | recording only",
@@ -57,15 +68,16 @@ final class RuntimeOwnershipTests: XCTestCase {
             XCTAssertTrue(document.contains(expected), "Missing effect wiring status: \(expected)")
         }
 
-        XCTAssertTrue(document.localizedStandardContains("Connected production ports: `audioRouting`, `imageAssets`, and `persistence`"))
+        XCTAssertTrue(document.localizedStandardContains("Connected production ports: `media`, `audioRouting`, `imageAssets`, and `persistence`"))
         XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
     func testDocsStateFullRuntimeIsTestOnlyUntilMigration() throws {
         let document = try runtimeOwnershipDocument()
 
-        XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` is test-only until a domain migration PR explicitly promotes it"))
-        XCTAssertTrue(document.localizedStandardContains("Media/BGM/Projection/PPT migration is blocked until its ports are wired and ownership PR is approved"))
+        XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
+        XCTAssertTrue(document.localizedStandardContains("production media ownership is expressed by `.mediaOwned`"))
+        XCTAssertTrue(document.localizedStandardContains("BGM/Projection/PPT migration is blocked until its ports are wired and an ownership PR is approved"))
     }
 
     func testDocsRequireExplicitBridgeModeInTests() throws {

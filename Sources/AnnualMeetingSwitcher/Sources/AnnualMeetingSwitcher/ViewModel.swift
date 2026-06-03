@@ -77,6 +77,39 @@ private final class ClosureAudioRoutingPort: AudioRoutingPort {
     }
 }
 
+private final class ClosureMediaPlaybackPort: MediaPlaybackPort {
+    var loadHandler: ((URL, Int) -> Void)?
+    var playHandler: ((Int) -> Void)?
+    var pauseHandler: ((Int) -> Void)?
+    var restartHandler: ((Int) -> Void)?
+    var stopHandler: ((Int) -> Void)?
+    var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
+
+    func load(url: URL, generation: Int) {
+        loadHandler?(url, generation)
+    }
+
+    func play(generation: Int) {
+        playHandler?(generation)
+    }
+
+    func pause(generation: Int) {
+        pauseHandler?(generation)
+    }
+
+    func restart(generation: Int) {
+        restartHandler?(generation)
+    }
+
+    func stop(generation: Int) {
+        stopHandler?(generation)
+    }
+
+    func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
+        setVolumeHandler?(volume, fade, generation)
+    }
+}
+
 private final class ClosureImageAssetPort: ImageAssetPort {
     var loadBackgroundImageHandler: ((URL?) -> Void)?
     var loadCornerLogoImageHandler: ((URL?) -> Void)?
@@ -520,6 +553,7 @@ final class SwitcherViewModel {
         userDefaults: UserDefaults = .standard,
         runtime: LiveRuntimeStore? = nil
     ) {
+        let mediaPlaybackPort = ClosureMediaPlaybackPort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -527,12 +561,31 @@ final class SwitcherViewModel {
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(
                 recordsOnly: false,
+                media: mediaPlaybackPort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
             ),
-            environment: .productionAudioOwned()
+            environment: .productionMediaOwned()
         )
+        mediaPlaybackPort.loadHandler = { [weak self] url, _ in
+            self?.avCoordinator.load(url: url)
+        }
+        mediaPlaybackPort.playHandler = { [weak self] _ in
+            self?.avCoordinator.play(reloadIfNeeded: false)
+        }
+        mediaPlaybackPort.pauseHandler = { [weak self] _ in
+            self?.avCoordinator.pause()
+        }
+        mediaPlaybackPort.restartHandler = { [weak self] _ in
+            self?.avCoordinator.restartFromBeginning()
+        }
+        mediaPlaybackPort.stopHandler = { [weak self] _ in
+            self?.avCoordinator.stop()
+        }
+        mediaPlaybackPort.setVolumeHandler = { [weak self] volume, fade, _ in
+            self?.fadeMediaVolume(to: volume, duration: fade)
+        }
         audioRoutingPort.applyHandler = { [weak self] reason, state in
             self?.applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: state)
         }
@@ -1387,31 +1440,14 @@ final class SwitcherViewModel {
     func switchToProgram(_ item: ProgramItem) {
         guard programSourceIsAvailable(item) else { return }
         guard item.sourceKind.isActivatableProgram else { return }
-        dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
 
         switch item.sourceKind {
         case .agendaMarker, .unsupported:
             return
         case .media:
-            guard let url = item.sourceURL else { return }
             stopCurrentDeckPresentationIfNeeded(before: item)
-            let isReplacingLoadedMedia = avCoordinator.hasLoadedMedia
-            let isStartingFreshMediaProgram = currentProgramItem == nil && !isReplacingLoadedMedia
-            let isReplacingNonMediaProgram = currentProgramItem != nil && currentProgramItem?.sourceKind != .media
-            let needsMutedClearedProgramStartup = needsMutedMediaStartupAfterClearedProgram
+            dispatchRuntimeProgramSelection(for: item)
             currentHTMLURL = nil              // 清空 HTML 层
-            avCoordinator.load(url: url)
-            if liveAudioFadeDuration > 0
-                && ((isStartingFreshMediaProgram && isBGMPlaying)
-                    || isReplacingLoadedMedia || isReplacingNonMediaProgram || needsMutedClearedProgramStartup) {
-                // 避免新媒体在 currentProgramItem 更新前继承上一条媒体音量；programChanged 会淡入到目标值。
-                avCoordinator.volume = 0
-            }
-            if isPanicMode {
-                avCoordinator.pause()
-            } else {
-                avCoordinator.play()
-            }
             needsMutedMediaStartupAfterClearedProgram = false
             currentProgramItem = item
         case .keynote:
@@ -1421,9 +1457,9 @@ final class SwitcherViewModel {
                 return
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
+            dispatchRuntimeProgramSelection(for: item)
             currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
-            avCoordinator.stop()              // 清空旧视频，避免副屏/监视器残留上一条节目
             keynotePresentationHandler(url)
         case .pptx:
             guard let url = item.sourceURL else { return }
@@ -1432,22 +1468,30 @@ final class SwitcherViewModel {
                 return
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
+            dispatchRuntimeProgramSelection(for: item)
             currentProgramItem = item
             currentHTMLURL = nil              // 清空 HTML 层
-            avCoordinator.stop()              // 清空旧视频，避免副屏/监视器残留上一条节目
             pptxOpenHandler(url)
         case .html:
             guard let url = item.sourceURL else { return }
             stopCurrentDeckPresentationIfNeeded(before: item)
+            dispatchRuntimeProgramSelection(for: item)
             currentProgramItem = item
-            avCoordinator.stop()              // Bug3修复：stop清空currentURL，监视器不再显示视频
             openHTMLInOutputWindow(url: url)
         case .activeDeck:
             stopCurrentDeckPresentationIfNeeded(before: item)
+            dispatchRuntimeProgramSelection(for: item)
             currentProgramItem = item
             currentHTMLURL = nil
-            avCoordinator.stop()
             activeDeckPresentationHandler()
+        }
+    }
+
+    private func dispatchRuntimeProgramSelection(for item: ProgramItem) {
+        if programItems.contains(where: { $0.id == item.id }) {
+            dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
+        } else {
+            dispatchRuntimeFacadeAction(.operatorSelectedDetachedProgram(item))
         }
     }
 
@@ -1677,7 +1721,6 @@ final class SwitcherViewModel {
             if panicPlaybackSnapshot?.currentProgramID == currentProgramItem?.id {
                 panicPlaybackSnapshot?.wasMediaPlaying = false
             }
-            avCoordinator.pause()
             return
         }
 
@@ -1881,25 +1924,17 @@ final class SwitcherViewModel {
         }
 
         guard !isPanicMode else {
-            if avCoordinator.isPlaying {
-                dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
+            if runtime.state.media.isPlaying || avCoordinator.isPlaying {
+                dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
                 if panicPlaybackSnapshot?.currentProgramID == item.id {
                     panicPlaybackSnapshot?.wasMediaPlaying = false
                 }
-                avCoordinator.pause()
-                applyCurrentRuntimeAudioRouting(reason: .mediaPlaybackChanged)
             }
             return
         }
 
         // 普通视频
         dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
-        if avCoordinator.isPlaying {
-            avCoordinator.pause()
-        } else {
-            avCoordinator.play()
-        }
-        applyCurrentRuntimeAudioRouting(reason: .mediaPlaybackChanged)
     }
 
     private func stopDeckPresentation() {
@@ -1926,7 +1961,7 @@ final class SwitcherViewModel {
 
     func seekProgramItemToStart(_ item: ProgramItem) {
         if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
-            programSeekToStartHandler()
+            dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
         }
     }
 
@@ -1934,17 +1969,12 @@ final class SwitcherViewModel {
         guard let item = currentProgramItem,
               programItemSupportsSeeking(item) else { return }
         dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
-        if isPanicMode {
-            programSeekToStartHandler()
-        } else {
-            programRestartFromBeginningHandler {}
-        }
-        applyCurrentRuntimeAudioRouting(reason: .mediaPlaybackChanged)
         recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }
 
     func seekProgramItemToEnd(_ item: ProgramItem) {
         if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
+            // Seek-to-end is not migrated yet because MediaPlaybackPort intentionally has no seek endpoint in this PR.
             programSeekToEndHandler()
         }
     }
@@ -1990,9 +2020,11 @@ final class SwitcherViewModel {
             if currentProgramItem?.supportsPresentationControl == true {
                 deckStopHandler()
             }
+            if currentProgramItem?.sourceKind == .media {
+                dispatchRuntimeFacadeAction(.operatorStoppedCurrentMedia)
+            }
             currentProgramItem = nil
             currentHTMLURL = nil   // Bug2修复：删除HTML条目时清空大屏
-            avCoordinator.stop()
         }
         saveData()
     }

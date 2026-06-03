@@ -34,10 +34,14 @@ extension SwitcherViewModel {
     // MARK: - Private
 
     private func activatePanic() {
-        dispatchRuntimeFacadeAction(.operatorSetPanic(true))
         panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
         isPanicMode = true
+        if shouldPauseMediaForActivePanic(panicPlaybackSnapshot) {
+            dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
+        } else {
+            dispatchRuntimeFacadeAction(.operatorSetPanic(true))
+        }
         applyCurrentRuntimeAudioRouting(reason: .panicChanged)
         pausePlaybackForActivePanic(generation: panicAudioTransitionGeneration)
     }
@@ -50,8 +54,7 @@ extension SwitcherViewModel {
         panicPlaybackSnapshot = nil
         isPanicMode = false
         if shouldResumeMediaAfterPanic(snapshot) {
-            avCoordinator.volume = 0
-            avCoordinator.play()
+            dispatchRuntimeFacadeAction(.operatorResumedMediaAfterPanic(generation: nil))
         }
         if shouldResumeBGMAfterPanic(snapshot) {
             invalidateBGMTransitionGeneration()
@@ -91,22 +94,19 @@ extension SwitcherViewModel {
 
         cleanupBag.panicAudioPauseTask?.cancel()
         guard delay > 0 else {
-            pausePlaybackAfterPanicFade(snapshot, generation: generation)
+            pauseBGMPlaybackAfterPanicFade(snapshot, generation: generation)
             return
         }
 
         cleanupBag.panicAudioPauseTask = Task { @MainActor [weak self] in
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             guard let self, self.isPanicMode, self.panicAudioTransitionGeneration == generation else { return }
-            self.pausePlaybackAfterPanicFade(snapshot, generation: generation)
+            self.pauseBGMPlaybackAfterPanicFade(snapshot, generation: generation)
         }
     }
 
-    private func pausePlaybackAfterPanicFade(_ snapshot: PanicPlaybackSnapshot?, generation: Int) {
+    private func pauseBGMPlaybackAfterPanicFade(_ snapshot: PanicPlaybackSnapshot?, generation: Int) {
         guard isPanicMode, panicAudioTransitionGeneration == generation else { return }
-        if shouldPauseMediaForActivePanic(snapshot) {
-            avCoordinator.pause()
-        }
         if shouldPauseBGMForActivePanic(snapshot) {
             invalidateBGMTransitionGeneration()
             bgmAudioPlayer?.pause()

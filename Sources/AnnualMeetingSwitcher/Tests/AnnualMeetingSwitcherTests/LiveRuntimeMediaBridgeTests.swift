@@ -3,6 +3,61 @@ import XCTest
 
 @MainActor
 final class LiveRuntimeMediaBridgeTests: XCTestCase {
+    func testAVPlayerIsPlayingCallbackUpdatesRuntimeMediaState() {
+        var state = LiveRuntimeState()
+        state.media.generation = 7
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .mediaPlaybackChanged(isPlaying: true, generation: 7),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+
+        XCTAssertTrue(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.state.audio.routingContext.isMediaPlaying)
+    }
+
+    func testAVPlayerPlaybackEndedDispatchesRuntimeMediaReachedEnd() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let item = mediaProgram()
+        viewModel.programItems = [item]
+        viewModel.currentProgramItem = item
+
+        viewModel.handlePlaybackEnded()
+
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "mediaReachedEnd" })
+    }
+
+    func testMediaReachedEndAppliesRuntimeAudioRouting() {
+        var state = LiveRuntimeState()
+        state.media.generation = 3
+        state.media.isPlaying = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .mediaReachedEnd(generation: 3),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.state.media.didPlayToEnd)
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testStaleMediaCallbackIsIgnoredByGeneration() {
+        var state = LiveRuntimeState()
+        state.media.generation = 3
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .mediaPlaybackChanged(isPlaying: true, generation: 2),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+        )
+
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
     func testMediaPlaybackActionProducesPlaybackAndRoutingEffects() {
         var state = LiveRuntimeState()
         state.media.loadedURL = URL(fileURLWithPath: "/tmp/video.mp4")
@@ -80,7 +135,8 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testViewModelCurrentProgramItemDidSetRoutesProgramRoutingThroughRuntime() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -139,6 +195,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.programItems = [item]
         viewModel.currentProgramItem = item
+        viewModel.avCoordinator.load(url: item.sourceURL!)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         viewModel.avCoordinator.isPlaying = true
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
@@ -149,14 +206,14 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorToggledMediaPlayback" })
-        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "mediaPlaybackChanged" })
-        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
 
-    func testRestartCurrentMediaDoesNotEmitRuntimeMediaEffectsInProductionAudioOwned() {
+    func testRestartCurrentMediaEmitsRuntimeMediaEffectsInMediaOwnedMode() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
+            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -178,7 +235,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let restartEffects = Array(runtime.recordedEffects.dropFirst(recordedEffectCount))
 
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
-        XCTAssertFalse(restartEffects.contains { effect in
+        XCTAssertTrue(restartEffects.contains { effect in
             if case .restartMedia = effect { return true }
             return false
         })
@@ -186,7 +243,8 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             if case .playMedia = effect { return true }
             return false
         })
-        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
+        XCTAssertEqual(audioRouting.reasons, [.mediaPlaybackChanged])
+        XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
 
     func testViewModelProgramSwitchDispatchesRuntimeProgramAction() {

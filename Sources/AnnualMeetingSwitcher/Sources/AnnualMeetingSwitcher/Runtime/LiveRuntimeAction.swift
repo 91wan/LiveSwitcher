@@ -8,8 +8,12 @@ enum PPTStopReason: String, Equatable {
 
 enum LiveRuntimeAction: Equatable {
     case operatorSelectedProgram(UUID)
+    case operatorSelectedDetachedProgram(ProgramItem)
     case operatorToggledMediaPlayback
     case operatorRestartedCurrentMedia
+    case operatorStoppedCurrentMedia
+    case operatorPausedMediaForPanic(generation: Int?)
+    case operatorResumedMediaAfterPanic(generation: Int?)
     case operatorSelectedAudioStrategy(AudioStrategy)
     case operatorChangedMasterVolume(Double)
     case operatorChangedMediaVolume(Double)
@@ -71,8 +75,12 @@ extension LiveRuntimeAction {
     var redactedName: String {
         switch self {
         case .operatorSelectedProgram: return "operatorSelectedProgram"
+        case .operatorSelectedDetachedProgram: return "operatorSelectedProgram"
         case .operatorToggledMediaPlayback: return "operatorToggledMediaPlayback"
         case .operatorRestartedCurrentMedia: return "operatorRestartedCurrentMedia"
+        case .operatorStoppedCurrentMedia: return "operatorStoppedCurrentMedia"
+        case .operatorPausedMediaForPanic: return "operatorPausedMediaForPanic"
+        case .operatorResumedMediaAfterPanic: return "operatorResumedMediaAfterPanic"
         case .operatorSelectedAudioStrategy: return "operatorSelectedAudioStrategy"
         case .operatorChangedMasterVolume: return "operatorChangedMasterVolume"
         case .operatorChangedMediaVolume: return "operatorChangedMediaVolume"

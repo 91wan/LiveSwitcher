@@ -23,7 +23,7 @@ final class LiveMediaControlTests: XCTestCase {
         return url
     }
 
-    func testRestartCurrentMediaSeeksToBeginningAndPlays() throws {
+    func testRestartCurrentMediaRoutesThroughRuntimeAndPlays() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 1.0
         let videoURL = try makeTempURL(ext: "mp4")
@@ -41,10 +41,12 @@ final class LiveMediaControlTests: XCTestCase {
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
         viewModel.restartCurrentMediaFromBeginning()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        XCTAssertTrue(didRestartFromBeginning)
+        XCTAssertFalse(didRestartFromBeginning)
         XCTAssertFalse(didUseStandaloneSeek)
-        XCTAssertFalse(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.avCoordinator.isPlaying)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.mediaFadeDuration, 1.0)
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.0)
