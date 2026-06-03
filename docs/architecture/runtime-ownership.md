@@ -5,8 +5,9 @@ This document is the current ownership map for the LiveSwitcher runtime facade.
 Current authoritative runtime domains:
 - Audio
 - Media playback
+- BGM playback and progress timer
 
-Program queue, BGM, Panic, PPT, Projection, and Automation are not runtime-owned.
+Program queue, Panic, PPT, Projection, and Automation are not runtime-owned.
 Their runtime state is either a ViewModel-owned snapshot or an explicit callback
 from an already-executed facade path. Operator actions for unowned domains must
 not mutate real domain state or infer playback/output state that the ViewModel
@@ -14,8 +15,8 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.mediaOwned`.
-`.fullRuntime` remains test-only; production media ownership is expressed by `.mediaOwned`.
+Production bridge mode is `.bgmOwned`.
+`.fullRuntime` remains test-only; production BGM ownership is expressed by `.bgmOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -33,19 +34,20 @@ Each stage includes all domains migrated in earlier stages:
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
-means Audio + Media + BGM + Projection. BGM migration must not start until the
-cumulative bridge ownership and effect-filtering tests pass.
+means Audio + Media + BGM + Projection.
 
-In this mode the runtime reducer owns `state.audio` and `state.media`, and may execute the wired
-ports needed for current production behavior. Connected production ports: `media`, `audioRouting`, `imageAssets`, and `persistence`. The audio routing port is wired.
+In this mode the runtime reducer owns `state.audio`, `state.media`, and
+`state.bgm`, and may execute the wired ports needed for current production
+behavior. Connected production ports: `media`, `bgm`, `bgmTimer`,
+`audioRouting`, `imageAssets`, and `persistence`. The audio routing port is wired.
 Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
-from mirror-only domains can be used without making BGM or Panic runtime-owned.
+from mirror-only domains can be used without making Panic runtime-owned.
 
 The reducer may record operator intent in the action log, but operator actions
-for mirror-only domains must not change BGM, Projection, PPT, Panic,
-Program, or Automation state. Mirror state changes for those domains must come
-from facade synchronization or explicit callback actions such as media/BGM
-playback callbacks and PPT event-tap callbacks.
+for mirror-only domains must not change Projection, PPT, Panic, Program, or
+Automation state. Mirror state changes for those domains must come from facade
+synchronization or explicit callback actions such as media playback callbacks
+and PPT event-tap callbacks.
 
 Support storage uses runtime state, but production ingress remains
 `ViewModel.recordSupportEvent` until a dedicated Support migration PR. In every
@@ -57,9 +59,10 @@ Effective audio output getters are pure Runtime state reads.
 
 A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed.
 Operator actions for mirror-only domains must not mutate real runtime domain state.
-No next domain may be migrated until the Audio and Media ownership tests pass and
-production effective audio output and media playback output remain runtime-owned.
-BGM/Projection/PPT migration is blocked until its ports are wired and an ownership PR is approved.
+No next domain may be migrated until the Audio, Media, and BGM ownership tests
+pass and production effective audio output plus media/BGM playback output remain
+runtime-owned. Projection/PPT migration remains blocked until its ports are
+wired and an ownership PR is approved.
 
 ## Domain Ownership
 
@@ -67,9 +70,9 @@ BGM/Projection/PPT migration is blocked until its ports are wired and an ownersh
 | --- | --- | --- | --- | --- |
 | Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation. Runtime may mirror current selection only to drive media playback. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
-| BGM | ViewModel owner | Mirror-only snapshot/callback state plus persisted play-mode preference | not migrated | Concrete playback, current track, progress, and timer ownership remain in ViewModel. |
+| BGM | Runtime owner | Authoritative current track, playback state, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
-| Panic | ViewModel owner | Mirror-only snapshot plus runtime media pause/resume actions | not migrated | Panic orchestration and BGM behavior remain ViewModel-owned; media pause/resume goes through Runtime. |
+| Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
 | PPT mode | ViewModel owner | Mirror-only callback state and action log | recording only | Operator toggles do not mutate PPT state; event-tap started/failed/stopped callbacks may update the mirror. |
 | Projection | ViewModel owner | Mirror-only snapshot/callback state | not migrated | Output windows and display safety remain ViewModel-owned. |
 | Automation notice | ViewModel owner | Mirror-only notice state | not migrated | AppleScript execution and notice UI ownership remain ViewModel-owned. |
@@ -80,15 +83,15 @@ BGM/Projection/PPT migration is blocked until its ports are wired and an ownersh
 | Port | Production state | Ownership meaning |
 | --- | --- | --- |
 | `media` | wired | Runtime media playback effects execute through the ViewModel bridge to `AVPlayerCoordinator`. |
+| `bgm` | wired | Runtime BGM playback effects execute through the ViewModel bridge to `AVAudioPlayer` with an `AVPlayer` fallback. |
+| `bgmTimer` | wired | Runtime BGM timer effects start and stop the ViewModel-owned timer implementation by generation. |
 | `audioRouting` | wired | Runtime audio routing decisions execute through the ViewModel bridge using runtime state. |
 | `imageAssets` | wired | Runtime can request background and corner-logo image reloads. |
 | `persistence` | wired | Runtime can persist selected preference updates. |
-| `bgm` | not migrated | BGM playback effects are not executable in production. |
 | `projection` | not migrated | Projection effects are not executable in production. |
 | `ppt` | recording only | Runtime does not start or stop the PPT event tap in production. |
 | `automation` | not migrated | AppleScript execution is still ViewModel-owned. |
 | `automationNotice` | recording only | Runtime records notice state while ViewModel drives the UI. |
-| `bgmTimer` | not migrated | BGM timer effects are not executable in production. |
 | `support` | runtime storage, ViewModel ingress | Support events are stored in runtime state, but production writes enter through `ViewModel.recordSupportEvent`. |
 
 ## Media Playback Boundary
@@ -111,10 +114,25 @@ Media-owned program selection must not mutate PPT mirror state and must not own
 non-media activation. PPT mirror state changes only through
 `pptEventTapStarted`, `pptEventTapFailed`, and `pptEventTapStopped`.
 
+## BGM Playback Boundary
+
+BGM playback is runtime-owned. ViewModel owns BGM library import, removal,
+category metadata, and ordering, but current track, play/stop/next/previous,
+end/failure callbacks, progress, duration, generation, and timer start/stop are
+owned by `LiveRuntimeState.bgm`.
+
+Production uses `BGMPlaybackPort` and `BGMTimerPort` effects for concrete
+playback and timer operations. ViewModel bridges those effects to
+`AVAudioPlayer`, the `AVPlayer` fallback, and the existing timer implementation.
+Runtime BGM effects are generation-guarded so stale play, stop, timer, progress,
+finish, and failure callbacks cannot mutate the current track. Panic selection
+can cue a BGM item without starting audible playback; Panic orchestration itself
+remains ViewModel-owned.
+
 ## Next Migration Gate
 
-BGM, Projection, PPT, Program queue, Automation, and Support ingress migration
-remain blocked. The next migration may proceed only after Audio and Media
+Projection, PPT, Program queue, Automation, and Support ingress migration remain
+blocked. The next migration may proceed only after Audio, Media, and BGM
 ownership tests pass, cumulative bridge tests pass, bridge mode explicitness
 tests pass, no implicit full runtime remains, the target domain port is
 connected in a dedicated PR, and ViewModel no longer owns that target domain's

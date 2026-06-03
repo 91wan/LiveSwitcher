@@ -89,7 +89,7 @@ final class BGMProgressStoreTests: XCTestCase {
         let removeBody = try XCTUnwrap(source.functionBody(named: "removeBGMItem"))
 
         XCTAssertFalse(removeBody.contains("bgmAudioPlayer?.stop()"))
-        XCTAssertTrue(removeBody.contains("releaseBGMPlayerAfterFade"))
+        XCTAssertTrue(removeBody.contains(".operatorStoppedBGM"))
     }
 
     func testFallbackBGMProgressTimerSamplesFallbackPlayerTime() throws {
@@ -97,7 +97,8 @@ final class BGMProgressStoreTests: XCTestCase {
         let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
 
         XCTAssertTrue(updateBody.contains("bgmFallbackPlayer.currentTime()"))
-        XCTAssertTrue(updateBody.contains("bgmProgressStore.update"))
+        XCTAssertTrue(updateBody.contains(".bgmProgressUpdated"))
+        XCTAssertTrue(updateBody.contains("syncBGMFacadeFromRuntime"))
     }
 
     func testBGMSeekUsesFallbackDurationPolicyForAVPlayerFallbackItems() throws {
@@ -114,11 +115,10 @@ final class BGMProgressStoreTests: XCTestCase {
 
     func testBGMProgressTimerIgnoresStaleTransitionGeneration() throws {
         let source = try sourceText("ViewModel.swift")
-        let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer"))
+        let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer(generation: Int)"))
 
-        XCTAssertTrue(startBody.contains("let generation = bgmTransitionGeneration"))
         XCTAssertTrue(startBody.contains("self.bgmTransitionGeneration == generation"))
-        XCTAssertTrue(startBody.contains("updateBGMProgress"))
+        XCTAssertTrue(startBody.contains("updateBGMProgress(generation: generation)"))
         XCTAssertFalse(startBody.contains("Task { @MainActor"))
     }
 
@@ -142,8 +142,9 @@ final class BGMProgressStoreTests: XCTestCase {
         let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
 
         XCTAssertTrue(source.contains("fadeBGMPlayerVolume"))
-        XCTAssertTrue(toggleBody.contains("applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)"))
-        XCTAssertTrue(toggleBody.contains("BGMFadeCompletionPolicy.pauseDelay"))
+        XCTAssertTrue(toggleBody.contains("dispatchRuntimeFacadeAction(.operatorStoppedBGM)"))
+        XCTAssertTrue(source.contains("applyAudioRoutingForRuntimeChange"))
+        XCTAssertTrue(source.contains("BGMFadeCompletionPolicy.pauseDelay"))
         XCTAssertFalse(toggleBody.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(toggleBody.contains("bgmAudioPlayer?.setVolume(0, fadeDuration: fadeDur)"))
         XCTAssertFalse(toggleBody.contains("capturedPlayer?.volume = 0"))

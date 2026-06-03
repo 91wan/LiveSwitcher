@@ -340,18 +340,25 @@ final class LiveRuntimeEffectRunner {
             media?.setVolume(volume, fade: fade, generation: generation)
 
         case .prepareBGM(let item, let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.prepare(item: item, generation: generation)
         case .playBGM(let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.play(generation: generation)
         case .pauseBGM(let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.pause(generation: generation)
         case .stopBGM(let fade, let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.stop(fade: fade, generation: generation)
         case .setBGMVolume(let volume, let fade, let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.setVolume(volume, fade: fade, generation: generation)
         case .startBGMTimer(let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgmTimer?.start(generation: generation)
         case .stopBGMTimer(let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgmTimer?.stop(generation: generation)
 
         case .startProjection:
@@ -408,5 +415,9 @@ final class LiveRuntimeEffectRunner {
 
     private func isCurrentMediaGeneration(_ generation: Int, currentState: () -> LiveRuntimeState) -> Bool {
         currentState().media.generation == generation
+    }
+
+    private func isCurrentBGMGeneration(_ generation: Int, currentState: () -> LiveRuntimeState) -> Bool {
+        currentState().bgm.generation == generation
     }
 }

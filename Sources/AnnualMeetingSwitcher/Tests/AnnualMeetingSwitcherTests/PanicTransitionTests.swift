@@ -276,8 +276,8 @@ final class PanicTransitionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: bgmURL) }
         let item = BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp)
 
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = true
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
         viewModel.togglePanicMode()
 
         viewModel.bgmDidFinish()
@@ -372,8 +372,7 @@ final class PanicTransitionTests: XCTestCase {
         let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
         viewModel.bgmItems = [first, second]
-        viewModel.currentBGMItem = first
-        viewModel.isBGMPlaying = true
+        viewModel.toggleBGM(first)
 
         viewModel.togglePanicMode()
         viewModel.bgmDidFinish()

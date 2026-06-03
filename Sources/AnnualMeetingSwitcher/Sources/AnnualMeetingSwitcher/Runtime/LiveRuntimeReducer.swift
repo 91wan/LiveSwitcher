@@ -206,16 +206,25 @@ enum LiveRuntimeReducer {
             guard let item = state.bgm.items.first(where: { $0.id == id }) else { break }
             state.bgm.generation += 1
             state.bgm.currentID = id
-            state.bgm.isPlaying = true
             state.bgm.progress = 0
             state.bgm.currentTime = 0
             state.bgm.duration = nil
-            effects += [
-                .prepareBGM(item, generation: state.bgm.generation),
-                .playBGM(generation: state.bgm.generation),
-                .startBGMTimer(generation: state.bgm.generation),
-                .applyAudioRouting(reason: .bgmPlaybackChanged)
-            ]
+            if state.panic.isActive {
+                state.bgm.isPlaying = false
+                effects += [
+                    .stopBGM(fade: 0, generation: state.bgm.generation),
+                    .stopBGMTimer(generation: state.bgm.generation),
+                    .applyAudioRouting(reason: .bgmPlaybackChanged)
+                ]
+            } else {
+                state.bgm.isPlaying = true
+                effects += [
+                    .prepareBGM(item, generation: state.bgm.generation),
+                    .playBGM(generation: state.bgm.generation),
+                    .startBGMTimer(generation: state.bgm.generation),
+                    .applyAudioRouting(reason: .bgmPlaybackChanged)
+                ]
+            }
             syncAudioRoutingContextFromMirrorState(&state)
             recalculateAudio(&state)
 
@@ -252,6 +261,30 @@ enum LiveRuntimeReducer {
                 effects: &effects,
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
+
+        case .operatorPausedBGMForPanic(let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            let targetGeneration = generation ?? state.bgm.generation
+            guard targetGeneration == state.bgm.generation else { break }
+            guard state.bgm.isPlaying else { break }
+            state.bgm.isPlaying = false
+            syncAudioRoutingContextFromMirrorState(&state)
+            effects.append(.pauseBGM(generation: targetGeneration))
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .panicChanged))
+
+        case .operatorResumedBGMAfterPanic(let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            let targetGeneration = generation ?? state.bgm.generation
+            guard targetGeneration == state.bgm.generation else { break }
+            state.bgm.isPlaying = true
+            syncAudioRoutingContextFromMirrorState(&state)
+            effects += [
+                .setBGMVolume(0, fade: 0, generation: targetGeneration),
+                .playBGM(generation: targetGeneration)
+            ]
+            recalculateAudio(&state)
+            effects.append(.applyAudioRouting(reason: .panicChanged))
 
         case .operatorToggledPPTMode:
             break
@@ -373,12 +406,16 @@ enum LiveRuntimeReducer {
 
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
+            state.bgm.generation += 1
             state.bgm.isPlaying = false
             state.audio.routingContext.isBGMPlaying = false
             if canWriteReducerSupport(in: bridgeMode) {
                 state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
             }
-            effects.append(.stopBGMTimer(generation: generation))
+            effects += [
+                .stopBGM(fade: 0, generation: state.bgm.generation),
+                .stopBGMTimer(generation: state.bgm.generation)
+            ]
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
 
@@ -574,12 +611,13 @@ enum LiveRuntimeReducer {
         effects: inout [LiveRuntimeEffect],
         speakerModeDuckedRatio: Float
     ) {
-        guard let currentID = state.bgm.currentID,
-              let index = state.bgm.items.firstIndex(where: { $0.id == currentID }),
-              !state.bgm.items.isEmpty
+        guard let categoryItems = currentCategoryBGMItems(in: state),
+              let currentID = state.bgm.currentID,
+              let index = categoryItems.firstIndex(where: { $0.id == currentID }),
+              !categoryItems.isEmpty
         else { return }
-        let nextIndex = (index + offset + state.bgm.items.count) % state.bgm.items.count
-        let nextItem = state.bgm.items[nextIndex]
+        let nextIndex = (index + offset + categoryItems.count) % categoryItems.count
+        let nextItem = categoryItems[nextIndex]
         state.bgm.generation += 1
         state.bgm.currentID = nextItem.id
         state.bgm.isPlaying = true
@@ -601,8 +639,18 @@ enum LiveRuntimeReducer {
         effects: inout [LiveRuntimeEffect],
         speakerModeDuckedRatio: Float
     ) {
-        guard let currentID = state.bgm.currentID,
-              let index = state.bgm.items.firstIndex(where: { $0.id == currentID })
+        guard !state.panic.isActive else {
+            stopFinishedBGM(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: speakerModeDuckedRatio
+            )
+            return
+        }
+
+        guard let categoryItems = currentCategoryBGMItems(in: state),
+              let currentID = state.bgm.currentID,
+              let index = categoryItems.firstIndex(where: { $0.id == currentID })
         else {
             stopFinishedBGM(
                 state: &state,
@@ -615,23 +663,23 @@ enum LiveRuntimeReducer {
         switch state.bgm.playMode {
         case .loopOne:
             restartBGM(
-                state.bgm.items[index],
+                categoryItems[index],
                 state: &state,
                 effects: &effects,
                 speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         case .loopAll:
-            let nextIndex = (index + 1) % state.bgm.items.count
+            let nextIndex = (index + 1) % categoryItems.count
             restartBGM(
-                state.bgm.items[nextIndex],
+                categoryItems[nextIndex],
                 state: &state,
                 effects: &effects,
                 speakerModeDuckedRatio: speakerModeDuckedRatio
             )
         case .sequential:
-            if index < state.bgm.items.count - 1 {
+            if index < categoryItems.count - 1 {
                 restartBGM(
-                    state.bgm.items[index + 1],
+                    categoryItems[index + 1],
                     state: &state,
                     effects: &effects,
                     speakerModeDuckedRatio: speakerModeDuckedRatio
@@ -644,6 +692,13 @@ enum LiveRuntimeReducer {
                 )
             }
         }
+    }
+
+    private static func currentCategoryBGMItems(in state: LiveRuntimeState) -> [BGMItem]? {
+        guard let currentID = state.bgm.currentID,
+              let currentItem = state.bgm.items.first(where: { $0.id == currentID })
+        else { return nil }
+        return state.bgm.items.filter { $0.category == currentItem.category }
     }
 
     private static func restartBGM(
@@ -675,7 +730,13 @@ enum LiveRuntimeReducer {
     ) {
         state.bgm.generation += 1
         state.bgm.isPlaying = false
-        effects.append(.stopBGMTimer(generation: state.bgm.generation))
+        state.bgm.progress = 0
+        state.bgm.currentTime = 0
+        state.bgm.duration = nil
+        effects += [
+            .stopBGM(fade: 0, generation: state.bgm.generation),
+            .stopBGMTimer(generation: state.bgm.generation)
+        ]
         syncAudioRoutingContextFromMirrorState(&state)
         recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))

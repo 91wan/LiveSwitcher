@@ -7,15 +7,16 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeStore().bridgeMode, .audioOwned)
     }
 
-    func testProductionViewModelRuntimeIsMediaOwned() {
+    func testProductionViewModelRuntimeIsBGMOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .mediaOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .bgmOwned)
     }
 
     func testFullRuntimeMustBeExplicitInTests() {
         XCTAssertEqual(LiveRuntimeEnvironment.fullRuntimeForTests().bridgeMode, .fullRuntime)
         XCTAssertEqual(LiveRuntimeEnvironment.productionAudioOwned().bridgeMode, .audioOwned)
+        XCTAssertEqual(LiveRuntimeEnvironment.productionBGMOwning().bridgeMode, .bgmOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.recordingOnlyForTests().bridgeMode, .recordingOnly)
     }
 
@@ -26,6 +27,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
                     && !line.contains("bridgeMode:")
                     && !line.contains(".productionAudioOwned(")
                     && !line.contains(".productionMediaOwned(")
+                    && !line.contains(".productionBGMOwning(")
                     && !line.contains(".fullRuntimeForTests(")
                     && !line.contains(".recordingOnlyForTests("))
         }

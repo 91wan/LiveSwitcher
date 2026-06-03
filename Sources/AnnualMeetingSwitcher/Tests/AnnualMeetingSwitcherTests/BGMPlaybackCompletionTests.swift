@@ -10,9 +10,8 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let item = BGMItem(title: "Solo", url: audioURL, category: .warmUp)
         let viewModel = makeViewModel()
         viewModel.bgmItems = [item]
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = true
         viewModel.bgmPlayMode = .loopAll
+        viewModel.toggleBGM(item)
 
         viewModel.bgmDidFinish()
 
@@ -79,7 +78,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertEqual(viewModel.bgmProgress, 0)
     }
 
-    func testPanicBGMStopAndRestoreInvalidateBGMTransitionGeneration() throws {
+    func testPanicBGMStopAndRestoreRouteThroughRuntime() throws {
         let (directory, audioURL) = try makeAudioFixture()
         defer { try? FileManager.default.removeItem(at: directory) }
         let item = BGMItem(title: "Panic BGM", url: audioURL, category: .warmUp)
@@ -87,19 +86,17 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 0
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
-        let generationBeforePanic = viewModel.bgmTransitionGenerationForTesting
 
         viewModel.togglePanicMode()
 
-        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforePanic)
         XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorPausedBGMForPanic" })
 
-        let generationBeforeRestore = viewModel.bgmTransitionGenerationForTesting
         viewModel.togglePanicMode()
 
-        XCTAssertGreaterThan(viewModel.bgmTransitionGenerationForTesting, generationBeforeRestore)
         XCTAssertTrue(viewModel.isBGMPlaying)
         XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorResumedBGMAfterPanic" })
     }
 
     func testSequentialFinishedFallbackTrackClearsFallbackItemBeforeReplay() throws {
@@ -357,7 +354,8 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         viewModel.toggleBGM(item)
 
         XCTAssertTrue(viewModel.isBGMPlaying)
-        XCTAssertLessThan(player.currentTime, 0.05)
+        let replayPlayer = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        XCTAssertLessThan(replayPlayer.currentTime, 0.05)
     }
 
     func testBGMPlayModePersistsAcrossViewModelInstances() {

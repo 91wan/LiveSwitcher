@@ -39,6 +39,7 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         )
         var state = LiveRuntimeState()
         state.media.generation = 7
+        state.bgm.generation = 3
         state.panic.isActive = true
 
         runner.run(
