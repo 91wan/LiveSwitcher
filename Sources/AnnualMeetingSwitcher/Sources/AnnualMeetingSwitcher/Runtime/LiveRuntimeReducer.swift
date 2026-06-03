@@ -63,6 +63,22 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
 
+        case .operatorSeekedCurrentMediaToStart:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
+            state.media.didPlayToEnd = false
+            state.media.currentTime = 0
+            effects.append(.seekMediaToStart(generation: state.media.generation))
+
+        case .operatorSeekedCurrentMediaToEnd:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
+            state.media.didPlayToEnd = false
+            if let duration = state.media.duration, duration.isFinite, duration > 0 {
+                state.media.currentTime = duration
+            }
+            effects.append(.seekMediaToEnd(generation: state.media.generation))
+
         case .operatorStoppedCurrentMedia:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             guard state.media.loadedURL != nil
@@ -461,14 +477,9 @@ enum LiveRuntimeReducer {
         now: Date,
         speakerModeDuckedRatio: Float
     ) {
-        let previousKind = state.program.effectiveCurrentItem?.sourceKind
         state.program.currentID = item.id
         state.program.currentDetachedItem = state.program.items.contains { $0.id == item.id } ? nil : item
         state.program.currentSwitchedAt = now
-
-        if previousKind?.supportsPresentationControl == true, !item.supportsPresentationControl {
-            state.ppt.isEventTapActive = false
-        }
 
         if item.sourceKind == .media, let url = item.sourceURL {
             state.media.generation += 1
@@ -489,12 +500,6 @@ enum LiveRuntimeReducer {
                 effects.append(.stopMedia(generation: state.media.generation))
             }
             state.media.loadedURL = nil
-        }
-
-        if item.supportsPresentationControl {
-            state.ppt.isRequested = true
-        } else if previousKind?.supportsPresentationControl == true {
-            state.ppt.isRequested = false
         }
 
         syncAudioRoutingContextFromMirrorState(&state)
@@ -861,6 +866,8 @@ enum LiveRuntimeReducer {
              .playMedia,
              .pauseMedia,
              .restartMedia,
+             .seekMediaToStart,
+             .seekMediaToEnd,
              .stopMedia,
              .setMediaVolume:
             return true

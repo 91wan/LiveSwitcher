@@ -11,6 +11,8 @@ enum LiveRuntimeAction: Equatable {
     case operatorSelectedDetachedProgram(ProgramItem)
     case operatorToggledMediaPlayback
     case operatorRestartedCurrentMedia
+    case operatorSeekedCurrentMediaToStart
+    case operatorSeekedCurrentMediaToEnd
     case operatorStoppedCurrentMedia
     case operatorPausedMediaForPanic(generation: Int?)
     case operatorResumedMediaAfterPanic(generation: Int?)
@@ -78,6 +80,8 @@ extension LiveRuntimeAction {
         case .operatorSelectedDetachedProgram: return "operatorSelectedProgram"
         case .operatorToggledMediaPlayback: return "operatorToggledMediaPlayback"
         case .operatorRestartedCurrentMedia: return "operatorRestartedCurrentMedia"
+        case .operatorSeekedCurrentMediaToStart: return "operatorSeekedCurrentMediaToStart"
+        case .operatorSeekedCurrentMediaToEnd: return "operatorSeekedCurrentMediaToEnd"
         case .operatorStoppedCurrentMedia: return "operatorStoppedCurrentMedia"
         case .operatorPausedMediaForPanic: return "operatorPausedMediaForPanic"
         case .operatorResumedMediaAfterPanic: return "operatorResumedMediaAfterPanic"

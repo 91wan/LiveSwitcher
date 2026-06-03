@@ -132,6 +132,14 @@ private final class MediaRuntimePanicPortSpy: MediaPlaybackPort {
         events.append("restart:\(generation)")
     }
 
+    func seekToStart(generation: Int) {
+        events.append("seekToStart:\(generation)")
+    }
+
+    func seekToEnd(generation: Int) {
+        events.append("seekToEnd:\(generation)")
+    }
+
     func stop(generation: Int) {
         events.append("stop:\(generation)")
     }

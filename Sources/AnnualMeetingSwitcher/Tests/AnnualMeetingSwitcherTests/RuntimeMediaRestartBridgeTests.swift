@@ -39,7 +39,7 @@ final class RuntimeMediaRestartBridgeTests: XCTestCase {
             .replacingOccurrences(of: "/ ", with: "/")
 
         XCTAssertTrue(document.localizedStandardContains("Media playback is runtime-owned"))
-        XCTAssertTrue(document.localizedStandardContains("load/play/pause/restart/stop effects execute through `MediaPlaybackPort`"))
+        XCTAssertTrue(document.localizedStandardContains("load/play/pause/restart/stop/seek effects execute through `MediaPlaybackPort`"))
     }
 
     private func mediaProgram() -> ProgramItem {
@@ -94,6 +94,14 @@ private final class RuntimeMediaRestartPortSpy: MediaPlaybackPort {
 
     func restart(generation: Int) {
         events.append("restart:\(generation)")
+    }
+
+    func seekToStart(generation: Int) {
+        events.append("seekToStart:\(generation)")
+    }
+
+    func seekToEnd(generation: Int) {
+        events.append("seekToEnd:\(generation)")
     }
 
     func stop(generation: Int) {

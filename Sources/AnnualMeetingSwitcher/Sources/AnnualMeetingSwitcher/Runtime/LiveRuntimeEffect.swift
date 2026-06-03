@@ -5,6 +5,8 @@ enum LiveRuntimeEffect: Equatable {
     case playMedia(generation: Int)
     case pauseMedia(generation: Int)
     case restartMedia(generation: Int)
+    case seekMediaToStart(generation: Int)
+    case seekMediaToEnd(generation: Int)
     case stopMedia(generation: Int)
     case setMediaVolume(Float, fade: TimeInterval, generation: Int)
 
@@ -63,6 +65,8 @@ protocol MediaPlaybackPort {
     func play(generation: Int)
     func pause(generation: Int)
     func restart(generation: Int)
+    func seekToStart(generation: Int)
+    func seekToEnd(generation: Int)
     func stop(generation: Int)
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int)
 }
@@ -264,6 +268,12 @@ final class LiveRuntimeEffectRunner {
         case .restartMedia(let generation):
             guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.restart(generation: generation)
+        case .seekMediaToStart(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            media?.seekToStart(generation: generation)
+        case .seekMediaToEnd(let generation):
+            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            media?.seekToEnd(generation: generation)
         case .stopMedia(let generation):
             guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
             media?.stop(generation: generation)
