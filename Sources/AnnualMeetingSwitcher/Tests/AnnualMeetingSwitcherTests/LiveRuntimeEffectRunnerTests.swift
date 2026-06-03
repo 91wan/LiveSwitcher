@@ -55,6 +55,9 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
                 .pauseBGM(generation: 3),
                 .stopBGM(fade: 0.5, generation: 3),
                 .setBGMVolume(0.6, fade: 0.25, generation: 3),
+                .seekBGMToBeginning(generation: 3),
+                .seekBGMToProgress(0.4, generation: 3),
+                .setBGMPlayMode(.loopOne, generation: 3),
                 .startBGMTimer(generation: 3),
                 .stopBGMTimer(generation: 3),
                 .startProjection,
@@ -90,7 +93,10 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
             "play:3",
             "pause:3",
             "stop:3:0.5",
-            "volume:3:0.6:0.25"
+            "volume:3:0.6:0.25",
+            "seekToBeginning:3",
+            "seekToProgress:3:0.4",
+            "playMode:3:单曲循环"
         ])
         XCTAssertEqual(projection.calls, ["start", "show", "stop", "hide"])
         XCTAssertEqual(ppt.calls, ["start", "stop:failed"])
@@ -107,7 +113,7 @@ final class LiveRuntimeEffectRunnerTests: XCTestCase {
         XCTAssertEqual(persistence.savedBGMPlayModes, [.sequential])
         XCTAssertEqual(persistence.saveCount, 1)
         XCTAssertEqual(support.events, [event])
-        XCTAssertEqual(runner.recordedEffects.count, 28)
+        XCTAssertEqual(runner.recordedEffects.count, 31)
     }
 
     func testRecordingRunnerDoesNotInvokeInjectedPorts() {
@@ -159,6 +165,7 @@ private final class MediaPortSpy: MediaPlaybackPort {
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         calls.append("volume:\(generation):\(volume):\(fade)")
     }
+
 }
 
 private final class BGMPortSpy: BGMPlaybackPort {
@@ -182,6 +189,18 @@ private final class BGMPortSpy: BGMPlaybackPort {
 
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         calls.append("volume:\(generation):\(volume):\(fade)")
+    }
+
+    func seekToBeginning(generation: Int) {
+        calls.append("seekToBeginning:\(generation)")
+    }
+
+    func seek(toProgress progress: Double, generation: Int) {
+        calls.append("seekToProgress:\(generation):\(progress)")
+    }
+
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
+        calls.append("playMode:\(generation.map(String.init) ?? "nil"):\(playMode.rawValue)")
     }
 }
 

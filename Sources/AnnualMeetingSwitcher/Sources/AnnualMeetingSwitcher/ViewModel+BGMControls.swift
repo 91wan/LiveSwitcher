@@ -46,17 +46,16 @@ extension SwitcherViewModel {
 
     // Toggle loop mode: loopAll → loopOne → sequential → loopAll
     func toggleLoopMode() {
+        let nextMode: BGMPlayMode
         switch bgmPlayMode {
         case .loopAll:
-            bgmPlayMode = .loopOne
-            bgmAudioPlayer?.numberOfLoops = -1
+            nextMode = .loopOne
         case .loopOne:
-            bgmPlayMode = .sequential
-            bgmAudioPlayer?.numberOfLoops = 0
+            nextMode = .sequential
         case .sequential:
-            bgmPlayMode = .loopAll
-            bgmAudioPlayer?.numberOfLoops = 0
+            nextMode = .loopAll
         }
+        bgmPlayMode = nextMode
         dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(bgmPlayMode))
     }
 

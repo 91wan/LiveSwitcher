@@ -103,8 +103,8 @@ final class BGMProgressStoreTests: XCTestCase {
 
     func testBGMSeekUsesFallbackDurationPolicyForAVPlayerFallbackItems() throws {
         let source = try sourceText("ViewModel.swift")
-        let seekBody = try XCTUnwrap(source.functionBody(named: "seekBGM"))
-        let beginningBody = try XCTUnwrap(source.functionBody(named: "seekBGMToBeginning"))
+        let seekBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGM(toProgress"))
+        let beginningBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGMToBeginning"))
 
         XCTAssertTrue(source.contains("private func fallbackBGMKnownDuration()"))
         XCTAssertTrue(source.contains("BGMFallbackDurationPolicy.knownDuration"))
@@ -117,7 +117,7 @@ final class BGMProgressStoreTests: XCTestCase {
         let source = try sourceText("ViewModel.swift")
         let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer(generation: Int)"))
 
-        XCTAssertTrue(startBody.contains("self.bgmTransitionGeneration == generation"))
+        XCTAssertTrue(startBody.contains("self.activeBGMTimerGeneration == generation"))
         XCTAssertTrue(startBody.contains("updateBGMProgress(generation: generation)"))
         XCTAssertFalse(startBody.contains("Task { @MainActor"))
     }

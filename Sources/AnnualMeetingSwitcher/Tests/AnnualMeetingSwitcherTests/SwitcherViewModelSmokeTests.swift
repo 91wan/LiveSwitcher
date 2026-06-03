@@ -533,6 +533,14 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
     func testFallbackBGMSeekUpdatesCurrentTimeAndKeepsDuration() {
         let viewModel = makeViewModel()
+        let item = BGMItem(title: "Fallback", url: URL(fileURLWithPath: "/tmp/fallback.mp3"))
+        viewModel.bgmItems = [item]
+        viewModel.currentBGMItem = item
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
+        var state = viewModel.runtime.state
+        state.bgm.currentID = item.id
+        state.bgm.duration = 200
+        viewModel.runtime.replaceStateForFacadeSync(state)
         viewModel.bgmDuration = 200
 
         viewModel.seekBGM(toProgress: 0.25)
@@ -565,6 +573,16 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
     func testFallbackBGMSeekToBeginningKeepsKnownDuration() {
         let viewModel = makeViewModel()
+        let item = BGMItem(title: "Fallback", url: URL(fileURLWithPath: "/tmp/fallback.mp3"))
+        viewModel.bgmItems = [item]
+        viewModel.currentBGMItem = item
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
+        var state = viewModel.runtime.state
+        state.bgm.currentID = item.id
+        state.bgm.duration = 90
+        state.bgm.progress = 0.5
+        state.bgm.currentTime = 45
+        viewModel.runtime.replaceStateForFacadeSync(state)
         viewModel.bgmDuration = 90
         viewModel.bgmCurrentTime = 45
         viewModel.bgmProgress = 0.5

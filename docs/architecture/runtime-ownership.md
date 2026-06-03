@@ -61,8 +61,8 @@ A domain is not runtime-owned until its ports are wired and its legacy ViewModel
 Operator actions for mirror-only domains must not mutate real runtime domain state.
 No next domain may be migrated until the Audio, Media, and BGM ownership tests
 pass and production effective audio output plus media/BGM playback output remain
-runtime-owned. Projection/PPT migration remains blocked until its ports are
-wired and an ownership PR is approved.
+runtime-owned. Projection/PPT migration remains blocked until BGM hardening
+tests pass, its ports are wired, and an ownership PR is approved.
 
 ## Domain Ownership
 
@@ -70,7 +70,7 @@ wired and an ownership PR is approved.
 | --- | --- | --- | --- | --- |
 | Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation. Runtime may mirror current selection only to drive media playback. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
-| BGM | Runtime owner | Authoritative current track, playback state, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. BGM library editing remains ViewModel-owned. |
+| BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
 | PPT mode | ViewModel owner | Mirror-only callback state and action log | recording only | Operator toggles do not mutate PPT state; event-tap started/failed/stopped callbacks may update the mirror. |
@@ -118,6 +118,7 @@ non-media activation. PPT mirror state changes only through
 
 BGM playback is runtime-owned. ViewModel owns BGM library import, removal,
 category metadata, and ordering, but current track, play/stop/next/previous,
+seek-to-beginning, seek-to-progress, loop-mode player side effects,
 end/failure callbacks, progress, duration, generation, and timer start/stop are
 owned by `LiveRuntimeState.bgm`.
 
@@ -129,11 +130,26 @@ finish, and failure callbacks cannot mutate the current track. Panic selection
 can cue a BGM item without starting audible playback; Panic orchestration itself
 remains ViewModel-owned.
 
+BGM callbacks require an active runtime BGM generation plus active item identity:
+the current BGM item id and URL must match the active callback guard before a
+finish, failure, or progress callback can dispatch into Runtime. Callback
+dispatch must not fall back to `runtime.state.bgm.generation`.
+
+BGM timers are generation-bound. Runtime paths start and stop timers with
+`startBGMTimer(generation:)` and `stopBGMTimer(generation:)`; stale stop
+requests cannot stop the current timer. Async BGM release, fallback retire, and
+volume fade tasks capture generation before they touch shared BGM player,
+fallback player, observer, meter, item, or timer state.
+
+BGM library editing remains ViewModel-owned. Runtime receives the facade
+snapshot of library items so it can choose current/next/previous playback, but
+it must not import, reorder, dedupe, or edit BGM metadata.
+
 ## Next Migration Gate
 
 Projection, PPT, Program queue, Automation, and Support ingress migration remain
 blocked. The next migration may proceed only after Audio, Media, and BGM
-ownership tests pass, cumulative bridge tests pass, bridge mode explicitness
-tests pass, no implicit full runtime remains, the target domain port is
-connected in a dedicated PR, and ViewModel no longer owns that target domain's
-migrated side effects in that future PR.
+ownership and hardening tests pass, cumulative bridge tests pass, bridge mode
+explicitness tests pass, no implicit full runtime remains, the target domain
+port is connected in a dedicated PR, and ViewModel no longer owns that target
+domain's migrated side effects in that future PR.

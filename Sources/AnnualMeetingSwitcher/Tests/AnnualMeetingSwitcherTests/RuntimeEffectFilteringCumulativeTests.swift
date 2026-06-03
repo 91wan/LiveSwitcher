@@ -11,6 +11,9 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
             .pauseBGM(generation: 1),
             .stopBGM(fade: 0.5, generation: 1),
             .setBGMVolume(0.4, fade: 0.2, generation: 1),
+            .seekBGMToBeginning(generation: 1),
+            .seekBGMToProgress(0.5, generation: 1),
+            .setBGMPlayMode(.loopOne, generation: 1),
             .startBGMTimer(generation: 1),
             .stopBGMTimer(generation: 1)
         ].forEach { effect in

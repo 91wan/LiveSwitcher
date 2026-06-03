@@ -50,7 +50,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
-        XCTAssertTrue(document.localizedStandardContains("Projection/PPT migration remains blocked until its ports are"))
+        XCTAssertTrue(document.localizedStandardContains("Projection/PPT migration remains blocked until BGM hardening"))
         XCTAssertTrue(document.localizedStandardContains("Bridge modes are cumulative migration stages"))
         XCTAssertTrue(document.localizedStandardContains("`.bgmOwned` means Audio + Media + BGM, not Audio + BGM"))
         XCTAssertTrue(document.localizedStandardContains("means Audio + Media + BGM + Projection"))
