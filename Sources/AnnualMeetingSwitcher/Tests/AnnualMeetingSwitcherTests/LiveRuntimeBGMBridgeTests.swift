@@ -143,6 +143,82 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.playBGM(generation: 8)))
     }
 
+    func testRuntimeNextPreviousStayInsideCurrentCategory() {
+        let warmUp = bgmItem(title: "Warm A", category: .warmUp)
+        let ceremony = bgmItem(title: "Ceremony", category: .entrance)
+        let warmUpNext = bgmItem(title: "Warm B", category: .warmUp)
+        var state = LiveRuntimeState()
+        state.bgm.items = [warmUp, ceremony, warmUpNext]
+        state.bgm.currentID = warmUp.id
+        state.bgm.isPlaying = true
+        state.bgm.generation = 2
+
+        let next = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorSelectedNextBGM,
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+        let previous = LiveRuntimeReducer.reduce(
+            state: next.state,
+            action: .operatorSelectedPreviousBGM,
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(next.state.bgm.currentID, warmUpNext.id)
+        XCTAssertTrue(next.effects.contains(.prepareBGM(warmUpNext, generation: 3)))
+        XCTAssertEqual(previous.state.bgm.currentID, warmUp.id)
+        XCTAssertTrue(previous.effects.contains(.prepareBGM(warmUp, generation: 4)))
+    }
+
+    func testRuntimeLoopAllEndAdvancesInsideCurrentCategory() {
+        let warmUp = bgmItem(title: "Warm A", category: .warmUp)
+        let ceremony = bgmItem(title: "Ceremony", category: .entrance)
+        let warmUpNext = bgmItem(title: "Warm B", category: .warmUp)
+        var state = LiveRuntimeState()
+        state.bgm.items = [warmUp, ceremony, warmUpNext]
+        state.bgm.currentID = warmUp.id
+        state.bgm.isPlaying = true
+        state.bgm.playMode = .loopAll
+        state.bgm.generation = 7
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmReachedEnd(generation: 7),
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertEqual(mutation.state.bgm.currentID, warmUpNext.id)
+        XCTAssertTrue(mutation.effects.contains(.prepareBGM(warmUpNext, generation: 8)))
+    }
+
+    func testRuntimeFinishedAndFailedBGMReleasePlaybackPort() {
+        let item = bgmItem(title: "Tail")
+        var state = LiveRuntimeState()
+        state.bgm.items = [item]
+        state.bgm.currentID = item.id
+        state.bgm.isPlaying = true
+        state.bgm.playMode = .sequential
+        state.bgm.generation = 4
+
+        let finished = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmReachedEnd(generation: 4),
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+        let failed = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .bgmFailed(reason: "playbackFailed", generation: 4),
+            environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
+        )
+
+        XCTAssertFalse(finished.state.bgm.isPlaying)
+        XCTAssertTrue(finished.effects.contains(.stopBGM(fade: 0, generation: 5)))
+        XCTAssertTrue(finished.effects.contains(.stopBGMTimer(generation: 5)))
+        XCTAssertFalse(failed.state.bgm.isPlaying)
+        XCTAssertTrue(failed.effects.contains(.stopBGM(fade: 0, generation: 5)))
+        XCTAssertTrue(failed.effects.contains(.stopBGMTimer(generation: 5)))
+    }
+
     func testRuntimeSequentialEndStopsAtLastTrack() {
         let first = bgmItem(title: "First")
         let second = bgmItem(title: "Second")
@@ -251,8 +327,8 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         XCTAssertNil(defaults.string(forKey: "bgmPlayMode"))
     }
 
-    private func bgmItem(title: String) -> BGMItem {
-        BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"))
+    private func bgmItem(title: String, category: BGMCategory = .warmUp) -> BGMItem {
+        BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"), category: category)
     }
 
     private func temporaryBGMItem(title: String) throws -> BGMItem {

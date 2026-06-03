@@ -3,52 +3,48 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionRuntimeWiringDeclaresConnectedPorts() {
+    func testProductionRuntimeConnectedPortsExactlyMatchExpectedBGMOwningSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsMediaOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsBGMOwning() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .mediaOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .bgmOwned)
     }
 
-    func testProductionRuntimeWiresMediaAndAudioPorts() {
+    func testProductionRuntimeWiresMediaBGMAndAudioPorts() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
     }
 
-    func testProductionRuntimeDoesNotWireBGMProjectionPPTAutomationSupport() {
+    func testProductionRuntimeWiresBGMTimerPort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
+    }
+
+    func testProductionRuntimeDoesNotWireProjectionPPTAutomationNoticeOrSupport() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         [
-            LiveRuntimeEffectPortKind.bgm,
             .projection,
             .ppt,
             .automation,
-            .bgmTimer,
             .automationNotice,
             .support
         ].forEach { kind in
             XCTAssertFalse(connected.contains(kind), "\(kind.rawValue) should not be considered production-migrated.")
         }
-    }
-
-    func testBGMOwningModeIsNotProductionYet() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertNotEqual(viewModel.runtimeBridgeMode, .bgmOwned)
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .mediaOwned)
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.bgm))
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
     }
 
     func testCustomEffectRunnerReportsInjectedPorts() {

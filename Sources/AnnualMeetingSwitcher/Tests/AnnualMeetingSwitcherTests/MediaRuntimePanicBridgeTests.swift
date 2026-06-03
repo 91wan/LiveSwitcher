@@ -67,11 +67,13 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         XCTAssertFalse(source.contains("avCoordinator.volume = 0"))
     }
 
-    func testBGMBehaviorRemainsViewModelOwnedInThisPR() throws {
+    func testPanicDoesNotDirectlyCallBGMPlayers() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Panic.swift")
 
-        XCTAssertTrue(source.contains("bgmAudioPlayer"))
-        XCTAssertTrue(source.contains("bgmFallbackPlayer"))
+        XCTAssertFalse(source.contains("bgmAudioPlayer"))
+        XCTAssertFalse(source.contains("bgmFallbackPlayer"))
+        XCTAssertTrue(source.contains(".operatorPausedBGMForPanic"))
+        XCTAssertTrue(source.contains(".operatorResumedBGMAfterPanic"))
     }
 
     private func viewModel(media: MediaRuntimePanicPortSpy) -> SwitcherViewModel {

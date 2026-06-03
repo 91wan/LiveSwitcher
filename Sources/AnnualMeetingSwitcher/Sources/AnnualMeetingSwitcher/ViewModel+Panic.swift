@@ -57,13 +57,7 @@ extension SwitcherViewModel {
             dispatchRuntimeFacadeAction(.operatorResumedMediaAfterPanic(generation: nil))
         }
         if shouldResumeBGMAfterPanic(snapshot) {
-            invalidateBGMTransitionGeneration()
-            isBGMPlaying = true
-            bgmAudioPlayer?.volume = 0
-            bgmAudioPlayer?.play()
-            bgmFallbackPlayer.volume = 0
-            bgmFallbackPlayer.play()
-            startBGMTimer()
+            dispatchRuntimeFacadeAction(.operatorResumedBGMAfterPanic(generation: nil))
         }
         applyCurrentRuntimeAudioRouting(reason: .panicChanged)
     }
@@ -108,11 +102,7 @@ extension SwitcherViewModel {
     private func pauseBGMPlaybackAfterPanicFade(_ snapshot: PanicPlaybackSnapshot?, generation: Int) {
         guard isPanicMode, panicAudioTransitionGeneration == generation else { return }
         if shouldPauseBGMForActivePanic(snapshot) {
-            invalidateBGMTransitionGeneration()
-            bgmAudioPlayer?.pause()
-            bgmFallbackPlayer.pause()
-            isBGMPlaying = false
-            stopBGMTimer()
+            dispatchRuntimeFacadeAction(.operatorPausedBGMForPanic(generation: nil))
         }
     }
 

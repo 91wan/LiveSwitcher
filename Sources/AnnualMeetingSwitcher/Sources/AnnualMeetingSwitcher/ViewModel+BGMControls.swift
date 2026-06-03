@@ -70,100 +70,10 @@ extension SwitcherViewModel {
     func bgmDidFinish() {
         dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
         removeBGMFallbackEndObserver()
-        guard !isPanicMode else {
-            invalidateBGMTransitionGeneration()
-            if panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
-                panicPlaybackSnapshot?.wasBGMPlaying = false
-            }
-            bgmAudioPlayer?.delegate = nil
-            bgmAudioPlayer = nil
-            bgmFallbackPlayer.pause()
-            bgmFallbackPlayer.replaceCurrentItem(with: nil)
-            isBGMPlaying = false
-            resetBGMRealtimeMeter()
-            bgmProgress = 0
-            bgmCurrentTime = 0
-            bgmDuration = nil
-            recordBGMPlaybackState(isPlaying: false, reason: "finishedDuringPanic")
-            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
-            stopBGMTimer()
-            return
+        if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
+            panicPlaybackSnapshot?.wasBGMPlaying = false
         }
-
-        // 单曲循环（numberOfLoops == -1）不会触发 delegate
-        guard let current = currentBGMItem else {
-            invalidateBGMTransitionGeneration()
-            isBGMPlaying = false
-            clearBGMTakeoverIfNeeded()
-            resetBGMRealtimeMeter()
-            recordBGMPlaybackState(isPlaying: false, reason: "finished")
-            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
-            stopBGMTimer()
-            return
-        }
-
-        if bgmPlayMode == .loopOne {
-            restartLoopingBGM(current)
-            return
-        }
-
-        let items = bgmItems.filter { $0.category == current.category }
-        guard let index = items.firstIndex(where: { $0.id == current.id }) else {
-            invalidateBGMTransitionGeneration()
-            isBGMPlaying = false
-            clearBGMTakeoverIfNeeded()
-            resetBGMRealtimeMeter()
-            recordBGMPlaybackState(isPlaying: false, reason: "missingCurrent")
-            applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
-            stopBGMTimer()
-            return
-        }
-
-        // 顺序播放：到最后一首时停止
-        if bgmPlayMode == .sequential && index == items.count - 1 {
-            finishSequentialBGMPlayback()
-            return
-        }
-
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
-
-        // 列表循环 / 顺序播放（非最后一首）：播放下一首
-        let nextIndex = (index + 1) % items.count
-        let nextItem = items[nextIndex]
-        if nextItem.id == current.id {
-            currentBGMItem = nil
-            isBGMPlaying = false
-        }
-        toggleBGM(nextItem)
-    }
-
-    private func finishSequentialBGMPlayback() {
-        invalidateBGMTransitionGeneration()
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        isBGMPlaying = false
-        clearBGMTakeoverIfNeeded()
-        resetBGMRealtimeMeter()
-        recordBGMPlaybackState(isPlaying: false, reason: "finished")
-        applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
-        stopBGMTimer()
-        removeBGMFallbackEndObserver()
-        bgmFallbackPlayer.seek(to: .zero)
-        bgmFallbackPlayer.replaceCurrentItem(with: nil)
-    }
-
-    private func restartLoopingBGM(_ item: BGMItem) {
-        stopBGMTimer()
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
-        removeBGMFallbackEndObserver()
-        bgmFallbackPlayer.pause()
-        bgmFallbackPlayer.replaceCurrentItem(with: nil)
-        currentBGMItem = nil
-        toggleBGM(item)
+        recordBGMPlaybackState(isPlaying: isBGMPlaying, reason: isBGMPlaying ? "advanced" : "finished")
     }
 
     func bgmDidFail(from player: AVAudioPlayer) {
@@ -173,52 +83,19 @@ extension SwitcherViewModel {
 
     func bgmDidFail() {
         dispatchRuntimeBGMCallback { .bgmFailed(reason: "playbackFailed", generation: $0) }
-        invalidateBGMTransitionGeneration()
         if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
             panicPlaybackSnapshot?.wasBGMPlaying = false
         }
-        stopBGMTimer()
-        bgmAudioPlayer?.delegate = nil
-        bgmAudioPlayer = nil
-        resetBGMRealtimeMeter()
-        cancelBGMFallbackFade()
-        removeBGMFallbackEndObserver()
-        bgmFallbackPlayer.volume = 0
-        bgmFallbackPlayer.pause()
-        bgmFallbackPlayer.replaceCurrentItem(with: nil)
-        isBGMPlaying = false
         clearBGMTakeoverIfNeeded()
-        bgmProgress = 0
-        bgmCurrentTime = 0
-        bgmDuration = nil
         LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
         recordSupportEvent(kind: .bgmPlaybackFailed, detail: "state=stopped")
-        applyCurrentRuntimeAudioRouting(reason: .bgmPlaybackChanged)
     }
 
     func playNextBGM() {
-        guard let current = currentBGMItem else { return }
-        let items = bgmItems.filter { $0.category == current.category }
-        guard items.count > 1 else { return }
-        guard let index = items.firstIndex(where: { $0.id == current.id }) else { return }
-
-        let nextIndex = (index + 1) % items.count
-        let nextItem = items[nextIndex]
-
         dispatchRuntimeFacadeAction(.operatorSelectedNextBGM)
-        toggleBGM(nextItem)
     }
 
     func playPreviousBGM() {
-        guard let current = currentBGMItem else { return }
-        let items = bgmItems.filter { $0.category == current.category }
-        guard items.count > 1 else { return }
-        guard let index = items.firstIndex(where: { $0.id == current.id }) else { return }
-
-        let prevIndex = (index - 1 + items.count) % items.count
-        let prevItem = items[prevIndex]
-
         dispatchRuntimeFacadeAction(.operatorSelectedPreviousBGM)
-        toggleBGM(prevItem)
     }
 }

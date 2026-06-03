@@ -60,22 +60,21 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
         let source = try sourceText("ViewModel.swift")
         let controls = try sourceText("ViewModel+BGMControls.swift")
         let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
-        let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
+        let prepareBody = try XCTUnwrap(source.functionBody(named: "prepareRuntimeBGM"))
 
         XCTAssertTrue(updateBody.contains("finishBGMIfProgressReachedEnd"))
         XCTAssertTrue(source.contains("BGMPlaybackEndPolicy.shouldTreatAsFinished"))
         XCTAssertTrue(source.contains("bgmAudioPlayer?.delegate = nil"))
-        XCTAssertTrue(toggleBody.contains("BGMPlaybackEndPolicy.numberOfLoops(for: bgmPlayMode)"))
-        XCTAssertTrue(controls.contains("bgmPlayMode == .loopOne"))
+        XCTAssertTrue(prepareBody.contains("BGMPlaybackEndPolicy.numberOfLoops(for: runtime.state.bgm.playMode)"))
+        XCTAssertTrue(controls.contains(".operatorSelectedBGMPlayMode(bgmPlayMode)"))
     }
 
     func testBGMPauseFadeTasksAreGenerationGuarded() throws {
         let source = try sourceText("ViewModel.swift")
-        let toggleBody = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
 
-        XCTAssertTrue(toggleBody.contains("bgmTransitionGeneration += 1"))
-        XCTAssertTrue(toggleBody.contains("let generation = bgmTransitionGeneration"))
-        XCTAssertTrue(toggleBody.contains("self.bgmTransitionGeneration == generation"))
+        XCTAssertTrue(source.contains("private func prepareRuntimeBGM(_ item: BGMItem, generation: Int)"))
+        XCTAssertTrue(source.contains("activeRuntimeBGMGenerationForCallbacks = generation"))
+        XCTAssertTrue(source.contains("self.bgmTransitionGeneration == generation"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
