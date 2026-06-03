@@ -41,6 +41,65 @@ final class BGMRuntimeGenerationTests: XCTestCase {
         XCTAssertEqual(bgm.callCount, 1)
     }
 
+    func testStaleBGMReleaseTaskCannotStopCurrentPlayer() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try functionBody(named: "releaseBGMPlayerAfterFade", in: source)
+
+        XCTAssertTrue(body.contains("generation: Int"))
+        XCTAssertTrue(body.contains("runtime.state.bgm.generation == generation"))
+    }
+
+    func testStaleFallbackRetireTaskCannotClearCurrentFallbackPlayer() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try functionBody(named: "retireCurrentBGMFallbackPlayerForSwitch", in: source)
+
+        XCTAssertTrue(body.contains("generation: Int"))
+        XCTAssertTrue(body.contains("runtime.state.bgm.generation == generation"))
+        XCTAssertTrue(body.contains("replaceCurrentItem(with: nil)"))
+    }
+
+    func testStaleBGMFadeTaskCannotOverwriteCurrentVolume() throws {
+        let source = try sourceText("ViewModel.swift")
+        let playerFadeBody = try functionBody(named: "fadeBGMPlayerVolume(to targetVolume", in: source)
+        let fallbackFadeBody = try functionBody(named: "fadeBGMFallbackVolume", in: source)
+
+        XCTAssertTrue(playerFadeBody.contains("generation: Int?"))
+        XCTAssertTrue(playerFadeBody.contains("runtime.state.bgm.generation != generation"))
+        XCTAssertTrue(fallbackFadeBody.contains("generation: Int?"))
+        XCTAssertTrue(fallbackFadeBody.contains("runtime.state.bgm.generation != generation"))
+    }
+
+    func testRapidBGM_A_B_C_LeavesOnlyCActive() {
+        var state = state(generation: 0)
+        let first = bgmItem(title: "A")
+        let second = bgmItem(title: "B")
+        let third = bgmItem(title: "C")
+        state.bgm.items = [first, second, third]
+
+        let a = reduce(state, .operatorSelectedBGM(first.id))
+        let b = reduce(a.state, .operatorSelectedBGM(second.id))
+        let c = reduce(b.state, .operatorSelectedBGM(third.id))
+
+        XCTAssertEqual(c.state.bgm.currentID, third.id)
+        XCTAssertEqual(c.state.bgm.generation, 3)
+        XCTAssertEqual(c.effects.filter { if case .prepareBGM = $0 { true } else { false } }, [.prepareBGM(third, generation: 3)])
+    }
+
+    func testOldBGMObserverCannotAdvanceNewTrack() {
+        var state = state(generation: 0)
+        let first = bgmItem(title: "A")
+        let second = bgmItem(title: "B")
+        state.bgm.items = [first, second]
+        state.bgm.playMode = .loopAll
+
+        let selectedA = reduce(state, .operatorSelectedBGM(first.id))
+        let selectedB = reduce(selectedA.state, .operatorSelectedBGM(second.id))
+        let staleFinish = reduce(selectedB.state, .bgmReachedEnd(generation: selectedA.state.bgm.generation))
+
+        XCTAssertEqual(staleFinish.state.bgm.currentID, second.id)
+        XCTAssertEqual(staleFinish.effects, [])
+    }
+
     private func assertStaleBGMEffectIgnored(_ effect: LiveRuntimeEffect) {
         let bgm = BGMRuntimeGenerationPlaybackPortSpy()
         let runner = LiveRuntimeEffectRunner(recordsOnly: false, bgm: bgm)
@@ -69,6 +128,63 @@ final class BGMRuntimeGenerationTests: XCTestCase {
 
     private func bgmItem() -> BGMItem {
         BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
+    }
+
+    private func bgmItem(title: String) -> BGMItem {
+        BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(title).mp3"))
+    }
+
+    private func reduce(_ state: LiveRuntimeState, _ action: LiveRuntimeAction) -> LiveRuntimeMutation {
+        LiveRuntimeReducer.reduce(
+            state: state,
+            action: action,
+            environment: .productionBGMOwning()
+        )
+    }
+
+    private func functionBody(named name: String, in source: String) throws -> String {
+        guard let start = source.range(of: "func \(name)") ?? source.range(of: "private func \(name)") else {
+            XCTFail("Function \(name) not found")
+            return ""
+        }
+        guard let bodyStart = source[start.lowerBound...].firstIndex(of: "{") else {
+            XCTFail("Function \(name) body not found")
+            return ""
+        }
+        var depth = 0
+        var index = bodyStart
+        while index < source.endIndex {
+            if source[index] == "{" { depth += 1 }
+            if source[index] == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(source[start.lowerBound...index])
+                }
+            }
+            index = source.index(after: index)
+        }
+        XCTFail("Function \(name) body was not closed")
+        return ""
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func sourceURL(_ relativePath: String) throws -> URL {
+        let packageRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let candidates = [
+            packageRoot.appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher").appendingPathComponent(relativePath),
+            packageRoot.appendingPathComponent("Sources/AnnualMeetingSwitcher").appendingPathComponent(relativePath),
+            packageRoot.appendingPathComponent(relativePath)
+        ]
+        if let url = candidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
+            return url
+        }
+        return candidates[0]
     }
 }
 

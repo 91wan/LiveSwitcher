@@ -322,6 +322,10 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        let item = BGMItem(title: "BGM", url: URL(fileURLWithPath: "/tmp/audio-runtime-bgm.mp3"))
+        viewModel.bgmItems = [item]
+        viewModel.currentBGMItem = item
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: item, generation: 0)
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         viewModel.dispatchRuntimeBGMCallback {

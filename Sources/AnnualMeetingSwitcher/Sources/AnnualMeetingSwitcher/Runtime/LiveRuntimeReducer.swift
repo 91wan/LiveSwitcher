@@ -230,7 +230,27 @@ enum LiveRuntimeReducer {
 
         case .operatorSelectedBGMPlayMode(let playMode):
             state.bgm.playMode = playMode
-            effects.append(.saveBGMPlayMode(playMode))
+            effects += [
+                .setBGMPlayMode(playMode, generation: state.bgm.currentID == nil ? nil : state.bgm.generation),
+                .saveBGMPlayMode(playMode)
+            ]
+
+        case .operatorSeekedBGMToBeginning:
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            guard state.bgm.currentID != nil else { break }
+            state.bgm.progress = 0
+            state.bgm.currentTime = 0
+            effects.append(.seekBGMToBeginning(generation: state.bgm.generation))
+
+        case .operatorSeekedBGMToProgress(let progress):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            guard state.bgm.currentID != nil else { break }
+            let clampedProgress = min(max(progress, 0), 1)
+            state.bgm.progress = clampedProgress
+            if let duration = state.bgm.duration, duration.isFinite, duration > 0 {
+                state.bgm.currentTime = duration * clampedProgress
+            }
+            effects.append(.seekBGMToProgress(clampedProgress, generation: state.bgm.generation))
 
         case .operatorStoppedBGM:
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }

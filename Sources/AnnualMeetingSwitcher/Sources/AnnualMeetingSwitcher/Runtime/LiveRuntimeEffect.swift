@@ -15,6 +15,9 @@ enum LiveRuntimeEffect: Equatable {
     case pauseBGM(generation: Int)
     case stopBGM(fade: TimeInterval, generation: Int)
     case setBGMVolume(Float, fade: TimeInterval, generation: Int)
+    case seekBGMToBeginning(generation: Int)
+    case seekBGMToProgress(Double, generation: Int)
+    case setBGMPlayMode(BGMPlayMode, generation: Int?)
     case startBGMTimer(generation: Int)
     case stopBGMTimer(generation: Int)
 
@@ -79,6 +82,9 @@ extension LiveRuntimeEffect {
              .pauseBGM,
              .stopBGM,
              .setBGMVolume,
+             .seekBGMToBeginning,
+             .seekBGMToProgress,
+             .setBGMPlayMode,
              .startBGMTimer,
              .stopBGMTimer:
             return .bgm
@@ -135,6 +141,15 @@ protocol BGMPlaybackPort {
     func pause(generation: Int)
     func stop(fade: TimeInterval, generation: Int)
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int)
+    func seekToBeginning(generation: Int)
+    func seek(toProgress progress: Double, generation: Int)
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?)
+}
+
+extension BGMPlaybackPort {
+    func seekToBeginning(generation: Int) {}
+    func seek(toProgress progress: Double, generation: Int) {}
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {}
 }
 
 protocol ProjectionPort {
@@ -354,6 +369,17 @@ final class LiveRuntimeEffectRunner {
         case .setBGMVolume(let volume, let fade, let generation):
             guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgm?.setVolume(volume, fade: fade, generation: generation)
+        case .seekBGMToBeginning(let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            bgm?.seekToBeginning(generation: generation)
+        case .seekBGMToProgress(let progress, let generation):
+            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            bgm?.seek(toProgress: progress, generation: generation)
+        case .setBGMPlayMode(let playMode, let generation):
+            if let generation {
+                guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            }
+            bgm?.setPlayMode(playMode, generation: generation)
         case .startBGMTimer(let generation):
             guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
             bgmTimer?.start(generation: generation)

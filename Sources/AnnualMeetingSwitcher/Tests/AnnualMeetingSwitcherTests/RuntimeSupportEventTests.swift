@@ -28,8 +28,10 @@ final class RuntimeSupportEventTests: XCTestCase {
             url: URL(fileURLWithPath: "/tmp/private-walk-in.mp3"),
             category: .warmUp
         )
+        viewModel.bgmItems = [item]
         viewModel.currentBGMItem = item
         viewModel.isBGMPlaying = true
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: item, generation: 0)
         viewModel.isBGMAudioTakeoverActive = true
         viewModel.bgmProgress = 0.6
         viewModel.bgmCurrentTime = 42

@@ -126,6 +126,9 @@ private final class ClosureBGMPlaybackPort: BGMPlaybackPort {
     var pauseHandler: ((Int) -> Void)?
     var stopHandler: ((TimeInterval, Int) -> Void)?
     var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
+    var seekToBeginningHandler: ((Int) -> Void)?
+    var seekToProgressHandler: ((Double, Int) -> Void)?
+    var setPlayModeHandler: ((BGMPlayMode, Int?) -> Void)?
 
     func prepare(item: BGMItem, generation: Int) {
         prepareHandler?(item, generation)
@@ -145,6 +148,18 @@ private final class ClosureBGMPlaybackPort: BGMPlaybackPort {
 
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         setVolumeHandler?(volume, fade, generation)
+    }
+
+    func seekToBeginning(generation: Int) {
+        seekToBeginningHandler?(generation)
+    }
+
+    func seek(toProgress progress: Double, generation: Int) {
+        seekToProgressHandler?(progress, generation)
+    }
+
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
+        setPlayModeHandler?(playMode, generation)
     }
 }
 
@@ -534,6 +549,9 @@ final class SwitcherViewModel {
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
     @ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks: Int?
+    @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
+    @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
+    @ObservationIgnored private var activeBGMTimerGeneration: Int?
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -674,6 +692,15 @@ final class SwitcherViewModel {
         bgmPlaybackPort.setVolumeHandler = { [weak self] volume, fade, generation in
             self?.setRuntimeBGMVolume(volume, fade: fade, generation: generation)
         }
+        bgmPlaybackPort.seekToBeginningHandler = { [weak self] generation in
+            self?.seekRuntimeBGMToBeginning(generation: generation)
+        }
+        bgmPlaybackPort.seekToProgressHandler = { [weak self] progress, generation in
+            self?.seekRuntimeBGM(toProgress: progress, generation: generation)
+        }
+        bgmPlaybackPort.setPlayModeHandler = { [weak self] playMode, generation in
+            self?.setRuntimeBGMPlayMode(playMode, generation: generation)
+        }
         bgmTimerPort.startHandler = { [weak self] generation in
             self?.startBGMTimer(generation: generation)
         }
@@ -795,7 +822,9 @@ final class SwitcherViewModel {
 
     func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        let generation = activeRuntimeBGMGenerationForCallbacks ?? runtime.state.bgm.generation
+        guard let generation = activeRuntimeBGMGenerationForCallbacks else { return }
+        guard currentBGMItem?.id == activeRuntimeBGMItemIDForCallbacks else { return }
+        guard currentBGMItem?.url == activeRuntimeBGMURLForCallbacks else { return }
         runtime.dispatch(makeAction(generation))
         syncBGMFacadeFromRuntime()
     }
@@ -1093,15 +1122,16 @@ final class SwitcherViewModel {
         }
 
         let effectiveBGM = effectiveBGM ?? appliedBGMOutputVolume()
+        let bgmGeneration = runtime.state.bgm.currentID == nil ? nil : runtime.state.bgm.generation
         if let bgmFadeDuration, bgmAudioPlayer != nil {
-            fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration)
+            fadeBGMPlayerVolume(to: effectiveBGM, duration: bgmFadeDuration, generation: bgmGeneration)
         } else {
             cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
             bgmAudioPlayer?.volume = effectiveBGM
         }
 
         if let bgmFadeDuration {
-            fadeBGMFallbackVolume(to: effectiveBGM, duration: bgmFadeDuration)
+            fadeBGMFallbackVolume(to: effectiveBGM, duration: bgmFadeDuration, generation: bgmGeneration)
         } else {
             cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
             bgmFallbackPlayer.volume = effectiveBGM
@@ -1146,6 +1176,28 @@ final class SwitcherViewModel {
         cleanupBag.bgmProgressTimer
     }
 
+    var activeBGMTimerGenerationForTesting: Int? {
+        activeBGMTimerGeneration
+    }
+
+    var activeRuntimeBGMCallbackGenerationForTesting: Int? {
+        activeRuntimeBGMGenerationForCallbacks
+    }
+
+    var activeRuntimeBGMCallbackItemIDForTesting: UUID? {
+        activeRuntimeBGMItemIDForCallbacks
+    }
+
+    var activeRuntimeBGMCallbackURLForTesting: URL? {
+        activeRuntimeBGMURLForCallbacks
+    }
+
+    func seedActiveRuntimeBGMCallbackForTesting(item: BGMItem, generation: Int) {
+        activeRuntimeBGMGenerationForCallbacks = generation
+        activeRuntimeBGMItemIDForCallbacks = item.id
+        activeRuntimeBGMURLForCallbacks = item.url
+    }
+
     func invalidateBGMTransitionGeneration() {
         bgmTransitionGeneration += 1
     }
@@ -1170,9 +1222,10 @@ final class SwitcherViewModel {
         }
     }
 
-    private func fadeBGMFallbackVolume(to targetVolume: Float, duration: Double) {
+    private func fadeBGMFallbackVolume(to targetVolume: Float, duration: Double, generation: Int?) {
         cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         guard duration > 0 else {
+            if let generation, runtime.state.bgm.generation != generation { return }
             bgmFallbackPlayer.volume = targetVolume
             return
         }
@@ -1185,15 +1238,17 @@ final class SwitcherViewModel {
                 to: targetVolume,
                 duration: duration
             ) { [weak self] volume in
+                if let generation, self?.runtime.state.bgm.generation != generation { return }
                 self?.bgmFallbackPlayer.volume = volume
             }
         }
     }
 
-    private func fadeBGMPlayerVolume(to targetVolume: Float, duration: Double) {
+    private func fadeBGMPlayerVolume(to targetVolume: Float, duration: Double, generation: Int?) {
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
         guard let player = bgmAudioPlayer else { return }
         guard duration > 0 else {
+            if let generation, runtime.state.bgm.generation != generation { return }
             player.volume = targetVolume
             return
         }
@@ -1206,6 +1261,7 @@ final class SwitcherViewModel {
                 to: targetVolume,
                 duration: duration
             ) { [weak player] volume in
+                if let generation, self.runtime.state.bgm.generation != generation { return }
                 player?.volume = volume
             }
         }
@@ -1213,20 +1269,22 @@ final class SwitcherViewModel {
 
     private func prepareRuntimeBGM(_ item: BGMItem, generation: Int) {
         activeRuntimeBGMGenerationForCallbacks = generation
+        activeRuntimeBGMItemIDForCallbacks = item.id
+        activeRuntimeBGMURLForCallbacks = item.url
         bgmTransitionGeneration = generation
         let fadeDuration = liveAudioFadeDuration
 
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
         cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         if let oldPlayer = bgmAudioPlayer {
-            fadeBGMPlayerVolume(oldPlayer, to: 0, duration: fadeDuration)
-            releaseBGMPlayerAfterFade(oldPlayer, duration: fadeDuration)
+            fadeBGMPlayerVolume(oldPlayer, to: 0, duration: fadeDuration, generation: generation)
+            releaseBGMPlayerAfterFade(oldPlayer, duration: fadeDuration, generation: generation)
         }
         bgmAudioPlayer?.delegate = nil
         bgmAudioPlayer = nil
         resetBGMRealtimeMeter()
         removeBGMFallbackEndObserver()
-        retireCurrentBGMFallbackPlayerForSwitch(duration: fadeDuration)
+        retireCurrentBGMFallbackPlayerForSwitch(duration: fadeDuration, generation: generation)
 
         if let player = try? AVAudioPlayer(contentsOf: item.url) {
             player.volume = 0
@@ -1255,8 +1313,8 @@ final class SwitcherViewModel {
         bgmFallbackPlayer.volume = 0
         bgmFallbackPlayer.play()
         let targetVolume = runtime.state.audio.effectiveBGM
-        fadeBGMPlayerVolume(to: targetVolume, duration: liveAudioFadeDuration)
-        fadeBGMFallbackVolume(to: targetVolume, duration: liveAudioFadeDuration)
+        fadeBGMPlayerVolume(to: targetVolume, duration: liveAudioFadeDuration, generation: generation)
+        fadeBGMFallbackVolume(to: targetVolume, duration: liveAudioFadeDuration, generation: generation)
     }
 
     private func pauseRuntimeBGM(generation: Int) {
@@ -1268,6 +1326,8 @@ final class SwitcherViewModel {
     private func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         activeRuntimeBGMGenerationForCallbacks = nil
+        activeRuntimeBGMItemIDForCallbacks = nil
+        activeRuntimeBGMURLForCallbacks = nil
         bgmTransitionGeneration = generation
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
@@ -1276,8 +1336,8 @@ final class SwitcherViewModel {
         if let player = bgmAudioPlayer {
             player.delegate = nil
             if fade > 0 {
-                fadeBGMPlayerVolume(player, to: 0, duration: fade)
-                releaseBGMPlayerAfterFade(player, duration: fade)
+                fadeBGMPlayerVolume(player, to: 0, duration: fade, generation: generation)
+                releaseBGMPlayerAfterFade(player, duration: fade, generation: generation)
             } else {
                 player.stop()
                 player.volume = 0
@@ -1286,7 +1346,7 @@ final class SwitcherViewModel {
         }
         bgmAudioPlayer = nil
         if fade > 0 {
-            fadeBGMFallbackVolume(to: 0, duration: fade)
+            fadeBGMFallbackVolume(to: 0, duration: fade, generation: generation)
             releaseBGMFallbackAfterFade(duration: fade, generation: generation)
         } else {
             removeBGMFallbackEndObserver()
@@ -1299,16 +1359,52 @@ final class SwitcherViewModel {
     private func setRuntimeBGMVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         if bgmAudioPlayer != nil {
-            fadeBGMPlayerVolume(to: volume, duration: fade)
+            fadeBGMPlayerVolume(to: volume, duration: fade, generation: generation)
         } else {
             cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
             bgmAudioPlayer?.volume = volume
         }
-        fadeBGMFallbackVolume(to: volume, duration: fade)
+        fadeBGMFallbackVolume(to: volume, duration: fade, generation: generation)
     }
 
-    private func fadeBGMPlayerVolume(_ player: AVAudioPlayer, to targetVolume: Float, duration: Double) {
+    private func seekRuntimeBGMToBeginning(generation: Int) {
+        guard runtime.state.bgm.generation == generation else { return }
+        bgmAudioPlayer?.currentTime = 0
+        bgmFallbackPlayer.seek(to: .zero)
+        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? fallbackBGMKnownDuration() ?? 0)
+    }
+
+    private func seekRuntimeBGM(toProgress progress: Double, generation: Int) {
+        guard runtime.state.bgm.generation == generation else { return }
+        let clampedProgress = BGMProgressStore.clampedProgress(progress)
+        guard let player = bgmAudioPlayer else {
+            guard let duration = fallbackBGMKnownDuration(), duration > 0 else {
+                return
+            }
+            let targetTime = duration * clampedProgress
+            bgmFallbackPlayer.seek(to: CMTime(seconds: targetTime, preferredTimescale: 600))
+            bgmProgressStore.update(currentTime: targetTime, duration: duration)
+            return
+        }
+        let duration = player.duration
         guard duration > 0 else {
+            bgmProgressStore.update(currentTime: 0, duration: 0)
+            return
+        }
+        player.currentTime = duration * clampedProgress
+        bgmProgressStore.update(currentTime: player.currentTime, duration: duration)
+    }
+
+    private func setRuntimeBGMPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
+        if let generation {
+            guard runtime.state.bgm.generation == generation else { return }
+        }
+        bgmAudioPlayer?.numberOfLoops = BGMPlaybackEndPolicy.numberOfLoops(for: playMode)
+    }
+
+    private func fadeBGMPlayerVolume(_ player: AVAudioPlayer, to targetVolume: Float, duration: Double, generation: Int?) {
+        guard duration > 0 else {
+            if let generation, runtime.state.bgm.generation != generation { return }
             player.volume = targetVolume
             return
         }
@@ -1323,6 +1419,7 @@ final class SwitcherViewModel {
                 to: targetVolume,
                 duration: duration
             ) { [weak player] volume in
+                if let generation, self.runtime.state.bgm.generation != generation { return }
                 player?.volume = volume
             }
         }
@@ -2399,29 +2496,11 @@ final class SwitcherViewModel {
     }
 
     func seekBGMToBeginning() {
-        bgmAudioPlayer?.currentTime = 0
-        bgmFallbackPlayer.seek(to: .zero)
-        bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? fallbackBGMKnownDuration() ?? 0)
+        dispatchRuntimeFacadeAction(.operatorSeekedBGMToBeginning)
     }
 
     func seekBGM(toProgress progress: Double) {
-        let clampedProgress = BGMProgressStore.clampedProgress(progress)
-        guard let player = bgmAudioPlayer else {
-            guard let duration = fallbackBGMKnownDuration(), duration > 0 else {
-                return
-            }
-            let targetTime = duration * clampedProgress
-            bgmFallbackPlayer.seek(to: CMTime(seconds: targetTime, preferredTimescale: 600))
-            bgmProgressStore.update(currentTime: targetTime, duration: duration)
-            return
-        }
-        let duration = player.duration
-        guard duration > 0 else {
-            bgmProgressStore.update(currentTime: 0, duration: 0)
-            return
-        }
-        player.currentTime = duration * clampedProgress
-        bgmProgressStore.update(currentTime: player.currentTime, duration: duration)
+        dispatchRuntimeFacadeAction(.operatorSeekedBGMToProgress(progress))
     }
 
     private func fallbackBGMKnownDuration() -> Double? {
@@ -2498,27 +2577,33 @@ final class SwitcherViewModel {
     }
 
     func startBGMTimer(generation: Int) {
-        stopBGMTimer()
+        stopActiveBGMTimer()
         bgmTransitionGeneration = generation
+        activeBGMTimerGeneration = generation
         cleanupBag.bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.bgmTransitionGeneration == generation else { return }
+                guard let self, self.activeBGMTimerGeneration == generation else { return }
                 self.updateBGMProgress(generation: generation)
             }
         }
     }
 
-    func stopBGMTimer() {
+    private func stopBGMTimer() {
+        stopActiveBGMTimer()
+    }
+
+    private func stopActiveBGMTimer() {
         cleanupBag.bgmProgressTimer?.invalidate()
         cleanupBag.bgmProgressTimer = nil
+        activeBGMTimerGeneration = nil
     }
 
     func stopBGMTimer(generation: Int) {
-        guard bgmTransitionGeneration == generation || runtime.state.bgm.generation == generation else { return }
-        stopBGMTimer()
+        guard activeBGMTimerGeneration == generation else { return }
+        stopActiveBGMTimer()
     }
 
-    private func releaseBGMPlayerAfterFade(_ player: AVAudioPlayer, duration: Double) {
+    private func releaseBGMPlayerAfterFade(_ player: AVAudioPlayer, duration: Double, generation: Int) {
         let taskID = UUID()
         cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self] in
             defer { self?.cleanupBag.bgmTransitionTasks[taskID] = nil }
@@ -2526,7 +2611,7 @@ final class SwitcherViewModel {
             if releaseDelay > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
             }
-            guard !Task.isCancelled else { return }
+            guard let self, !Task.isCancelled, self.runtime.state.bgm.generation == generation else { return }
             player.delegate = nil
             player.stop()
         }
@@ -2549,7 +2634,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func retireCurrentBGMFallbackPlayerForSwitch(duration: Double) {
+    private func retireCurrentBGMFallbackPlayerForSwitch(duration: Double, generation: Int) {
         guard bgmFallbackPlayer.currentItem != nil else { return }
 
         let player = bgmFallbackPlayer
@@ -2574,7 +2659,7 @@ final class SwitcherViewModel {
             } else {
                 player.volume = 0
             }
-            guard !Task.isCancelled else { return }
+            guard self.runtime.state.bgm.generation == generation, !Task.isCancelled else { return }
             player.volume = 0
             player.pause()
             player.replaceCurrentItem(with: nil)
