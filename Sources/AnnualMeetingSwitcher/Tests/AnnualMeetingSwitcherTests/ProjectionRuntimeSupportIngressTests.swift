@@ -33,7 +33,13 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
-    func testViewModelRecordsProjectionStartedSupportAfterRuntimeTransition() throws {
+    func testProjectionOwnedReducerDoesNotWriteProjectionStartFailedSupport() {
+        let mutation = reduce(LiveRuntimeState(), .projectionStartFailed(reason: .noTargetScreen))
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+    }
+
+    func testViewModelRecordsStartSuccessSupportAfterRuntimeTransition() throws {
         let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
 
         viewModel.handleBroadcastToggle()
@@ -42,13 +48,44 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionToggle })
     }
 
-    func testViewModelRecordsProjectionLostSupportAfterRuntimeTransition() throws {
+    func testViewModelRecordsStopSupportAfterRuntimeTransition() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStopped })
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionToggle })
+    }
+
+    func testViewModelRecordsStartFailureSupportAfterRuntimeTransition() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionFailClosed })
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStartFailed })
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .projectionLost })
+    }
+
+    func testViewModelRecordsDisplayLostSupportAfterRuntimeTransition() throws {
         let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
 
         viewModel.handleExternalDisplayLost()
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionFailClosed })
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionLost })
+    }
+
+    func testProjectionSupportEventsAreNotDuplicatedAcrossRepeatedCallbacks() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+
+        viewModel.handleExternalDisplayLost()
+        viewModel.handleExternalDisplayLost()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionFailClosed }.count, 1)
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionLost }.count, 1)
     }
 
     func testSupportEventRecordedStillWritesRuntimeSupportStorage() {

@@ -47,6 +47,16 @@ final class RuntimeEffectWiringTests: XCTestCase {
         }
     }
 
+    func testProjectionHardeningKeepsRuntimeBoundaryBeforePPTMigration() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let connected = viewModel.runtimeConnectedPortKinds
+
+        XCTAssertTrue(connected.contains(.projection))
+        XCTAssertFalse(connected.contains(.ppt))
+        XCTAssertFalse(connected.contains(.automation))
+        XCTAssertFalse(connected.contains(.support))
+    }
+
     func testCustomEffectRunnerReportsInjectedPorts() {
         let runner = LiveRuntimeEffectRunner(
             recordsOnly: false,

@@ -1104,6 +1104,7 @@ final class SwitcherViewModel {
     private func shouldSyncProjectionFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .operatorToggledProjection,
+             .projectionStartFailed,
              .projectionExternalDisplayLost,
              .projectionExternalDisplayAvailable,
              .projectionExternalDisplayUnavailable:
@@ -2850,23 +2851,26 @@ final class SwitcherViewModel {
     // MARK: - 推流控制
 
     func handleBroadcastToggle() {
+        refreshExternalDisplayAvailability()
         let oldProjection = runtime.state.projection
         dispatchRuntimeFacadeAction(.operatorToggledProjection)
         syncProjectionFacadeFromRuntime()
         recordProjectionSupportAfterRuntimeToggle(old: oldProjection, new: runtime.state.projection)
-        LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
-    }
-
-    func showOutputWindow() {
-        showOutputWindowFromRuntimeProjection()
+        if oldProjection.isBroadcasting != runtime.state.projection.isBroadcasting {
+            LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
+        }
     }
 
     private func showOutputWindowFromRuntimeProjection() {
         guard let targetScreen = projectionService.targetScreen() else {
             let oldProjection = runtime.state.projection
-            dispatchRuntimeFacadeAction(.projectionExternalDisplayLost)
+            dispatchRuntimeFacadeAction(.projectionStartFailed(reason: .noTargetScreen))
             syncProjectionFacadeFromRuntime()
-            recordProjectionSupportAfterRuntimeDisplayLost(old: oldProjection, new: runtime.state.projection)
+            recordProjectionSupportAfterRuntimeStartFailure(
+                old: oldProjection,
+                new: runtime.state.projection,
+                reason: .noTargetScreen
+            )
             return
         }
 
@@ -2882,10 +2886,6 @@ final class SwitcherViewModel {
             outputWindowController?.mountAnyView(rootView: outputView)
         }
         outputWindowController?.show(on: targetScreen)
-    }
-
-    func hideOutputWindow() {
-        hideOutputWindowFromRuntimeProjection()
     }
 
     private func hideOutputWindowFromRuntimeProjection() {
@@ -2917,6 +2917,21 @@ final class SwitcherViewModel {
             recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
             recordSupportEvent(kind: .projectionStartFailed, detail: "externalDisplay=false")
         }
+    }
+
+    private func recordProjectionSupportAfterRuntimeStartFailure(
+        old: ProjectionRuntimeState,
+        new: ProjectionRuntimeState,
+        reason: ProjectionStartFailureReason
+    ) {
+        guard !old.isBroadcasting,
+              !new.isBroadcasting,
+              new.safetyNotice == "未检测到外接屏幕，未开始投射"
+        else { return }
+
+        LiveSwitcherTelemetry.projectionFailClosed()
+        recordSupportEvent(kind: .projectionFailClosed, detail: "reason=\(reason.rawValue)")
+        recordSupportEvent(kind: .projectionStartFailed, detail: "reason=\(reason.rawValue)")
     }
 
     private func recordProjectionSupportAfterRuntimeDisplayLost(

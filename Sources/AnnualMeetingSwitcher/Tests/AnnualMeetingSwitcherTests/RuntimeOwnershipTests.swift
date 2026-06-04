@@ -117,7 +117,12 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Projection output is runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("Runtime owns projection start/stop decisions"))
         XCTAssertTrue(document.localizedStandardContains("The concrete output window"))
+        XCTAssertTrue(document.localizedStandardContains("Projection start failure is distinct from display loss"))
+        XCTAssertTrue(document.localizedStandardContains("`projectionStartFailed` records start failure semantics"))
+        XCTAssertTrue(document.localizedStandardContains("`projectionExternalDisplayLost` is only for broadcasting loss"))
+        XCTAssertTrue(document.localizedStandardContains("Raw output-window show/hide side effects are internal ProjectionPort"))
         XCTAssertTrue(document.localizedStandardContains("Support production ingress remains ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("PPT migration remains blocked until Projection hardening tests pass"))
     }
 
     private func runtimeOwnershipDocument() throws -> String {

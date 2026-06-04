@@ -947,7 +947,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(viewModel.broadcastSafetyNotice, "副屏已断开，投射已停止")
     }
 
-    func testSafeBroadcastToggleDoesNotRecordStartedWhenDisplayDisappearsBeforeShow() {
+    func testSafeBroadcastToggleRecordsStartFailureWhenDisplayDisappearsBeforeShow() {
         let viewModel = makeViewModel()
         var providerCalls = 0
         viewModel.externalScreenProvider = {
@@ -959,11 +959,12 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         let kinds = viewModel.supportEvents.map(\.kind)
         XCTAssertFalse(viewModel.isBroadcasting)
-        XCTAssertTrue(kinds.contains(.projectionLost))
+        XCTAssertTrue(kinds.contains(.projectionStartFailed))
+        XCTAssertFalse(kinds.contains(.projectionLost))
         XCTAssertFalse(kinds.contains(.projectionStarted))
     }
 
-    func testBroadcastToggleDoesNotRecordStartedWhenDisplayDisappearsBeforeShow() {
+    func testBroadcastToggleRecordsStartFailureWhenDisplayDisappearsBeforeShow() {
         let viewModel = makeViewModel()
         var providerCalls = 0
         viewModel.externalScreenProvider = {
@@ -975,7 +976,8 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         let kinds = viewModel.supportEvents.map(\.kind)
         XCTAssertFalse(viewModel.isBroadcasting)
-        XCTAssertTrue(kinds.contains(.projectionLost))
+        XCTAssertTrue(kinds.contains(.projectionStartFailed))
+        XCTAssertFalse(kinds.contains(.projectionLost))
         XCTAssertFalse(kinds.contains(.projectionStarted))
     }
 
@@ -1048,7 +1050,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertEqual(outputSpy.hideCount, 1)
     }
 
-    func testShowOutputWindowReusesExistingControllerAcrossMultipleShows() {
+    func testProjectionRuntimeStartReusesExistingControllerAcrossMultipleStarts() {
         let viewModel = makeViewModel()
         let outputSpy = OutputWindowControllerSpy()
         var factoryInvocationCount = 0
@@ -1058,13 +1060,14 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             return outputSpy
         }
 
-        viewModel.showOutputWindow()
-        viewModel.showOutputWindow()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
 
         XCTAssertEqual(factoryInvocationCount, 1)
         XCTAssertEqual(outputSpy.mountCount, 1)
         XCTAssertEqual(outputSpy.showCount, 2)
-        XCTAssertEqual(outputSpy.hideCount, 0)
+        XCTAssertEqual(outputSpy.hideCount, 1)
     }
 
     func testSwitchingToKeynoteStopsPreviousVideoAndInvokesPresentationHandler() throws {

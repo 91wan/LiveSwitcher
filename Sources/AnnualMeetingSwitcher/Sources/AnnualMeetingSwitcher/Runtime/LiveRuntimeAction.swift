@@ -6,6 +6,11 @@ enum PPTStopReason: String, Equatable {
     case failed
 }
 
+enum ProjectionStartFailureReason: String, Equatable {
+    case noTargetScreen
+    case externalDisplayUnavailable
+}
+
 enum LiveRuntimeAction: Equatable {
     case operatorSelectedProgram(UUID)
     case operatorSelectedDetachedProgram(ProgramItem)
@@ -62,6 +67,7 @@ enum LiveRuntimeAction: Equatable {
     case bgmProgressUpdated(time: Double, duration: Double?, generation: Int)
 
     case panicFadeCompleted(generation: Int)
+    case projectionStartFailed(reason: ProjectionStartFailureReason)
     case projectionExternalDisplayLost
     case projectionExternalDisplayAvailable
     case projectionExternalDisplayUnavailable
@@ -132,6 +138,7 @@ extension LiveRuntimeAction {
         case .bgmFailed: return "bgmFailed"
         case .bgmProgressUpdated: return "bgmProgressUpdated"
         case .panicFadeCompleted: return "panicFadeCompleted"
+        case .projectionStartFailed: return "projectionStartFailed"
         case .projectionExternalDisplayLost: return "projectionExternalDisplayLost"
         case .projectionExternalDisplayAvailable: return "projectionExternalDisplayAvailable"
         case .projectionExternalDisplayUnavailable: return "projectionExternalDisplayUnavailable"

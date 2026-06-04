@@ -29,8 +29,27 @@ final class ProjectionRuntimeStateTests: XCTestCase {
         let mutation = reduce(LiveRuntimeState(), .operatorToggledProjection)
 
         XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
         XCTAssertEqual(mutation.state.projection.safetyNotice, "未检测到外接屏幕，未开始投射")
         XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testProjectionStartFailureNoTargetScreenSetsSafetyNoticeAndNoEffect() {
+        var state = LiveRuntimeState()
+        state.projection.hasExternalDisplay = true
+
+        let mutation = reduce(state, .projectionStartFailed(reason: .noTargetScreen))
+
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertEqual(mutation.state.projection.safetyNotice, "未检测到外接屏幕，未开始投射")
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testProjectionStartFailureDoesNotWriteReducerSupportInProjectionOwnedMode() {
+        let mutation = reduce(LiveRuntimeState(), .projectionStartFailed(reason: .externalDisplayUnavailable))
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
     func testProjectionExternalDisplayLostStopsBroadcasting() {
