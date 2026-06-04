@@ -151,7 +151,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         XCTAssertTrue(forwarded[0].detail.contains("lastSeen="))
     }
 
-    func testViewModelSupportEventsDispatchRuntimeActionsAndMirrorFacadeState() {
+    func testViewModelSupportEventsDispatchRuntimeIngressWithoutActionLogNoiseAndMirrorFacadeState() {
         let viewModel = makeViewModel()
 
         viewModel.recordSupportEvent(
@@ -160,7 +160,7 @@ final class RuntimeSupportEventTests: XCTestCase {
             timestamp: Date(timeIntervalSince1970: 1_790_000_000)
         )
 
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertEqual(viewModel.runtime.state.support.events, viewModel.supportEvents)
         XCTAssertEqual(viewModel.supportEvents.last?.kind, .projectionStarted)
     }
@@ -176,7 +176,7 @@ final class RuntimeSupportEventTests: XCTestCase {
             )
         }
 
-        XCTAssertEqual(viewModel.runtime.actionLog.filter { $0.actionName == "supportEventRecorded" }.count, 3)
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertEqual(viewModel.runtime.state.support.events, viewModel.supportEvents)
         let event = try? XCTUnwrap(viewModel.supportEvents.last)
         XCTAssertEqual(event?.kind, .pageInterceptWPSNotRunning)

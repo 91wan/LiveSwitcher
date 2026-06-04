@@ -56,7 +56,7 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
 
         XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }.count, 1)
         XCTAssertEqual(viewModel.runtime.state.support.events.filter { $0.kind == .appleScriptFailed }.count, 1)
-        XCTAssertEqual(viewModel.runtime.actionLog.filter { $0.actionName == "supportEventRecorded" }.count, 1)
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationFailed" })
     }
 

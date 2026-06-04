@@ -185,6 +185,10 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`ViewModel.recordSupportEvent` remains the canonical facade call site"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
         XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("returns the exact accepted event stored in `state.support.events`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("emits `.recordSupportEvent` only for that accepted event"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("`.supportEventRecorded` is support ingress, not operator intent"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("suppressed from the operator-facing Runtime action log"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("must not append support events directly, perform local redaction/coalescing/trimming"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Support event generation call sites and telemetry remain ViewModel-owned"))
     }

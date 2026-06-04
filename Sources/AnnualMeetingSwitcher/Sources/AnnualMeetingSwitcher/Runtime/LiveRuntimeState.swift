@@ -185,7 +185,13 @@ struct SupportRuntimeState: Equatable {
     var coalescedCounts: [String: Int] = [:]
     var eventLimit = 80
 
-    mutating func record(kind: LiveSupportEventKind, detail: String, at date: Date) {
+    @discardableResult
+    mutating func record(event: LiveSupportEvent) -> LiveSupportEvent? {
+        record(kind: event.kind, detail: event.detail, at: event.timestamp)
+    }
+
+    @discardableResult
+    mutating func record(kind: LiveSupportEventKind, detail: String, at date: Date) -> LiveSupportEvent? {
         let baseDetail = LiveSupportRedactor.safeEventDetail(detail)
         let key = "\(kind.rawValue)|\(baseDetail)"
 
@@ -194,20 +200,21 @@ struct SupportRuntimeState: Equatable {
             let existing = events.remove(at: index)
             let nextCount = supportEventCoalescedCount(existing.detail) + 1
             coalescedCounts[key] = nextCount
-            events.append(
-                LiveSupportEvent(
-                    timestamp: date,
-                    kind: kind,
-                    detail: "\(baseDetail),count=\(nextCount),lastSeen=\(Self.isoString(date))"
-                )
+            let accepted = LiveSupportEvent(
+                timestamp: date,
+                kind: kind,
+                detail: "\(baseDetail),count=\(nextCount),lastSeen=\(Self.isoString(date))"
             )
+            events.append(accepted)
             trimToLimit()
-            return
+            return events.contains(accepted) ? accepted : nil
         }
 
         coalescedCounts[key] = 1
-        events.append(LiveSupportEvent(timestamp: date, kind: kind, detail: baseDetail))
+        let accepted = LiveSupportEvent(timestamp: date, kind: kind, detail: baseDetail)
+        events.append(accepted)
         trimToLimit()
+        return events.contains(accepted) ? accepted : nil
     }
 
     private mutating func trimToLimit() {

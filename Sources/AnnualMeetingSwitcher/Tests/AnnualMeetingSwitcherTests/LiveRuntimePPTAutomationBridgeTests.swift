@@ -10,7 +10,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         viewModel.setPPTMode(true, source: .liveMode)
 
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
     }
 

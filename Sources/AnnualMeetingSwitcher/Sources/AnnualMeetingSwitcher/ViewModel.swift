@@ -1205,8 +1205,6 @@ final class SwitcherViewModel {
     }
 
     func syncSupportFacadeFromRuntime() {
-        guard runtime.bridgeMode.owns(.support) else { return }
-
         supportEvents = runtime.state.support.events
     }
 
@@ -2238,7 +2236,6 @@ final class SwitcherViewModel {
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
         dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
         syncSupportFacadeFromRuntime()
-        syncLegacySupportFacadeFromRuntime()
         syncAutomationNoticeFacadeFromRuntime()
     }
 
@@ -3149,7 +3146,6 @@ final class SwitcherViewModel {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
         dispatchRuntimeFacadeAction(.supportEventRecorded(event))
         syncSupportFacadeFromRuntime()
-        syncLegacySupportFacadeFromRuntime()
     }
 
     // MARK: - System Volume Observer

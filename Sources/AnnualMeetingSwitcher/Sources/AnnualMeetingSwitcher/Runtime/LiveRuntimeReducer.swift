@@ -548,8 +548,9 @@ enum LiveRuntimeReducer {
             state.automation.notice = nil
 
         case .supportEventRecorded(let event):
-            state.support.record(kind: event.kind, detail: event.detail, at: event.timestamp)
-            effects.append(.recordSupportEvent(event))
+            if let accepted = state.support.record(event: event) {
+                effects.append(.recordSupportEvent(accepted))
+            }
         }
 
         return LiveRuntimeMutation(

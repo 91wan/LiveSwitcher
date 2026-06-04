@@ -5,11 +5,12 @@ final class SupportRuntimeCoalescingTests: XCTestCase {
     func testRepeatedAutomationFailureCoalescesInRuntimeState() throws {
         var state = SupportRuntimeState()
         state.record(kind: .appleScriptFailed, detail: "action=keynote.open,error=failed", at: Date(timeIntervalSince1970: 100))
-        state.record(kind: .appleScriptFailed, detail: "action=keynote.open,error=failed", at: Date(timeIntervalSince1970: 101))
+        let accepted = state.record(kind: .appleScriptFailed, detail: "action=keynote.open,error=failed", at: Date(timeIntervalSince1970: 101))
 
         let event = try XCTUnwrap(state.events.first)
         XCTAssertEqual(state.events.count, 1)
         XCTAssertTrue(event.detail.contains("count=2"))
+        XCTAssertEqual(accepted, event)
     }
 
     func testChangingAutomationFailureDetailsStaySeparate() {

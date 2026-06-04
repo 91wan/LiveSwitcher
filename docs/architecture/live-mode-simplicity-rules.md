@@ -90,15 +90,15 @@ product boundary.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
 - Current authoritative runtime domains: Audio, Media playback, BGM playback,
-  Projection output, and PPT EventTap lifecycle, plus Automation notice
-  lifecycle.
+  Projection output, PPT EventTap lifecycle, Automation notice lifecycle, and
+  Support ingress/storage.
 - Mirror-only live domains are Program queue, Panic, and Automation. PPT key
   forwarding, WPS automation, automation execution, Support event production,
   and telemetry remain ViewModel-owned implementation details.
-- Runtime-backed actions must respect the production `.automationNoticeOwned`
+- Runtime-backed actions must respect the production `.supportOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
-  lifecycle, automation notices, audio routing, image assets, and persistence
-  may execute; unowned automation execution and support effects must not.
+  lifecycle, automation notices, Support ingress, audio routing, image assets,
+  and persistence may execute; unowned automation execution must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.
