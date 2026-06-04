@@ -19,7 +19,7 @@ final class SupportRuntimeProductionBoundaryTests: XCTestCase {
             timestamp: Date(timeIntervalSince1970: 100)
         )
 
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertEqual(viewModel.supportEvents, viewModel.runtime.state.support.events)
     }
 

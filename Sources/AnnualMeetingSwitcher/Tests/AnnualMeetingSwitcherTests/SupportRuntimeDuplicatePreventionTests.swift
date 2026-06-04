@@ -24,7 +24,7 @@ final class SupportRuntimeDuplicatePreventionTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
-    func testSupportEventRecordedAddsOneRuntimeEventAndOnePortEffect() {
+    func testSupportEventRecordedAddsOneRuntimeEventAndOneAcceptedPortEffect() {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 100),
             kind: .projectionStarted,
@@ -34,7 +34,22 @@ final class SupportRuntimeDuplicatePreventionTests: XCTestCase {
         let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
         XCTAssertEqual(mutation.state.support.events.count, 1)
-        XCTAssertEqual(mutation.effects, [.recordSupportEvent(event)])
+        XCTAssertEqual(mutation.effects, mutation.state.support.events.map(LiveRuntimeEffect.recordSupportEvent))
+    }
+
+    func testSupportOwnedBGMFailureDoesNotGenerateReducerSupportEvent() {
+        var state = LiveRuntimeState()
+        state.bgm.generation = 7
+
+        let mutation = reduce(state, .bgmFailed(reason: "failed", generation: 7), bridgeMode: .supportOwned)
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+    }
+
+    func testSupportOwnedPanicToggleDoesNotGenerateReducerSupportEvent() {
+        let mutation = reduce(.operatorToggledPanic, bridgeMode: .supportOwned)
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
     func testViewModelRecordSupportEventDoesNotDuplicateFacadeEvents() {
@@ -54,8 +69,16 @@ final class SupportRuntimeDuplicatePreventionTests: XCTestCase {
         _ action: LiveRuntimeAction,
         bridgeMode: LiveRuntimeBridgeMode
     ) -> LiveRuntimeMutation {
+        reduce(LiveRuntimeState(), action, bridgeMode: bridgeMode)
+    }
+
+    private func reduce(
+        _ state: LiveRuntimeState,
+        _ action: LiveRuntimeAction,
+        bridgeMode: LiveRuntimeBridgeMode
+    ) -> LiveRuntimeMutation {
         LiveRuntimeReducer.reduce(
-            state: LiveRuntimeState(),
+            state: state,
             action: action,
             environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: bridgeMode)
         )

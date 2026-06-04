@@ -51,6 +51,55 @@ final class RuntimeActionLogPolicyTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "automationFailed" })
     }
 
+    func testSupportEventRecordedIsNotLoggedButStillWritesSupportState() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .supportOwned)
+        )
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .projectionStarted,
+            detail: "source=viewModel"
+        )
+
+        runtime.dispatch(.supportEventRecorded(event))
+
+        XCTAssertFalse(LiveRuntimeActionLogPolicy.shouldLog(.supportEventRecorded(event)))
+        XCTAssertTrue(runtime.actionLog.isEmpty)
+        XCTAssertEqual(runtime.state.support.events, [event])
+    }
+
+    func testRepeatedSupportEventsDoNotGrowActionLog() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .supportOwned)
+        )
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .projectionStarted,
+            detail: "source=viewModel"
+        )
+
+        runtime.dispatch(.supportEventRecorded(event))
+        runtime.dispatch(.supportEventRecorded(event))
+        runtime.dispatch(.supportEventRecorded(event))
+
+        XCTAssertTrue(runtime.actionLog.isEmpty)
+        XCTAssertEqual(runtime.state.support.events.count, 3)
+    }
+
+    func testAutomationNoticeDismissalStillLogsAction() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .automationNoticeOwned)
+        )
+
+        runtime.dispatch(.automationNoticeDismissed)
+
+        XCTAssertTrue(LiveRuntimeActionLogPolicy.shouldLog(.automationNoticeDismissed))
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "automationNoticeDismissed" })
+    }
+
     func testProjectionLostIsLogged() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),

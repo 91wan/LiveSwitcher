@@ -69,6 +69,97 @@ final class SupportRuntimeEffectExecutionTests: XCTestCase {
         XCTAssertTrue(automation.actions.isEmpty)
     }
 
+    func testSupportPortReceivesAcceptedSanitizedEvent() throws {
+        let support = SupportEventPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, support: support),
+            environment: .productionSupportOwning()
+        )
+
+        runtime.dispatch(.supportEventRecorded(LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .appleScriptFailed,
+            detail: "path=/Users/operator/private-show.key,error=failed"
+        )))
+
+        let accepted = try XCTUnwrap(support.events.last)
+        XCTAssertEqual(accepted, runtime.state.support.events.last)
+        XCTAssertFalse(accepted.detail.localizedStandardContains("/Users/"))
+        XCTAssertFalse(accepted.detail.localizedStandardContains("private-show.key"))
+    }
+
+    func testSupportPortDoesNotReceiveRawInputEvent() throws {
+        let support = SupportEventPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, support: support),
+            environment: .productionSupportOwning()
+        )
+        let first = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.open,error=failed"
+        )
+        let rawRepeat = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 101),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.open,error=failed"
+        )
+
+        runtime.dispatch(.supportEventRecorded(first))
+        runtime.dispatch(.supportEventRecorded(rawRepeat))
+
+        let accepted = try XCTUnwrap(support.events.last)
+        XCTAssertNotEqual(accepted, rawRepeat)
+        XCTAssertTrue(accepted.detail.contains("count=2"))
+    }
+
+    func testSupportPortReceivesAcceptedCoalescedEventOnRepeatedFailure() throws {
+        let support = SupportEventPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, support: support),
+            environment: .productionSupportOwning()
+        )
+        let first = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.open,error=failed"
+        )
+        let second = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 101),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.open,error=failed"
+        )
+
+        runtime.dispatch(.supportEventRecorded(first))
+        runtime.dispatch(.supportEventRecorded(second))
+
+        let accepted = try XCTUnwrap(runtime.state.support.events.first)
+        XCTAssertEqual(support.events.last, accepted)
+        XCTAssertTrue(accepted.detail.contains("count=2"))
+        XCTAssertNotEqual(support.events.last, second)
+    }
+
+    func testSupportPortDoesNotReceiveTrimmedLowPriorityEvent() {
+        let support = SupportEventPortSpy()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, support: support),
+            environment: .productionSupportOwning()
+        )
+        var state = runtime.state
+        state.support.eventLimit = 1
+        state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: Date(timeIntervalSince1970: 100))
+        runtime.replaceStateForFacadeSync(state, clearActionLog: false)
+
+        runtime.dispatch(.supportEventRecorded(LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 101),
+            kind: .systemVolumeSynced,
+            detail: "deviceID=1,volume=0.5"
+        )))
+
+        XCTAssertTrue(support.events.isEmpty)
+        XCTAssertEqual(runtime.state.support.events.map(\.kind), [.panicModeChanged])
+    }
+
     private func supportEvent() -> LiveSupportEvent {
         LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 100),

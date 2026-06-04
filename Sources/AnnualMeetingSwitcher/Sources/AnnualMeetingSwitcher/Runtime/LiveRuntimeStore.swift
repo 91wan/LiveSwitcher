@@ -113,6 +113,7 @@ enum LiveRuntimeActionLogPolicy {
         case .facadeAudioInputsChanged,
              .automationNoticeRequested,
              .automationNoticeExpired,
+             .supportEventRecorded,
              .bgmProgressUpdated,
              .mediaSeekCompleted:
             return false

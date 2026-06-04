@@ -52,6 +52,13 @@ final class SupportRuntimePortContractTests: XCTestCase {
         XCTAssertTrue(source.contains("recordHandler?(event)"))
     }
 
+    func testSupportEventPortHasNoDefaultNoOpImplementation() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+
+        XCTAssertTrue(source.contains("protocol SupportEventPort"))
+        XCTAssertFalse(source.contains("extension SupportEventPort"))
+    }
+
     func testProductionSupportPortIsWiredAndAutomationPortIsNot() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let initializer = try XCTUnwrap(source.range(of: "LiveRuntimeEffectRunner("))

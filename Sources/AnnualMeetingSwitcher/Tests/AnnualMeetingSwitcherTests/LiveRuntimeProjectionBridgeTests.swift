@@ -188,7 +188,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
 
         XCTAssertFalse(viewModel.isBroadcasting)
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "projectionExternalDisplayLost" })
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
         XCTAssertFalse(viewModel.runtime.state.projection.isBroadcasting)
         XCTAssertEqual(viewModel.broadcastSafetyNotice, "副屏已断开，投射已停止")
     }

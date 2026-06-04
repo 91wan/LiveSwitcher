@@ -80,6 +80,7 @@ operator actions and callback actions. Support events enter Runtime through the
 explicit `.supportEventRecorded` facade action.
 
 Support storage, production ingress, and facade projection use Runtime state.
+Runtime also owns accepted-event selection before notification port effects.
 `ViewModel.recordSupportEvent` is now a thin Runtime facade that dispatches
 `.supportEventRecorded` and syncs `supportEvents` from `runtime.state.support`.
 Reducer-generated support events remain full-runtime/test-only; production
@@ -108,7 +109,7 @@ ownership PR is approved.
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. AppleScript execution, Keynote/WPS/PPT automation execution, automation permission modal alerts, support event generation call sites, and telemetry remain ViewModel-owned. |
-| Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
+| Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
 | Persistence | ViewModel/UserDefaults | Wired preference persistence effects | bridge in progress | Runtime may persist selected preferences, but general state save remains ViewModel/UserDefaults-owned. |
 
 ## Effect Wiring
@@ -285,6 +286,11 @@ Support storage and production ingress are runtime-owned. Runtime owns
 `state.support.events`, `state.support.coalescedCounts`, and
 `state.support.eventLimit`, including redaction, coalescing, priority retention,
 and trimming. Production uses `.supportOwned` and wires `SupportEventPort`.
+`SupportRuntimeState.record` returns the exact accepted event stored in
+`state.support.events`, including a coalesced replacement event, or `nil` when
+the incoming event is trimmed immediately by priority retention. The reducer
+emits `.recordSupportEvent` only for that accepted event, so the port never
+receives a raw, rejected, or uncoalesced ingress payload.
 
 `ViewModel.recordSupportEvent` remains the canonical facade call site for
 existing UI, projection, PPT, BGM, automation failure, preflight, and overlay
@@ -294,6 +300,14 @@ append support events directly, perform local redaction/coalescing/trimming,
 write UserDefaults, run telemetry, or execute automation. The production
 `SupportEventPort` is notification-only and exists to sync the concrete
 `supportEvents` facade after Runtime state changes.
+
+`.supportEventRecorded` is support ingress, not operator intent, and is
+suppressed from the operator-facing Runtime action log. Meaningful operator and
+system actions such as projection toggles, `automationFailed`, and
+`automationNoticeDismissed` remain logged. Reducer-generated support remains
+disabled in production migrated domains; ViewModel call sites still decide
+which Support events exist. Automation execution remains ViewModel-owned and is
+not wired in `.supportOwned`.
 
 ## Next Migration Gate
 

@@ -12,12 +12,12 @@ final class SupportRuntimeIngressTests: XCTestCase {
         XCTAssertEqual(recorded.detail, event.detail)
     }
 
-    func testSupportEventRecordedEmitsRecordSupportEffectWhenSupportOwned() {
+    func testSupportEventRecordedEmitsAcceptedRecordSupportEffectWhenSupportOwned() {
         let event = supportEvent()
 
         let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
-        XCTAssertEqual(mutation.effects, [.recordSupportEvent(event)])
+        XCTAssertEqual(mutation.effects, mutation.state.support.events.map(LiveRuntimeEffect.recordSupportEvent))
     }
 
     func testAutomationNoticeOwnedStillBlocksRecordSupportEffect() {

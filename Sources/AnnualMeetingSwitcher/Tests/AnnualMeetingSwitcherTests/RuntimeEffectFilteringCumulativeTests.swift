@@ -55,6 +55,18 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         )
     }
 
+    func testProductionSupportOwnedModeDoesNotOwnAutomationDomain() {
+        XCTAssertFalse(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode.owns(.automation))
+        XCTAssertTrue(LiveRuntimeEnvironment.fullRuntimeForTests().bridgeMode.owns(.automation))
+    }
+
+    func testSupportOwnedModeBlocksRunAppleScriptEffect() {
+        let effect = LiveRuntimeEffect.runAppleScript(script: "tell app", action: "keynote.next-slide")
+
+        XCTAssertEqual(effect.requiredBridgeDomain, .automation)
+        XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(effect.requiredBridgeDomain))
+    }
+
     func testAudioOwnedDoesNotAllowSaveBGMPlayMode() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .audioOwned)
 
