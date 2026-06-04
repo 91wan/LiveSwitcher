@@ -24,7 +24,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         }
     }
 
-    func testProjectionStartWithDisplayProducesStartAndShowEffects() {
+    func testProjectionStartWithDisplayProducesCanonicalStartEffect() {
         var state = LiveRuntimeState()
         state.projection.hasExternalDisplay = true
 
@@ -36,8 +36,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
 
         XCTAssertTrue(mutation.state.projection.isBroadcasting)
         XCTAssertNil(mutation.state.projection.safetyNotice)
-        XCTAssertTrue(mutation.effects.contains(.startProjection))
-        XCTAssertTrue(mutation.effects.contains(.showOutputWindow))
+        XCTAssertEqual(mutation.effects, [.startProjection])
         XCTAssertTrue(mutation.state.support.events.contains { $0.kind == .projectionStarted })
     }
 
@@ -49,7 +48,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         )
 
         XCTAssertFalse(mutation.state.projection.isBroadcasting)
-        XCTAssertEqual(mutation.state.projection.safetyNotice, "No external display")
+        XCTAssertEqual(mutation.state.projection.safetyNotice, "未检测到外接屏幕，未开始投射")
         XCTAssertFalse(mutation.effects.contains(.startProjection))
         XCTAssertFalse(mutation.effects.contains(.showOutputWindow))
         XCTAssertTrue(mutation.state.support.events.contains { $0.kind == .projectionStartFailed })
@@ -115,7 +114,7 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
         XCTAssertNil(mutation.state.projection.lastDisplayLostAt)
     }
 
-    func testProjectionDisplayUnavailableCallbackOnlyUpdatesAvailabilityCache() {
+    func testProjectionDisplayUnavailableCallbackStopsActiveBroadcasting() {
         var state = LiveRuntimeState()
         state.projection.isBroadcasting = true
         state.projection.hasExternalDisplay = true
@@ -126,9 +125,9 @@ final class LiveRuntimeProjectionBridgeTests: XCTestCase {
             environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
 
-        XCTAssertTrue(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
         XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
-        XCTAssertFalse(mutation.effects.contains(.stopProjection))
+        XCTAssertTrue(mutation.effects.contains(.stopProjection))
         XCTAssertFalse(mutation.state.support.events.contains { $0.kind == .projectionLost })
     }
 

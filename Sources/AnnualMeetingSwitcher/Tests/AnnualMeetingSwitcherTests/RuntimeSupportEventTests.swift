@@ -59,7 +59,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
         viewModel.handleBroadcastToggle()
         viewModel.handleBroadcastToggle()
-        viewModel.isBroadcasting = true
+        viewModel.handleBroadcastToggle()
         viewModel.handleExternalDisplayLost()
 
         let kinds = viewModel.supportEvents.map(\.kind)

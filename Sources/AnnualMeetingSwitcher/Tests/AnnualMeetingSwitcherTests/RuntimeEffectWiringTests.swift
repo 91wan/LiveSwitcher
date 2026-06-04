@@ -3,24 +3,25 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionRuntimeConnectedPortsExactlyMatchExpectedBGMOwningSet() {
+    func testProductionConnectedPortsExactlyMatchProjectionOwnedSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsBGMOwning() {
+    func testProductionViewModelRuntimeBridgeModeIsProjectionOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .bgmOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .projectionOwned)
     }
 
-    func testProductionRuntimeWiresMediaBGMAndAudioPorts() {
+    func testProductionRuntimeWiresProjectionMediaBGMAndAudioPorts() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.projection))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
@@ -32,12 +33,11 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
     }
 
-    func testProductionRuntimeDoesNotWireProjectionPPTAutomationNoticeOrSupport() {
+    func testProductionRuntimeDoesNotWirePPTAutomationNoticeOrSupport() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         [
-            .projection,
             .ppt,
             .automation,
             .automationNotice,

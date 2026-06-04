@@ -154,16 +154,6 @@ protocol ProjectionPort {
     func hide()
 }
 
-extension ProjectionPort {
-    func start() {
-        show()
-    }
-
-    func stop() {
-        hide()
-    }
-}
-
 protocol PPTEventTapPort {
     func start()
     func stop(reason: PPTStopReason)

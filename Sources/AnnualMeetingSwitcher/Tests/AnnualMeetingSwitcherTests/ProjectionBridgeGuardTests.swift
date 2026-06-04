@@ -49,6 +49,6 @@ final class ProjectionBridgeGuardTests: XCTestCase {
         )
 
         XCTAssertTrue(mutation.effects.contains(.startProjection))
-        XCTAssertTrue(mutation.effects.contains(.showOutputWindow))
+        XCTAssertFalse(mutation.effects.contains(.showOutputWindow))
     }
 }
