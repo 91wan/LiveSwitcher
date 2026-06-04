@@ -9,6 +9,12 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
+    func testAutomationFailedReducerDoesNotWriteSupportInAutomationNoticeOwned() {
+        let mutation = reduce(.automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed"))
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+    }
+
     func testAutomationNoticeOwnedReducerDoesNotWriteProgramSourceMissingSupport() {
         let mutation = reduce(.automationNoticeRequested(action: "program.source.missing"))
 
@@ -40,6 +46,20 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
     }
 
+    func testHandleAppleScriptFailureWritesSupportThroughViewModelOnly() {
+        let viewModel = makeViewModel()
+
+        viewModel.handleAppleScriptFailure(
+            AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed"),
+            action: "keynote.next-slide"
+        )
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }.count, 1)
+        XCTAssertEqual(viewModel.runtime.state.support.events.filter { $0.kind == .appleScriptFailed }.count, 1)
+        XCTAssertEqual(viewModel.runtime.actionLog.filter { $0.actionName == "supportEventRecorded" }.count, 1)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationFailed" })
+    }
+
     func testRepeatedAppleScriptFailuresCoalesceSupportEvents() {
         let viewModel = makeViewModel()
 
@@ -55,6 +75,36 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         let failures = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
         XCTAssertEqual(failures.count, 1)
         XCTAssertTrue(failures[0].detail.contains("count=2"))
+    }
+
+    func testRepeatedAppleScriptFailuresCoalesceSupportButSuppressVisibleNotice() throws {
+        let viewModel = makeViewModel()
+
+        viewModel.handleAppleScriptFailure(
+            AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed"),
+            action: "keynote.next-slide"
+        )
+        let firstNotice = try XCTUnwrap(viewModel.automationRuntimeNotice)
+        let firstShowCount = viewModel.runtime.recordedEffects.filter { effect in
+            if case .showAutomationNotice = effect { return true }
+            return false
+        }.count
+
+        viewModel.handleAppleScriptFailure(
+            AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed"),
+            action: "keynote.next-slide"
+        )
+
+        let failures = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
+        let secondShowCount = viewModel.runtime.recordedEffects.filter { effect in
+            if case .showAutomationNotice = effect { return true }
+            return false
+        }.count
+
+        XCTAssertEqual(viewModel.automationRuntimeNotice, firstNotice)
+        XCTAssertEqual(failures.count, 1)
+        XCTAssertTrue(failures[0].detail.contains("count=2"))
+        XCTAssertEqual(secondShowCount, firstShowCount)
     }
 
     func testRepeatedAppleScriptFailuresDoNotEvictCriticalSupportEvents() {
@@ -75,6 +125,10 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         XCTAssertTrue(state.events.contains { $0.kind == .panicModeChanged })
         XCTAssertTrue(state.events.contains { $0.kind == .projectionLost })
         XCTAssertLessThanOrEqual(state.events.count, state.eventLimit)
+    }
+
+    func testCriticalSupportEventsSurviveRepeatedAutomationFailures() {
+        testRepeatedAppleScriptFailuresDoNotEvictCriticalSupportEvents()
     }
 
     private func reduce(_ action: LiveRuntimeAction) -> LiveRuntimeMutation {

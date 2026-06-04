@@ -69,6 +69,53 @@ final class AutomationNoticeRuntimeOwnershipTests: XCTestCase {
         XCTAssertFalse(notice.message.localizedStandardContains("private-show.key"))
     }
 
+    func testAutomationFailedNoticeDoesNotUseSanitizedMessageAsVisibleCopy() throws {
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .automationFailed(
+                action: "keynote.next-slide",
+                sanitizedMessage: "raw script source /Users/operator/private-show.key customer line"
+            ),
+            environment: .productionAutomationNoticeOwning(now: Date(timeIntervalSince1970: 100))
+        )
+
+        let notice = try XCTUnwrap(mutation.state.automation.notice)
+        XCTAssertFalse(notice.title.localizedStandardContains("raw script source"))
+        XCTAssertFalse(notice.message.localizedStandardContains("raw script source"))
+        XCTAssertFalse(notice.message.localizedStandardContains("/Users/operator"))
+        XCTAssertFalse(notice.message.localizedStandardContains("customer line"))
+    }
+
+    func testAutomationFailedNoticeUsesActionPolicyCopy() throws {
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed"),
+            environment: .productionAutomationNoticeOwning(now: Date(timeIntervalSince1970: 100))
+        )
+
+        let notice = try XCTUnwrap(mutation.state.automation.notice)
+        XCTAssertEqual(notice.title, "翻页未发送")
+        XCTAssertEqual(notice.primaryAction, .openSafetyCockpit)
+    }
+
+    func testPermissionNoticeUsesOpenSystemSettingsAction() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "accessibilityPermission.denied")
+
+        XCTAssertEqual(notice.primaryAction, .openSystemSettingsAccessibility)
+    }
+
+    func testWPSPageNoticeUsesSafetyCockpitAction() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "wps.page.next")
+
+        XCTAssertEqual(notice.primaryAction, .openSafetyCockpit)
+    }
+
+    func testProgramSourceMissingNoticeUsesSafetyCockpitAction() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "program.source.missing")
+
+        XCTAssertEqual(notice.primaryAction, .openSafetyCockpit)
+    }
+
     func testProgramSourceMissingUsesRuntimeNotice() {
         let viewModel = makeViewModel()
         let missingURL = FileManager.default.temporaryDirectory
@@ -79,7 +126,12 @@ final class AutomationNoticeRuntimeOwnershipTests: XCTestCase {
 
         viewModel.switchToProgram(item)
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeRequested" })
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains { effect in
+            if case .showAutomationNotice(let notice) = effect {
+                return notice.action == "program.source.missing"
+            }
+            return false
+        })
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "program.source.missing")
     }
 

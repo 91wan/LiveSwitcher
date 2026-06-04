@@ -73,7 +73,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
 
         viewModel.switchToProgram(item)
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeRequested" })
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeRequested" })
         XCTAssertEqual(viewModel.runtime.state.automation.notice?.action, "program.source.missing")
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "program.source.missing")
         XCTAssertTrue(viewModel.runtime.recordedEffects.contains {
@@ -98,18 +98,16 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "automationNoticeDismissed")
         XCTAssertNil(viewModel.runtime.state.automation.notice)
 
-        let expiringNotice = AutomationRuntimeNoticePolicy.make(
-            action: "keynote.next-slide",
-            createdAt: Date(timeIntervalSince1970: 2_000)
-        )
-        viewModel.automationRuntimeNotice = expiringNotice
+        viewModel.dispatchRuntimeFacadeAction(.automationNoticeRequested(action: "keynote.next-slide"))
+        let expiringNotice = try XCTUnwrap(viewModel.automationRuntimeNotice)
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.expireAutomationRuntimeNotice(
             id: expiringNotice.id,
             now: expiringNotice.expiresAt!.addingTimeInterval(1)
         )
 
-        XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "automationNoticeExpired")
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "automationNoticeExpired" })
         XCTAssertNil(viewModel.runtime.state.automation.notice)
     }
 
