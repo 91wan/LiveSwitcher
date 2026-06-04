@@ -291,7 +291,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(source.contains("presentAutomationAlert("))
         XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
         XCTAssertTrue(failureBody.contains("dispatchRuntimeFacadeAction(.automationFailed"))
-        XCTAssertTrue(failureBody.contains("supportEvents = runtime.state.support.events"))
+        XCTAssertTrue(failureBody.contains("syncSupportFacadeFromRuntime()"))
         XCTAssertTrue(failureBody.contains("syncAutomationNoticeFacadeFromRuntime()"))
         XCTAssertTrue(startPageInterceptBody.contains("presentAutomationAlert("))
         XCTAssertFalse(startPageInterceptBody.contains("let alert = NSAlert()"))

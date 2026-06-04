@@ -23,10 +23,10 @@ final class AutomationNoticeRuntimePortContractTests: XCTestCase {
         XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.automation))
     }
 
-    func testProductionRuntimeDoesNotWireSupportPort() {
+    func testProductionRuntimeWiresSupportPortAfterSupportMigration() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.support))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
     }
 
     func testRunAppleScriptEffectRequiresAutomationDomain() {
