@@ -176,6 +176,19 @@ private final class ClosureBGMTimerPort: BGMTimerPort {
     }
 }
 
+private final class ClosureAutomationNoticePort: AutomationNoticePort {
+    var showHandler: ((AutomationRuntimeNotice) -> Void)?
+    var expireHandler: ((UUID, Date) -> Void)?
+
+    func show(_ notice: AutomationRuntimeNotice) {
+        showHandler?(notice)
+    }
+
+    func expire(id: UUID, at date: Date) {
+        expireHandler?(id, date)
+    }
+}
+
 private final class ClosureProjectionPort: ProjectionPort {
     var hasExternalDisplayHandler: (() -> Bool)?
     var startHandler: (() -> Void)?
@@ -337,6 +350,7 @@ final class ViewModelCleanupBag {
     var bgmFallbackFailureObserver: NSObjectProtocol?
     var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
     var retiredBGMFallbackPlayers: [UUID: AVPlayer] = [:]
+    var automationNoticeExpiryTask: Task<Void, Never>?
     var panicAudioPauseTask: Task<Void, Never>?
     var backgroundImageLoadTask: Task<Void, Never>?
     var cornerLogoImageLoadTask: Task<Void, Never>?
@@ -355,6 +369,7 @@ final class ViewModelCleanupBag {
             player.replaceCurrentItem(with: nil)
         }
         retiredBGMFallbackPlayers.removeAll()
+        automationNoticeExpiryTask?.cancel()
         panicAudioPauseTask?.cancel()
         backgroundImageLoadTask?.cancel()
         cornerLogoImageLoadTask?.cancel()
@@ -696,6 +711,7 @@ final class SwitcherViewModel {
         let bgmTimerPort = ClosureBGMTimerPort()
         let projectionPort = ClosureProjectionPort()
         let pptPort = ClosurePPTEventTapPort()
+        let automationNoticePort = ClosureAutomationNoticePort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -708,12 +724,29 @@ final class SwitcherViewModel {
                 projection: projectionPort,
                 ppt: pptPort,
                 bgmTimer: bgmTimerPort,
+                automationNotice: automationNoticePort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
             ),
-            environment: .productionPPTOwning()
+            environment: .productionAutomationNoticeOwning()
         )
+        automationNoticePort.showHandler = { [weak self] notice in
+            self?.automationRuntimeNotice = notice
+        }
+        automationNoticePort.expireHandler = { [weak self] id, date in
+            guard let self else { return }
+            cleanupBag.automationNoticeExpiryTask?.cancel()
+            cleanupBag.automationNoticeExpiryTask = Task { @MainActor [weak self] in
+                let delay = max(0, date.timeIntervalSinceNow)
+                if delay > 0 {
+                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                }
+                guard !Task.isCancelled else { return }
+                self?.dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
+                self?.syncAutomationNoticeFacadeFromRuntime()
+            }
+        }
         projectionPort.hasExternalDisplayHandler = { [weak self] in
             self?.projectionService.hasExternalDisplay ?? false
         }
@@ -896,6 +929,9 @@ final class SwitcherViewModel {
         }
         if shouldSyncPPTFacadeAfterRuntimeAction(action) {
             syncPPTFacadeFromRuntime()
+        }
+        if shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action) {
+            syncAutomationNoticeFacadeFromRuntime()
         }
     }
 
@@ -1094,9 +1130,36 @@ final class SwitcherViewModel {
 
         syncProjectionAvailabilityIntoRuntimeSnapshot(&state)
 
-        state.automation.notice = automationRuntimeNotice
+        syncAutomationNoticeIntoRuntimeSnapshot(&state)
         state.support.events = supportEvents
         return state
+    }
+
+    private func syncAutomationNoticeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.automationNotice) else {
+            state.automation = runtime.state.automation
+            return
+        }
+
+        state.automation.notice = automationRuntimeNotice
+    }
+
+    private func shouldSyncAutomationNoticeFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .automationFailed,
+             .automationNoticeRequested,
+             .automationNoticeExpired,
+             .automationNoticeDismissed:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func syncAutomationNoticeFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.automationNotice) else { return }
+
+        automationRuntimeNotice = runtime.state.automation.notice
     }
 
     private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
@@ -2121,12 +2184,12 @@ final class SwitcherViewModel {
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
         dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
         supportEvents = runtime.state.support.events
-        automationRuntimeNotice = runtime.state.automation.notice
+        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func dismissAutomationRuntimeNotice() {
         dispatchRuntimeFacadeAction(.automationNoticeDismissed)
-        automationRuntimeNotice = nil
+        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func expireAutomationRuntimeNotice(id: UUID, now: Date = Date()) {
@@ -2136,12 +2199,12 @@ final class SwitcherViewModel {
               now >= expiresAt
         else { return }
         dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
-        automationRuntimeNotice = nil
+        syncAutomationNoticeFacadeFromRuntime()
     }
 
     private func showAutomationRuntimeNotice(action: String) {
         dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))
-        automationRuntimeNotice = runtime.state.automation.notice
+        syncAutomationNoticeFacadeFromRuntime()
     }
 
     private func presentAutomationAlert(

@@ -35,6 +35,26 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .bgm)
     }
 
+    func testShowAutomationNoticeRequiresAutomationNoticeDomain() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "keynote.next-slide")
+
+        XCTAssertEqual(LiveRuntimeEffect.showAutomationNotice(notice).requiredBridgeDomain, .automationNotice)
+    }
+
+    func testExpireAutomationNoticeRequiresAutomationNoticeDomain() {
+        XCTAssertEqual(
+            LiveRuntimeEffect.expireAutomationNotice(UUID(), at: Date(timeIntervalSince1970: 1)).requiredBridgeDomain,
+            .automationNotice
+        )
+    }
+
+    func testRunAppleScriptStillRequiresAutomationDomain() {
+        XCTAssertEqual(
+            LiveRuntimeEffect.runAppleScript(script: "tell app", action: "keynote.next-slide").requiredBridgeDomain,
+            .automation
+        )
+    }
+
     func testAudioOwnedDoesNotAllowSaveBGMPlayMode() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .audioOwned)
 
@@ -130,6 +150,28 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertEqual(pptMutation.effects, [.startPPTEventTap])
         XCTAssertFalse(automationMutation.effects.contains { effect in
             if case .showAutomationNotice = effect { return true }
+            return false
+        })
+        XCTAssertFalse(supportMutation.effects.contains(.recordSupportEvent(support)))
+    }
+
+    func testAutomationNoticeOwnedModeAllowsAutomationNoticeButBlocksAutomationAndSupportEffects() {
+        let support = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 10),
+            kind: .pageInterceptEnabled,
+            detail: "source=test"
+        )
+
+        let noticeMutation = reduce(.automationNoticeRequested(action: "keynote.open"), bridgeMode: .automationNoticeOwned)
+        let scriptMutation = reduce(.automationFailed(action: "keynote.open", sanitizedMessage: "failed"), bridgeMode: .automationNoticeOwned)
+        let supportMutation = reduce(.supportEventRecorded(support), bridgeMode: .automationNoticeOwned)
+
+        XCTAssertTrue(noticeMutation.effects.contains { effect in
+            if case .showAutomationNotice = effect { return true }
+            return false
+        })
+        XCTAssertFalse(scriptMutation.effects.contains { effect in
+            if case .runAppleScript = effect { return true }
             return false
         })
         XCTAssertFalse(supportMutation.effects.contains(.recordSupportEvent(support)))

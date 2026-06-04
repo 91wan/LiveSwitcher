@@ -84,6 +84,16 @@ enum AutomationRuntimeNoticePolicy {
             )
         }
 
+        if action.contains("accessibilityPermission") || action.contains("permissionDenied") {
+            return (
+                "需要辅助功能权限",
+                "请在系统设置中允许 LiveSwitcher 控制演示软件。",
+                .fail,
+                .openSystemSettingsAccessibility,
+                14
+            )
+        }
+
         if action.hasPrefix("wps.page") {
             return (
                 "演示软件未运行",
