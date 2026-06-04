@@ -306,8 +306,23 @@ enum LiveRuntimeReducer {
             recalculateAudio(&state)
             effects.append(.applyAudioRouting(reason: .panicChanged))
 
-        case .operatorToggledPPTMode:
-            break
+        case .operatorToggledPPTMode(let source):
+            guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
+            reducePPTModeSet(
+                !(state.ppt.isRequested || state.ppt.isEventTapActive),
+                source: source,
+                state: &state,
+                effects: &effects
+            )
+
+        case .operatorSetPPTMode(let isEnabled, let source):
+            guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
+            reducePPTModeSet(
+                isEnabled,
+                source: source,
+                state: &state,
+                effects: &effects
+            )
 
         case .operatorToggledProjection:
             guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
@@ -501,23 +516,15 @@ enum LiveRuntimeReducer {
             state.ppt.isRequested = true
             state.ppt.isEventTapActive = true
             state.ppt.lastFailureReason = nil
-            if canWriteReducerSupport(in: bridgeMode) {
-                state.support.record(kind: .pageInterceptEnabled, detail: "source=runtime", at: environment.now)
-            }
 
         case .pptEventTapFailed(let reason):
             state.ppt.isRequested = false
             state.ppt.isEventTapActive = false
             state.ppt.lastFailureReason = reason
-            if canWriteReducerSupport(in: bridgeMode) {
-                state.support.record(kind: .pageInterceptDisabled, detail: "reason=failed", at: environment.now)
-            }
 
-        case .pptEventTapStopped(let reason):
+        case .pptEventTapStopped:
+            state.ppt.isRequested = false
             state.ppt.isEventTapActive = false
-            if reason != .programChanged {
-                state.ppt.isRequested = false
-            }
 
         case .automationFailed(let action, let sanitizedMessage):
             requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
@@ -595,6 +602,28 @@ enum LiveRuntimeReducer {
             return state.program.currentDetachedItem
         }
         return nil
+    }
+
+    private static func reducePPTModeSet(
+        _ isEnabled: Bool,
+        source: PPTModeToggleSource,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        _ = source
+        if isEnabled {
+            guard !state.ppt.isRequested, !state.ppt.isEventTapActive else { return }
+            state.ppt.isRequested = true
+            state.ppt.isEventTapActive = false
+            state.ppt.lastFailureReason = nil
+            effects.append(.startPPTEventTap)
+            return
+        }
+
+        guard state.ppt.isRequested || state.ppt.isEventTapActive else { return }
+        state.ppt.isRequested = false
+        state.ppt.isEventTapActive = false
+        effects.append(.stopPPTEventTap(reason: .operatorDisabled))
     }
 
     private static func reducePanicToggle(

@@ -116,6 +116,25 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         }
     }
 
+    func testPPTOwningModeAllowsPPTButBlocksAutomationAndSupportEffects() {
+        let support = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 10),
+            kind: .pageInterceptEnabled,
+            detail: "source=test"
+        )
+
+        let pptMutation = reduce(.operatorSetPPTMode(true, source: .liveMode), bridgeMode: .pptOwned)
+        let automationMutation = reduce(.automationNoticeRequested(action: "keynote.open"), bridgeMode: .pptOwned)
+        let supportMutation = reduce(.supportEventRecorded(support), bridgeMode: .pptOwned)
+
+        XCTAssertEqual(pptMutation.effects, [.startPPTEventTap])
+        XCTAssertFalse(automationMutation.effects.contains { effect in
+            if case .showAutomationNotice = effect { return true }
+            return false
+        })
+        XCTAssertFalse(supportMutation.effects.contains(.recordSupportEvent(support)))
+    }
+
     func testMediaOwnedBlocksBGMEffects() {
         let bgm = bgmItem()
         var state = LiveRuntimeState()

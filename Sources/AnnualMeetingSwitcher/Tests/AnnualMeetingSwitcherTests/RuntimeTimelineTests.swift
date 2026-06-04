@@ -95,7 +95,7 @@ final class RuntimeTimelineTests: XCTestCase {
         XCTAssertFalse(store.state.ppt.isEventTapActive)
         XCTAssertEqual(store.state.ppt.lastFailureReason, "tap-unavailable")
         XCTAssertFalse(store.state.support.events.contains { $0.kind == .pageInterceptEnabled })
-        XCTAssertFalse(store.recordedEffects.contains(.startPPTEventTap))
+        XCTAssertTrue(store.recordedEffects.contains(.startPPTEventTap))
         XCTAssertFalse(store.recordedEffects.contains(.stopPPTEventTap(reason: .failed)))
     }
 

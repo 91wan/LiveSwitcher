@@ -20,7 +20,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         }
     }
 
-    func testDocsStateAudioMediaBGMAndProjectionAreAuthoritative() throws {
+    func testDocsStateAudioMediaBGMProjectionAndPPTAreAuthoritative() throws {
         let document = try runtimeOwnershipDocument()
 
         XCTAssertTrue(document.localizedStandardContains("Current authoritative runtime domains"))
@@ -28,45 +28,51 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Media playback"))
         XCTAssertTrue(document.localizedStandardContains("BGM playback and progress timer"))
         XCTAssertTrue(document.localizedStandardContains("Projection output"))
+        XCTAssertTrue(document.localizedStandardContains("PPT EventTap lifecycle"))
         XCTAssertTrue(document.localizedStandardContains("| Media playback | Runtime owner |"))
         XCTAssertTrue(document.localizedStandardContains("| BGM | Runtime owner |"))
         XCTAssertTrue(document.localizedStandardContains("| Projection | Runtime owner |"))
+        XCTAssertTrue(document.localizedStandardContains("| PPT mode | Runtime owner |"))
         XCTAssertFalse(document.localizedStandardContains("Runtime authoritative: no"))
     }
 
-    func testDocsStatePPTAndOtherUnmigratedDomainsRemainMirrorOnly() throws {
+    func testDocsStatePPTLifecycleMigratedButKeyForwardingStaysViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
 
-        XCTAssertTrue(document.localizedStandardContains("Program queue, Panic, PPT, and Automation are not runtime-owned"))
-        XCTAssertTrue(document.localizedStandardContains("| PPT mode | ViewModel owner |"))
+        XCTAssertTrue(document.localizedStandardContains("PPT key forwarding and WPS automation implementation remain ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("PPT EventTap lifecycle is runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("permission alert UI"))
         XCTAssertFalse(document.localizedStandardContains("| Projection | ViewModel owner |"))
     }
 
     func testDocumentDoesNotClaimRuntimeAuthorityBeforeEffectsAreFullyWired() throws {
         let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed"))
         XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
-        XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio, Media, BGM, and Projection"))
-        XCTAssertTrue(document.localizedStandardContains("playback output plus projection start/stop output remain runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("No next domain may be migrated until the Audio, Media, BGM, Projection, and PPT"))
+        XCTAssertTrue(document.localizedStandardContains("projection start/stop output plus PPT EventTap lifecycle"))
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
-        XCTAssertTrue(document.localizedStandardContains("Automation, and Support production ingress migration remain blocked"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation and Support production ingress migration remain blocked"))
         XCTAssertTrue(document.localizedStandardContains("Bridge modes are cumulative migration stages"))
         XCTAssertTrue(document.localizedStandardContains("`.bgmOwned` means Audio + Media + BGM, not Audio + BGM"))
         XCTAssertTrue(document.localizedStandardContains("means Audio + Media + BGM + Projection"))
+        XCTAssertTrue(document.localizedStandardContains("`.pptOwned` means Audio + Media + BGM"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {
         let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
 
         [
             "`media` | wired",
             "`bgm` | wired",
             "`bgmTimer` | wired",
             "`projection` | wired",
-            "`ppt` | recording only",
+            "`ppt` | wired",
             "`automation` | not migrated",
             "`automationNotice` | recording only",
             "`support` | runtime storage, ViewModel ingress"
@@ -74,8 +80,8 @@ final class RuntimeOwnershipTests: XCTestCase {
             XCTAssertTrue(document.contains(expected), "Missing effect wiring status: \(expected)")
         }
 
-        XCTAssertTrue(document.localizedStandardContains("Connected production ports: `media`, `bgm`,"))
-        XCTAssertTrue(document.localizedStandardContains("`projection`, `audioRouting`, `imageAssets`, and `persistence`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Connected production ports: `media`, `bgm`,"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("`projection`, `ppt`,"))
         XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
@@ -83,8 +89,8 @@ final class RuntimeOwnershipTests: XCTestCase {
         let document = try runtimeOwnershipDocument()
 
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
-        XCTAssertTrue(document.localizedStandardContains("production Projection ownership is expressed by `.projectionOwned`"))
-        XCTAssertTrue(document.localizedStandardContains("PPT, Program queue, Automation, and Support ingress migration remain"))
+        XCTAssertTrue(document.localizedStandardContains("production PPT lifecycle ownership is expressed by `.pptOwned`"))
+        XCTAssertTrue(document.localizedStandardContains("Program queue, Automation, and Support ingress migration remain"))
         XCTAssertTrue(document.localizedStandardContains("Support storage uses runtime state, but production ingress remains"))
         XCTAssertTrue(document.localizedStandardContains("until a dedicated Support migration PR"))
     }
@@ -122,13 +128,28 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`projectionExternalDisplayLost` is only for broadcasting loss"))
         XCTAssertTrue(document.localizedStandardContains("Raw output-window show/hide side effects are internal ProjectionPort"))
         XCTAssertTrue(document.localizedStandardContains("Support production ingress remains ViewModel-owned"))
-        XCTAssertTrue(document.localizedStandardContains("PPT migration remains blocked until Projection hardening tests pass"))
+        XCTAssertTrue(document.localizedStandardContains("Automation migration remains blocked"))
+    }
+
+    func testDocsStatePPTEventTapLifecycleMigratedButSupportIngressRemainsViewModelOwned() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("PPT EventTap lifecycle is runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("Runtime owns `state.ppt.isRequested`"))
+        XCTAssertTrue(document.localizedStandardContains("`isPageInterceptEnabled` is a projection"))
+        XCTAssertTrue(document.localizedStandardContains("PPT key forwarding and WPS automation implementation remain ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("PPT support event production remain"))
+        XCTAssertTrue(document.localizedStandardContains("must not write support storage directly"))
     }
 
     private func runtimeOwnershipDocument() throws -> String {
         let url = try repositoryRoot()
             .appendingPathComponent("docs/architecture/runtime-ownership.md")
         return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    private func normalizedWhitespace(_ text: String) -> String {
+        text.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
     }
 
     private func repositoryRoot() throws -> URL {

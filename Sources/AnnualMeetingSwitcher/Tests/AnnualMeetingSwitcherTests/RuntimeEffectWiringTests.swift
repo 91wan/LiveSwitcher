@@ -3,24 +3,25 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsExactlyMatchProjectionOwnedSet() {
+    func testProductionConnectedPortsExactlyMatchPPTOwnedSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProjectionOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsPPTOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .projectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .pptOwned)
     }
 
-    func testProductionRuntimeWiresProjectionMediaBGMAndAudioPorts() {
+    func testProductionRuntimeWiresPPTProjectionMediaBGMAndAudioPorts() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.ppt))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.projection))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
@@ -33,12 +34,11 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
     }
 
-    func testProductionRuntimeDoesNotWirePPTAutomationNoticeOrSupport() {
+    func testProductionRuntimeDoesNotWireAutomationNoticeOrSupport() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         [
-            .ppt,
             .automation,
             .automationNotice,
             .support
@@ -47,12 +47,12 @@ final class RuntimeEffectWiringTests: XCTestCase {
         }
     }
 
-    func testProjectionHardeningKeepsRuntimeBoundaryBeforePPTMigration() {
+    func testPPTHardeningKeepsRuntimeBoundaryBeforeAutomationMigration() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         XCTAssertTrue(connected.contains(.projection))
-        XCTAssertFalse(connected.contains(.ppt))
+        XCTAssertTrue(connected.contains(.ppt))
         XCTAssertFalse(connected.contains(.automation))
         XCTAssertFalse(connected.contains(.support))
     }

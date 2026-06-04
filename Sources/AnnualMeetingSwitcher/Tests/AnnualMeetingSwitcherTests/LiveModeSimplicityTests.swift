@@ -13,7 +13,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Toggle projection"))
         XCTAssertTrue(document.contains("Restart current media"))
         XCTAssertTrue(document.contains("Current authoritative runtime domains: Audio, Media playback, BGM playback"))
-        XCTAssertTrue(document.contains("and Projection output"))
+        XCTAssertTrue(document.contains("Projection output, and PPT EventTap lifecycle"))
         XCTAssertTrue(document.contains("Mirror-only live domains"))
         XCTAssertTrue(document.contains("code-level gate"))
         XCTAssertTrue(document.contains("Live Mode remains an execution surface"))
@@ -21,6 +21,8 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Runtime migration PRs must not add live controls"))
         XCTAssertTrue(document.contains("Projection runtime migration does not add live controls"))
         XCTAssertTrue(document.contains("Projection configuration must not move into Live mode"))
+        XCTAssertTrue(document.contains("PPT runtime migration does not add live controls"))
+        XCTAssertTrue(document.contains("PPT setup/configuration and key-forwarding implementation details must not"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {

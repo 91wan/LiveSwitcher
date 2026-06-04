@@ -7,10 +7,10 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeStore().bridgeMode, .audioOwned)
     }
 
-    func testProductionViewModelRuntimeIsProjectionOwning() {
+    func testProductionViewModelRuntimeIsPPTOwning() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .projectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .pptOwned)
     }
 
     func testFullRuntimeMustBeExplicitInTests() {
@@ -18,6 +18,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEnvironment.productionAudioOwned().bridgeMode, .audioOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.productionBGMOwning().bridgeMode, .bgmOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.productionProjectionOwned().bridgeMode, .projectionOwned)
+        XCTAssertEqual(LiveRuntimeEnvironment.productionPPTOwning().bridgeMode, .pptOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.recordingOnlyForTests().bridgeMode, .recordingOnly)
     }
 
@@ -30,6 +31,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
                     && !line.contains(".productionMediaOwned(")
                     && !line.contains(".productionBGMOwning(")
                     && !line.contains(".productionProjectionOwned(")
+                    && !line.contains(".productionPPTOwning(")
                     && !line.contains(".fullRuntimeForTests(")
                     && !line.contains(".recordingOnlyForTests("))
         }

@@ -7,7 +7,7 @@ final class PPTModeCommandTests: XCTestCase {
         XCTAssertFalse(PPTModeToggleModel.nextState(isEnabled: true))
     }
 
-    func testAppCommandUsesViewModelToggleHelper() throws {
+    func testCommandPathUsesTogglePPTMode() throws {
         let app = try sourceText("App.swift")
 
         XCTAssertTrue(app.contains("viewModel.togglePPTMode(source: .command)"))
@@ -15,7 +15,7 @@ final class PPTModeCommandTests: XCTestCase {
     }
 
     @MainActor
-    func testPPTModeChangeRecordsSource() throws {
+    func testCommandPathRecordsSourceCommandAfterRuntimeSuccess() throws {
         let suiteName = "PPTModeCommandTests.source.\(UUID().uuidString)"
         let userDefaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         defer { userDefaults.removePersistentDomain(forName: suiteName) }
@@ -31,6 +31,13 @@ final class PPTModeCommandTests: XCTestCase {
         let event = try XCTUnwrap(viewModel.supportEvents.last(where: { $0.kind == .pptModeChanged }))
         XCTAssertTrue(event.detail.contains("isOn=true"))
         XCTAssertTrue(event.detail.contains("source=command"))
+    }
+
+    func testCommandPathDoesNotDirectlyMutatePPTBool() throws {
+        let app = try sourceText("App.swift")
+
+        XCTAssertFalse(app.contains("isPageInterceptEnabled ="))
+        XCTAssertFalse(app.contains("isPageInterceptEnabled.toggle()"))
     }
 
     @MainActor
