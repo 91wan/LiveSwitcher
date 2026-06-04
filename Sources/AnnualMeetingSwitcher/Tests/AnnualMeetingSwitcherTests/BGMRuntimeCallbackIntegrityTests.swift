@@ -3,15 +3,16 @@ import XCTest
 
 @MainActor
 final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
-    func testBGMCallbackIgnoredWhenNoActiveGeneration() {
+    func testDispatchRuntimeBGMCallbackReturnsFalseWhenNoActiveGeneration() {
         let viewModel = makeViewModel()
 
-        viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
+        let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
+        XCTAssertFalse(accepted)
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "bgmReachedEnd" })
     }
 
-    func testBGMCallbackIgnoredWhenCurrentItemDoesNotMatchActiveItem() {
+    func testDispatchRuntimeBGMCallbackReturnsFalseWhenItemMismatch() {
         let viewModel = makeViewModel()
         let first = bgmItem(title: "First")
         let second = bgmItem(title: "Second")
@@ -19,13 +20,14 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         viewModel.toggleBGM(first)
         viewModel.currentBGMItem = second
 
-        viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
+        let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
+        XCTAssertFalse(accepted)
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "bgmReachedEnd" })
     }
 
-    func testBGMCallbackIgnoredWhenCurrentURLDoesNotMatchActiveURL() {
+    func testDispatchRuntimeBGMCallbackReturnsFalseWhenURLMismatch() {
         let viewModel = makeViewModel()
         let first = bgmItem(title: "First")
         let replacement = BGMItem(title: "First", url: URL(fileURLWithPath: "/tmp/replacement.mp3"), category: first.category)
@@ -33,20 +35,22 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         viewModel.toggleBGM(first)
         viewModel.currentBGMItem = replacement
 
-        viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
+        let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
+        XCTAssertFalse(accepted)
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "bgmReachedEnd" })
     }
 
-    func testBGMCallbackUsesActiveGeneration() {
+    func testDispatchRuntimeBGMCallbackReturnsTrueWhenAccepted() {
         let viewModel = makeViewModel()
         let item = bgmItem()
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
         let activeGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting
 
-        viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
+        let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
+        XCTAssertTrue(accepted)
         XCTAssertEqual(activeGeneration, 1)
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "bgmReachedEnd" })
     }
@@ -66,6 +70,21 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.bgm.currentID, second.id)
     }
 
+    func testStaleBGMFinishCallbackDoesNotRecordPlaybackState() {
+        let viewModel = makeViewModel()
+        let first = bgmItem(title: "First")
+        let second = bgmItem(title: "Second")
+        viewModel.bgmItems = [first, second]
+        viewModel.toggleBGM(first)
+        viewModel.toggleBGM(second)
+        viewModel.currentBGMItem = first
+        let previousCount = viewModel.supportEvents.filter { $0.kind == .bgmPlaybackChanged }.count
+
+        viewModel.bgmDidFinish()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .bgmPlaybackChanged }.count, previousCount)
+    }
+
     func testStaleBGMFailureCallbackDoesNotStopCurrentTrack() {
         let viewModel = makeViewModel()
         let first = bgmItem(title: "First")
@@ -79,6 +98,31 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
 
         XCTAssertEqual(viewModel.runtime.state.bgm.currentID, second.id)
         XCTAssertTrue(viewModel.runtime.state.bgm.isPlaying)
+    }
+
+    func testStaleBGMFailureCallbackDoesNotRecordSupportEvent() {
+        let viewModel = makeViewModel()
+        let first = bgmItem(title: "First")
+        let second = bgmItem(title: "Second")
+        viewModel.bgmItems = [first, second]
+        viewModel.toggleBGM(first)
+        viewModel.toggleBGM(second)
+        viewModel.currentBGMItem = first
+
+        viewModel.bgmDidFail()
+
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .bgmPlaybackFailed })
+    }
+
+    func testAcceptedBGMFailureCallbackRecordsSupportEvent() {
+        let viewModel = makeViewModel()
+        let item = bgmItem()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.bgmDidFail()
+
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .bgmPlaybackFailed })
     }
 
     func testBGMPrepareSetsActiveCallbackIdentity() {

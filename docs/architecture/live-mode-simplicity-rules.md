@@ -43,6 +43,10 @@ product boundary.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
   paths behind the existing BGM transport.
+- BGM runtime cleanup-gate hardening does not change the Live Mode surface.
+  It only separates current-player generation-guarded tasks from retired-player
+  cleanup and tightens callback, timer, and port contracts behind existing BGM
+  controls.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live

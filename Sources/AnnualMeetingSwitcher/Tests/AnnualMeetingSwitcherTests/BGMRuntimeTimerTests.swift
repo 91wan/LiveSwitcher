@@ -59,7 +59,13 @@ final class BGMRuntimeTimerTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
-    func testNoArgumentStartBGMTimerIsNotUsedByRuntimeOwnedPaths() throws {
+    func testNoArgumentStartBGMTimerIsPrivateOrRemoved() throws {
+        let source = try sourceText("ViewModel.swift")
+
+        XCTAssertFalse(source.contains("\n    func startBGMTimer()"))
+    }
+
+    func testRuntimeOwnedPathsUseGenerationBoundStartTimer() throws {
         let source = try sourceText("ViewModel.swift")
         let initializer = try substring(
             in: source,
@@ -69,6 +75,18 @@ final class BGMRuntimeTimerTests: XCTestCase {
 
         XCTAssertFalse(initializer.contains("startBGMTimer()"))
         XCTAssertTrue(initializer.contains("startBGMTimer(generation: generation)"))
+    }
+
+    func testRuntimeOwnedPathsUseGenerationBoundStopTimer() throws {
+        let source = try sourceText("ViewModel.swift")
+        let initializer = try substring(
+            in: source,
+            from: "bgmTimerPort.stopHandler",
+            to: "audioRoutingPort.applyHandler"
+        )
+
+        XCTAssertFalse(initializer.contains("stopBGMTimer()"))
+        XCTAssertTrue(initializer.contains("stopBGMTimer(generation: generation)"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

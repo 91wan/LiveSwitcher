@@ -67,7 +67,7 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFinish() {
-        dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
+        guard dispatchRuntimeBGMCallback({ .bgmReachedEnd(generation: $0) }) else { return }
         removeBGMFallbackEndObserver()
         if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
             panicPlaybackSnapshot?.wasBGMPlaying = false
@@ -81,7 +81,7 @@ extension SwitcherViewModel {
     }
 
     func bgmDidFail() {
-        dispatchRuntimeBGMCallback { .bgmFailed(reason: "playbackFailed", generation: $0) }
+        guard dispatchRuntimeBGMCallback({ .bgmFailed(reason: "playbackFailed", generation: $0) }) else { return }
         if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
             panicPlaybackSnapshot?.wasBGMPlaying = false
         }

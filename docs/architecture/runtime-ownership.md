@@ -70,7 +70,7 @@ tests pass, its ports are wired, and an ownership PR is approved.
 | --- | --- | --- | --- | --- |
 | Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation. Runtime may mirror current selection only to drive media playback. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
-| BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. BGM library editing remains ViewModel-owned. |
+| BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. `saveBGMPlayMode` is a BGM-domain effect. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
 | PPT mode | ViewModel owner | Mirror-only callback state and action log | recording only | Operator toggles do not mutate PPT state; event-tap started/failed/stopped callbacks may update the mirror. |
@@ -133,13 +133,22 @@ remains ViewModel-owned.
 BGM callbacks require an active runtime BGM generation plus active item identity:
 the current BGM item id and URL must match the active callback guard before a
 finish, failure, or progress callback can dispatch into Runtime. Callback
-dispatch must not fall back to `runtime.state.bgm.generation`.
+dispatch returns whether Runtime accepted the callback and must not fall back to
+`runtime.state.bgm.generation`. Ignored stale BGM callbacks must not record
+support events or playback-state support entries.
 
 BGM timers are generation-bound. Runtime paths start and stop timers with
 `startBGMTimer(generation:)` and `stopBGMTimer(generation:)`; stale stop
-requests cannot stop the current timer. Async BGM release, fallback retire, and
-volume fade tasks capture generation before they touch shared BGM player,
-fallback player, observer, meter, item, or timer state.
+requests cannot stop the current timer.
+
+BGM async cleanup has two separate ownership rules. Current-player tasks that
+touch shared state such as `bgmAudioPlayer`, `bgmFallbackPlayer`, observers,
+meters, active callback identity, timers, or effective output volume are
+generation-guarded. Retired captured-player cleanup tasks are not skipped just
+because a later BGM generation exists: old `AVAudioPlayer` instances and retired
+fallback `AVPlayer` instances must finish fade/stop/release cleanup, remove only
+their own retired-player bookkeeping, and must not touch the current player or
+current fallback state.
 
 BGM library editing remains ViewModel-owned. Runtime receives the facade
 snapshot of library items so it can choose current/next/previous playback, but

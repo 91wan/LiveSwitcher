@@ -59,7 +59,6 @@ extension LiveRuntimeEffect {
              .saveThemeOverride,
              .saveAudioStrategy,
              .saveSpeakerMode,
-             .saveBGMPlayMode,
              .saveAutoPlayNextVideoOnEnd,
              .saveAutoAdvanceAtScheduledTime,
              .saveShowAgendaTimeline,
@@ -86,7 +85,8 @@ extension LiveRuntimeEffect {
              .seekBGMToProgress,
              .setBGMPlayMode,
              .startBGMTimer,
-             .stopBGMTimer:
+             .stopBGMTimer,
+             .saveBGMPlayMode:
             return .bgm
 
         case .startProjection,
@@ -144,12 +144,6 @@ protocol BGMPlaybackPort {
     func seekToBeginning(generation: Int)
     func seek(toProgress progress: Double, generation: Int)
     func setPlayMode(_ playMode: BGMPlayMode, generation: Int?)
-}
-
-extension BGMPlaybackPort {
-    func seekToBeginning(generation: Int) {}
-    func seek(toProgress progress: Double, generation: Int) {}
-    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {}
 }
 
 protocol ProjectionPort {
