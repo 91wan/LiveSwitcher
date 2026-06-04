@@ -3,23 +3,24 @@ import XCTest
 
 @MainActor
 final class SupportMigrationReadinessTests: XCTestCase {
-    func testSupportNotProductionOwnedYet() {
+    func testSupportIsProductionOwnedNow() {
         let viewModel = makeViewModel()
 
-        XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.support))
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationNoticeOwned)
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .supportOwned)
     }
 
-    func testProductionRuntimeDoesNotWireSupportPortYet() {
+    func testProductionRuntimeWiresSupportPortNow() {
         let viewModel = makeViewModel()
 
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.support))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
     }
 
-    func testFullRuntimeOwnsSupportOnlyInTests() {
+    func testAutomationExecutionStillNotProductionOwned() {
         XCTAssertTrue(LiveRuntimeBridgeMode.fullRuntime.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.automationNoticeOwned.owns(.support))
-        XCTAssertFalse(makeViewModel().runtimeBridgeMode.owns(.support))
+        XCTAssertTrue(makeViewModel().runtimeBridgeMode.owns(.support))
+        XCTAssertFalse(makeViewModel().runtimeBridgeMode.owns(.automation))
     }
 
     func testSupportEventRecordedIsOnlyCurrentReducerSupportWriteInProductionModes() throws {
@@ -42,18 +43,22 @@ final class SupportMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(projectionFailure.state.support.events.isEmpty)
     }
 
-    func testAutomationNoticeOwnedDoesNotOwnSupport() {
+    func testAutomationNoticeOwnedDoesNotOwnSupportButSupportOwnedDoes() {
         XCTAssertFalse(LiveRuntimeBridgeMode.automationNoticeOwned.owns(.support))
+        XCTAssertTrue(LiveRuntimeBridgeMode.supportOwned.owns(.support))
     }
 
-    func testAutomationNoticeRuntimeTestsPassBeforeSupportMigration() throws {
+    func testSupportRuntimeMigrationTestsExist() throws {
         let requiredFiles = [
-            "AutomationNoticeRuntimeExpiryTaskTests.swift",
-            "AutomationNoticeRuntimeActionLogTests.swift",
-            "AutomationNoticeRuntimeThrottleTests.swift",
-            "AutomationNoticeRuntimeSupportBoundaryTests.swift",
-            "AutomationNoticeRuntimeOwnershipTests.swift",
-            "AutomationNoticeRuntimePortContractTests.swift"
+            "SupportRuntimeOwnershipTests.swift",
+            "SupportRuntimeIngressTests.swift",
+            "SupportRuntimeEffectExecutionTests.swift",
+            "SupportRuntimeFacadeSyncTests.swift",
+            "SupportRuntimeCoalescingTests.swift",
+            "SupportRuntimePriorityRetentionTests.swift",
+            "SupportRuntimeDuplicatePreventionTests.swift",
+            "SupportRuntimeProductionBoundaryTests.swift",
+            "SupportRuntimePortContractTests.swift"
         ]
 
         for filename in requiredFiles {

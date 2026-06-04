@@ -189,6 +189,14 @@ private final class ClosureAutomationNoticePort: AutomationNoticePort {
     }
 }
 
+private final class ClosureSupportEventPort: SupportEventPort {
+    var recordHandler: ((LiveSupportEvent) -> Void)?
+
+    func record(_ event: LiveSupportEvent) {
+        recordHandler?(event)
+    }
+}
+
 private final class ClosureProjectionPort: ProjectionPort {
     var hasExternalDisplayHandler: (() -> Bool)?
     var startHandler: (() -> Void)?
@@ -715,6 +723,7 @@ final class SwitcherViewModel {
         let projectionPort = ClosureProjectionPort()
         let pptPort = ClosurePPTEventTapPort()
         let automationNoticePort = ClosureAutomationNoticePort()
+        let supportPort = ClosureSupportEventPort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -730,10 +739,14 @@ final class SwitcherViewModel {
                 automationNotice: automationNoticePort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
-                persistence: persistencePort
+                persistence: persistencePort,
+                support: supportPort
             ),
-            environment: .productionAutomationNoticeOwning()
+            environment: .productionSupportOwning()
         )
+        supportPort.recordHandler = { [weak self] _ in
+            self?.syncSupportFacadeFromRuntime()
+        }
         automationNoticePort.showHandler = { [weak self] notice in
             self?.cancelAutomationNoticeExpiryTask()
             self?.automationRuntimeNotice = notice
@@ -937,6 +950,9 @@ final class SwitcherViewModel {
         if shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action) {
             syncAutomationNoticeFacadeFromRuntime()
         }
+        if shouldSyncSupportFacadeAfterRuntimeAction(action) {
+            syncSupportFacadeFromRuntime()
+        }
     }
 
     private func syncRuntimeEnvironmentFromFacade() {
@@ -1135,8 +1151,17 @@ final class SwitcherViewModel {
         syncProjectionAvailabilityIntoRuntimeSnapshot(&state)
 
         syncAutomationNoticeIntoRuntimeSnapshot(&state)
-        state.support.events = supportEvents
+        syncSupportIntoRuntimeSnapshot(&state)
         return state
+    }
+
+    private func syncSupportIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.support) else {
+            state.support = runtime.state.support
+            return
+        }
+
+        state.support.events = supportEvents
     }
 
     private func syncAutomationNoticeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
@@ -1168,6 +1193,27 @@ final class SwitcherViewModel {
             cancelAutomationNoticeExpiryTask()
         }
         automationRuntimeNotice = notice
+    }
+
+    private func shouldSyncSupportFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .supportEventRecorded:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func syncSupportFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.support) else { return }
+
+        supportEvents = runtime.state.support.events
+    }
+
+    private func syncLegacySupportFacadeFromRuntime() {
+        guard !runtime.bridgeMode.owns(.support) else { return }
+
+        supportEvents = runtime.state.support.events
     }
 
     private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
@@ -2191,7 +2237,8 @@ final class SwitcherViewModel {
         let message = appleScriptFailureMessage(error)
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
         dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
-        supportEvents = runtime.state.support.events
+        syncSupportFacadeFromRuntime()
+        syncLegacySupportFacadeFromRuntime()
         syncAutomationNoticeFacadeFromRuntime()
     }
 
@@ -3101,7 +3148,8 @@ final class SwitcherViewModel {
     ) {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
         dispatchRuntimeFacadeAction(.supportEventRecorded(event))
-        supportEvents = runtime.state.support.events
+        syncSupportFacadeFromRuntime()
+        syncLegacySupportFacadeFromRuntime()
     }
 
     // MARK: - System Volume Observer

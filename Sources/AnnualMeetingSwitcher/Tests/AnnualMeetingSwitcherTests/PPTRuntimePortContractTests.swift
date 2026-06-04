@@ -27,12 +27,12 @@ final class PPTRuntimePortContractTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.ppt))
     }
 
-    func testProductionRuntimeWiresAutomationNoticeButNotAutomationExecutionOrSupport() {
+    func testProductionRuntimeWiresAutomationNoticeAndSupportButNotAutomationExecution() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automationNotice))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
         XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.automation))
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.support))
     }
 
     func testPPTEventTapPortHasNoDefaultNoOpImplementation() throws {

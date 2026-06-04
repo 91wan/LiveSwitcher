@@ -39,6 +39,13 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         )
     }
 
+    func testSupportOwnedModeOwnsPriorDomainsAndSupport() {
+        XCTAssertEqual(
+            LiveRuntimeBridgeMode.supportOwned.ownedDomains,
+            [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support]
+        )
+    }
+
     func testFullRuntimeOwnsAllDomains() {
         XCTAssertEqual(LiveRuntimeBridgeMode.fullRuntime.ownedDomains, Set(LiveRuntimeDomain.allCases))
     }
@@ -72,5 +79,11 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
 
         XCTAssertFalse(mode.owns(.automation))
         XCTAssertFalse(mode.owns(.support))
+    }
+
+    func testSupportOwnedModeDoesNotOwnAutomationExecution() {
+        let mode = LiveRuntimeBridgeMode.supportOwned
+
+        XCTAssertFalse(mode.owns(.automation))
     }
 }

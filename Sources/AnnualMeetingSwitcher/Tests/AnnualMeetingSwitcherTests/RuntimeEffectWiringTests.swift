@@ -3,19 +3,19 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsExactlyMatchAutomationNoticeOwnedSet() {
+    func testProductionConnectedPortsExactlyMatchSupportOwnedSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsAutomationNoticeOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsSupportOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationNoticeOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .supportOwned)
     }
 
     func testProductionRuntimeWiresPPTProjectionMediaBGMAndAudioPorts() {
@@ -41,23 +41,23 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
     }
 
-    func testProductionRuntimeWiresAutomationNoticeButNotAutomationPort() {
+    func testProductionRuntimeWiresSupportAndAutomationNoticeButNotAutomationPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         XCTAssertTrue(connected.contains(.automationNotice))
+        XCTAssertTrue(connected.contains(.support))
         XCTAssertFalse(connected.contains(.automation))
-        XCTAssertFalse(connected.contains(.support))
     }
 
-    func testPPTHardeningKeepsRuntimeBoundaryBeforeAutomationMigration() {
+    func testSupportMigrationKeepsAutomationExecutionBoundaryClosed() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
         XCTAssertTrue(connected.contains(.projection))
         XCTAssertTrue(connected.contains(.ppt))
+        XCTAssertTrue(connected.contains(.support))
         XCTAssertFalse(connected.contains(.automation))
-        XCTAssertFalse(connected.contains(.support))
     }
 
     func testCustomEffectRunnerReportsInjectedPorts() {

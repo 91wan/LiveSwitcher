@@ -14,6 +14,7 @@ final class RuntimeOwnershipTests: XCTestCase {
             "PPT mode",
             "Projection",
             "Automation notice",
+            "Support",
             "Persistence"
         ].forEach { domain in
             XCTAssertTrue(document.contains("| \(domain) |"), "Missing ownership row for \(domain)")
@@ -29,10 +30,12 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("BGM playback and progress timer"))
         XCTAssertTrue(document.localizedStandardContains("Projection output"))
         XCTAssertTrue(document.localizedStandardContains("PPT EventTap lifecycle"))
+        XCTAssertTrue(document.localizedStandardContains("Support event storage and ingress"))
         XCTAssertTrue(document.localizedStandardContains("| Media playback | Runtime owner |"))
         XCTAssertTrue(document.localizedStandardContains("| BGM | Runtime owner |"))
         XCTAssertTrue(document.localizedStandardContains("| Projection | Runtime owner |"))
         XCTAssertTrue(document.localizedStandardContains("| PPT mode | Runtime owner |"))
+        XCTAssertTrue(document.localizedStandardContains("| Support | Runtime owner |"))
         XCTAssertFalse(document.localizedStandardContains("Runtime authoritative: no"))
     }
 
@@ -56,12 +59,13 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation execution and Support production ingress migration remain blocked"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation execution migration remains blocked"))
         XCTAssertTrue(document.localizedStandardContains("Bridge modes are cumulative migration stages"))
         XCTAssertTrue(document.localizedStandardContains("`.bgmOwned` means Audio + Media + BGM, not Audio + BGM"))
         XCTAssertTrue(document.localizedStandardContains("means Audio + Media + BGM + Projection"))
         XCTAssertTrue(document.localizedStandardContains("`.pptOwned` means Audio + Media + BGM"))
         XCTAssertTrue(document.localizedStandardContains("`.automationNoticeOwned` means Audio +"))
+        XCTAssertTrue(document.localizedStandardContains("`.supportOwned` means Audio +"))
     }
 
     func testUnconnectedRuntimePortsAreDocumentedAsNotMigrated() throws {
@@ -75,14 +79,14 @@ final class RuntimeOwnershipTests: XCTestCase {
             "`projection` | wired",
             "`ppt` | wired",
             "`automationNotice` | wired",
+            "`support` | wired",
             "`automation` | not migrated",
-            "`support` | runtime storage, ViewModel ingress"
         ].forEach { expected in
             XCTAssertTrue(document.contains(expected), "Missing effect wiring status: \(expected)")
         }
 
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Connected production ports: `media`, `bgm`,"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("`projection`, `ppt`, `automationNotice`,"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("`projection`, `ppt`, `automationNotice`, `support`,"))
         XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
@@ -91,10 +95,9 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("production automation notice lifecycle ownership is expressed by `.automationNoticeOwned`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue, Automation execution, and Support ingress migration remain"))
-        XCTAssertTrue(document.localizedStandardContains("Support storage uses runtime state, but production ingress remains"))
-        XCTAssertTrue(document.localizedStandardContains("until a dedicated Support migration PR"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("production Support ownership is expressed by `.supportOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue and Automation execution migration remain blocked"))
+        XCTAssertTrue(document.localizedStandardContains("Support storage, production ingress, and facade projection use Runtime state"))
     }
 
     func testDocsRequireExplicitBridgeModeInTests() throws {
@@ -119,7 +122,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Bridge mode describes domain ownership"))
     }
 
-    func testDocsStateProjectionMigratedButSupportIngressRemainsViewModelOwned() throws {
+    func testDocsStateProjectionMigratedAndSupportIngressIsRuntimeOwned() throws {
         let document = try runtimeOwnershipDocument()
 
         XCTAssertTrue(document.localizedStandardContains("Projection output is runtime-owned"))
@@ -129,18 +132,18 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`projectionStartFailed` records start failure semantics"))
         XCTAssertTrue(document.localizedStandardContains("`projectionExternalDisplayLost` is only for broadcasting loss"))
         XCTAssertTrue(document.localizedStandardContains("Raw output-window show/hide side effects are internal ProjectionPort"))
-        XCTAssertTrue(document.localizedStandardContains("Support production ingress remains ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("Support production ingress is runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("Automation execution migration remains blocked"))
     }
 
-    func testDocsStatePPTEventTapLifecycleMigratedButSupportIngressRemainsViewModelOwned() throws {
+    func testDocsStatePPTEventTapLifecycleMigratedButSupportGenerationRemainsViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
 
         XCTAssertTrue(document.localizedStandardContains("PPT EventTap lifecycle is runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("Runtime owns `state.ppt.isRequested`"))
         XCTAssertTrue(document.localizedStandardContains("`isPageInterceptEnabled` is a projection"))
         XCTAssertTrue(document.localizedStandardContains("PPT key forwarding and WPS automation implementation remain ViewModel-owned"))
-        XCTAssertTrue(document.localizedStandardContains("PPT support event production remain"))
+        XCTAssertTrue(document.localizedStandardContains("PPT support event generation remain"))
         XCTAssertTrue(document.localizedStandardContains("must not write support storage directly"))
     }
 
@@ -154,7 +157,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Runtime may keep a current BGM item selected while stopped"))
     }
 
-    func testDocsStateAutomationNoticeMigratedButAutomationExecutionAndSupportIngressRemainViewModelOwned() throws {
+    func testDocsStateAutomationNoticeMigratedButAutomationExecutionAndSupportGenerationRemainViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
         let normalizedDocument = normalizedWhitespace(document)
 
@@ -169,8 +172,21 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("`automationFailed` remains the meaningful system event"))
         XCTAssertTrue(document.localizedStandardContains("Automation execution is not runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("AppleScript execution, Keynote/WPS/PPT automation execution"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Support event production, telemetry, and concrete facade storage remain ViewModel-owned"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("support event generation call sites, and telemetry remain ViewModel-owned"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned` or `.supportOwned`"))
+    }
+
+    func testDocsStateSupportIngressMigratedButGenerationStaysViewModelOwned() throws {
+        let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
+
+        XCTAssertTrue(document.localizedStandardContains("Support storage and production ingress are runtime-owned"))
+        XCTAssertTrue(document.localizedStandardContains("Production uses `.supportOwned` and wires `SupportEventPort`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel.recordSupportEvent` remains the canonical facade call site"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
+        XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not append support events directly, perform local redaction/coalescing/trimming"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Support event generation call sites and telemetry remain ViewModel-owned"))
     }
 
     private func runtimeOwnershipDocument() throws -> String {

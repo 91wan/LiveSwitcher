@@ -9,12 +9,13 @@ Current authoritative runtime domains:
 - Projection output
 - PPT EventTap lifecycle
 - Automation notice lifecycle
+- Support event storage and ingress
 
-Program queue, Panic orchestration, Automation execution, and Support event
-production are not runtime-owned.
+Program queue, Panic orchestration, and Automation execution are not
+runtime-owned.
 PPT key forwarding, WPS automation implementation, Keynote/WPS/PPT automation
-execution, automation permission modal alerts, Support event production, and
-telemetry remain ViewModel-owned.
+execution, automation permission modal alerts, Support event generation call
+sites, and telemetry remain ViewModel-owned.
 Their runtime state is either a ViewModel-owned snapshot or an explicit callback
 from an already-executed facade path. Operator actions for unowned domains must
 not mutate real domain state or infer playback/output state that the ViewModel
@@ -22,9 +23,9 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.automationNoticeOwned`.
-`.fullRuntime` remains test-only; production automation notice lifecycle
-ownership is expressed by `.automationNoticeOwned`.
+Production bridge mode is `.supportOwned`.
+`.fullRuntime` remains test-only; production Support ownership is expressed by
+`.supportOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -47,37 +48,42 @@ Each stage includes all domains migrated in earlier stages:
 | `projectionOwned` | Audio, Media playback, BGM, Projection |
 | `pptOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle |
 | `automationNoticeOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle |
+| `supportOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress |
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
 means Audio + Media + BGM + Projection. `.pptOwned` means Audio + Media + BGM
 + Projection + PPT EventTap lifecycle. `.automationNoticeOwned` means Audio +
 Media + BGM + Projection + PPT EventTap lifecycle + Automation notice
-lifecycle.
+lifecycle. `.supportOwned` means Audio + Media + BGM + Projection + PPT
+EventTap lifecycle + Automation notice lifecycle + Support event storage and
+ingress.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
 `state.automation.notice` plus `state.automation.suppressionUntilByAction`, and
-may execute the wired ports needed for current production behavior. Connected
-production ports: `media`, `bgm`, `bgmTimer`, `projection`, `ppt`,
-`automationNotice`, `audioRouting`, `imageAssets`, and `persistence`. The audio
-routing, projection, PPT EventTap, and automation notice ports are wired.
+`state.support`. It may execute the wired ports needed for current production
+behavior. Connected production ports: `media`, `bgm`, `bgmTimer`, `projection`,
+`ppt`, `automationNotice`, `support`, `audioRouting`, `imageAssets`, and
+`persistence`. The audio routing, projection, PPT EventTap, automation notice,
+and Support ports are wired.
 Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
 from mirror-only domains can be used without making Panic runtime-owned.
 
 The reducer may record operator intent in the action log, but operator actions
 for mirror-only domains must not change Panic, Program, Automation execution, or
-Support state.
+unowned domain state.
 Mirror state changes for those domains must come from facade synchronization or
 explicit callback actions such as media playback callbacks. PPT EventTap
 lifecycle changes and automation notice lifecycle changes flow through Runtime
-operator actions and callback actions.
+operator actions and callback actions. Support events enter Runtime through the
+explicit `.supportEventRecorded` facade action.
 
-Support storage uses runtime state, but production ingress remains
-`ViewModel.recordSupportEvent` until a dedicated Support migration PR. In every
-production bridge stage before explicit Support ownership, reducer-generated
-support events are blocked except for the explicit `.supportEventRecorded`
-action.
+Support storage, production ingress, and facade projection use Runtime state.
+`ViewModel.recordSupportEvent` is now a thin Runtime facade that dispatches
+`.supportEventRecorded` and syncs `supportEvents` from `runtime.state.support`.
+Reducer-generated support events remain full-runtime/test-only; production
+support writes use `.supportEventRecorded`.
 `facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state.
 Effective audio output getters are pure Runtime state reads.
 
@@ -86,9 +92,9 @@ Operator actions for mirror-only domains must not mutate real runtime domain sta
 No next domain may be migrated until the Audio, Media, BGM, Projection, PPT,
 and Automation notice ownership tests pass and production effective audio output
 plus media/BGM playback output plus projection start/stop output plus PPT
-EventTap lifecycle plus automation notice lifecycle remain runtime-owned.
-Automation execution and Support production ingress migration remain blocked
-until a dedicated ownership PR is approved.
+EventTap lifecycle plus automation notice lifecycle plus Support ingress remain
+runtime-owned. Automation execution migration remains blocked until a dedicated
+ownership PR is approved.
 
 ## Domain Ownership
 
@@ -99,9 +105,10 @@ until a dedicated ownership PR is approved.
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. `saveBGMPlayMode` is a BGM-domain effect. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
-| PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event production, telemetry, and the `isPageInterceptEnabled` facade projection. |
-| Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event production, and telemetry. |
-| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. AppleScript execution, Keynote/WPS/PPT automation execution, automation permission modal alerts, Support event production, and telemetry remain ViewModel-owned. |
+| PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
+| Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
+| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. AppleScript execution, Keynote/WPS/PPT automation execution, automation permission modal alerts, support event generation call sites, and telemetry remain ViewModel-owned. |
+| Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
 | Persistence | ViewModel/UserDefaults | Wired preference persistence effects | bridge in progress | Runtime may persist selected preferences, but general state save remains ViewModel/UserDefaults-owned. |
 
 ## Effect Wiring
@@ -117,8 +124,8 @@ until a dedicated ownership PR is approved.
 | `projection` | wired | Runtime projection start/stop effects execute through the ViewModel bridge to the concrete output window controller. |
 | `ppt` | wired | Runtime PPT EventTap lifecycle effects execute through the ViewModel bridge to the concrete CGEventTap implementation. |
 | `automationNotice` | wired | Runtime automation notice show and expiry effects execute through the ViewModel bridge to the concrete facade notice field. |
+| `support` | wired | Runtime support ingress notifies the ViewModel bridge to sync the concrete `supportEvents` facade from `runtime.state.support`. |
 | `automation` | not migrated | AppleScript execution is still ViewModel-owned. |
-| `support` | runtime storage, ViewModel ingress | Support events are stored in runtime state, but production writes enter through `ViewModel.recordSupportEvent`. |
 
 ## Media Playback Boundary
 
@@ -211,11 +218,12 @@ safety notice and does not emit `stopProjection`.
 was already active; it sets the display-lost safety notice and emits
 `stopProjection` only when the previous state was broadcasting.
 
-Support production ingress remains ViewModel-owned. In `.projectionOwned`,
+Support production ingress is runtime-owned. In `.projectionOwned`,
 projection reducer actions must not write support storage directly; support
 entries for projection start, stop, fail-closed, and display-lost events are
-recorded by ViewModel after Runtime transitions. `.supportEventRecorded` remains
-the only reducer action that writes support storage in production.
+still generated by ViewModel after Runtime transitions and enter Runtime through
+`.supportEventRecorded`. `.supportEventRecorded` remains the only reducer action
+that writes support storage in production.
 
 ## PPT EventTap Boundary
 
@@ -229,7 +237,7 @@ Production uses `PPTEventTapPort` effects for EventTap lifecycle side effects.
 ViewModel bridges those effects to the existing CGEventTap fields:
 `pageInterceptEventTap`, `pageInterceptRunLoopSource`, and
 `pageInterceptSelfRefcon`. The actual key forwarding, WPS/Keynote automation,
-permission alert UI, telemetry, and PPT support event production remain
+permission alert UI, telemetry, and PPT support event generation remain
 ViewModel-owned.
 
 PPT start success records support only after `pptEventTapStarted`. PPT start
@@ -265,26 +273,40 @@ an operator-visible dismissal.
 
 Automation execution is not runtime-owned. AppleScript execution, Keynote/WPS/PPT
 automation execution, PPT key forwarding, WPS key forwarding, automation
-permission modal alerts, Support event production, telemetry, and concrete
-facade storage remain ViewModel-owned. Runtime-generated automation notice
-failures must not write Support storage in `.automationNoticeOwned`; support
-entries for automation failures are still produced by ViewModel and enter
+permission modal alerts, support event generation call sites, and telemetry
+remain ViewModel-owned. Runtime-generated automation notice failures must not
+write Support storage in `.automationNoticeOwned` or `.supportOwned`; support
+entries for automation failures are still generated by ViewModel and enter
 runtime storage only through `.supportEventRecorded`.
+
+## Support Boundary
+
+Support storage and production ingress are runtime-owned. Runtime owns
+`state.support.events`, `state.support.coalescedCounts`, and
+`state.support.eventLimit`, including redaction, coalescing, priority retention,
+and trimming. Production uses `.supportOwned` and wires `SupportEventPort`.
+
+`ViewModel.recordSupportEvent` remains the canonical facade call site for
+existing UI, projection, PPT, BGM, automation failure, preflight, and overlay
+event generation. It must only build the `LiveSupportEvent`, dispatch
+`.supportEventRecorded`, and sync `supportEvents` from Runtime. It must not
+append support events directly, perform local redaction/coalescing/trimming,
+write UserDefaults, run telemetry, or execute automation. The production
+`SupportEventPort` is notification-only and exists to sync the concrete
+`supportEvents` facade after Runtime state changes.
 
 ## Next Migration Gate
 
-Program queue, Automation execution, and Support ingress migration remain
-blocked. The next migration may proceed only after Audio, Media, BGM,
-Projection, PPT, and Automation notice ownership and hardening tests pass,
+Program queue and Automation execution migration remain blocked. The next
+migration may proceed only after Audio, Media, BGM, Projection, PPT, Automation
+notice, and Support ownership and hardening tests pass,
 cumulative bridge tests pass, bridge mode explicitness tests pass, explicit
 runtime-store tests pass, no implicit full runtime remains, the target domain
 port is connected in a dedicated PR, and ViewModel no longer owns that target
-domain's migrated side effects in that future PR. Support production ingress
-remains ViewModel-owned until a dedicated Support ownership PR. Support must
-not be the next migration until Automation notice hardening tests are passing.
+domain's migrated side effects in that future PR.
 Automation execution migration remains blocked.
 
 Remaining migration boundaries:
 - PPT key forwarding and WPS automation implementation remain ViewModel-owned.
 - Automation execution is not runtime-owned yet.
-- Support production ingress remains ViewModel-owned.
+- Support event generation call sites and telemetry remain ViewModel-owned.

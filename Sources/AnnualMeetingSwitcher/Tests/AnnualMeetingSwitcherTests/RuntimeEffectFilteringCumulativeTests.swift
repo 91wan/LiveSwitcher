@@ -177,6 +177,23 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertFalse(supportMutation.effects.contains(.recordSupportEvent(support)))
     }
 
+    func testSupportOwnedModeAllowsSupportButBlocksAutomationExecutionEffects() {
+        let support = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 10),
+            kind: .pageInterceptEnabled,
+            detail: "source=test"
+        )
+
+        let supportMutation = reduce(.supportEventRecorded(support), bridgeMode: .supportOwned)
+        let scriptMutation = reduce(.automationFailed(action: "keynote.open", sanitizedMessage: "failed"), bridgeMode: .supportOwned)
+
+        XCTAssertTrue(supportMutation.effects.contains(.recordSupportEvent(support)))
+        XCTAssertFalse(scriptMutation.effects.contains { effect in
+            if case .runAppleScript = effect { return true }
+            return false
+        })
+    }
+
     func testMediaOwnedBlocksBGMEffects() {
         let bgm = bgmItem()
         var state = LiveRuntimeState()

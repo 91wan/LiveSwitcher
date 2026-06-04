@@ -186,7 +186,7 @@ enum LiveRuntimeReducer {
                 state: &state,
                 effects: &effects,
                 now: environment.now,
-                canWriteSupport: canWriteReducerSupport(in: bridgeMode),
+                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
@@ -197,7 +197,7 @@ enum LiveRuntimeReducer {
                 state: &state,
                 effects: &effects,
                 now: environment.now,
-                canWriteSupport: canWriteReducerSupport(in: bridgeMode),
+                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
@@ -330,21 +330,21 @@ enum LiveRuntimeReducer {
                 state.projection.isBroadcasting = false
                 state.projection.safetyNotice = nil
                 effects.append(.stopProjection)
-                if canWriteReducerSupport(in: bridgeMode) {
+                if canGenerateReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStopped, detail: "source=runtime", at: environment.now)
                 }
             } else if state.projection.hasExternalDisplay {
                 state.projection.isBroadcasting = true
                 state.projection.safetyNotice = nil
                 effects.append(.startProjection)
-                if canWriteReducerSupport(in: bridgeMode) {
+                if canGenerateReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStarted, detail: "source=runtime", at: environment.now)
                 }
             } else {
                 state.projection.isBroadcasting = false
                 state.projection.hasExternalDisplay = false
                 state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
-                if canWriteReducerSupport(in: bridgeMode) {
+                if canGenerateReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
                 }
             }
@@ -447,7 +447,7 @@ enum LiveRuntimeReducer {
             state.bgm.generation += 1
             state.bgm.isPlaying = false
             state.audio.routingContext.isBGMPlaying = false
-            if canWriteReducerSupport(in: bridgeMode) {
+            if canGenerateReducerSupport(in: bridgeMode) {
                 state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: environment.now)
             }
             effects += [
@@ -487,7 +487,7 @@ enum LiveRuntimeReducer {
             guard wasBroadcasting else { break }
             if state.projection.lastDisplayLostAt == nil {
                 state.projection.lastDisplayLostAt = environment.now
-                if canWriteReducerSupport(in: bridgeMode) {
+                if canGenerateReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionLost, detail: "state=displayLost", at: environment.now)
                 }
             }
@@ -528,7 +528,7 @@ enum LiveRuntimeReducer {
 
         case .automationFailed(let action, let sanitizedMessage):
             requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
-            if canWriteReducerSupport(in: bridgeMode) {
+            if canGenerateReducerSupport(in: bridgeMode) {
                 state.support.record(
                     kind: .appleScriptFailed,
                     detail: "action=\(action),error=\(sanitizedMessage)",
@@ -549,6 +549,7 @@ enum LiveRuntimeReducer {
 
         case .supportEventRecorded(let event):
             state.support.record(kind: event.kind, detail: event.detail, at: event.timestamp)
+            effects.append(.recordSupportEvent(event))
         }
 
         return LiveRuntimeMutation(
@@ -935,7 +936,7 @@ enum LiveRuntimeReducer {
         bridgeMode.owns(domain)
     }
 
-    private static func canWriteReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
-        bridgeMode.owns(.support)
+    private static func canGenerateReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
+        bridgeMode == .fullRuntime
     }
 }
