@@ -351,6 +351,7 @@ final class ViewModelCleanupBag {
     var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
     var retiredBGMFallbackPlayers: [UUID: AVPlayer] = [:]
     var automationNoticeExpiryTask: Task<Void, Never>?
+    var automationNoticeExpiryTaskNoticeID: UUID?
     var panicAudioPauseTask: Task<Void, Never>?
     var backgroundImageLoadTask: Task<Void, Never>?
     var cornerLogoImageLoadTask: Task<Void, Never>?
@@ -370,6 +371,8 @@ final class ViewModelCleanupBag {
         }
         retiredBGMFallbackPlayers.removeAll()
         automationNoticeExpiryTask?.cancel()
+        automationNoticeExpiryTask = nil
+        automationNoticeExpiryTaskNoticeID = nil
         panicAudioPauseTask?.cancel()
         backgroundImageLoadTask?.cancel()
         cornerLogoImageLoadTask?.cancel()
@@ -732,19 +735,20 @@ final class SwitcherViewModel {
             environment: .productionAutomationNoticeOwning()
         )
         automationNoticePort.showHandler = { [weak self] notice in
+            self?.cancelAutomationNoticeExpiryTask()
             self?.automationRuntimeNotice = notice
         }
         automationNoticePort.expireHandler = { [weak self] id, date in
             guard let self else { return }
-            cleanupBag.automationNoticeExpiryTask?.cancel()
+            cancelAutomationNoticeExpiryTask()
+            cleanupBag.automationNoticeExpiryTaskNoticeID = id
             cleanupBag.automationNoticeExpiryTask = Task { @MainActor [weak self] in
                 let delay = max(0, date.timeIntervalSinceNow)
                 if delay > 0 {
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 }
                 guard !Task.isCancelled else { return }
-                self?.dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
-                self?.syncAutomationNoticeFacadeFromRuntime()
+                self?.expireAutomationNoticeFromScheduledTask(id: id)
             }
         }
         projectionPort.hasExternalDisplayHandler = { [weak self] in
@@ -1159,7 +1163,11 @@ final class SwitcherViewModel {
     func syncAutomationNoticeFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.automationNotice) else { return }
 
-        automationRuntimeNotice = runtime.state.automation.notice
+        let notice = runtime.state.automation.notice
+        if notice == nil {
+            cancelAutomationNoticeExpiryTask()
+        }
+        automationRuntimeNotice = notice
     }
 
     private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
@@ -2188,6 +2196,7 @@ final class SwitcherViewModel {
     }
 
     func dismissAutomationRuntimeNotice() {
+        cancelAutomationNoticeExpiryTask()
         dispatchRuntimeFacadeAction(.automationNoticeDismissed)
         syncAutomationNoticeFacadeFromRuntime()
     }
@@ -2198,6 +2207,7 @@ final class SwitcherViewModel {
               let expiresAt = notice.expiresAt,
               now >= expiresAt
         else { return }
+        cancelAutomationNoticeExpiryTask()
         dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
         syncAutomationNoticeFacadeFromRuntime()
     }
@@ -2205,6 +2215,31 @@ final class SwitcherViewModel {
     private func showAutomationRuntimeNotice(action: String) {
         dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))
         syncAutomationNoticeFacadeFromRuntime()
+    }
+
+    private func cancelAutomationNoticeExpiryTask() {
+        cleanupBag.automationNoticeExpiryTask?.cancel()
+        cleanupBag.automationNoticeExpiryTask = nil
+        cleanupBag.automationNoticeExpiryTaskNoticeID = nil
+    }
+
+    private func expireAutomationNoticeFromScheduledTask(id: UUID) {
+        guard runtime.state.automation.notice?.id == id else { return }
+        dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
+        syncAutomationNoticeFacadeFromRuntime()
+    }
+
+    var automationNoticeExpiryTaskIsActiveForTesting: Bool {
+        guard let task = cleanupBag.automationNoticeExpiryTask else { return false }
+        return !task.isCancelled
+    }
+
+    var automationNoticeExpiryTaskNoticeIDForTesting: UUID? {
+        cleanupBag.automationNoticeExpiryTaskNoticeID
+    }
+
+    func expireAutomationNoticeFromScheduledTaskForTesting(id: UUID) {
+        expireAutomationNoticeFromScheduledTask(id: id)
     }
 
     private func presentAutomationAlert(

@@ -820,6 +820,9 @@ enum LiveRuntimeReducer {
         effects: inout [LiveRuntimeEffect],
         now: Date
     ) {
+        state.automation.suppressionUntilByAction = state.automation.suppressionUntilByAction.filter { _, expiry in
+            expiry > now
+        }
         let notice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: now)
         let suppressionUntil = state.automation.suppressionUntilByAction[action] ?? .distantPast
         guard suppressionUntil <= now else { return }

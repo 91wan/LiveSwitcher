@@ -111,6 +111,8 @@ enum LiveRuntimeActionLogPolicy {
     static func shouldLog(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .facadeAudioInputsChanged,
+             .automationNoticeRequested,
+             .automationNoticeExpired,
              .bgmProgressUpdated,
              .mediaSeekCompleted:
             return false

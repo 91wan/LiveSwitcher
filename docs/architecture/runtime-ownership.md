@@ -250,6 +250,19 @@ for notice surface side effects. ViewModel bridges those effects to the existing
 `automationRuntimeNotice` facade field and dispatches expiry callbacks back into
 Runtime.
 
+Automation notice expiry tasks are ID-bound. Showing a replacement notice,
+dismissing the current notice, manually expiring it, clearing Runtime notice
+state, or cleaning up the ViewModel cancels the pending expiry task. A scheduled
+expiry callback dispatches `.automationNoticeExpired` only while the current
+Runtime notice ID still matches the scheduled ID, so stale expiry callbacks
+cannot clear a newer notice.
+
+`automationNoticeRequested` and `automationNoticeExpired` are internal lifecycle
+actions and are suppressed from the operator-facing Runtime action log.
+`automationFailed` remains the meaningful system event for automation failure
+diagnostics, and `automationNoticeDismissed` remains logged because it represents
+an operator-visible dismissal.
+
 Automation execution is not runtime-owned. AppleScript execution, Keynote/WPS/PPT
 automation execution, PPT key forwarding, WPS key forwarding, automation
 permission modal alerts, Support event production, telemetry, and concrete
@@ -268,7 +281,7 @@ runtime-store tests pass, no implicit full runtime remains, the target domain
 port is connected in a dedicated PR, and ViewModel no longer owns that target
 domain's migrated side effects in that future PR. Support production ingress
 remains ViewModel-owned until a dedicated Support ownership PR. Support must
-not be the next migration until Automation notice runtime tests are passing.
+not be the next migration until Automation notice hardening tests are passing.
 Automation execution migration remains blocked.
 
 Remaining migration boundaries:

@@ -64,6 +64,9 @@ product boundary.
 - Automation notice runtime migration does not add live controls. Automation
   failures appear through the existing notice surface, and no live-mode
   configuration surface is added.
+- Automation notice runtime hardening does not add live controls. Expiry
+  cleanup, stale-expiry guards, suppression cleanup, and action-log filtering
+  stay behind the existing notice surface.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
