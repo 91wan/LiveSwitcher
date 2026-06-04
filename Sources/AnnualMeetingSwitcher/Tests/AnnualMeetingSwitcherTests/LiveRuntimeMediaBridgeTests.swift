@@ -183,7 +183,8 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testManualPlaybackToggleRoutesAudioThroughRuntimeOnly() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
+            environment: .productionAudioOwned()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

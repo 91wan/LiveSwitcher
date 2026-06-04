@@ -7,7 +7,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeStore().bridgeMode, .audioOwned)
     }
 
-    func testProductionViewModelRuntimeIsBGMOwned() {
+    func testProductionViewModelRuntimeIsBGMOwning() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(viewModel.runtimeBridgeMode, .bgmOwned)
@@ -36,15 +36,32 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
     }
 
     func testNoImplicitFullRuntimeStoreCreationInTests() throws {
-        let violations = try testSourceLines { line in
-            line.contains("LiveRuntimeStore()")
-                || (line.contains("LiveRuntimeStore(")
-                    && line.contains("effectRunner:")
-                    && !line.contains("environment:")
-                    && !line.contains("RuntimeTestFactory."))
-        }
+        let violations = try storeConstructionsWithImplicitEnvironment()
 
         XCTAssertTrue(violations.isEmpty, violations.joined(separator: "\n"))
+    }
+
+    func testCustomEffectRunnerStoreCreationRequiresEnvironment() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeStore.swift")
+
+        XCTAssertTrue(source.contains("effectRunner: LiveRuntimeEffectRunner,"))
+        XCTAssertTrue(source.contains("environment: LiveRuntimeEnvironment"))
+        XCTAssertFalse(source.contains("effectRunner: LiveRuntimeEffectRunner ="))
+        XCTAssertFalse(source.contains("environment: LiveRuntimeEnvironment?"))
+    }
+
+    func testPersistencePortDoesNotChangeBridgeModeAutomatically() {
+        let runner = LiveRuntimeEffectRunner(
+            recordsOnly: false,
+            persistence: RuntimeEnvironmentExplicitnessPersistencePort()
+        )
+        let store = LiveRuntimeStore(
+            effectRunner: runner,
+            environment: .productionAudioOwned()
+        )
+
+        XCTAssertEqual(store.connectedPortKinds, [.persistence])
+        XCTAssertEqual(store.bridgeMode, .audioOwned)
     }
 
     func testReducerCallsInTestsUseExplicitEnvironment() throws {
@@ -73,7 +90,10 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
 
     private func testSourceLines(matching predicate: (String) -> Bool) throws -> [String] {
         try testSourceURLs()
-            .filter { $0.lastPathComponent != "RuntimeEnvironmentExplicitnessTests.swift" }
+            .filter {
+                $0.lastPathComponent != "RuntimeEnvironmentExplicitnessTests.swift"
+                    && $0.lastPathComponent != "RuntimeStoreInitializationTests.swift"
+            }
             .flatMap { url -> [String] in
                 let text = try String(contentsOf: url, encoding: .utf8)
                 return text
@@ -97,6 +117,62 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         .filter { $0.pathExtension == "swift" }
     }
 
+    private func storeConstructionsWithImplicitEnvironment() throws -> [String] {
+        try testSourceURLs()
+            .filter {
+                $0.lastPathComponent != "RuntimeEnvironmentExplicitnessTests.swift"
+                    && $0.lastPathComponent != "RuntimeStoreInitializationTests.swift"
+            }
+            .flatMap { url -> [String] in
+                let text = try String(contentsOf: url, encoding: .utf8)
+                return storeConstructionRanges(in: text)
+                    .filter { range in
+                        let construction = String(text[range])
+                        return construction.contains("effectRunner:")
+                            && !construction.contains("environment:")
+                    }
+                    .map { range in
+                        "\(url.lastPathComponent):\(lineNumber(for: range.lowerBound, in: text)): missing explicit environment"
+                    }
+            }
+    }
+
+    private func storeConstructionRanges(in text: String) -> [Range<String.Index>] {
+        var ranges: [Range<String.Index>] = []
+        var searchStart = text.startIndex
+        while let start = text.range(of: "LiveRuntimeStore(", range: searchStart..<text.endIndex)?.lowerBound {
+            var index = start
+            var depth = 0
+            var hasSeenOpeningParenthesis = false
+            while index < text.endIndex {
+                let character = text[index]
+                if character == "(" {
+                    depth += 1
+                    hasSeenOpeningParenthesis = true
+                } else if character == ")" {
+                    depth -= 1
+                    if hasSeenOpeningParenthesis && depth == 0 {
+                        let end = text.index(after: index)
+                        ranges.append(start..<end)
+                        searchStart = end
+                        break
+                    }
+                }
+                index = text.index(after: index)
+            }
+            if index == text.endIndex {
+                break
+            }
+        }
+        return ranges
+    }
+
+    private func lineNumber(for index: String.Index, in text: String) -> Int {
+        text[..<index].reduce(1) { count, character in
+            character == "\n" ? count + 1 : count
+        }
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
     }
@@ -111,4 +187,8 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         }
         throw XCTSkip("Could not locate repository root from test source path.")
     }
+}
+
+private final class RuntimeEnvironmentExplicitnessPersistencePort: PersistencePort {
+    func save() {}
 }

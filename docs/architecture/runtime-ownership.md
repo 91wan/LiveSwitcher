@@ -20,6 +20,12 @@ Production bridge mode is `.bgmOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
+Explicit runtime-store construction rules:
+- Bridge mode is explicit and never inferred from ports.
+- Ports describe executable capabilities.
+- Bridge mode describes domain ownership.
+- A custom `LiveRuntimeEffectRunner` must always be paired with an explicit `LiveRuntimeEnvironment`.
+- Connected ports such as `persistence` must not promote the store to a broader ownership mode.
 
 Bridge modes are cumulative migration stages, not isolated domain selectors.
 Each stage includes all domains migrated in earlier stages:
@@ -62,7 +68,8 @@ Operator actions for mirror-only domains must not mutate real runtime domain sta
 No next domain may be migrated until the Audio, Media, and BGM ownership tests
 pass and production effective audio output plus media/BGM playback output remain
 runtime-owned. Projection/PPT migration remains blocked until BGM hardening
-tests pass, its ports are wired, and an ownership PR is approved.
+tests pass, explicit runtime-store tests pass, its ports are wired, and an
+ownership PR is approved.
 
 ## Domain Ownership
 
@@ -74,7 +81,7 @@ tests pass, its ports are wired, and an ownership PR is approved.
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
 | PPT mode | ViewModel owner | Mirror-only callback state and action log | recording only | Operator toggles do not mutate PPT state; event-tap started/failed/stopped callbacks may update the mirror. |
-| Projection | ViewModel owner | Mirror-only snapshot/callback state | not migrated | Output windows and display safety remain ViewModel-owned. |
+| Projection | ViewModel owner | Mirror-only snapshot/callback state | not migrated | Projection is not runtime-owned yet. Output windows and display safety remain ViewModel-owned. |
 | Automation notice | ViewModel owner | Mirror-only notice state | not migrated | AppleScript execution and notice UI ownership remain ViewModel-owned. |
 | Persistence | ViewModel/UserDefaults | Wired preference persistence effects | bridge in progress | Runtime may persist selected preferences, but general state save remains ViewModel/UserDefaults-owned. |
 
@@ -159,6 +166,14 @@ it must not import, reorder, dedupe, or edit BGM metadata.
 Projection, PPT, Program queue, Automation, and Support ingress migration remain
 blocked. The next migration may proceed only after Audio, Media, and BGM
 ownership and hardening tests pass, cumulative bridge tests pass, bridge mode
-explicitness tests pass, no implicit full runtime remains, the target domain
-port is connected in a dedicated PR, and ViewModel no longer owns that target
-domain's migrated side effects in that future PR.
+explicitness tests pass, explicit runtime-store tests pass, no implicit full
+runtime remains, the target domain port is connected in a dedicated PR, and
+ViewModel no longer owns that target domain's migrated side effects in that
+future PR. Projection migration is next only after explicit runtime-store tests
+pass. Support production ingress remains ViewModel-owned until a dedicated
+Support ownership PR.
+
+Projection migration readiness:
+- Projection migration is next only after explicit runtime-store tests pass.
+- Projection is not runtime-owned yet.
+- Support production ingress remains ViewModel-owned.

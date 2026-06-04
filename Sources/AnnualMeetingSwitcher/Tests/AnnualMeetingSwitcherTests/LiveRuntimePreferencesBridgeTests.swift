@@ -80,7 +80,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let persistence = PreferencePersistencePortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence),
+            environment: .productionAudioOwned()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

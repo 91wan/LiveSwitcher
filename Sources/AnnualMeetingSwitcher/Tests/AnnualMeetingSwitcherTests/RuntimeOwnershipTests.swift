@@ -94,6 +94,28 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains(environmentDefaultText))
     }
 
+    func testDocsStateBridgeModeIsNeverInferredFromPorts() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Bridge mode is explicit and never inferred from ports"))
+        XCTAssertTrue(document.localizedStandardContains("A custom `LiveRuntimeEffectRunner` must always be paired with an explicit `LiveRuntimeEnvironment`"))
+    }
+
+    func testDocsStatePortsDoNotImplyOwnership() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Ports describe executable capabilities"))
+        XCTAssertTrue(document.localizedStandardContains("Bridge mode describes domain ownership"))
+    }
+
+    func testDocsStateProjectionNotMigratedYet() throws {
+        let document = try runtimeOwnershipDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Projection is not runtime-owned yet"))
+        XCTAssertTrue(document.localizedStandardContains("Projection migration is next only after explicit runtime-store tests pass"))
+        XCTAssertTrue(document.localizedStandardContains("Support production ingress remains ViewModel-owned"))
+    }
+
     private func runtimeOwnershipDocument() throws -> String {
         let url = try repositoryRoot()
             .appendingPathComponent("docs/architecture/runtime-ownership.md")

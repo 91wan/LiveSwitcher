@@ -310,7 +310,8 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let persistence = PersistencePortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence),
+            environment: .productionBGMOwning()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

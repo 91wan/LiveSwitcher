@@ -56,6 +56,20 @@ final class RuntimeEffectWiringTests: XCTestCase {
 
         XCTAssertEqual(runner.connectedPortKinds, [.audioRouting, .persistence])
     }
+
+    func testPersistencePortDoesNotImplyBGMOwningBridgeMode() {
+        let runner = LiveRuntimeEffectRunner(
+            recordsOnly: false,
+            persistence: RuntimeEffectWiringPersistencePort()
+        )
+        let store = LiveRuntimeStore(
+            effectRunner: runner,
+            environment: .productionAudioOwned()
+        )
+
+        XCTAssertEqual(store.connectedPortKinds, [.persistence])
+        XCTAssertEqual(store.bridgeMode, .audioOwned)
+    }
 }
 
 private final class RuntimeEffectWiringAudioPort: AudioRoutingPort {
