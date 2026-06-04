@@ -294,6 +294,17 @@ struct LiveRuntimeEnvironment: Equatable {
         )
     }
 
+    static func productionProjectionOwned(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            bridgeMode: .projectionOwned
+        )
+    }
+
     static func fullRuntimeForTests(
         now: Date = Date(),
         speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio

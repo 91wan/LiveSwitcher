@@ -48,6 +48,9 @@ product boundary.
   It only separates current-player generation-guarded tasks from retired-player
   cleanup and tightens callback, timer, and port contracts behind existing BGM
   controls.
+- Projection runtime migration does not add live controls. Existing projection
+  start/stop remains the only allowed projection action in Live mode.
+- Projection configuration must not move into Live mode.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
@@ -70,14 +73,14 @@ product boundary.
   media restart/playback, audio, and BGM transport.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
-- Current authoritative runtime domains: Audio, Media playback, and BGM playback.
-- Mirror-only live domains are Program queue, Panic, PPT, Projection, and
+- Current authoritative runtime domains: Audio, Media playback, BGM playback,
+  and Projection output.
+- Mirror-only live domains are Program queue, Panic, PPT, and
   Automation. Live controls for those domains must use ViewModel-owned flows and
   must not rely on runtime operator actions to mutate real state.
-- Runtime-backed actions must respect the production `.bgmOwned` bridge mode:
-  media playback, BGM playback/timer, audio routing, image assets, and
-  persistence may execute; unowned projection, PPT, automation, notice, and
-  support effects must not.
-- Projection migration, when it happens, must not add live controls.
+- Runtime-backed actions must respect the production `.projectionOwned` bridge
+  mode: media playback, BGM playback/timer, projection start/stop, audio
+  routing, image assets, and persistence may execute; unowned PPT, automation,
+  notice, and support effects must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

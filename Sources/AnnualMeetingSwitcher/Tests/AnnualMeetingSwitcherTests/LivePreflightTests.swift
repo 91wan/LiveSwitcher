@@ -593,8 +593,8 @@ final class LivePreflightTests: XCTestCase {
         viewModel.togglePanicMode()
         viewModel.toggleBGM(BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/missing.mp3")))
         viewModel.performLivePreflightAction(.manualReview)
-        viewModel.isBroadcasting = true
-        viewModel.handleExternalDisplayLost()
+        viewModel.externalScreenProvider = { nil }
+        viewModel.handleBroadcastToggle()
 
         let kinds = viewModel.supportEvents.map(\.kind)
         XCTAssertTrue(kinds.contains(.speakerModeChanged))

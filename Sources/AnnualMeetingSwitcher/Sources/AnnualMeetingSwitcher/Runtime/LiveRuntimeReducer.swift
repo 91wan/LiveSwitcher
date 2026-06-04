@@ -313,19 +313,21 @@ enum LiveRuntimeReducer {
             guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
             if state.projection.isBroadcasting {
                 state.projection.isBroadcasting = false
-                effects += [.stopProjection, .hideOutputWindow]
+                state.projection.safetyNotice = nil
+                effects.append(.stopProjection)
                 if canWriteReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStopped, detail: "source=runtime", at: environment.now)
                 }
             } else if state.projection.hasExternalDisplay {
                 state.projection.isBroadcasting = true
                 state.projection.safetyNotice = nil
-                effects += [.startProjection, .showOutputWindow]
+                effects.append(.startProjection)
                 if canWriteReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStarted, detail: "source=runtime", at: environment.now)
                 }
             } else {
-                state.projection.safetyNotice = "No external display"
+                state.projection.isBroadcasting = false
+                state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
                 if canWriteReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
                 }
@@ -454,6 +456,9 @@ enum LiveRuntimeReducer {
             let wasBroadcasting = state.projection.isBroadcasting
             state.projection.isBroadcasting = false
             state.projection.hasExternalDisplay = false
+            if wasBroadcasting {
+                state.projection.safetyNotice = "副屏已断开，投射已停止"
+            }
             guard wasBroadcasting else { break }
             if state.projection.lastDisplayLostAt == nil {
                 state.projection.lastDisplayLostAt = environment.now
@@ -469,8 +474,16 @@ enum LiveRuntimeReducer {
             state.projection.lastDisplayLostAt = nil
 
         case .projectionExternalDisplayUnavailable:
+            let wasBroadcasting = state.projection.isBroadcasting
+            state.projection.isBroadcasting = false
             state.projection.hasExternalDisplay = false
-            if !state.projection.isBroadcasting {
+            if wasBroadcasting {
+                state.projection.safetyNotice = "副屏已断开，投射已停止"
+                if state.projection.lastDisplayLostAt == nil {
+                    state.projection.lastDisplayLostAt = environment.now
+                }
+                effects.append(.stopProjection)
+            } else {
                 state.projection.lastDisplayLostAt = nil
             }
 

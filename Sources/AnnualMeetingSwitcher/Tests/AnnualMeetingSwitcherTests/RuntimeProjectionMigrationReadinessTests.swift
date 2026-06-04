@@ -3,17 +3,17 @@ import XCTest
 
 @MainActor
 final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
-    func testProjectionNotProductionOwnedYet() {
+    func testProjectionIsProductionOwnedNow() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .bgmOwned)
-        XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.projection))
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .projectionOwned)
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.projection))
     }
 
-    func testProductionRuntimeDoesNotWireProjectionPortYet() {
+    func testProductionRuntimeWiresProjectionPortNow() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.projection))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.projection))
     }
 
     func testProjectionOwnedModeIncludesAudioMediaBGMProjection() {
@@ -44,7 +44,7 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
 
         XCTAssertFalse(storeSource.contains("defaultEnvironment(for:"))
         XCTAssertFalse(storeSource.contains("connectedPortKinds.contains(.persistence)"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionBGMOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionProjectionOwned()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

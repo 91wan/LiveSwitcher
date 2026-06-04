@@ -176,6 +176,34 @@ private final class ClosureBGMTimerPort: BGMTimerPort {
     }
 }
 
+private final class ClosureProjectionPort: ProjectionPort {
+    var hasExternalDisplayHandler: (() -> Bool)?
+    var startHandler: (() -> Void)?
+    var stopHandler: (() -> Void)?
+    var showHandler: (() -> Void)?
+    var hideHandler: (() -> Void)?
+
+    var hasExternalDisplay: Bool {
+        hasExternalDisplayHandler?() ?? false
+    }
+
+    func start() {
+        startHandler?()
+    }
+
+    func stop() {
+        stopHandler?()
+    }
+
+    func show() {
+        showHandler?()
+    }
+
+    func hide() {
+        hideHandler?()
+    }
+}
+
 protocol BGMRuntimeCleanupHandle: AnyObject {
     var volume: Float { get set }
     func stop()
@@ -676,6 +704,7 @@ final class SwitcherViewModel {
         let mediaPlaybackPort = ClosureMediaPlaybackPort()
         let bgmPlaybackPort = ClosureBGMPlaybackPort()
         let bgmTimerPort = ClosureBGMTimerPort()
+        let projectionPort = ClosureProjectionPort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -685,13 +714,29 @@ final class SwitcherViewModel {
                 recordsOnly: false,
                 media: mediaPlaybackPort,
                 bgm: bgmPlaybackPort,
+                projection: projectionPort,
                 bgmTimer: bgmTimerPort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
             ),
-            environment: .productionBGMOwning()
+            environment: .productionProjectionOwned()
         )
+        projectionPort.hasExternalDisplayHandler = { [weak self] in
+            self?.projectionService.hasExternalDisplay ?? false
+        }
+        projectionPort.startHandler = { [weak self] in
+            self?.showOutputWindowFromRuntimeProjection()
+        }
+        projectionPort.stopHandler = { [weak self] in
+            self?.hideOutputWindowFromRuntimeProjection()
+        }
+        projectionPort.showHandler = { [weak self] in
+            self?.showOutputWindowFromRuntimeProjection()
+        }
+        projectionPort.hideHandler = { [weak self] in
+            self?.hideOutputWindowFromRuntimeProjection()
+        }
         mediaPlaybackPort.loadHandler = { [weak self] url, generation in
             self?.activeRuntimeMediaGenerationForCallbacks = generation
             self?.activeRuntimeMediaURLForCallbacks = url
@@ -846,6 +891,9 @@ final class SwitcherViewModel {
         runtime.dispatch(action)
         if shouldSyncBGMFacadeAfterRuntimeAction(action) {
             syncBGMFacadeFromRuntime()
+        }
+        if shouldSyncProjectionFacadeAfterRuntimeAction(action) {
+            syncProjectionFacadeFromRuntime()
         }
     }
 
@@ -1032,13 +1080,44 @@ final class SwitcherViewModel {
         state.preferences.showAgendaTimeline = showAgendaTimeline
         state.preferences.cornerLogoPosition = cornerLogoPosition
 
-        state.projection.isBroadcasting = isBroadcasting
-        state.projection.hasExternalDisplay = isExternalDisplayAvailable
-        state.projection.safetyNotice = broadcastSafetyNotice
+        syncProjectionAvailabilityIntoRuntimeSnapshot(&state)
 
         state.automation.notice = automationRuntimeNotice
         state.support.events = supportEvents
         return state
+    }
+
+    private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        state.projection.hasExternalDisplay = isExternalDisplayAvailable
+
+        guard runtime.bridgeMode.owns(.projection) else {
+            state.projection.isBroadcasting = isBroadcasting
+            state.projection.safetyNotice = broadcastSafetyNotice
+            return
+        }
+
+        state.projection.isBroadcasting = runtime.state.projection.isBroadcasting
+        state.projection.safetyNotice = runtime.state.projection.safetyNotice
+        state.projection.lastDisplayLostAt = runtime.state.projection.lastDisplayLostAt
+    }
+
+    private func shouldSyncProjectionFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorToggledProjection,
+             .projectionExternalDisplayLost,
+             .projectionExternalDisplayAvailable,
+             .projectionExternalDisplayUnavailable:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func syncProjectionFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.projection) else { return }
+
+        isBroadcasting = runtime.state.projection.isBroadcasting
+        broadcastSafetyNotice = runtime.state.projection.safetyNotice
     }
 
     private func syncBGMLibraryIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
@@ -2771,31 +2850,23 @@ final class SwitcherViewModel {
     // MARK: - 推流控制
 
     func handleBroadcastToggle() {
+        let oldProjection = runtime.state.projection
         dispatchRuntimeFacadeAction(.operatorToggledProjection)
-        if !isBroadcasting, !projectionService.hasExternalDisplay {
-            broadcastSafetyNotice = "未检测到外接屏幕，未开始投射"
-            LiveSwitcherTelemetry.projectionFailClosed()
-            recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
-            recordSupportEvent(kind: .projectionStartFailed, detail: "externalDisplay=false")
-            return
-        }
-
-        isBroadcasting.toggle()
-        if isBroadcasting {
-            showOutputWindow()
-            guard isBroadcasting else { return }
-            recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
-        } else {
-            hideOutputWindow()
-            recordSupportEvent(kind: .projectionStopped, detail: "isBroadcasting=false")
-        }
+        syncProjectionFacadeFromRuntime()
+        recordProjectionSupportAfterRuntimeToggle(old: oldProjection, new: runtime.state.projection)
         LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
-        recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=\(isBroadcasting)")
     }
 
     func showOutputWindow() {
+        showOutputWindowFromRuntimeProjection()
+    }
+
+    private func showOutputWindowFromRuntimeProjection() {
         guard let targetScreen = projectionService.targetScreen() else {
-            handleExternalDisplayLost()
+            let oldProjection = runtime.state.projection
+            dispatchRuntimeFacadeAction(.projectionExternalDisplayLost)
+            syncProjectionFacadeFromRuntime()
+            recordProjectionSupportAfterRuntimeDisplayLost(old: oldProjection, new: runtime.state.projection)
             return
         }
 
@@ -2810,20 +2881,50 @@ final class SwitcherViewModel {
             )
             outputWindowController?.mountAnyView(rootView: outputView)
         }
-        broadcastSafetyNotice = nil
         outputWindowController?.show(on: targetScreen)
     }
 
     func hideOutputWindow() {
+        hideOutputWindowFromRuntimeProjection()
+    }
+
+    private func hideOutputWindowFromRuntimeProjection() {
         outputWindowController?.hide()
     }
 
     func handleExternalDisplayLost() {
-        guard isBroadcasting else { return }
+        guard runtime.state.projection.isBroadcasting else { return }
+        let oldProjection = runtime.state.projection
         dispatchRuntimeFacadeAction(.projectionExternalDisplayLost)
-        isBroadcasting = false
-        outputWindowController?.hide()
-        broadcastSafetyNotice = "副屏已断开，投射已停止"
+        syncProjectionFacadeFromRuntime()
+        recordProjectionSupportAfterRuntimeDisplayLost(old: oldProjection, new: runtime.state.projection)
+    }
+
+    private func recordProjectionSupportAfterRuntimeToggle(
+        old: ProjectionRuntimeState,
+        new: ProjectionRuntimeState
+    ) {
+        if !old.isBroadcasting, new.isBroadcasting {
+            recordSupportEvent(kind: .projectionStarted, detail: "isBroadcasting=true")
+            recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=true")
+        } else if old.isBroadcasting, !new.isBroadcasting {
+            recordSupportEvent(kind: .projectionStopped, detail: "isBroadcasting=false")
+            recordSupportEvent(kind: .projectionToggle, detail: "isBroadcasting=false")
+        } else if !old.isBroadcasting,
+                  !new.isBroadcasting,
+                  new.safetyNotice == "未检测到外接屏幕，未开始投射" {
+            LiveSwitcherTelemetry.projectionFailClosed()
+            recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
+            recordSupportEvent(kind: .projectionStartFailed, detail: "externalDisplay=false")
+        }
+    }
+
+    private func recordProjectionSupportAfterRuntimeDisplayLost(
+        old: ProjectionRuntimeState,
+        new: ProjectionRuntimeState
+    ) {
+        guard old.isBroadcasting, !new.isBroadcasting else { return }
+
         LiveSwitcherTelemetry.projectionFailClosed()
         recordSupportEvent(kind: .projectionFailClosed, detail: "externalDisplay=false")
         recordSupportEvent(kind: .projectionLost, detail: "externalDisplay=false")
