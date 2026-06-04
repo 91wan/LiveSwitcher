@@ -3,19 +3,19 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsExactlyMatchPPTOwnedSet() {
+    func testProductionConnectedPortsExactlyMatchAutomationNoticeOwnedSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsPPTOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsAutomationNoticeOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .pptOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationNoticeOwned)
     }
 
     func testProductionRuntimeWiresPPTProjectionMediaBGMAndAudioPorts() {
@@ -41,17 +41,13 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
     }
 
-    func testProductionRuntimeDoesNotWireAutomationNoticeOrSupport() {
+    func testProductionRuntimeWiresAutomationNoticeButNotAutomationPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
 
-        [
-            .automation,
-            .automationNotice,
-            .support
-        ].forEach { kind in
-            XCTAssertFalse(connected.contains(kind), "\(kind.rawValue) should not be considered production-migrated.")
-        }
+        XCTAssertTrue(connected.contains(.automationNotice))
+        XCTAssertFalse(connected.contains(.automation))
+        XCTAssertFalse(connected.contains(.support))
     }
 
     func testPPTHardeningKeepsRuntimeBoundaryBeforeAutomationMigration() {

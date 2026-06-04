@@ -117,6 +117,34 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertEqual(pageNotice.expiresAt, createdAt.addingTimeInterval(10))
     }
 
+    func testProgramMissingNoticeIsActionable() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "program.source.missing")
+
+        XCTAssertEqual(notice.title, "节目文件不存在")
+        XCTAssertTrue(notice.message.contains("重新导入"))
+        XCTAssertEqual(notice.severity, .warn)
+        XCTAssertEqual(notice.primaryAction, .openSafetyCockpit)
+    }
+
+    func testPermissionNoticeCanOpenSettings() {
+        let notice = AutomationRuntimeNoticePolicy.make(action: "pageIntercept.accessibilityPermission")
+
+        XCTAssertEqual(notice.primaryAction, .openSystemSettingsAccessibility)
+        XCTAssertEqual(notice.primaryAction?.label, "打开权限设置")
+        XCTAssertTrue(notice.message.contains("系统设置"))
+    }
+
+    func testNoticeDoesNotContainRawErrorMessage() {
+        let notice = AutomationRuntimeNoticePolicy.make(
+            action: "keynote.next-slide.error=/Users/operator/Show/Agenda.html raw failure"
+        )
+
+        XCTAssertFalse(notice.title.localizedStandardContains("/Users/"))
+        XCTAssertFalse(notice.title.localizedStandardContains("Agenda.html"))
+        XCTAssertFalse(notice.message.localizedStandardContains("/Users/"))
+        XCTAssertFalse(notice.message.localizedStandardContains("raw failure"))
+    }
+
     func testAutomationRuntimeNoticeActionNamesSafetyCockpitDestination() throws {
         let source = try sourceText("ContentView.swift")
         let handler = try XCTUnwrap(source.functionBody(named: "handleAutomationRuntimeNoticeAction"))
@@ -264,7 +292,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
         XCTAssertTrue(failureBody.contains("dispatchRuntimeFacadeAction(.automationFailed"))
         XCTAssertTrue(failureBody.contains("supportEvents = runtime.state.support.events"))
-        XCTAssertTrue(failureBody.contains("automationRuntimeNotice = runtime.state.automation.notice"))
+        XCTAssertTrue(failureBody.contains("syncAutomationNoticeFacadeFromRuntime()"))
         XCTAssertTrue(startPageInterceptBody.contains("presentAutomationAlert("))
         XCTAssertFalse(startPageInterceptBody.contains("let alert = NSAlert()"))
     }

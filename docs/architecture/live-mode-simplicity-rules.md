@@ -61,6 +61,9 @@ product boundary.
   remains the only allowed live PPT action.
 - PPT setup/configuration and key-forwarding implementation details must not
   move into Live mode.
+- Automation notice runtime migration does not add live controls. Automation
+  failures appear through the existing notice surface, and no live-mode
+  configuration surface is added.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
@@ -84,12 +87,15 @@ product boundary.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
 - Current authoritative runtime domains: Audio, Media playback, BGM playback,
-  Projection output, and PPT EventTap lifecycle.
+  Projection output, and PPT EventTap lifecycle, plus Automation notice
+  lifecycle.
 - Mirror-only live domains are Program queue, Panic, and Automation. PPT key
-  forwarding and WPS automation remain ViewModel-owned implementation details.
-- Runtime-backed actions must respect the production `.pptOwned` bridge mode:
+  forwarding, WPS automation, automation execution, Support event production,
+  and telemetry remain ViewModel-owned implementation details.
+- Runtime-backed actions must respect the production `.automationNoticeOwned`
+  bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
-  lifecycle, audio routing, image assets, and persistence may execute; unowned
-  automation, notice, and support effects must not.
+  lifecycle, automation notices, audio routing, image assets, and persistence
+  may execute; unowned automation execution and support effects must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

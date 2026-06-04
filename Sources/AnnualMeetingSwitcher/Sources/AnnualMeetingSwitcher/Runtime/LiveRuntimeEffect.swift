@@ -99,10 +99,12 @@ extension LiveRuntimeEffect {
              .stopPPTEventTap:
             return .ppt
 
-        case .runAppleScript,
-             .showAutomationNotice,
-             .expireAutomationNotice:
+        case .runAppleScript:
             return .automation
+
+        case .showAutomationNotice,
+             .expireAutomationNotice:
+            return .automationNotice
 
         case .recordSupportEvent:
             return .support

@@ -3,11 +3,15 @@ import XCTest
 
 @MainActor
 final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
-    func testProjectionIsStillProductionOwnedThroughPPTOwningMode() {
+    func testProjectionIsStillProductionOwnedThroughAutomationNoticeOwningMode() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .pptOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationNoticeOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.projection))
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.ppt))
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationNotice))
+        XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.automation))
+        XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.support))
     }
 
     func testProductionRuntimeWiresProjectionPortNow() {
@@ -38,13 +42,13 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.hideOutputWindow.requiredBridgeDomain, .projection)
     }
 
-    func testProductionBridgeModeMustBeExplicitAfterPPTMigration() throws {
+    func testProductionBridgeModeMustBeExplicitAfterAutomationNoticeMigration() throws {
         let storeSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeStore.swift")
         let viewModelSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
 
         XCTAssertFalse(storeSource.contains("defaultEnvironment(for:"))
         XCTAssertFalse(storeSource.contains("connectedPortKinds.contains(.persistence)"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionPPTOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionAutomationNoticeOwning()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
