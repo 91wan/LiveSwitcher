@@ -625,6 +625,7 @@ final class SwitcherViewModel {
     @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
     @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
+    @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -637,22 +638,11 @@ final class SwitcherViewModel {
     @ObservationIgnored var saveDataDidRun: (() -> Void)?
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
-        setPPTMode(PPTModeToggleModel.nextState(isEnabled: isPageInterceptEnabled), source: source)
+        dispatchPPTIntent(.operatorToggledPPTMode(source: source), source: source)
     }
 
     func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
-        guard enabled != isPageInterceptEnabled else { return }
-        dispatchRuntimeFacadeAction(.operatorToggledPPTMode(source: source))
-        isPageInterceptEnabled = enabled
-        if enabled {
-            guard requestPageInterceptStartForModeToggle() else { return }
-        } else {
-            requestPageInterceptStopForModeToggle(reason: .operatorDisabled)
-        }
-        recordSupportEvent(
-            kind: .pptModeChanged,
-            detail: "isOn=\(enabled),source=\(source.rawValue)"
-        )
+        dispatchPPTIntent(.operatorSetPPTMode(enabled, source: source), source: source)
     }
 
     private var pageInterceptEventTap: CFMachPort?
@@ -705,6 +695,7 @@ final class SwitcherViewModel {
         let bgmPlaybackPort = ClosureBGMPlaybackPort()
         let bgmTimerPort = ClosureBGMTimerPort()
         let projectionPort = ClosureProjectionPort()
+        let pptPort = ClosurePPTEventTapPort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -715,12 +706,13 @@ final class SwitcherViewModel {
                 media: mediaPlaybackPort,
                 bgm: bgmPlaybackPort,
                 projection: projectionPort,
+                ppt: pptPort,
                 bgmTimer: bgmTimerPort,
                 audioRouting: audioRoutingPort,
                 imageAssets: imageAssetPort,
                 persistence: persistencePort
             ),
-            environment: .productionProjectionOwned()
+            environment: .productionPPTOwning()
         )
         projectionPort.hasExternalDisplayHandler = { [weak self] in
             self?.projectionService.hasExternalDisplay ?? false
@@ -736,6 +728,12 @@ final class SwitcherViewModel {
         }
         projectionPort.hideHandler = { [weak self] in
             self?.hideOutputWindowFromRuntimeProjection()
+        }
+        pptPort.startHandler = { [weak self] in
+            self?.startPPTEventTapFromRuntime()
+        }
+        pptPort.stopHandler = { [weak self] reason in
+            self?.stopPPTEventTapFromRuntime(reason: reason)
         }
         mediaPlaybackPort.loadHandler = { [weak self] url, generation in
             self?.activeRuntimeMediaGenerationForCallbacks = generation
@@ -894,6 +892,9 @@ final class SwitcherViewModel {
         }
         if shouldSyncProjectionFacadeAfterRuntimeAction(action) {
             syncProjectionFacadeFromRuntime()
+        }
+        if shouldSyncPPTFacadeAfterRuntimeAction(action) {
+            syncPPTFacadeFromRuntime()
         }
     }
 
@@ -1070,8 +1071,7 @@ final class SwitcherViewModel {
         state.panic.isActive = isPanicMode
         state.panic.snapshot = panicPlaybackSnapshot
 
-        state.ppt.isRequested = isPageInterceptEnabled
-        state.ppt.isEventTapActive = pageInterceptEventTap != nil
+        syncPPTFacadeIntoRuntimeSnapshot(&state)
         state.preferences.themeOverride = themeOverride
         state.preferences.activeWallpaperURL = activeWallpaperURL
         state.preferences.cornerLogoURL = cornerLogoURL
@@ -1099,6 +1099,45 @@ final class SwitcherViewModel {
         state.projection.isBroadcasting = runtime.state.projection.isBroadcasting
         state.projection.safetyNotice = runtime.state.projection.safetyNotice
         state.projection.lastDisplayLostAt = runtime.state.projection.lastDisplayLostAt
+    }
+
+    private func syncPPTFacadeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.ppt) else {
+            state.ppt = runtime.state.ppt
+            return
+        }
+
+        state.ppt.isRequested = isPageInterceptEnabled
+        state.ppt.isEventTapActive = pageInterceptEventTap != nil
+    }
+
+    private func shouldSyncPPTFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorSetPPTMode,
+             .operatorToggledPPTMode,
+             .pptEventTapStarted,
+             .pptEventTapFailed,
+             .pptEventTapStopped:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func dispatchPPTIntent(_ action: LiveRuntimeAction, source: PPTModeToggleSource) {
+        let previousPPT = runtime.state.ppt
+        pendingPPTToggleSource = source
+        dispatchRuntimeFacadeAction(action)
+        syncPPTFacadeFromRuntime()
+        if runtime.state.ppt == previousPPT {
+            pendingPPTToggleSource = nil
+        }
+    }
+
+    func syncPPTFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.ppt) else { return }
+
+        isPageInterceptEnabled = runtime.state.ppt.isEventTapActive
     }
 
     private func shouldSyncProjectionFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
@@ -2977,45 +3016,56 @@ final class SwitcherViewModel {
 
     // MARK: - V25: 翻页拦截器控制
 
-    private func requestPageInterceptStartForModeToggle() -> Bool {
+    private func startPPTEventTapFromRuntime() {
         if let pageInterceptStartOverride {
             if pageInterceptStartOverride() {
-                completePageInterceptStart(detail: "state=enabled,override=true")
-                return true
+                completePPTEventTapStartFromRuntime(detail: "state=enabled,override=true")
+                return
             }
-            completePageInterceptStartFailure(reason: "overrideFailed", presentAlert: false)
-            return false
+            completePPTEventTapStartFailureFromRuntime(reason: "overrideFailed", presentAlert: false)
+            return
         }
 
         guard pageInterceptSideEffectsEnabled else {
-            completePageInterceptStart(detail: "state=enabled,sideEffects=false")
-            return true
+            completePPTEventTapStartFromRuntime(detail: "state=enabled,sideEffects=false")
+            return
         }
 
-        return startPageIntercept()
+        _ = startPageIntercept()
     }
 
-    private func requestPageInterceptStopForModeToggle(reason: PPTStopReason) {
+    private func stopPPTEventTapFromRuntime(reason: PPTStopReason) {
         guard pageInterceptSideEffectsEnabled else {
-            dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
-            LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
-            recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=\(reason.rawValue),sideEffects=false")
+            completePPTEventTapStopFromRuntime(reason: reason, detail: "state=disabled,reason=\(reason.rawValue),sideEffects=false")
             return
         }
         stopPageIntercept(reason: reason)
     }
 
-    private func completePageInterceptStart(detail: String) {
+    private func completePPTEventTapStartFromRuntime(detail: String) {
+        let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapStarted)
+        syncPPTFacadeFromRuntime()
+        guard !oldPPT.isEventTapActive, runtime.state.ppt.isEventTapActive else { return }
         LiveSwitcherTelemetry.pageInterceptEnabled()
         recordSupportEvent(kind: .pageInterceptEnabled, detail: detail)
+        if let source = pendingPPTToggleSource {
+            recordSupportEvent(
+                kind: .pptModeChanged,
+                detail: "isOn=true,source=\(source.rawValue)"
+            )
+        }
+        pendingPPTToggleSource = nil
     }
 
-    private func completePageInterceptStartFailure(reason: String, presentAlert: Bool) {
+    private func completePPTEventTapStartFailureFromRuntime(reason: String, presentAlert: Bool) {
+        let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: reason))
-        isPageInterceptEnabled = false
+        syncPPTFacadeFromRuntime()
+        guard oldPPT.isRequested || oldPPT.isEventTapActive || pendingPPTToggleSource != nil else { return }
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason)
         recordSupportEvent(kind: .pageInterceptDisabled, detail: "reason=\(reason)")
+        pendingPPTToggleSource = nil
         guard presentAlert else { return }
 
         Task { @MainActor [weak self] in
@@ -3034,17 +3084,27 @@ final class SwitcherViewModel {
         }
     }
 
+    private func completePPTEventTapStopFromRuntime(reason: PPTStopReason, detail: String? = nil) {
+        let oldPPT = runtime.state.ppt
+        dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
+        syncPPTFacadeFromRuntime()
+        guard oldPPT.isRequested || oldPPT.isEventTapActive || pendingPPTToggleSource != nil else { return }
+        LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
+        recordSupportEvent(kind: .pageInterceptDisabled, detail: detail ?? "state=disabled,reason=\(reason.rawValue)")
+        if let source = pendingPPTToggleSource {
+            recordSupportEvent(
+                kind: .pptModeChanged,
+                detail: "isOn=false,source=\(source.rawValue)"
+            )
+        }
+        pendingPPTToggleSource = nil
+    }
+
     private func startPageIntercept() -> Bool {
         // 权限预检查：无辅助功能权限时提前提示，避免 tapCreate 静默失败
         let axOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false] as CFDictionary
         if !AXIsProcessTrustedWithOptions(axOptions) {
-            dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: "accessibilityPermission"))
-            isPageInterceptEnabled = false
-            LiveSwitcherTelemetry.pageInterceptDisabled(reason: "accessibilityPermission")
-            recordSupportEvent(
-                kind: .pageInterceptDisabled,
-                detail: "reason=accessibilityPermission"
-            )
+            completePPTEventTapStartFailureFromRuntime(reason: "accessibilityPermission", presentAlert: false)
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 self.presentAutomationAlert(
@@ -3067,7 +3127,7 @@ final class SwitcherViewModel {
             if let tap = pageInterceptEventTap {
                 CGEvent.tapEnable(tap: tap, enable: true)
                 pageInterceptRuntime.updateEventTap(tap)
-                completePageInterceptStart(detail: "state=enabled,existingTap=true")
+                completePPTEventTapStartFromRuntime(detail: "state=enabled,existingTap=true")
             }
             return true
         }
@@ -3083,7 +3143,7 @@ final class SwitcherViewModel {
             userInfo: selfRefcon
         ) else {
             Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
-            completePageInterceptStartFailure(reason: "eventTapCreateFailed", presentAlert: true)
+            completePPTEventTapStartFailureFromRuntime(reason: "eventTapCreateFailed", presentAlert: true)
             return false
         }
 
@@ -3095,7 +3155,7 @@ final class SwitcherViewModel {
         pageInterceptRunLoopSource = src
         pageInterceptSelfRefcon = selfRefcon
         pageInterceptRuntime.updateEventTap(tap)
-        completePageInterceptStart(detail: "state=enabled")
+        completePPTEventTapStartFromRuntime(detail: "state=enabled")
         return true
     }
 
@@ -3113,9 +3173,7 @@ final class SwitcherViewModel {
         pageInterceptEventTap = nil
         pageInterceptRunLoopSource = nil
         pageInterceptRuntime.updateEventTap(nil)
-        dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
-        LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
-        recordSupportEvent(kind: .pageInterceptDisabled, detail: "state=disabled,reason=\(reason.rawValue)")
+        completePPTEventTapStopFromRuntime(reason: reason)
     }
 
     nonisolated func reenablePageIntercept(reason: PageInterceptReenableReason) {

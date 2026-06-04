@@ -9,25 +9,26 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
 
         viewModel.setPPTMode(true, source: .liveMode)
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorToggledPPTMode" })
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
         XCTAssertEqual(viewModel.runtime.actionLog.last?.actionName, "supportEventRecorded")
         XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
     }
 
-    func testPPTModeDuplicateSetDoesNotDispatchRuntimeAction() throws {
+    func testPPTModeDuplicateSetDispatchesRuntimeNoopWithoutSupportEvent() throws {
         let viewModel = makeViewModel()
         viewModel.pageInterceptSideEffectsEnabled = false
 
         viewModel.setPPTMode(false, source: .liveMode)
 
-        XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
+        XCTAssertTrue(viewModel.supportEvents.isEmpty)
     }
 
-    func testPPTModeSideEffectsDoNotRouteThroughRuntimePortUntilMigration() throws {
+    func testPPTModeSideEffectsRouteThroughRuntimePortAfterMigration() throws {
         let ppt = PPTEventTapPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt),
-            environment: .productionAudioOwned()
+            environment: .productionPPTOwning()
         )
         let viewModel = makeViewModel(runtime: runtime)
         viewModel.pageInterceptSideEffectsEnabled = false
@@ -35,7 +36,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
         viewModel.setPPTMode(true, source: .liveMode)
         viewModel.setPPTMode(false, source: .liveMode)
 
-        XCTAssertTrue(ppt.calls.isEmpty)
+        XCTAssertEqual(ppt.calls, ["start", "stop:operatorDisabled"])
     }
 
     func testPPTModeStateDoesNotOwnEventTapSideEffectsInDidSet() throws {

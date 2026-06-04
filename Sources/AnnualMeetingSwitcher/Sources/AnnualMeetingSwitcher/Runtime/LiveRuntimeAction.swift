@@ -43,6 +43,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorPausedBGMForPanic(generation: Int?)
     case operatorResumedBGMAfterPanic(generation: Int?)
     case operatorToggledPPTMode(source: PPTModeToggleSource)
+    case operatorSetPPTMode(Bool, source: PPTModeToggleSource)
     case operatorToggledProjection
     case operatorSetConsoleMode(ConsoleMode)
     case operatorSetThemeOverride(ThemeOverride)
@@ -117,6 +118,7 @@ extension LiveRuntimeAction {
         case .operatorPausedBGMForPanic: return "operatorPausedBGMForPanic"
         case .operatorResumedBGMAfterPanic: return "operatorResumedBGMAfterPanic"
         case .operatorToggledPPTMode: return "operatorToggledPPTMode"
+        case .operatorSetPPTMode: return "operatorSetPPTMode"
         case .operatorToggledProjection: return "operatorToggledProjection"
         case .operatorSetConsoleMode: return "operatorSetConsoleMode"
         case .operatorSetThemeOverride: return "operatorSetThemeOverride"

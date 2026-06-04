@@ -82,21 +82,21 @@ final class PPTModeOwnershipTests: XCTestCase {
         XCTAssertTrue(event.detail.contains("source=liveMode"))
     }
 
-    func testDuplicateSetRecordsNoPPTModeEvent() {
+    func testDuplicateSetRecordsNoPPTModeEventEvenThoughRuntimeIntentIsLogged() {
         let viewModel = makeViewModel()
         viewModel.pageInterceptSideEffectsEnabled = false
 
         viewModel.setPPTMode(false, source: .liveMode)
 
         XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .pptModeChanged })
-        XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
     }
 
-    func testRuntimePPTPortIsRecordingOnlyDuringCurrentMigration() {
+    func testRuntimePPTPortIsUsedAfterMigration() {
         let ppt = PPTModeOwnershipPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt),
-            environment: .productionAudioOwned()
+            environment: .productionPPTOwning()
         )
         let viewModel = makeViewModel(runtime: runtime)
         viewModel.pageInterceptSideEffectsEnabled = false
@@ -104,8 +104,8 @@ final class PPTModeOwnershipTests: XCTestCase {
         viewModel.setPPTMode(true, source: .liveMode)
         viewModel.setPPTMode(false, source: .liveMode)
 
-        XCTAssertTrue(ppt.calls.isEmpty)
-        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorToggledPPTMode" })
+        XCTAssertEqual(ppt.calls, ["start", "stop:operatorDisabled"])
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
     }
 
     func testAllPPTUIAndCommandPathsUseHelperAndAvoidDirectToggle() throws {

@@ -11,6 +11,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
                 .mediaOwned,
                 .bgmOwned,
                 .projectionOwned,
+                .pptOwned,
                 .fullRuntime
             ]
         )
@@ -21,7 +22,10 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))
         XCTAssertTrue(LiveRuntimeBridgeMode.bgmOwned.owns(.media))
         XCTAssertTrue(LiveRuntimeBridgeMode.projectionOwned.owns(.bgm))
+        XCTAssertTrue(LiveRuntimeBridgeMode.pptOwned.owns(.projection))
+        XCTAssertTrue(LiveRuntimeBridgeMode.pptOwned.owns(.ppt))
         XCTAssertFalse(LiveRuntimeBridgeMode.projectionOwned.owns(.support))
+        XCTAssertFalse(LiveRuntimeBridgeMode.pptOwned.owns(.support))
     }
 
     func testAudioOwnedModeDoesNotPredictProgramOrMediaStateFromOperatorIntent() {
