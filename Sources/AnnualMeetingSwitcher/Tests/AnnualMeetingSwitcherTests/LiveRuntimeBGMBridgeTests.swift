@@ -37,7 +37,11 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         )
 
         XCTAssertFalse(mutation.state.bgm.isPlaying)
-        XCTAssertTrue(mutation.effects.contains(.stopBGM(fade: 0.5, generation: state.bgm.generation + 1)))
+        XCTAssertTrue(
+            mutation.effects.contains(
+                .stopBGM(fade: AudioRoutingDefaults.liveAudioFadeDuration, generation: state.bgm.generation + 1)
+            )
+        )
         XCTAssertTrue(mutation.effects.contains(.stopBGMTimer(generation: state.bgm.generation + 1)))
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .bgmPlaybackChanged)))
     }

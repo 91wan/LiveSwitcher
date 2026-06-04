@@ -155,6 +155,13 @@ BGM timers are generation-bound. Runtime paths start and stop timers with
 `startBGMTimer(generation:)` and `stopBGMTimer(generation:)`; stale stop
 requests cannot stop the current timer.
 
+Runtime owns BGM fade-in and fade-out behavior. Manual BGM stop uses
+`LiveRuntimeEnvironment.liveAudioFadeDuration`; BGM fade-in and fade-out use
+the same configured live fade duration unless a specific policy says otherwise.
+Runtime may keep a current BGM item selected while stopped. BGM fallback cleanup
+does not require the current track to be nil; it releases the fallback player
+after the fade when the generation still matches and BGM is no longer playing.
+
 BGM async cleanup has two separate ownership rules. Current-player tasks that
 touch shared state such as `bgmAudioPlayer`, `bgmFallbackPlayer`, observers,
 meters, active callback identity, timers, or effective output volume are

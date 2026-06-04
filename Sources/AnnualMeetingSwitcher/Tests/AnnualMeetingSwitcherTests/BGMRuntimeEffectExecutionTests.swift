@@ -27,6 +27,12 @@ final class BGMRuntimeEffectExecutionTests: XCTestCase {
         XCTAssertEqual(port.calls, ["stop:9:0.4"])
     }
 
+    func testStopBGMEffectPreservesPositiveFadeForPort() {
+        let port = runBGMEffects([.stopBGM(fade: 1.25, generation: 9)], generation: 9)
+
+        XCTAssertEqual(port.calls, ["stop:9:1.25"])
+    }
+
     func testSetBGMVolumeEffectCallsBGMPort() {
         let port = runBGMEffects([.setBGMVolume(0.25, fade: 0.2, generation: 9)], generation: 9)
 

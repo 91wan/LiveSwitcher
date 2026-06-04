@@ -490,7 +490,7 @@ final class SwitcherViewModel {
     // MARK: - 转场配置
 
     var crossfadeDuration: Double = 3.0
-    var liveAudioFadeDuration: Double = 2.0
+    var liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     private let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
 
     // MARK: - 背景壁纸（多张）
@@ -882,6 +882,7 @@ final class SwitcherViewModel {
     // MARK: - Runtime facade bridge
 
     func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
+        syncRuntimeEnvironmentFromFacade()
         syncRuntimeStateFromFacade(
             clearActionLog: false,
             dispatchAudioInputsChanged: shouldDispatchAudioInputsBeforeRuntimeAction(action)
@@ -896,6 +897,17 @@ final class SwitcherViewModel {
         if shouldSyncPPTFacadeAfterRuntimeAction(action) {
             syncPPTFacadeFromRuntime()
         }
+    }
+
+    private func syncRuntimeEnvironmentFromFacade() {
+        runtime.updateEnvironment(
+            LiveRuntimeEnvironment(
+                now: Date(),
+                speakerModeDuckedRatio: speakerModeDuckedRatio,
+                liveAudioFadeDuration: liveAudioFadeDuration,
+                bridgeMode: runtime.bridgeMode
+            )
+        )
     }
 
     var runtimeConnectedPortKinds: Set<LiveRuntimeEffectPortKind> {
@@ -2790,7 +2802,7 @@ final class SwitcherViewModel {
                 try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
             }
             guard let self, !Task.isCancelled, self.bgmTransitionGeneration == generation else { return }
-            guard self.currentBGMItem == nil, !self.isBGMPlaying else { return }
+            guard !self.isBGMPlaying else { return }
             self.bgmFallbackPlayer.volume = 0
             self.bgmFallbackPlayer.pause()
             self.removeBGMFallbackEndObserver()

@@ -34,6 +34,13 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
     }
 
+    func testProductionRuntimeKeepsBGMFadeOutBehindBGMPort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
+    }
+
     func testProductionRuntimeDoesNotWireAutomationNoticeOrSupport() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds

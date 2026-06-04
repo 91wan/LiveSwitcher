@@ -257,7 +257,7 @@ enum LiveRuntimeReducer {
             state.bgm.generation += 1
             state.bgm.isPlaying = false
             effects += [
-                .stopBGM(fade: 0.5, generation: state.bgm.generation),
+                .stopBGM(fade: environment.liveAudioFadeDuration, generation: state.bgm.generation),
                 .stopBGMTimer(generation: state.bgm.generation),
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]

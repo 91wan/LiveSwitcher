@@ -252,91 +252,108 @@ struct SupportRuntimeState: Equatable {
 struct LiveRuntimeEnvironment: Equatable {
     var now: Date
     var speakerModeDuckedRatio: Float
+    var liveAudioFadeDuration: Double
     var bridgeMode: LiveRuntimeBridgeMode
 
     init(
         now: Date = Date(),
         speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration,
         bridgeMode: LiveRuntimeBridgeMode
     ) {
         self.now = now
         self.speakerModeDuckedRatio = speakerModeDuckedRatio
+        self.liveAudioFadeDuration = liveAudioFadeDuration
         self.bridgeMode = bridgeMode
     }
 
     static func productionAudioOwned(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .audioOwned
         )
     }
 
     static func productionMediaOwned(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .mediaOwned
         )
     }
 
     static func productionBGMOwning(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .bgmOwned
         )
     }
 
     static func productionProjectionOwned(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .projectionOwned
         )
     }
 
     static func productionPPTOwning(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .pptOwned
         )
     }
 
     static func fullRuntimeForTests(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .fullRuntime
         )
     }
 
     static func recordingOnlyForTests(
         now: Date = Date(),
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     ) -> LiveRuntimeEnvironment {
         LiveRuntimeEnvironment(
             now: now,
             speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .recordingOnly
         )
     }

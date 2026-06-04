@@ -142,6 +142,16 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("must not write support storage directly"))
     }
 
+    func testDocsStateBGMFadeOutUsesRuntimeLiveFadeDuration() throws {
+        let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
+
+        XCTAssertTrue(document.localizedStandardContains("Runtime owns BGM fade-in and fade-out behavior"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Manual BGM stop uses `LiveRuntimeEnvironment.liveAudioFadeDuration`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("BGM fallback cleanup does not require the current track to be nil"))
+        XCTAssertTrue(document.localizedStandardContains("Runtime may keep a current BGM item selected while stopped"))
+    }
+
     private func runtimeOwnershipDocument() throws -> String {
         let url = try repositoryRoot()
             .appendingPathComponent("docs/architecture/runtime-ownership.md")
