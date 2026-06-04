@@ -45,6 +45,33 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorResumedBGMAfterPanic" })
     }
 
+    func testPanicActivateFadesBGMToZeroBeforePause() {
+        let viewModel = makeViewModel()
+        let item = bgmItem(title: "Walk-in")
+        viewModel.liveAudioFadeDuration = 0.05
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.togglePanicMode()
+
+        XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 0.05)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.09))
+        XCTAssertFalse(viewModel.isBGMPlaying)
+    }
+
+    func testPanicPauseDoesNotHardCutBGMImmediatelyWhenFadeDurationPositive() {
+        let viewModel = makeViewModel()
+        let item = bgmItem(title: "Walk-in")
+        viewModel.liveAudioFadeDuration = 0.05
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.togglePanicMode()
+
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
     func testPanicDoesNotDirectlyCallBGMPlayers() throws {
         let source = try sourceText("ViewModel+Panic.swift")
 

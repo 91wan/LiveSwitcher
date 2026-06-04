@@ -25,7 +25,7 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
 
         viewModel.toggleBGM(item)
 
-        XCTAssertEqual(ports.bgm.events, [.stop(0.5, 2)])
+        XCTAssertEqual(ports.bgm.events, [.stop(2.0, 2)])
         XCTAssertEqual(ports.timer.events, [.stop(2)])
     }
 
@@ -85,7 +85,7 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
 
         viewModel.removeBGMItem(item)
 
-        XCTAssertEqual(ports.bgm.events, [.stop(0.5, 2)])
+        XCTAssertEqual(ports.bgm.events, [.stop(2.0, 2)])
         XCTAssertEqual(ports.timer.events, [.stop(2)])
     }
 

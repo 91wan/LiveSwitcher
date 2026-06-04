@@ -2,6 +2,7 @@ import Foundation
 
 enum AudioRoutingDefaults {
     static let speakerModeDuckedRatio: Float = 0.07
+    static let liveAudioFadeDuration: Double = 2.0
 }
 
 struct AudioRoutingInput: Equatable {

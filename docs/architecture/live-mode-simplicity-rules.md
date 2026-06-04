@@ -48,6 +48,9 @@ product boundary.
   It only separates current-player generation-guarded tasks from retired-player
   cleanup and tightens callback, timer, and port contracts behind existing BGM
   controls.
+- BGM fade-out runtime fixes do not add live controls; they only restore
+  configured fade-out behavior behind existing BGM stop/toggle actions. BGM
+  library editing remains setup-only.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates

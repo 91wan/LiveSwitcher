@@ -3,6 +3,10 @@ import XCTest
 
 @MainActor
 final class AudioRuntimeOwnershipTests: XCTestCase {
+    func testAudioRoutingDefaultsExposeSharedLiveAudioFadeDuration() {
+        XCTAssertEqual(AudioRoutingDefaults.liveAudioFadeDuration, 2.0)
+    }
+
     func testAudioFacadeMutationDispatchesRuntimeActionOnly() {
         let audioRouting = AudioRuntimeOwnershipPortSpy()
         let runtime = LiveRuntimeStore(

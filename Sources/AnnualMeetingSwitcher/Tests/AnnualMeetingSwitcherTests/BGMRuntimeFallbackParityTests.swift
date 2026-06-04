@@ -110,6 +110,30 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
         try assertFallbackEnd(playMode: .sequential, startsAtLast: true, expectedPlaying: false)
     }
 
+    func testFallbackBGMStopReleasesAfterFadeWhenCurrentTrackRemainsSelected() throws {
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0.01
+        let url = try makeTempFileURL(ext: "mp3")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let item = BGMItem(title: "Fallback", url: url, category: .warmUp)
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.toggleBGM(item)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+
+        XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertNil(viewModel.bgmFallbackPlayer.currentItem)
+    }
+
+    func testFallbackBGMStopDoesNotRequireCurrentItemNil() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try functionBody(named: "releaseBGMFallbackAfterFade", in: source)
+
+        XCTAssertFalse(body.contains("currentBGMItem == nil"))
+    }
+
     private func assertFallbackEnd(
         playMode: BGMPlayMode,
         startsAtLast: Bool,
@@ -151,5 +175,50 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
             .appendingPathExtension(ext)
         try Data("not-a-decodable-audio-fixture".utf8).write(to: url)
         return url
+    }
+
+    private func functionBody(named name: String, in source: String) throws -> String {
+        guard let start = source.range(of: "func \(name)") ?? source.range(of: "private func \(name)") else {
+            XCTFail("Function \(name) not found")
+            return ""
+        }
+        guard let bodyStart = source[start.lowerBound...].firstIndex(of: "{") else {
+            XCTFail("Function \(name) body not found")
+            return ""
+        }
+        var depth = 0
+        var index = bodyStart
+        while index < source.endIndex {
+            if source[index] == "{" { depth += 1 }
+            if source[index] == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(source[start.lowerBound...index])
+                }
+            }
+            index = source.index(after: index)
+        }
+        XCTFail("Function \(name) body was not closed")
+        return ""
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func sourceURL(_ relativePath: String) throws -> URL {
+        let packageRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let candidates = [
+            packageRoot.appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher").appendingPathComponent(relativePath),
+            packageRoot.appendingPathComponent("Sources/AnnualMeetingSwitcher").appendingPathComponent(relativePath),
+            packageRoot.appendingPathComponent(relativePath)
+        ]
+        if let url = candidates.first(where: { FileManager.default.fileExists(atPath: $0.path) }) {
+            return url
+        }
+        return candidates[0]
     }
 }

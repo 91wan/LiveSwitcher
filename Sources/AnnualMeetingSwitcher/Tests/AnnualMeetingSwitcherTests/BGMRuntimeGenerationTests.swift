@@ -69,6 +69,16 @@ final class BGMRuntimeGenerationTests: XCTestCase {
         XCTAssertTrue(fallbackFadeBody.contains("runtime.state.bgm.generation == generation"))
     }
 
+    func testBGMStopCancelsOnlyCurrentFadeTasksNotRetiredPlayerFadeTasks() throws {
+        let source = try sourceText("ViewModel.swift")
+        let body = try functionBody(named: "stopRuntimeBGM", in: source)
+
+        XCTAssertTrue(body.contains("cleanupBag.bgmPlayerVolumeFadeTask?.cancel()"))
+        XCTAssertTrue(body.contains("cleanupBag.bgmFallbackVolumeFadeTask?.cancel()"))
+        XCTAssertFalse(body.contains("cleanupBag.bgmTransitionTasks.values.forEach"))
+        XCTAssertFalse(body.contains("cleanupBag.bgmTransitionTasks.removeAll()"))
+    }
+
     func testRapidBGM_A_B_C_LeavesOnlyCActive() {
         var state = state(generation: 0)
         let first = bgmItem(title: "A")
