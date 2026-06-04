@@ -13,19 +13,21 @@ final class LiveRuntimeStore {
 
     init(
         initialState: LiveRuntimeState = LiveRuntimeState(),
-        effectRunner: LiveRuntimeEffectRunner = .recording(),
-        environment: LiveRuntimeEnvironment? = nil
+        environment: LiveRuntimeEnvironment = .productionAudioOwned()
+    ) {
+        self.state = initialState
+        self.effectRunner = .recording()
+        self.environment = environment
+    }
+
+    init(
+        initialState: LiveRuntimeState = LiveRuntimeState(),
+        effectRunner: LiveRuntimeEffectRunner,
+        environment: LiveRuntimeEnvironment
     ) {
         self.state = initialState
         self.effectRunner = effectRunner
-        self.environment = environment ?? Self.defaultEnvironment(for: effectRunner)
-    }
-
-    private static func defaultEnvironment(for effectRunner: LiveRuntimeEffectRunner) -> LiveRuntimeEnvironment {
-        if effectRunner.connectedPortKinds.contains(.persistence) {
-            return .productionBGMOwning()
-        }
-        return .productionAudioOwned()
+        self.environment = environment
     }
 
     var recordedEffects: [LiveRuntimeEffect] {

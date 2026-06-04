@@ -26,7 +26,8 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
     func testPPTModeSideEffectsDoNotRouteThroughRuntimePortUntilMigration() throws {
         let ppt = PPTEventTapPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt),
+            environment: .productionAudioOwned()
         )
         let viewModel = makeViewModel(runtime: runtime)
         viewModel.pageInterceptSideEffectsEnabled = false

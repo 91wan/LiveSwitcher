@@ -50,7 +50,8 @@ final class LiveRuntimeAssetBridgeTests: XCTestCase {
         let logoURL = URL(fileURLWithPath: "/tmp/live-switcher-logo.png")
         let images = ImageAssetPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, imageAssets: images)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, imageAssets: images),
+            environment: .productionAudioOwned()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

@@ -39,6 +39,7 @@ product boundary.
 
 - Live mode simplicity is independent of runtime migration.
 - Runtime migration PRs must not add live controls.
+- Runtime bridge explicitness PRs do not alter live controls.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
@@ -77,5 +78,6 @@ product boundary.
   media playback, BGM playback/timer, audio routing, image assets, and
   persistence may execute; unowned projection, PPT, automation, notice, and
   support effects must not.
+- Projection migration, when it happens, must not add live controls.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

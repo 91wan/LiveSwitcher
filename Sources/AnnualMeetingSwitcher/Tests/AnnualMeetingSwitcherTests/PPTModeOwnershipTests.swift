@@ -95,7 +95,8 @@ final class PPTModeOwnershipTests: XCTestCase {
     func testRuntimePPTPortIsRecordingOnlyDuringCurrentMigration() {
         let ppt = PPTModeOwnershipPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, ppt: ppt),
+            environment: .productionAudioOwned()
         )
         let viewModel = makeViewModel(runtime: runtime)
         viewModel.pageInterceptSideEffectsEnabled = false

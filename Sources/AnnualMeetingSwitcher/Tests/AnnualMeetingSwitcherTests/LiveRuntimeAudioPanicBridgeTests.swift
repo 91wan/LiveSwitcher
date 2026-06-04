@@ -162,7 +162,8 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
     func testViewModelAudioSettersRouteSideEffectsThroughRuntimePort() {
         let audioRouting = AudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
+            environment: .productionAudioOwned()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -184,7 +185,8 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         let persistence = PersistencePortSpy()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence)
+            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, persistence: persistence),
+            environment: .productionAudioOwned()
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
