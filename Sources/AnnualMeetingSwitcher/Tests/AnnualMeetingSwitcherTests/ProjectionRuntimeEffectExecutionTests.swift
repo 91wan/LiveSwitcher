@@ -1,3 +1,5 @@
+import AppKit
+import SwiftUI
 import XCTest
 @testable import LiveSwitcher
 
@@ -48,14 +50,12 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
         XCTAssertFalse(body.contains("recordSupportEvent("))
     }
 
-    func testProjectionPortStartWithoutScreenDispatchesProjectionLostOrUnavailable() throws {
+    func testProjectionPortStartWithoutScreenDispatchesProjectionStartFailed() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let body = try functionBody(named: "showOutputWindowFromRuntimeProjection", in: source)
 
-        XCTAssertTrue(
-            body.contains(".projectionExternalDisplayLost")
-                || body.contains(".projectionExternalDisplayUnavailable")
-        )
+        XCTAssertTrue(body.contains(".projectionStartFailed(reason: .noTargetScreen)"))
+        XCTAssertFalse(body.contains(".projectionExternalDisplayLost"))
     }
 
     func testOutputWindowControllerIsOnlyTouchedInsideProjectionPortHandlers() throws {
@@ -65,6 +65,38 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
         XCTAssertTrue(source.contains("hideOutputWindowFromRuntimeProjection"))
         XCTAssertFalse(try functionBody(named: "handleBroadcastToggle", in: source).contains("outputWindowController"))
         XCTAssertFalse(try functionBody(named: "handleExternalDisplayLost", in: source).contains("outputWindowController"))
+    }
+
+    func testProjectionPortStartMountsOutputViewOnlyOnce() throws {
+        let (viewModel, outputSpy) = try makeViewModelWithOutputSpy()
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(outputSpy.mountCount, 1)
+    }
+
+    func testProjectionPortStartCanShowExistingOutputWindowAgain() throws {
+        let (viewModel, outputSpy) = try makeViewModelWithOutputSpy()
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(outputSpy.showCount, 2)
+    }
+
+    func testProjectionPortStopCanHideWithoutDestroyingController() throws {
+        let (viewModel, outputSpy) = try makeViewModelWithOutputSpy()
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(outputSpy.hideCount, 1)
+        XCTAssertEqual(outputSpy.mountCount, 1)
+        XCTAssertEqual(outputSpy.showCount, 2)
     }
 
     private func functionBody(named name: String, in source: String) throws -> String {
@@ -106,6 +138,17 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
         }
         throw XCTSkip("Could not locate repository root from test source path.")
     }
+
+    private func makeViewModelWithOutputSpy() throws -> (SwitcherViewModel, ProjectionEffectOutputWindowControllerSpy) {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let outputSpy = ProjectionEffectOutputWindowControllerSpy()
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.externalScreenProvider = { screen }
+        return (viewModel, outputSpy)
+    }
 }
 
 private final class ProjectionRuntimeEffectPortSpy: ProjectionPort {
@@ -116,4 +159,23 @@ private final class ProjectionRuntimeEffectPortSpy: ProjectionPort {
     func stop() { calls.append("stop") }
     func show() { calls.append("show") }
     func hide() { calls.append("hide") }
+}
+
+private final class ProjectionEffectOutputWindowControllerSpy: OutputWindowControlling {
+    var onExternalDisplayUnavailable: (() -> Void)?
+    private(set) var mountCount = 0
+    private(set) var showCount = 0
+    private(set) var hideCount = 0
+
+    func mountAnyView(rootView: AnyView) {
+        mountCount += 1
+    }
+
+    func show(on screen: NSScreen?) {
+        showCount += 1
+    }
+
+    func hide() {
+        hideCount += 1
+    }
 }

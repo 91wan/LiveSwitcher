@@ -50,6 +50,9 @@ product boundary.
   controls.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
+- Projection runtime hardening does not add live controls; it only separates
+  start-failure and display-lost semantics behind the existing projection
+  action.
 - Projection configuration must not move into Live mode.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.

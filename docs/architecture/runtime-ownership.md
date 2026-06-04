@@ -176,6 +176,16 @@ Production uses `ProjectionPort` effects for output-window side effects.
 ViewModel bridges those effects to `OutputWindowController`, `OutputView`
 mounting, and `ProjectionService` screen lookup. The concrete output window
 controller remains behind the projection port and is not runtime-owned.
+Raw output-window show/hide side effects are internal ProjectionPort
+implementation details and must not be exposed as direct ViewModel bypasses.
+
+Projection start failure is distinct from display loss.
+`projectionStartFailed` records start failure semantics when the operator tries
+to start projection but no target screen is available. It sets the start-failed
+safety notice and does not emit `stopProjection`.
+`projectionExternalDisplayLost` is only for broadcasting loss after projection
+was already active; it sets the display-lost safety notice and emits
+`stopProjection` only when the previous state was broadcasting.
 
 Support production ingress remains ViewModel-owned. In `.projectionOwned`,
 projection reducer actions must not write support storage directly; support
@@ -193,6 +203,7 @@ runtime remains, the target domain port is connected in a dedicated PR, and
 ViewModel no longer owns that target domain's migrated side effects in that
 future PR. Support production ingress remains ViewModel-owned until a dedicated
 Support ownership PR.
+PPT migration remains blocked until Projection hardening tests pass.
 
 Remaining migration boundaries:
 - PPT is not runtime-owned yet.

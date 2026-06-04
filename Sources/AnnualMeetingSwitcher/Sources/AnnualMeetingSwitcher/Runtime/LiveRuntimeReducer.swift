@@ -327,6 +327,7 @@ enum LiveRuntimeReducer {
                 }
             } else {
                 state.projection.isBroadcasting = false
+                state.projection.hasExternalDisplay = false
                 state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
                 if canWriteReducerSupport(in: bridgeMode) {
                     state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
@@ -451,6 +452,15 @@ enum LiveRuntimeReducer {
 
         case .panicFadeCompleted:
             break
+
+        case .projectionStartFailed(let reason):
+            guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
+            state.projection.isBroadcasting = false
+            switch reason {
+            case .noTargetScreen, .externalDisplayUnavailable:
+                state.projection.hasExternalDisplay = false
+                state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
+            }
 
         case .projectionExternalDisplayLost:
             let wasBroadcasting = state.projection.isBroadcasting

@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import XCTest
 @testable import LiveSwitcher
 
@@ -73,6 +74,18 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
         XCTAssertFalse(viewModel.runtime.state.projection.isBroadcasting)
     }
 
+    func testOutputWindowUnavailableCallbackDispatchesRuntimeProjectionLost() throws {
+        let viewModel = try makeProductionViewModelWithDisplay()
+        let outputSpy = OutputWindowControllerSpy()
+
+        viewModel.outputWindowControllerFactory = { outputSpy }
+        viewModel.handleBroadcastToggle()
+        outputSpy.onExternalDisplayUnavailable?()
+
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "projectionExternalDisplayLost" })
+        XCTAssertFalse(viewModel.isBroadcasting)
+    }
+
     private func makeProjectionOwnedViewModel(
         isBroadcasting: Bool,
         hasExternalDisplay: Bool
@@ -97,6 +110,15 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
         viewModel.isBroadcasting = isBroadcasting
         viewModel.externalScreenProvider = { hasExternalDisplay ? screen : nil }
         viewModel.refreshExternalDisplayAvailability()
+        return viewModel
+    }
+
+    private func makeProductionViewModelWithDisplay() throws -> SwitcherViewModel {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { screen }
         return viewModel
     }
 
@@ -139,5 +161,24 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate repository root from test source path.")
+    }
+}
+
+private final class OutputWindowControllerSpy: OutputWindowControlling {
+    var onExternalDisplayUnavailable: (() -> Void)?
+    private(set) var mountCount = 0
+    private(set) var showCount = 0
+    private(set) var hideCount = 0
+
+    func mountAnyView(rootView: AnyView) {
+        mountCount += 1
+    }
+
+    func show(on screen: NSScreen?) {
+        showCount += 1
+    }
+
+    func hide() {
+        hideCount += 1
     }
 }

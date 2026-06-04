@@ -1,11 +1,144 @@
+import AppKit
 import XCTest
 @testable import LiveSwitcher
 
+@MainActor
 final class ProjectionRuntimeOwnershipTests: XCTestCase {
+    func testHandleBroadcastToggleRefreshesExternalDisplayAvailabilityBeforeDispatch() throws {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { screen }
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.runtime.state.projection.hasExternalDisplay)
+        XCTAssertTrue(viewModel.runtime.state.projection.isBroadcasting)
+    }
+
+    func testHandleBroadcastToggleUsesFreshAvailabilityForStartDecision() throws {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+        viewModel.externalScreenProvider = { screen }
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.isBroadcasting)
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains(.startProjection))
+    }
+
+    func testProjectionStartFailureDoesNotRecordProjectionToggleTelemetryIfNotBroadcastingChanged() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .projectionToggle })
+    }
+
+    func testProjectionStartSuccessRecordsProjectionToggleTelemetry() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionToggle }.count, 1)
+    }
+
+    func testProjectionStopRecordsProjectionToggleTelemetry() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionToggle }.count, 1)
+    }
+
+    func testHandleBroadcastToggleStartsProjectionThroughRuntimePort() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains(.startProjection))
+        XCTAssertTrue(viewModel.isBroadcasting)
+    }
+
+    func testHandleBroadcastToggleStopsProjectionThroughRuntimePort() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains(.stopProjection))
+        XCTAssertFalse(viewModel.isBroadcasting)
+    }
+
+    func testHandleBroadcastToggleStartFailureDoesNotCallProjectionPortStart() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertFalse(viewModel.runtime.recordedEffects.contains(.startProjection))
+        XCTAssertFalse(viewModel.isBroadcasting)
+    }
+
+    func testHandleBroadcastToggleUpdatesFacadeFromRuntime() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.isBroadcasting, viewModel.runtime.state.projection.isBroadcasting)
+        XCTAssertEqual(viewModel.broadcastSafetyNotice, viewModel.runtime.state.projection.safetyNotice)
+    }
+
+    func testHandleBroadcastToggleRecordsStartSupportOnce() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionStarted }.count, 1)
+    }
+
+    func testHandleBroadcastToggleRecordsStopSupportOnce() throws {
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionStopped }.count, 1)
+    }
+
+    func testHandleBroadcastToggleRecordsStartFailureSupportOnce() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionStartFailed }.count, 1)
+        XCTAssertEqual(viewModel.supportEvents.filter { $0.kind == .projectionFailClosed }.count, 1)
+    }
+
+    func testRepeatedStartFailureDoesNotDuplicateProjectionLost() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        viewModel.externalScreenProvider = { nil }
+        viewModel.refreshExternalDisplayAvailability()
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .projectionLost })
+    }
+
     func testHandleBroadcastToggleUsesRuntimeProjectionState() throws {
         let body = try functionBody(named: "handleBroadcastToggle")
 
         XCTAssertTrue(body.contains("let oldProjection = runtime.state.projection"))
+        XCTAssertTrue(body.contains("refreshExternalDisplayAvailability()"))
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.operatorToggledProjection)"))
         XCTAssertTrue(body.contains("syncProjectionFacadeFromRuntime()"))
         XCTAssertTrue(body.contains("recordProjectionSupportAfterRuntimeToggle"))
@@ -99,6 +232,33 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate repository root from test source path.")
+    }
+
+    private func makeProjectionOwnedViewModel(
+        isBroadcasting: Bool,
+        hasExternalDisplay: Bool
+    ) throws -> SwitcherViewModel {
+        let screen = NSScreen.main ?? NSScreen.screens.first
+        if hasExternalDisplay, screen == nil {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        var state = LiveRuntimeState()
+        state.projection.isBroadcasting = isBroadcasting
+        state.projection.hasExternalDisplay = hasExternalDisplay
+        let runtime = LiveRuntimeStore(
+            initialState: state,
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .projectionOwned)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+        viewModel.isBroadcasting = isBroadcasting
+        viewModel.externalScreenProvider = { hasExternalDisplay ? screen : nil }
+        viewModel.refreshExternalDisplayAvailability()
+        return viewModel
     }
 }
 

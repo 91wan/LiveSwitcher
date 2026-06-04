@@ -82,6 +82,18 @@ final class ProjectionRuntimeFacadeSyncTests: XCTestCase {
         XCTAssertEqual(viewModel.broadcastSafetyNotice, "副屏已断开，投射已停止")
     }
 
+    func testProjectionStartFailureSyncsViewModelSafetyNoticeFromRuntime() {
+        var state = LiveRuntimeState()
+        state.projection.hasExternalDisplay = false
+        let viewModel = makeViewModel(runtimeState: state, bridgeMode: .projectionOwned)
+        viewModel.externalScreenProvider = { nil }
+
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(viewModel.runtime.state.projection.safetyNotice, "未检测到外接屏幕，未开始投射")
+        XCTAssertEqual(viewModel.broadcastSafetyNotice, "未检测到外接屏幕，未开始投射")
+    }
+
     private func makeViewModel(
         runtimeState: LiveRuntimeState,
         bridgeMode: LiveRuntimeBridgeMode
