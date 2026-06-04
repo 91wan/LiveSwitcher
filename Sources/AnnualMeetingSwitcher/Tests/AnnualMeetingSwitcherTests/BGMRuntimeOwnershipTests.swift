@@ -233,6 +233,9 @@ private final class BGMRuntimeOwnershipPlaybackPort: BGMPlaybackPort {
     func pause(generation: Int) {}
     func stop(fade: TimeInterval, generation: Int) { events.append(.stop(fade, generation)) }
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {}
+    func seekToBeginning(generation: Int) {}
+    func seek(toProgress progress: Double, generation: Int) {}
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {}
 }
 
 private final class BGMRuntimeOwnershipTimerPort: BGMTimerPort {

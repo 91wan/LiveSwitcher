@@ -28,7 +28,35 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.loadMedia(mediaURL, generation: 1).requiredBridgeDomain, .media)
         XCTAssertEqual(LiveRuntimeEffect.playMedia(generation: 1).requiredBridgeDomain, .media)
         XCTAssertEqual(LiveRuntimeEffect.prepareBGM(bgm, generation: 1).requiredBridgeDomain, .bgm)
-        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .audio)
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .bgm)
+    }
+
+    func testSaveBGMPlayModeRequiresBGMDomain() {
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .bgm)
+    }
+
+    func testAudioOwnedDoesNotAllowSaveBGMPlayMode() {
+        let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .audioOwned)
+
+        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+    }
+
+    func testMediaOwnedDoesNotAllowSaveBGMPlayMode() {
+        let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .mediaOwned)
+
+        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+    }
+
+    func testBGMOwningModeAllowsSaveBGMPlayMode() {
+        let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .bgmOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+    }
+
+    func testProjectionOwningModeAllowsSaveBGMPlayMode() {
+        let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .projectionOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
     func testBGMOwningModeStillAllowsMediaEffects() {

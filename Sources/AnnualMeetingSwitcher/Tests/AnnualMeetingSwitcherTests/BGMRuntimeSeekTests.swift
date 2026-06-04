@@ -168,4 +168,5 @@ private final class BGMRuntimeSeekPortSpy: BGMPlaybackPort {
     func seek(toProgress progress: Double, generation: Int) {
         seekToProgressCalls.append((progress, generation))
     }
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {}
 }

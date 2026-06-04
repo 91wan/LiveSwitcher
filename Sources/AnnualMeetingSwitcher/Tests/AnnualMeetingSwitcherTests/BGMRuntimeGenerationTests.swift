@@ -41,32 +41,32 @@ final class BGMRuntimeGenerationTests: XCTestCase {
         XCTAssertEqual(bgm.callCount, 1)
     }
 
-    func testStaleBGMReleaseTaskCannotStopCurrentPlayer() throws {
+    func testRetiredBGMReleaseTaskDoesNotGuardOnCurrentGeneration() throws {
         let source = try sourceText("ViewModel.swift")
-        let body = try functionBody(named: "releaseBGMPlayerAfterFade", in: source)
+        let body = try functionBody(named: "releaseRetiredBGMPlayerAfterFade", in: source)
 
-        XCTAssertTrue(body.contains("generation: Int"))
-        XCTAssertTrue(body.contains("runtime.state.bgm.generation == generation"))
+        XCTAssertFalse(body.contains("runtime.state.bgm.generation"))
+        XCTAssertFalse(body.contains("bgmTransitionGeneration == generation"))
     }
 
-    func testStaleFallbackRetireTaskCannotClearCurrentFallbackPlayer() throws {
+    func testRetiredFallbackCleanupDoesNotGuardOnCurrentGeneration() throws {
         let source = try sourceText("ViewModel.swift")
         let body = try functionBody(named: "retireCurrentBGMFallbackPlayerForSwitch", in: source)
 
-        XCTAssertTrue(body.contains("generation: Int"))
-        XCTAssertTrue(body.contains("runtime.state.bgm.generation == generation"))
+        XCTAssertFalse(body.contains("generation: Int"))
+        XCTAssertFalse(body.contains("runtime.state.bgm.generation == generation"))
         XCTAssertTrue(body.contains("replaceCurrentItem(with: nil)"))
     }
 
-    func testStaleBGMFadeTaskCannotOverwriteCurrentVolume() throws {
+    func testCurrentBGMFadeTaskCannotOverwriteCurrentVolume() throws {
         let source = try sourceText("ViewModel.swift")
-        let playerFadeBody = try functionBody(named: "fadeBGMPlayerVolume(to targetVolume", in: source)
-        let fallbackFadeBody = try functionBody(named: "fadeBGMFallbackVolume", in: source)
+        let playerFadeBody = try functionBody(named: "fadeCurrentBGMPlayerVolume", in: source)
+        let fallbackFadeBody = try functionBody(named: "fadeCurrentBGMFallbackVolume", in: source)
 
-        XCTAssertTrue(playerFadeBody.contains("generation: Int?"))
-        XCTAssertTrue(playerFadeBody.contains("runtime.state.bgm.generation != generation"))
-        XCTAssertTrue(fallbackFadeBody.contains("generation: Int?"))
-        XCTAssertTrue(fallbackFadeBody.contains("runtime.state.bgm.generation != generation"))
+        XCTAssertTrue(playerFadeBody.contains("generation: Int"))
+        XCTAssertTrue(playerFadeBody.contains("runtime.state.bgm.generation == generation"))
+        XCTAssertTrue(fallbackFadeBody.contains("generation: Int"))
+        XCTAssertTrue(fallbackFadeBody.contains("runtime.state.bgm.generation == generation"))
     }
 
     func testRapidBGM_A_B_C_LeavesOnlyCActive() {
@@ -196,6 +196,9 @@ private final class BGMRuntimeGenerationPlaybackPortSpy: BGMPlaybackPort {
     func pause(generation: Int) { callCount += 1 }
     func stop(fade: TimeInterval, generation: Int) { callCount += 1 }
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) { callCount += 1 }
+    func seekToBeginning(generation: Int) { callCount += 1 }
+    func seek(toProgress progress: Double, generation: Int) { callCount += 1 }
+    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) { callCount += 1 }
 }
 
 private final class BGMRuntimeGenerationTimerPortSpy: BGMTimerPort {
