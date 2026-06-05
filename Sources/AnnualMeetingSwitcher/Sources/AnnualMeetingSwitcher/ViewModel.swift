@@ -213,7 +213,7 @@ final class SwitcherViewModel {
     var bgmFallbackPlayer: AVPlayer = AVPlayer()
     var panicPlaybackSnapshot: PanicPlaybackSnapshot?
     var panicAudioTransitionGeneration: Int = 0
-    var lastAudioRoutingTransition: AudioRoutingTransition?
+    private(set) var lastAudioRoutingTransition: AudioRoutingTransition?
 
     // MARK: - 引擎
 
@@ -223,7 +223,7 @@ final class SwitcherViewModel {
 
     // MARK: - 推流窗口
 
-    var outputWindowController: OutputWindowControlling?
+    private var outputWindowController: OutputWindowControlling?
     var externalScreenProvider: () -> NSScreen? = {
         SecondScreenSelector.pickExternal()
     } {
@@ -231,7 +231,7 @@ final class SwitcherViewModel {
             refreshExternalDisplayAvailability()
         }
     }
-    var isExternalDisplayAvailable: Bool = false
+    private(set) var isExternalDisplayAvailable: Bool = false
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
@@ -250,12 +250,12 @@ final class SwitcherViewModel {
 
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
-    var bgmTransitionGeneration: Int = 0
+    private var bgmTransitionGeneration: Int = 0
     @ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks: Int?
     @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
     @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
-    @ObservationIgnored var activeBGMTimerGeneration: Int?
-    @ObservationIgnored var pendingPPTToggleSource: PPTModeToggleSource?
+    @ObservationIgnored private var activeBGMTimerGeneration: Int?
+    @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -277,11 +277,11 @@ final class SwitcherViewModel {
         dispatchPPTIntent(.operatorSetPPTMode(enabled, source: source), source: source)
     }
 
-    var pageInterceptEventTap: CFMachPort?
-    var pageInterceptRunLoopSource: CFRunLoopSource?
-    var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
-    nonisolated let pageInterceptRuntime = PageInterceptRuntime()
-    nonisolated let wpsApplicationMonitor = WPSApplicationMonitor()
+    private var pageInterceptEventTap: CFMachPort?
+    private var pageInterceptRunLoopSource: CFRunLoopSource?
+    private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
+    nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
+    nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
@@ -353,11 +353,11 @@ final class SwitcherViewModel {
 
     private func dispatchPPTIntent(_ action: LiveRuntimeAction, source: PPTModeToggleSource) {
         let previousPPT = runtime.state.ppt
-        pendingPPTToggleSource = source
+        setPendingPPTToggleSource(source)
         dispatchRuntimeFacadeAction(action)
         syncPPTFacadeFromRuntime()
         if runtime.state.ppt == previousPPT {
-            pendingPPTToggleSource = nil
+            setPendingPPTToggleSource(nil)
         }
     }
 
@@ -434,8 +434,116 @@ final class SwitcherViewModel {
         pageInterceptEventTap != nil
     }
 
+    func updateExternalDisplayAvailabilityForProjection(_ isAvailable: Bool) {
+        isExternalDisplayAvailable = isAvailable
+    }
+
+    func makeOutputWindowControllerForProjection() -> OutputWindowControlling {
+        outputWindowControllerFactory()
+    }
+
+    func currentOutputWindowControllerForProjection() -> OutputWindowControlling? {
+        outputWindowController
+    }
+
+    func setOutputWindowControllerForProjection(_ controller: OutputWindowControlling?) {
+        outputWindowController = controller
+    }
+
+    func clearOutputWindowControllerForProjection() {
+        outputWindowController = nil
+    }
+
+    func currentPageInterceptTapForRuntime() -> CFMachPort? {
+        pageInterceptEventTap
+    }
+
+    func currentPageInterceptRunLoopSourceForRuntime() -> CFRunLoopSource? {
+        pageInterceptRunLoopSource
+    }
+
+    func installPageInterceptTapForRuntime(
+        tap: CFMachPort,
+        source: CFRunLoopSource,
+        refcon: UnsafeMutableRawPointer
+    ) {
+        pageInterceptEventTap = tap
+        pageInterceptRunLoopSource = source
+        pageInterceptSelfRefcon = refcon
+    }
+
+    func clearPageInterceptTapForRuntime() {
+        if let refcon = pageInterceptSelfRefcon {
+            Unmanaged<SwitcherViewModel>.fromOpaque(refcon).release()
+        }
+        pageInterceptEventTap = nil
+        pageInterceptRunLoopSource = nil
+        pageInterceptSelfRefcon = nil
+        updatePageInterceptRuntimeTap(nil)
+    }
+
+    func enableCurrentPageInterceptTapForRuntime() {
+        guard let tap = pageInterceptEventTap else { return }
+        CGEvent.tapEnable(tap: tap, enable: true)
+    }
+
+    func disableCurrentPageInterceptTapForRuntime() {
+        guard let tap = pageInterceptEventTap else { return }
+        CGEvent.tapEnable(tap: tap, enable: false)
+    }
+
+    nonisolated func updatePageInterceptRuntimeTap(_ tap: CFMachPort?) {
+        pageInterceptRuntime.updateEventTap(tap)
+    }
+
+    nonisolated func reenablePageInterceptRuntimeTap() -> Bool {
+        pageInterceptRuntime.reenableEventTap()
+    }
+
+    nonisolated func currentWPSProcessIdentifierForPageForwarding() -> pid_t? {
+        wpsApplicationMonitor.currentProcessIdentifier
+    }
+
+    func setPendingPPTToggleSource(_ source: PPTModeToggleSource?) {
+        pendingPPTToggleSource = source
+    }
+
+    func consumePendingPPTToggleSource() -> PPTModeToggleSource? {
+        let source = pendingPPTToggleSource
+        pendingPPTToggleSource = nil
+        return source
+    }
+
+    func currentPendingPPTToggleSource() -> PPTModeToggleSource? {
+        pendingPPTToggleSource
+    }
+
+    func setBGMTransitionGenerationForRuntime(_ generation: Int) {
+        bgmTransitionGeneration = generation
+    }
+
+    func incrementBGMTransitionGenerationForRuntime() {
+        bgmTransitionGeneration += 1
+    }
+
+    func currentBGMTransitionGenerationForRuntime() -> Int {
+        bgmTransitionGeneration
+    }
+
+    func setActiveBGMTimerGenerationForRuntime(_ generation: Int?) {
+        activeBGMTimerGeneration = generation
+    }
+
+    func activeBGMTimerGenerationForRuntime() -> Int? {
+        activeBGMTimerGeneration
+    }
+
+    func applyLastAudioRoutingTransitionFromRuntime(_ transition: AudioRoutingTransition?) {
+        lastAudioRoutingTransition = transition
+    }
+
     func resetLastAudioRoutingTransitionForTesting() {
-        lastAudioRoutingTransition = nil
+        applyLastAudioRoutingTransitionFromRuntime(nil)
     }
 
     var activeRuntimeMediaCallbackGenerationForTesting: Int? {
@@ -475,7 +583,7 @@ final class SwitcherViewModel {
     }
 
     func invalidateBGMTransitionGeneration() {
-        bgmTransitionGeneration += 1
+        incrementBGMTransitionGenerationForRuntime()
     }
 
     var currentProgramIsMediaSource: Bool {

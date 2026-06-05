@@ -76,7 +76,7 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("func prepareRuntimeBGM(_ item: BGMItem, generation: Int)"))
         XCTAssertTrue(source.contains("setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)"))
         XCTAssertTrue(facade.contains("validatedRuntimeBGMCallbackGeneration()"))
-        XCTAssertTrue(source.contains("self.bgmTransitionGeneration == generation"))
+        XCTAssertTrue(source.contains("self.currentBGMTransitionGenerationForRuntime() == generation"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

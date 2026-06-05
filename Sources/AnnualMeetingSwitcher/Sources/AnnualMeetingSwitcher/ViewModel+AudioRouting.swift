@@ -133,7 +133,7 @@ extension SwitcherViewModel {
             for: reason,
             liveAudioFadeDuration: liveAudioFadeDuration
         )
-        lastAudioRoutingTransition = transition
+        applyLastAudioRoutingTransitionFromRuntime(transition)
         applyAudioRouting(
             mediaFadeDuration: transition.mediaFadeDuration,
             bgmFadeDuration: transition.bgmFadeDuration,

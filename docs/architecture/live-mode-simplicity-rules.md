@@ -82,6 +82,10 @@ product boundary.
   to `ViewModel+PPTEventTap.swift`, and the Support ingress facade to
   `ViewModel+SupportFacade.swift`; Live mode remains execution-only and code
   simplicity remains part of product simplicity.
+- Projection and PPT encapsulation cleanup does not add live controls. It only
+  hides raw output-window, EventTap, WPS monitor, BGM timer-generation, and
+  audio-routing transition storage behind narrow ViewModel accessors before any
+  future query migration; Live mode remains execution-only.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

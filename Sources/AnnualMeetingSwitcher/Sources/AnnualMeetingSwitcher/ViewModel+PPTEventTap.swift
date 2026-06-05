@@ -39,23 +39,22 @@ extension SwitcherViewModel {
         guard !oldPPT.isEventTapActive, runtime.state.ppt.isEventTapActive else { return }
         LiveSwitcherTelemetry.pageInterceptEnabled()
         recordSupportEvent(kind: .pageInterceptEnabled, detail: detail)
-        if let source = pendingPPTToggleSource {
+        if let source = consumePendingPPTToggleSource() {
             recordSupportEvent(
                 kind: .pptModeChanged,
                 detail: "isOn=true,source=\(source.rawValue)"
             )
         }
-        pendingPPTToggleSource = nil
     }
 
     private func completePPTEventTapStartFailureFromRuntime(reason: String, presentAlert: Bool) {
         let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: reason))
         syncPPTFacadeFromRuntime()
-        guard oldPPT.isRequested || oldPPT.isEventTapActive || pendingPPTToggleSource != nil else { return }
+        guard oldPPT.isRequested || oldPPT.isEventTapActive || currentPendingPPTToggleSource() != nil else { return }
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason)
         recordSupportEvent(kind: .pageInterceptDisabled, detail: "reason=\(reason)")
-        pendingPPTToggleSource = nil
+        setPendingPPTToggleSource(nil)
         guard presentAlert else { return }
 
         Task { @MainActor [weak self] in
@@ -78,16 +77,15 @@ extension SwitcherViewModel {
         let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
         syncPPTFacadeFromRuntime()
-        guard oldPPT.isRequested || oldPPT.isEventTapActive || pendingPPTToggleSource != nil else { return }
+        guard oldPPT.isRequested || oldPPT.isEventTapActive || currentPendingPPTToggleSource() != nil else { return }
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
         recordSupportEvent(kind: .pageInterceptDisabled, detail: detail ?? "state=disabled,reason=\(reason.rawValue)")
-        if let source = pendingPPTToggleSource {
+        if let source = consumePendingPPTToggleSource() {
             recordSupportEvent(
                 kind: .pptModeChanged,
                 detail: "isOn=false,source=\(source.rawValue)"
             )
         }
-        pendingPPTToggleSource = nil
     }
 
     private func startPageIntercept() -> Bool {
@@ -112,11 +110,11 @@ extension SwitcherViewModel {
             return false
         }
 
-        guard pageInterceptEventTap == nil else {
+        guard currentPageInterceptTapForRuntime() == nil else {
             // 已有 tap，直接 enable
-            if let tap = pageInterceptEventTap {
-                CGEvent.tapEnable(tap: tap, enable: true)
-                pageInterceptRuntime.updateEventTap(tap)
+            if let tap = currentPageInterceptTapForRuntime() {
+                enableCurrentPageInterceptTapForRuntime()
+                updatePageInterceptRuntimeTap(tap)
                 completePPTEventTapStartFromRuntime(detail: "state=enabled,existingTap=true")
             }
             return true
@@ -137,37 +135,32 @@ extension SwitcherViewModel {
             return false
         }
 
-        let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0)
+        guard let src = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, tap, 0) else {
+            CFMachPortInvalidate(tap)
+            Unmanaged<SwitcherViewModel>.fromOpaque(selfRefcon).release()
+            completePPTEventTapStartFailureFromRuntime(reason: "runLoopSourceCreateFailed", presentAlert: true)
+            return false
+        }
         CFRunLoopAddSource(CFRunLoopGetCurrent(), src, .commonModes)
         CGEvent.tapEnable(tap: tap, enable: true)
 
-        pageInterceptEventTap = tap
-        pageInterceptRunLoopSource = src
-        pageInterceptSelfRefcon = selfRefcon
-        pageInterceptRuntime.updateEventTap(tap)
+        installPageInterceptTapForRuntime(tap: tap, source: src, refcon: selfRefcon)
+        updatePageInterceptRuntimeTap(tap)
         completePPTEventTapStartFromRuntime(detail: "state=enabled")
         return true
     }
 
     private func stopPageIntercept(reason: PPTStopReason = .operatorDisabled) {
-        if let tap = pageInterceptEventTap {
-            CGEvent.tapEnable(tap: tap, enable: false)
-        }
-        if let src = pageInterceptRunLoopSource {
+        disableCurrentPageInterceptTapForRuntime()
+        if let src = currentPageInterceptRunLoopSourceForRuntime() {
             CFRunLoopRemoveSource(CFRunLoopGetCurrent(), src, .commonModes)
         }
-        if let refcon = pageInterceptSelfRefcon {
-            Unmanaged<SwitcherViewModel>.fromOpaque(refcon).release()
-            pageInterceptSelfRefcon = nil
-        }
-        pageInterceptEventTap = nil
-        pageInterceptRunLoopSource = nil
-        pageInterceptRuntime.updateEventTap(nil)
+        clearPageInterceptTapForRuntime()
         completePPTEventTapStopFromRuntime(reason: reason)
     }
 
     nonisolated func reenablePageIntercept(reason: PageInterceptReenableReason) {
-        let didReenable = pageInterceptRuntime.reenableEventTap()
+        let didReenable = reenablePageInterceptRuntimeTap()
         LiveSwitcherTelemetry.pageInterceptAutoReenabled(reason: reason, didReenable: didReenable)
         Task { @MainActor [weak self] in
             self?.recordSupportEvent(
@@ -203,7 +196,7 @@ extension SwitcherViewModel {
     /// 向后台 WPS 进程注入翻页按键（nonisolated，可在 C 回调中调用）
     nonisolated private func sendPageKeyToWPS(isPageDown: Bool) {
         let direction = isPageDown ? "next" : "previous"
-        guard let targetPID = wpsApplicationMonitor.currentProcessIdentifier else {
+        guard let targetPID = currentWPSProcessIdentifierForPageForwarding() else {
             LiveSwitcherTelemetry.pageInterceptWPSNotRunning(direction: direction)
             Task { @MainActor [weak self] in
                 self?.recordSupportEvent(
