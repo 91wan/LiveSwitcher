@@ -148,6 +148,19 @@ of `ViewModel.swift`. The ViewModel remains a facade plus concrete platform
 bridge; it should not become a dumping ground for generic adapter classes or
 domain sync policy switches.
 
+Runtime dispatch and callback bridge methods live in
+`ViewModel+RuntimeFacade.swift`. Facade-to-runtime snapshot construction and
+owned-domain preservation live in `ViewModel+RuntimeSnapshot.swift`.
+Runtime-to-facade projection helpers live in
+`ViewModel+RuntimeFacadeSync.swift`. Concrete ViewModel Runtime port wiring
+lives in `ViewModel+RuntimeWiring.swift`. Generic closure-based Runtime port
+adapters live in `LiveRuntimeClosurePorts.swift`.
+
+`ViewModel.swift` must not own Runtime bridge mechanics. It may keep
+ViewModel-owned orchestration for domains that are not part of the current
+Runtime migration contract, but generic Runtime dispatch, snapshot, sync, port
+wiring, and closure adapter mechanics belong in the narrow files above.
+
 Generic closure-based Runtime port adapters live in
 `LiveRuntimeClosurePorts.swift`. New Runtime ports must be added there or in a
 similarly narrow Runtime bridge file, not inline in `ViewModel.swift`.
@@ -165,7 +178,8 @@ function to `ViewModel.swift`.
 Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
 migration remains blocked until the bridge slimming tests, runtime wiring
-extraction tests, and the existing runtime ownership tests pass.
+extraction tests, Runtime facade/snapshot extraction tests, and the existing
+runtime ownership tests pass.
 
 ## Effect Wiring
 

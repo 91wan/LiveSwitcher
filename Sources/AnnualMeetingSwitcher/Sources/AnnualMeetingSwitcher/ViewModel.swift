@@ -182,7 +182,7 @@ final class SwitcherViewModel {
 
     var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
-    private let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
+    let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
 
     // MARK: - 背景壁纸（多张）
 
@@ -211,7 +211,7 @@ final class SwitcherViewModel {
     var bgmItems: [BGMItem] = []
     var currentBGMItem: BGMItem?
     var isBGMPlaying: Bool = false
-    @ObservationIgnored private var transientRuntimeBGMItem: BGMItem?
+    @ObservationIgnored var transientRuntimeBGMItem: BGMItem?
     var isBGMAudioTakeoverActive: Bool = false {
         didSet {
             guard oldValue != isBGMAudioTakeoverActive else { return }
@@ -219,7 +219,7 @@ final class SwitcherViewModel {
         }
     }
     var bgmPlayMode: BGMPlayMode = .loopAll
-    private(set) var supportEvents: [LiveSupportEvent] = []
+    var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
     var isSpeakerMode: Bool = false {
@@ -312,9 +312,9 @@ final class SwitcherViewModel {
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
-    @ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks: Int?
-    @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
-    @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
+    @ObservationIgnored var activeRuntimeBGMGenerationForCallbacks: Int?
+    @ObservationIgnored var activeRuntimeBGMItemIDForCallbacks: UUID?
+    @ObservationIgnored var activeRuntimeBGMURLForCallbacks: URL?
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
     @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
@@ -338,7 +338,7 @@ final class SwitcherViewModel {
         dispatchPPTIntent(.operatorSetPPTMode(enabled, source: source), source: source)
     }
 
-    private var pageInterceptEventTap: CFMachPort?
+    var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?
     private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
     nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
@@ -436,249 +436,6 @@ final class SwitcherViewModel {
         avCoordinator.shutdownNonisolated()
     }
 
-    // MARK: - Runtime facade bridge
-
-    func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
-        let syncOptions = LiveRuntimeFacadeSyncPolicy.options(for: action)
-        syncRuntimeEnvironmentFromFacade()
-        syncRuntimeStateFromFacade(
-            clearActionLog: false,
-            dispatchAudioInputsChanged: syncOptions.dispatchAudioInputsChanged
-        )
-        runtime.dispatch(action)
-        if syncOptions.syncBGM {
-            syncBGMFacadeFromRuntime()
-        }
-        if syncOptions.syncProjection {
-            syncProjectionFacadeFromRuntime()
-        }
-        if syncOptions.syncPPT {
-            syncPPTFacadeFromRuntime()
-        }
-        if syncOptions.syncAutomationNotice {
-            syncAutomationNoticeFacadeFromRuntime()
-        }
-        if syncOptions.syncSupport {
-            syncSupportFacadeFromRuntime()
-        }
-    }
-
-    private func syncRuntimeEnvironmentFromFacade() {
-        runtime.updateEnvironment(
-            LiveRuntimeEnvironment(
-                now: Date(),
-                speakerModeDuckedRatio: speakerModeDuckedRatio,
-                liveAudioFadeDuration: liveAudioFadeDuration,
-                bridgeMode: runtime.bridgeMode
-            )
-        )
-    }
-
-    var runtimeConnectedPortKinds: Set<LiveRuntimeEffectPortKind> {
-        runtime.connectedPortKinds
-    }
-
-    var runtimeBridgeMode: LiveRuntimeBridgeMode {
-        runtime.bridgeMode
-    }
-
-    func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
-        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        guard let generation = activeRuntimeMediaGenerationForCallbacks else { return }
-        guard currentProgramItem?.sourceKind == .media else { return }
-        guard avCoordinator.currentURL == activeRuntimeMediaURLForCallbacks else { return }
-        runtime.dispatch(makeAction(generation))
-    }
-
-    @discardableResult
-    func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) -> Bool {
-        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        guard let generation = activeRuntimeBGMGenerationForCallbacks else { return false }
-        guard currentBGMItem?.id == activeRuntimeBGMItemIDForCallbacks else { return false }
-        guard currentBGMItem?.url == activeRuntimeBGMURLForCallbacks else { return false }
-        runtime.dispatch(makeAction(generation))
-        syncBGMFacadeFromRuntime()
-        return true
-    }
-
-    func dispatchRuntimeBGMProgressCallback(time: Double, duration: Double?) {
-        dispatchRuntimeBGMCallback {
-            .bgmProgressUpdated(time: time, duration: duration, generation: $0)
-        }
-    }
-
-    func syncRuntimeStateFromFacade(clearActionLog: Bool) {
-        syncRuntimeStateFromFacade(clearActionLog: clearActionLog, dispatchAudioInputsChanged: true)
-    }
-
-    func syncRuntimeAudioInputsFromFacade(reason: AudioRoutingRuntimeChangeReason?) {
-        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: true)
-        if let reason {
-            applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: runtime.state)
-        }
-    }
-
-    private func syncRuntimeStateFromFacade(
-        clearActionLog: Bool,
-        dispatchAudioInputsChanged: Bool
-    ) {
-        let snapshot = makeRuntimeStateSnapshot()
-        let audioInputsChanged = dispatchAudioInputsChanged && !runtimeAudioInputsMatch(runtime.state, snapshot)
-        let audioSnapshot = audioFacadeSnapshot()
-        runtime.replaceStateForFacadeSync(snapshot, clearActionLog: clearActionLog)
-        if audioInputsChanged {
-            runtime.dispatch(.facadeAudioInputsChanged(audioSnapshot))
-        }
-    }
-
-    private func runtimeAudioInputsMatch(_ lhs: LiveRuntimeState, _ rhs: LiveRuntimeState) -> Bool {
-        lhs.audio.masterVolume == rhs.audio.masterVolume
-            && lhs.audio.mediaVolume == rhs.audio.mediaVolume
-            && lhs.audio.bgmVolume == rhs.audio.bgmVolume
-            && lhs.audio.strategy == rhs.audio.strategy
-            && lhs.audio.isMasterMuted == rhs.audio.isMasterMuted
-            && lhs.audio.isMediaMuted == rhs.audio.isMediaMuted
-            && lhs.audio.isBGMMuted == rhs.audio.isBGMMuted
-            && lhs.audio.isSpeakerMode == rhs.audio.isSpeakerMode
-            && lhs.audio.isBGMTakeoverActive == rhs.audio.isBGMTakeoverActive
-            && lhs.audio.routingContext == rhs.audio.routingContext
-    }
-
-    private func audioFacadeSnapshot() -> AudioFacadeSnapshot {
-        AudioFacadeSnapshot(
-            masterVolume: masterVolume,
-            mediaVolume: mediaVolume,
-            bgmVolume: bgmVolume,
-            strategy: audioStrategy,
-            isMasterMuted: isMasterAudioMuted,
-            isMediaMuted: isMediaAudioMuted,
-            isBGMMuted: isBGMAudioMuted,
-            isSpeakerMode: isSpeakerMode,
-            isBGMTakeoverActive: isBGMAudioTakeoverActive,
-            isPanicMode: isPanicMode,
-            isCurrentProgramMediaSource: currentProgramIsMediaSource,
-            isMediaPlaying: avCoordinator.isPlaying,
-            isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying
-        )
-    }
-
-    private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
-        var state = runtime.state
-        state.mode = consoleMode
-        state.program.items = programItems
-        if let currentProgramItem,
-           !programItems.contains(where: { $0.id == currentProgramItem.id }) {
-            state.program.currentDetachedItem = currentProgramItem
-        } else {
-            state.program.currentDetachedItem = nil
-        }
-        state.program.currentID = currentProgramItem?.id
-        state.program.currentSwitchedAt = currentProgramSwitchedAt
-
-        state.media.loadedURL = avCoordinator.currentURL
-        state.media.isPlaying = avCoordinator.isPlaying
-        state.media.currentTime = avCoordinator.currentTime
-        state.media.duration = avCoordinator.duration
-
-        syncBGMLibraryIntoRuntimeSnapshot(&state)
-
-        state.audio.masterVolume = masterVolume
-        state.audio.mediaVolume = mediaVolume
-        state.audio.bgmVolume = bgmVolume
-        state.audio.strategy = audioStrategy
-        state.audio.isMasterMuted = isMasterAudioMuted
-        state.audio.isMediaMuted = isMediaAudioMuted
-        state.audio.isBGMMuted = isBGMAudioMuted
-        state.audio.isSpeakerMode = isSpeakerMode
-        state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
-        state.audio.routingContext = AudioRoutingContext(
-            isCurrentProgramMediaSource: currentProgramIsMediaSource,
-            isMediaPlaying: avCoordinator.isPlaying,
-            isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying,
-            isPanicMode: isPanicMode
-        )
-
-        state.panic.isActive = isPanicMode
-        state.panic.snapshot = panicPlaybackSnapshot
-
-        syncPPTFacadeIntoRuntimeSnapshot(&state)
-        state.preferences.themeOverride = themeOverride
-        state.preferences.activeWallpaperURL = activeWallpaperURL
-        state.preferences.cornerLogoURL = cornerLogoURL
-        state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
-        state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
-        state.preferences.showAgendaTimeline = showAgendaTimeline
-        state.preferences.cornerLogoPosition = cornerLogoPosition
-
-        syncProjectionAvailabilityIntoRuntimeSnapshot(&state)
-
-        syncAutomationNoticeIntoRuntimeSnapshot(&state)
-        syncSupportIntoRuntimeSnapshot(&state)
-        return state
-    }
-
-    private func syncSupportIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        guard !runtime.bridgeMode.owns(.support) else {
-            state.support = runtime.state.support
-            return
-        }
-
-        state.support.events = supportEvents
-    }
-
-    private func syncAutomationNoticeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        guard !runtime.bridgeMode.owns(.automationNotice) else {
-            state.automation = runtime.state.automation
-            return
-        }
-
-        state.automation.notice = automationRuntimeNotice
-    }
-
-    func syncAutomationNoticeFacadeFromRuntime() {
-        guard runtime.bridgeMode.owns(.automationNotice) else { return }
-
-        let notice = runtime.state.automation.notice
-        if notice == nil {
-            cancelAutomationNoticeExpiryTask()
-        }
-        automationRuntimeNotice = notice
-    }
-
-    func syncSupportFacadeFromRuntime() {
-        supportEvents = runtime.state.support.events
-    }
-
-    private func syncLegacySupportFacadeFromRuntime() {
-        guard !runtime.bridgeMode.owns(.support) else { return }
-
-        supportEvents = runtime.state.support.events
-    }
-
-    private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        state.projection.hasExternalDisplay = isExternalDisplayAvailable
-
-        guard runtime.bridgeMode.owns(.projection) else {
-            state.projection.isBroadcasting = isBroadcasting
-            state.projection.safetyNotice = broadcastSafetyNotice
-            return
-        }
-
-        state.projection.isBroadcasting = runtime.state.projection.isBroadcasting
-        state.projection.safetyNotice = runtime.state.projection.safetyNotice
-        state.projection.lastDisplayLostAt = runtime.state.projection.lastDisplayLostAt
-    }
-
-    private func syncPPTFacadeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        guard !runtime.bridgeMode.owns(.ppt) else {
-            state.ppt = runtime.state.ppt
-            return
-        }
-
-        state.ppt.isRequested = isPageInterceptEnabled
-        state.ppt.isEventTapActive = pageInterceptEventTap != nil
-    }
-
     private func dispatchPPTIntent(_ action: LiveRuntimeAction, source: PPTModeToggleSource) {
         let previousPPT = runtime.state.ppt
         pendingPPTToggleSource = source
@@ -687,54 +444,6 @@ final class SwitcherViewModel {
         if runtime.state.ppt == previousPPT {
             pendingPPTToggleSource = nil
         }
-    }
-
-    func syncPPTFacadeFromRuntime() {
-        guard runtime.bridgeMode.owns(.ppt) else { return }
-
-        isPageInterceptEnabled = runtime.state.ppt.isEventTapActive
-    }
-
-    func syncProjectionFacadeFromRuntime() {
-        guard runtime.bridgeMode.owns(.projection) else { return }
-
-        isBroadcasting = runtime.state.projection.isBroadcasting
-        broadcastSafetyNotice = runtime.state.projection.safetyNotice
-    }
-
-    private func syncBGMLibraryIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        var runtimeBGMItems = bgmItems
-        if runtime.bridgeMode.owns(.bgm),
-           let currentRuntimeItem = runtime.state.bgm.currentItem,
-           !runtimeBGMItems.contains(where: { $0.id == currentRuntimeItem.id }) {
-            runtimeBGMItems.append(currentRuntimeItem)
-        }
-        if let transientRuntimeBGMItem,
-           !runtimeBGMItems.contains(where: { $0.id == transientRuntimeBGMItem.id }) {
-            runtimeBGMItems.append(transientRuntimeBGMItem)
-        }
-        state.bgm.items = runtimeBGMItems
-        state.bgm.playMode = bgmPlayMode
-
-        guard !runtime.bridgeMode.owns(.bgm) else { return }
-
-        state.bgm.currentID = currentBGMItem?.id
-        state.bgm.isPlaying = isBGMPlaying
-        state.bgm.progress = bgmProgress
-        state.bgm.currentTime = bgmCurrentTime
-        state.bgm.duration = bgmDuration
-    }
-
-    func syncBGMFacadeFromRuntime() {
-        guard runtime.bridgeMode.owns(.bgm) else { return }
-
-        let bgm = runtime.state.bgm
-        currentBGMItem = bgm.currentItem
-        isBGMPlaying = bgm.isPlaying
-        bgmProgress = bgm.progress
-        bgmCurrentTime = bgm.currentTime
-        bgmDuration = bgm.duration
-        bgmPlayMode = bgm.playMode
     }
 
     // MARK: - 音量实际应用（Fix Issue #7/#8）
@@ -1196,7 +905,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private var currentProgramIsMediaSource: Bool {
+    var currentProgramIsMediaSource: Bool {
         currentProgramItem?.sourceKind == .media
     }
 

@@ -46,6 +46,10 @@ product boundary.
 - Runtime wiring extraction does not add live controls. It only moves concrete
   ViewModel Runtime port handler wiring into `ViewModel+RuntimeWiring.swift`;
   Live mode remains execution-only.
+- Runtime facade/snapshot extraction does not add live controls. It only moves
+  Runtime dispatch/callback bridge code, facade-to-runtime snapshot building,
+  and runtime-to-facade projection helpers out of `ViewModel.swift`; Live mode
+  remains execution-only.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

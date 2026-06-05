@@ -198,7 +198,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     }
 
     func testFacadeSyncDoesNotWriteLegacyEffectiveAudioValues() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+RuntimeSnapshot.swift")
         let body = try XCTUnwrap(source.functionBody(named: "makeRuntimeStateSnapshot"))
 
         XCTAssertFalse(body.contains("legacyAudioRoutingOutputForSnapshotOnly"))

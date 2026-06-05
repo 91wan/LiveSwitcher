@@ -19,17 +19,24 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
         XCTAssertFalse(body.contains("syncLegacySupportFacadeFromRuntime()"))
     }
 
-    func testLegacySupportFacadeSyncRemainsGuardedForNonSupportOwnedCompatibility() throws {
-        let body = try viewModelFunctionBody(named: "private func syncLegacySupportFacadeFromRuntime")
+    func testLegacySupportFacadeSyncHasBeenRemoved() throws {
+        let sources = try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift"
+        ].map(sourceText).joined(separator: "\n")
 
-        XCTAssertTrue(body.contains("guard !runtime.bridgeMode.owns(.support) else { return }"))
-        XCTAssertTrue(body.contains("supportEvents = runtime.state.support.events"))
+        XCTAssertFalse(sources.contains("syncLegacySupportFacadeFromRuntime"))
     }
 
-    func testSupportEventsFacadeIsPrivateSet() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+    func testSupportEventsFacadeIsNotPublic() throws {
+        let sources = try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift"
+        ].map(sourceText).joined(separator: "\n")
 
-        XCTAssertTrue(source.contains("private(set) var supportEvents"))
+        XCTAssertTrue(sources.contains("var supportEvents"))
+        XCTAssertFalse(sources.contains("public var supportEvents"))
+        XCTAssertFalse(sources.contains("open var supportEvents"))
     }
 
     private func viewModelFunctionBody(named marker: String) throws -> String {

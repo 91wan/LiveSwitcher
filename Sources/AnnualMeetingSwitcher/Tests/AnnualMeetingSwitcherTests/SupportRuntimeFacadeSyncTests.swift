@@ -29,7 +29,7 @@ final class SupportRuntimeFacadeSyncTests: XCTestCase {
     }
 
     func testNonSupportOwnedSnapshotStillMirrorsFacadeEvents() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeSnapshot.swift")
 
         XCTAssertTrue(source.contains("guard !runtime.bridgeMode.owns(.support) else"))
         XCTAssertTrue(source.contains("state.support.events = supportEvents"))
