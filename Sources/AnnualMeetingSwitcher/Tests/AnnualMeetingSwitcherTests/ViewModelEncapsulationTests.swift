@@ -126,11 +126,12 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
     }
 
-    func testPageInterceptEventTapIsPrivate() throws {
+    func testPageInterceptEventTapIsFacadeScoped() throws {
         let source = try viewModelSource()
 
-        XCTAssertTrue(source.contains("private var pageInterceptEventTap: CFMachPort?"))
-        XCTAssertFalse(source.contains("\n    var pageInterceptEventTap: CFMachPort?"))
+        XCTAssertTrue(source.contains("var pageInterceptEventTap: CFMachPort?"))
+        XCTAssertFalse(source.contains("public var pageInterceptEventTap"))
+        XCTAssertFalse(source.contains("open var pageInterceptEventTap"))
     }
 
     func testRuntimeSnapshotUsesPageInterceptTapActiveAccessor() throws {
@@ -142,6 +143,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
     func testRawPageInterceptEventTapIsNotReferencedOutsideViewModelCore() throws {
         let offenders = try viewModelSourceFiles()
             .filter { !$0.hasSuffix("ViewModel.swift") }
+            .filter { !$0.hasSuffix("ViewModel+PPTEventTap.swift") }
             .filter { try repositorySource($0).contains("pageInterceptEventTap") }
 
         XCTAssertTrue(offenders.isEmpty, offenders.joined(separator: "\n"))

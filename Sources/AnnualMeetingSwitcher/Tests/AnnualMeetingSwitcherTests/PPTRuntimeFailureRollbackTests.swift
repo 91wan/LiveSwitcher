@@ -34,7 +34,7 @@ final class PPTRuntimeFailureRollbackTests: XCTestCase {
     }
 
     func testPPTStartPermissionFailureCanStillPresentAlert() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PPTEventTap.swift")
 
         XCTAssertTrue(source.contains("presentAutomationAlert("))
         XCTAssertTrue(source.contains("accessibilityPermission"))

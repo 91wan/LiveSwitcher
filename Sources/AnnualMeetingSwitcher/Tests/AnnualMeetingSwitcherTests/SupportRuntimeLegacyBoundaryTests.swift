@@ -45,7 +45,7 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
     private func viewModelFunctionBody(named marker: String) throws -> String {
         try functionBody(
             named: marker,
-            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+SupportFacade.swift"
         )
     }
 

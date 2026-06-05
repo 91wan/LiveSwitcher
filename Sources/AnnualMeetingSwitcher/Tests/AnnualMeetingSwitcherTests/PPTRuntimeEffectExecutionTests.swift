@@ -3,7 +3,7 @@ import XCTest
 
 final class PPTRuntimeEffectExecutionTests: XCTestCase {
     func testPPTPortStartDispatchesRuntimeStartedCallback() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PPTEventTap.swift")
         let body = try functionBody(named: "completePPTEventTapStartFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapStarted"))
@@ -11,7 +11,7 @@ final class PPTRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testPPTPortStartDispatchesRuntimeFailedCallback() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PPTEventTap.swift")
         let body = try functionBody(named: "completePPTEventTapStartFailureFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapFailed(reason: reason)"))
@@ -19,7 +19,7 @@ final class PPTRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testPPTPortStopDispatchesRuntimeStoppedCallback() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PPTEventTap.swift")
         let body = try functionBody(named: "completePPTEventTapStopFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapStopped(reason: reason)"))

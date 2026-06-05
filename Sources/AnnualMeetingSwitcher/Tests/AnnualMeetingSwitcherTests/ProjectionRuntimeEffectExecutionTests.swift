@@ -42,7 +42,7 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testProjectionPortStartDoesNotMutateViewModelBroadcastingDirectly() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try projectionOutputSource()
         let body = try functionBody(named: "showOutputWindowFromRuntimeProjection", in: source)
 
         XCTAssertFalse(body.contains("isBroadcasting ="))
@@ -51,7 +51,7 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testProjectionPortStartWithoutScreenDispatchesProjectionStartFailed() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try projectionOutputSource()
         let body = try functionBody(named: "showOutputWindowFromRuntimeProjection", in: source)
 
         XCTAssertTrue(body.contains(".projectionStartFailed(reason: .noTargetScreen)"))
@@ -59,7 +59,7 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testOutputWindowControllerIsOnlyTouchedInsideProjectionPortHandlers() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try projectionOutputSource()
 
         XCTAssertTrue(source.contains("showOutputWindowFromRuntimeProjection"))
         XCTAssertTrue(source.contains("hideOutputWindowFromRuntimeProjection"))
@@ -126,6 +126,10 @@ final class ProjectionRuntimeEffectExecutionTests: XCTestCase {
 
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
+    }
+
+    private func projectionOutputSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift")
     }
 
     private func repositoryRoot() throws -> URL {
