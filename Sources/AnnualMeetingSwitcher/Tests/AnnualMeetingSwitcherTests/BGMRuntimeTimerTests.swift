@@ -66,27 +66,27 @@ final class BGMRuntimeTimerTests: XCTestCase {
     }
 
     func testRuntimeOwnedPathsUseGenerationBoundStartTimer() throws {
-        let source = try sourceText("ViewModel.swift")
-        let initializer = try substring(
+        let source = try sourceText("ViewModel+RuntimeWiring.swift")
+        let wiring = try substring(
             in: source,
-            from: "bgmTimerPort.startHandler",
-            to: "audioRoutingPort.applyHandler"
+            from: "ports.bgmTimerPort.startHandler",
+            to: "ports.audioRoutingPort.applyHandler"
         )
 
-        XCTAssertFalse(initializer.contains("startBGMTimer()"))
-        XCTAssertTrue(initializer.contains("startBGMTimer(generation: generation)"))
+        XCTAssertFalse(wiring.contains("startBGMTimer()"))
+        XCTAssertTrue(wiring.contains("startBGMTimer(generation: generation)"))
     }
 
     func testRuntimeOwnedPathsUseGenerationBoundStopTimer() throws {
-        let source = try sourceText("ViewModel.swift")
-        let initializer = try substring(
+        let source = try sourceText("ViewModel+RuntimeWiring.swift")
+        let wiring = try substring(
             in: source,
-            from: "bgmTimerPort.stopHandler",
-            to: "audioRoutingPort.applyHandler"
+            from: "ports.bgmTimerPort.stopHandler",
+            to: "ports.audioRoutingPort.applyHandler"
         )
 
-        XCTAssertFalse(initializer.contains("stopBGMTimer()"))
-        XCTAssertTrue(initializer.contains("stopBGMTimer(generation: generation)"))
+        XCTAssertFalse(wiring.contains("stopBGMTimer()"))
+        XCTAssertTrue(wiring.contains("stopBGMTimer(generation: generation)"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

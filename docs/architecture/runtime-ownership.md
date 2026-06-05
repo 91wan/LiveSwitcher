@@ -151,6 +151,12 @@ domain sync policy switches.
 Generic closure-based Runtime port adapters live in
 `LiveRuntimeClosurePorts.swift`. New Runtime ports must be added there or in a
 similarly narrow Runtime bridge file, not inline in `ViewModel.swift`.
+Concrete `SwitcherViewModel` Runtime port handler wiring lives in
+`ViewModel+RuntimeWiring.swift`. `SwitcherViewModel.init` must not contain raw
+Runtime port handler assignments. Future Runtime domain migrations must add
+concrete ViewModel handler wiring through `configureRuntimePortHandlers(...)`,
+not directly in the initializer. Production bridge mode remains
+`.automationCommandOwned`.
 
 Facade sync decisions live in `LiveRuntimeFacadeSyncPolicy`. New Runtime domain
 migrations must update that policy instead of adding another `shouldSync...`
@@ -158,8 +164,8 @@ function to `ViewModel.swift`.
 
 Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
-migration remains blocked until the bridge slimming tests and the existing
-runtime ownership tests pass.
+migration remains blocked until the bridge slimming tests, runtime wiring
+extraction tests, and the existing runtime ownership tests pass.
 
 ## Effect Wiring
 

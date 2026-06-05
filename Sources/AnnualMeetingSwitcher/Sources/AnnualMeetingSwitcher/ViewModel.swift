@@ -101,8 +101,8 @@ final class SwitcherViewModel {
     }
     var currentProgramSwitchedAt: Date?
     @ObservationIgnored private var suppressCurrentProgramFacadeDispatch = false
-    @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
-    @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
+    @ObservationIgnored var activeRuntimeMediaGenerationForCallbacks: Int?
+    @ObservationIgnored var activeRuntimeMediaURLForCallbacks: URL?
     private var needsMutedMediaStartupAfterClearedProgram = false
     var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
@@ -346,11 +346,11 @@ final class SwitcherViewModel {
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
-    private let userDefaults: UserDefaults
+    let userDefaults: UserDefaults
 
     // MARK: - UserDefaults Keys
 
-    private enum UDKeys {
+    enum UDKeys {
         static let pushList = "pushList_paths"
         static let pushListTitles = "pushList_titles"
         static let pushListSubtitles = "pushList_subtitles"
@@ -384,190 +384,13 @@ final class SwitcherViewModel {
         userDefaults: UserDefaults = .standard,
         runtime: LiveRuntimeStore? = nil
     ) {
-        let mediaPlaybackPort = ClosureMediaPlaybackPort()
-        let bgmPlaybackPort = ClosureBGMPlaybackPort()
-        let bgmTimerPort = ClosureBGMTimerPort()
-        let projectionPort = ClosureProjectionPort()
-        let pptPort = ClosurePPTEventTapPort()
-        let automationNoticePort = ClosureAutomationNoticePort()
-        let supportPort = ClosureSupportEventPort()
-        let automationPort = ClosureAutomationPort()
-        let audioRoutingPort = ClosureAudioRoutingPort()
-        let imageAssetPort = ClosureImageAssetPort()
-        let persistencePort = ClosurePersistencePort()
+        let runtimePorts = SwitcherRuntimePortBundle()
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(
-                recordsOnly: false,
-                media: mediaPlaybackPort,
-                bgm: bgmPlaybackPort,
-                projection: projectionPort,
-                ppt: pptPort,
-                automation: automationPort,
-                bgmTimer: bgmTimerPort,
-                automationNotice: automationNoticePort,
-                audioRouting: audioRoutingPort,
-                imageAssets: imageAssetPort,
-                persistence: persistencePort,
-                support: supportPort
-            ),
+            effectRunner: runtimePorts.makeEffectRunner(),
             environment: .productionAutomationCommandOwning()
         )
-        supportPort.recordHandler = { [weak self] _ in
-            self?.syncSupportFacadeFromRuntime()
-        }
-        automationPort.runHandler = { [weak self] script, action in
-            Task { @MainActor [weak self] in
-                guard let self else { return }
-                defer { automationCommandDidFinishForTesting?() }
-                do {
-                    if let automationCommandRunnerForTesting {
-                        try automationCommandRunnerForTesting(script, action)
-                    } else {
-                        try AppleScriptRunner.run(script, action: action)
-                    }
-                } catch {
-                    self.handleAppleScriptFailure(error, action: action)
-                }
-            }
-        }
-        automationNoticePort.showHandler = { [weak self] notice in
-            self?.cancelAutomationNoticeExpiryTask()
-            self?.automationRuntimeNotice = notice
-        }
-        automationNoticePort.expireHandler = { [weak self] id, date in
-            guard let self else { return }
-            cancelAutomationNoticeExpiryTask()
-            cleanupBag.automationNoticeExpiryTaskNoticeID = id
-            cleanupBag.automationNoticeExpiryTask = Task { @MainActor [weak self] in
-                let delay = max(0, date.timeIntervalSinceNow)
-                if delay > 0 {
-                    try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                }
-                guard !Task.isCancelled else { return }
-                self?.expireAutomationNoticeFromScheduledTask(id: id)
-            }
-        }
-        projectionPort.hasExternalDisplayHandler = { [weak self] in
-            self?.projectionService.hasExternalDisplay ?? false
-        }
-        projectionPort.startHandler = { [weak self] in
-            self?.showOutputWindowFromRuntimeProjection()
-        }
-        projectionPort.stopHandler = { [weak self] in
-            self?.hideOutputWindowFromRuntimeProjection()
-        }
-        projectionPort.showHandler = { [weak self] in
-            self?.showOutputWindowFromRuntimeProjection()
-        }
-        projectionPort.hideHandler = { [weak self] in
-            self?.hideOutputWindowFromRuntimeProjection()
-        }
-        pptPort.startHandler = { [weak self] in
-            self?.startPPTEventTapFromRuntime()
-        }
-        pptPort.stopHandler = { [weak self] reason in
-            self?.stopPPTEventTapFromRuntime(reason: reason)
-        }
-        mediaPlaybackPort.loadHandler = { [weak self] url, generation in
-            self?.activeRuntimeMediaGenerationForCallbacks = generation
-            self?.activeRuntimeMediaURLForCallbacks = url
-            self?.avCoordinator.load(url: url)
-        }
-        mediaPlaybackPort.playHandler = { [weak self] _ in
-            self?.avCoordinator.play(reloadIfNeeded: false)
-        }
-        mediaPlaybackPort.pauseHandler = { [weak self] _ in
-            self?.avCoordinator.pause()
-        }
-        mediaPlaybackPort.restartHandler = { [weak self] _ in
-            self?.avCoordinator.restartFromBeginning()
-        }
-        mediaPlaybackPort.seekToStartHandler = { [weak self] _ in
-            self?.avCoordinator.seekToBeginning()
-        }
-        mediaPlaybackPort.seekToEndHandler = { [weak self] _ in
-            self?.avCoordinator.seekToEnd()
-        }
-        mediaPlaybackPort.stopHandler = { [weak self] generation in
-            if self?.activeRuntimeMediaGenerationForCallbacks == generation {
-                self?.activeRuntimeMediaGenerationForCallbacks = nil
-                self?.activeRuntimeMediaURLForCallbacks = nil
-            }
-            self?.avCoordinator.stop()
-        }
-        mediaPlaybackPort.setVolumeHandler = { [weak self] volume, fade, _ in
-            self?.fadeMediaVolume(to: volume, duration: fade)
-        }
-        bgmPlaybackPort.prepareHandler = { [weak self] item, generation in
-            self?.prepareRuntimeBGM(item, generation: generation)
-        }
-        bgmPlaybackPort.playHandler = { [weak self] generation in
-            self?.playRuntimeBGM(generation: generation)
-        }
-        bgmPlaybackPort.pauseHandler = { [weak self] generation in
-            self?.pauseRuntimeBGM(generation: generation)
-        }
-        bgmPlaybackPort.stopHandler = { [weak self] fade, generation in
-            self?.stopRuntimeBGM(fade: fade, generation: generation)
-        }
-        bgmPlaybackPort.setVolumeHandler = { [weak self] volume, fade, generation in
-            self?.setRuntimeBGMVolume(volume, fade: fade, generation: generation)
-        }
-        bgmPlaybackPort.seekToBeginningHandler = { [weak self] generation in
-            self?.seekRuntimeBGMToBeginning(generation: generation)
-        }
-        bgmPlaybackPort.seekToProgressHandler = { [weak self] progress, generation in
-            self?.seekRuntimeBGM(toProgress: progress, generation: generation)
-        }
-        bgmPlaybackPort.setPlayModeHandler = { [weak self] playMode, generation in
-            self?.setRuntimeBGMPlayMode(playMode, generation: generation)
-        }
-        bgmTimerPort.startHandler = { [weak self] generation in
-            self?.startBGMTimer(generation: generation)
-        }
-        bgmTimerPort.stopHandler = { [weak self] generation in
-            self?.stopBGMTimer(generation: generation)
-        }
-        audioRoutingPort.applyHandler = { [weak self] reason, state in
-            self?.applyAudioRoutingForRuntimeChange(reason: reason, runtimeState: state)
-        }
-        imageAssetPort.loadBackgroundImageHandler = { [weak self] url in
-            self?.loadBackgroundImage(from: url)
-        }
-        imageAssetPort.loadCornerLogoImageHandler = { [weak self] url in
-            self?.loadCornerLogoImage(from: url)
-        }
-        persistencePort.saveHandler = { [weak self] in
-            self?.saveData()
-        }
-        persistencePort.saveConsoleModeHandler = { [weak self] mode in
-            self?.userDefaults.set(mode.rawValue, forKey: UDKeys.consoleMode)
-        }
-        persistencePort.saveThemeOverrideHandler = { [weak self] theme in
-            self?.userDefaults.set(theme.rawValue, forKey: UDKeys.themeOverride)
-        }
-        persistencePort.saveAudioStrategyHandler = { [weak self] strategy in
-            self?.userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
-        }
-        persistencePort.saveSpeakerModeHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
-        }
-        persistencePort.saveBGMPlayModeHandler = { [weak self] playMode in
-            self?.userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
-        }
-        persistencePort.saveAutoPlayNextVideoOnEndHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoPlayNextVideoOnEnd)
-        }
-        persistencePort.saveAutoAdvanceAtScheduledTimeHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
-        }
-        persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
-        }
-        persistencePort.saveCornerLogoPositionHandler = { [weak self] position in
-            self?.userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
-        }
+        configureRuntimePortHandlers(runtimePorts)
         self.keynotePresentationHandler = { [weak self] url in
             self?.openAndPresentKeynote(url: url)
         }
@@ -1087,7 +910,7 @@ final class SwitcherViewModel {
         bgmTransitionGeneration += 1
     }
 
-    private func fadeMediaVolume(to targetVolume: Float, duration: Double) {
+    func fadeMediaVolume(to targetVolume: Float, duration: Double) {
         cleanupBag.mediaVolumeFadeTask?.cancel()
         guard duration > 0 else {
             avCoordinator.volume = targetVolume
@@ -1152,7 +975,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func prepareRuntimeBGM(_ item: BGMItem, generation: Int) {
+    func prepareRuntimeBGM(_ item: BGMItem, generation: Int) {
         activeRuntimeBGMGenerationForCallbacks = generation
         activeRuntimeBGMItemIDForCallbacks = item.id
         activeRuntimeBGMURLForCallbacks = item.url
@@ -1187,7 +1010,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func playRuntimeBGM(generation: Int) {
+    func playRuntimeBGM(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         activeRuntimeBGMGenerationForCallbacks = generation
         bgmTransitionGeneration = generation
@@ -1202,13 +1025,13 @@ final class SwitcherViewModel {
         fadeCurrentBGMFallbackVolume(to: targetVolume, duration: liveAudioFadeDuration, generation: generation)
     }
 
-    private func pauseRuntimeBGM(generation: Int) {
+    func pauseRuntimeBGM(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         bgmAudioPlayer?.pause()
         bgmFallbackPlayer.pause()
     }
 
-    private func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
+    func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         activeRuntimeBGMGenerationForCallbacks = nil
         activeRuntimeBGMItemIDForCallbacks = nil
@@ -1241,7 +1064,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func setRuntimeBGMVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
+    func setRuntimeBGMVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         if bgmAudioPlayer != nil {
             fadeCurrentBGMPlayerVolume(to: volume, duration: fade, generation: generation)
@@ -1252,14 +1075,14 @@ final class SwitcherViewModel {
         fadeCurrentBGMFallbackVolume(to: volume, duration: fade, generation: generation)
     }
 
-    private func seekRuntimeBGMToBeginning(generation: Int) {
+    func seekRuntimeBGMToBeginning(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         bgmAudioPlayer?.currentTime = 0
         bgmFallbackPlayer.seek(to: .zero)
         bgmProgressStore.update(currentTime: 0, duration: bgmAudioPlayer?.duration ?? fallbackBGMKnownDuration() ?? 0)
     }
 
-    private func seekRuntimeBGM(toProgress progress: Double, generation: Int) {
+    func seekRuntimeBGM(toProgress progress: Double, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         let clampedProgress = BGMProgressStore.clampedProgress(progress)
         guard let player = bgmAudioPlayer else {
@@ -1280,7 +1103,7 @@ final class SwitcherViewModel {
         bgmProgressStore.update(currentTime: player.currentTime, duration: duration)
     }
 
-    private func setRuntimeBGMPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
+    func setRuntimeBGMPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
         if let generation {
             guard runtime.state.bgm.generation == generation else { return }
         }
@@ -1377,7 +1200,7 @@ final class SwitcherViewModel {
         currentProgramItem?.sourceKind == .media
     }
 
-    private func loadBackgroundImage(from url: URL?) {
+    func loadBackgroundImage(from url: URL?) {
         cleanupBag.backgroundImageLoadTask?.cancel()
         guard let url else {
             backgroundImage = nil
@@ -1391,7 +1214,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func loadCornerLogoImage(from url: URL?) {
+    func loadCornerLogoImage(from url: URL?) {
         cleanupBag.cornerLogoImageLoadTask?.cancel()
         guard let url else {
             cornerLogoImage = nil
@@ -1848,13 +1671,13 @@ final class SwitcherViewModel {
         syncAutomationNoticeFacadeFromRuntime()
     }
 
-    private func cancelAutomationNoticeExpiryTask() {
+    func cancelAutomationNoticeExpiryTask() {
         cleanupBag.automationNoticeExpiryTask?.cancel()
         cleanupBag.automationNoticeExpiryTask = nil
         cleanupBag.automationNoticeExpiryTaskNoticeID = nil
     }
 
-    private func expireAutomationNoticeFromScheduledTask(id: UUID) {
+    func expireAutomationNoticeFromScheduledTask(id: UUID) {
         guard runtime.state.automation.notice?.id == id else { return }
         dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
         syncAutomationNoticeFacadeFromRuntime()
@@ -2635,7 +2458,7 @@ final class SwitcherViewModel {
         }
     }
 
-    private func showOutputWindowFromRuntimeProjection() {
+    func showOutputWindowFromRuntimeProjection() {
         guard let targetScreen = projectionService.targetScreen() else {
             let oldProjection = runtime.state.projection
             dispatchRuntimeFacadeAction(.projectionStartFailed(reason: .noTargetScreen))
@@ -2662,7 +2485,7 @@ final class SwitcherViewModel {
         outputWindowController?.show(on: targetScreen)
     }
 
-    private func hideOutputWindowFromRuntimeProjection() {
+    func hideOutputWindowFromRuntimeProjection() {
         outputWindowController?.hide()
     }
 
@@ -2751,7 +2574,7 @@ final class SwitcherViewModel {
 
     // MARK: - V25: 翻页拦截器控制
 
-    private func startPPTEventTapFromRuntime() {
+    func startPPTEventTapFromRuntime() {
         if let pageInterceptStartOverride {
             if pageInterceptStartOverride() {
                 completePPTEventTapStartFromRuntime(detail: "state=enabled,override=true")
@@ -2769,7 +2592,7 @@ final class SwitcherViewModel {
         _ = startPageIntercept()
     }
 
-    private func stopPPTEventTapFromRuntime(reason: PPTStopReason) {
+    func stopPPTEventTapFromRuntime(reason: PPTStopReason) {
         guard pageInterceptSideEffectsEnabled else {
             completePPTEventTapStopFromRuntime(reason: reason, detail: "state=disabled,reason=\(reason.rawValue),sideEffects=false")
             return

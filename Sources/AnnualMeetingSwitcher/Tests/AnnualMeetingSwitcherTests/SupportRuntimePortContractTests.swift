@@ -60,16 +60,13 @@ final class SupportRuntimePortContractTests: XCTestCase {
     }
 
     func testProductionSupportAndAutomationCommandPortsAreWired() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
-        let initializer = try XCTUnwrap(source.range(of: "LiveRuntimeEffectRunner("))
-        let suffix = source[initializer.lowerBound...]
-        let runnerArguments = try XCTUnwrap(suffix.range(of: "\n            ),"))
-        let body = String(suffix[..<runnerArguments.lowerBound])
+        let viewModelSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let closurePortsSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
 
-        XCTAssertTrue(body.contains("support: supportPort"))
-        XCTAssertTrue(body.contains("automation: automationPort"))
-        XCTAssertTrue(source.contains("environment: .productionAutomationCommandOwning()"))
-        XCTAssertTrue(source.contains("let supportPort = ClosureSupportEventPort()"))
+        XCTAssertTrue(closurePortsSource.contains("support: supportPort"))
+        XCTAssertTrue(closurePortsSource.contains("automation: automationPort"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionAutomationCommandOwning()"))
+        XCTAssertTrue(closurePortsSource.contains("let supportPort = ClosureSupportEventPort()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
