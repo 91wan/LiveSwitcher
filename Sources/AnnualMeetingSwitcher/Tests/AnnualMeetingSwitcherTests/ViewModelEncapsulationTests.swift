@@ -129,7 +129,8 @@ final class ViewModelEncapsulationTests: XCTestCase {
     func testPageInterceptEventTapIsFacadeScoped() throws {
         let source = try viewModelSource()
 
-        XCTAssertTrue(source.contains("var pageInterceptEventTap: CFMachPort?"))
+        XCTAssertTrue(source.contains("private var pageInterceptEventTap: CFMachPort?"))
+        XCTAssertFalse(source.contains("\n    var pageInterceptEventTap: CFMachPort?"))
         XCTAssertFalse(source.contains("public var pageInterceptEventTap"))
         XCTAssertFalse(source.contains("open var pageInterceptEventTap"))
     }

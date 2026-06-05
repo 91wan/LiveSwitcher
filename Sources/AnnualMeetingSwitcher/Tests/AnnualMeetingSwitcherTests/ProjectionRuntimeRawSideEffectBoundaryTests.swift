@@ -22,8 +22,9 @@ final class ProjectionRuntimeRawSideEffectBoundaryTests: XCTestCase {
 
         XCTAssertFalse(toggleBody.contains("outputWindowController"))
         XCTAssertFalse(lostBody.contains("outputWindowController"))
-        XCTAssertTrue(startBody.contains("outputWindowController"))
-        XCTAssertTrue(stopBody.contains("outputWindowController"))
+        XCTAssertTrue(startBody.contains("currentOutputWindowControllerForProjection()"))
+        XCTAssertTrue(startBody.contains("setOutputWindowControllerForProjection("))
+        XCTAssertTrue(stopBody.contains("currentOutputWindowControllerForProjection()?.hide()"))
     }
 
     func testHandleBroadcastToggleDoesNotCallRawOutputSideEffects() throws {

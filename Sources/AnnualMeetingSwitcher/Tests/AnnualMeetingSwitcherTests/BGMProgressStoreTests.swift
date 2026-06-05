@@ -120,7 +120,7 @@ final class BGMProgressStoreTests: XCTestCase {
         let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer(generation: Int)"))
 
-        XCTAssertTrue(startBody.contains("self.activeBGMTimerGeneration == generation"))
+        XCTAssertTrue(startBody.contains("self.activeBGMTimerGenerationForRuntime() == generation"))
         XCTAssertTrue(startBody.contains("updateBGMProgress(generation: generation)"))
         XCTAssertFalse(startBody.contains("Task { @MainActor"))
     }

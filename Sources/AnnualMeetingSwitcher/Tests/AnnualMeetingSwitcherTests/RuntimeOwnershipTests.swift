@@ -203,6 +203,17 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection/PPT/Support facade extraction tests"))
     }
 
+    func testDocsStateProjectionPPTEncapsulationGatesBlockQueryMigration() throws {
+        let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
+
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection output controller storage, external-display availability mutation"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("PPT EventTap raw handles, pending PPT toggle source, WPS application monitoring"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("BGM transition generation, active BGM timer generation, and last audio-routing transition storage"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("encapsulated behind narrow ViewModel accessors"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Result-returning query migration must also wait for the Projection/PPT encapsulation gates"))
+    }
+
     func testDocsStateSupportIngressMigratedButGenerationStaysViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
         let normalizedDocument = normalizedWhitespace(document)

@@ -52,7 +52,7 @@ extension SwitcherViewModel {
 
     func prepareRuntimeBGM(_ item: BGMItem, generation: Int) {
         setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
-        bgmTransitionGeneration = generation
+        setBGMTransitionGenerationForRuntime(generation)
         let fadeDuration = liveAudioFadeDuration
 
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
@@ -88,7 +88,7 @@ extension SwitcherViewModel {
         if let item = runtime.state.bgm.currentItem {
             setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
         }
-        bgmTransitionGeneration = generation
+        setBGMTransitionGenerationForRuntime(generation)
         rewindBGMIfAtEndBeforeResume()
         bgmAudioPlayer?.volume = 0
         bgmAudioPlayer?.isMeteringEnabled = true
@@ -109,7 +109,7 @@ extension SwitcherViewModel {
     func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         clearActiveRuntimeBGMCallbackIdentity()
-        bgmTransitionGeneration = generation
+        setBGMTransitionGenerationForRuntime(generation)
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
@@ -206,7 +206,7 @@ extension SwitcherViewModel {
 
     func installBGMFallbackEndObserver(for item: AVPlayerItem) {
         removeBGMFallbackEndObserver()
-        let generation = bgmTransitionGeneration
+        let generation = currentBGMTransitionGenerationForRuntime()
         cleanupBag.bgmFallbackEndObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
@@ -215,7 +215,7 @@ extension SwitcherViewModel {
             Task { @MainActor [weak self, weak item] in
                 guard let self,
                       let item,
-                      self.bgmTransitionGeneration == generation,
+                      self.currentBGMTransitionGenerationForRuntime() == generation,
                       self.bgmFallbackPlayer.currentItem === item
                 else { return }
                 self.bgmDidFinish()
@@ -229,7 +229,7 @@ extension SwitcherViewModel {
             Task { @MainActor [weak self, weak item] in
                 guard let self,
                       let item,
-                      self.bgmTransitionGeneration == generation,
+                      self.currentBGMTransitionGenerationForRuntime() == generation,
                       self.bgmFallbackPlayer.currentItem === item
                 else { return }
                 self.bgmDidFail()
@@ -297,16 +297,16 @@ extension SwitcherViewModel {
     }
 
     private func startBGMTimer() {
-        startBGMTimer(generation: bgmTransitionGeneration)
+        startBGMTimer(generation: currentBGMTransitionGenerationForRuntime())
     }
 
     func startBGMTimer(generation: Int) {
         stopActiveBGMTimer()
-        bgmTransitionGeneration = generation
-        activeBGMTimerGeneration = generation
+        setBGMTransitionGenerationForRuntime(generation)
+        setActiveBGMTimerGenerationForRuntime(generation)
         cleanupBag.bgmProgressTimer = Timer.scheduledTimer(withTimeInterval: BGMProgressStore.updateInterval, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.activeBGMTimerGeneration == generation else { return }
+                guard let self, self.activeBGMTimerGenerationForRuntime() == generation else { return }
                 self.updateBGMProgress(generation: generation)
             }
         }
@@ -319,11 +319,11 @@ extension SwitcherViewModel {
     private func stopActiveBGMTimer() {
         cleanupBag.bgmProgressTimer?.invalidate()
         cleanupBag.bgmProgressTimer = nil
-        activeBGMTimerGeneration = nil
+        setActiveBGMTimerGenerationForRuntime(nil)
     }
 
     func stopBGMTimer(generation: Int) {
-        guard activeBGMTimerGeneration == generation else { return }
+        guard activeBGMTimerGenerationForRuntime() == generation else { return }
         stopActiveBGMTimer()
     }
 
@@ -349,7 +349,7 @@ extension SwitcherViewModel {
             if releaseDelay > 0 {
                 try? await Task.sleep(nanoseconds: UInt64(releaseDelay * 1_000_000_000))
             }
-            guard let self, !Task.isCancelled, self.bgmTransitionGeneration == generation else { return }
+            guard let self, !Task.isCancelled, self.currentBGMTransitionGenerationForRuntime() == generation else { return }
             guard !self.isBGMPlaying else { return }
             self.bgmFallbackPlayer.volume = 0
             self.bgmFallbackPlayer.pause()

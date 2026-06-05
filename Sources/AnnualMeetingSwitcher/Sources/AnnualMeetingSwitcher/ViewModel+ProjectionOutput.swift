@@ -9,7 +9,7 @@ extension SwitcherViewModel {
         let isAvailable = externalScreenProvider() != nil
         guard isAvailable != isExternalDisplayAvailable else { return }
 
-        isExternalDisplayAvailable = isAvailable
+        updateExternalDisplayAvailabilityForProjection(isAvailable)
         if isAvailable {
             dispatchRuntimeFacadeAction(.projectionExternalDisplayAvailable)
         } else {
@@ -54,22 +54,23 @@ extension SwitcherViewModel {
             return
         }
 
-        if outputWindowController == nil {
-            outputWindowController = outputWindowControllerFactory()
-            outputWindowController?.onExternalDisplayUnavailable = { [weak self] in
+        if currentOutputWindowControllerForProjection() == nil {
+            let controller = makeOutputWindowControllerForProjection()
+            controller.onExternalDisplayUnavailable = { [weak self] in
                 self?.handleExternalDisplayLost()
             }
             let outputView = AnyView(
                 OutputView()
                     .environment(self)
             )
-            outputWindowController?.mountAnyView(rootView: outputView)
+            controller.mountAnyView(rootView: outputView)
+            setOutputWindowControllerForProjection(controller)
         }
-        outputWindowController?.show(on: targetScreen)
+        currentOutputWindowControllerForProjection()?.show(on: targetScreen)
     }
 
     func hideOutputWindowFromRuntimeProjection() {
-        outputWindowController?.hide()
+        currentOutputWindowControllerForProjection()?.hide()
     }
 
     func handleExternalDisplayLost() {

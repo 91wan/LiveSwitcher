@@ -242,6 +242,12 @@ Moving bridge mechanics out of the core file must not expose private ViewModel
 storage as broad module-wide mutable state. Cross-file Runtime extensions must
 use narrow accessors and mutators for callback identity, support projection,
 PPT EventTap snapshot state, persistence writes, and audio configuration.
+Projection output controller storage, external-display availability mutation,
+PPT EventTap raw handles, pending PPT toggle source, WPS application monitoring,
+BGM transition generation, active BGM timer generation, and last audio-routing
+transition storage are encapsulated behind narrow ViewModel accessors. Runtime
+facade files may call those accessors, but must not treat the raw storage as
+module-wide mutable state.
 `supportEvents` is a Runtime-backed facade projection and is not broadly
 mutable; Runtime sync updates it through the dedicated projection method.
 Core model types such as `ProgramItem`, `BGMItem`, and `BGMPlayMode` live in
@@ -266,7 +272,10 @@ they are not substitutes for behavior tests. Result-returning automation query
 migration remains blocked until the bridge slimming tests, runtime wiring
 extraction tests, Runtime facade/snapshot extraction tests, ViewModel
 encapsulation gates, Projection/PPT/Support facade extraction tests, and the
-existing runtime ownership tests pass.
+existing runtime ownership tests pass. Result-returning query migration must
+also wait for the Projection/PPT encapsulation gates that hide raw output-window,
+EventTap, WPS monitor, BGM timer-generation, and audio-routing transition
+storage behind accessors.
 
 ## Effect Wiring
 
