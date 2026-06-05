@@ -4,14 +4,18 @@ import AppKit
 
 final class AutomationRuntimeSafetyTests: XCTestCase {
     func testAppleScriptAutomationRunsOnMainActorInsteadOfDetachedThread() throws {
-        let source = try sourceText("ViewModel.swift")
-        let runAutomationScript = try XCTUnwrap(source.functionBody(named: "runAutomationScript"))
-        let openPPTX = try XCTUnwrap(source.functionBody(named: "openPPTXWithKeynote"))
+        let viewModelSource = try sourceText("ViewModel.swift")
+        let runtimeWiringSource = try sourceText("ViewModel+RuntimeWiring.swift")
+        let runAutomationScript = try XCTUnwrap(viewModelSource.functionBody(named: "runAutomationScript"))
+        let configureRuntimePortHandlers = try XCTUnwrap(
+            runtimeWiringSource.functionBody(named: "configureRuntimePortHandlers")
+        )
+        let openPPTX = try XCTUnwrap(viewModelSource.functionBody(named: "openPPTXWithKeynote"))
 
         XCTAssertFalse(runAutomationScript.contains("Task.detached(priority: .userInitiated)"))
         XCTAssertFalse(openPPTX.contains("Task.detached(priority: .userInitiated)"))
-        XCTAssertTrue(source.contains("automationPort.runHandler = { [weak self] script, action in"))
-        XCTAssertTrue(source.contains("Task { @MainActor [weak self] in"))
+        XCTAssertTrue(runtimeWiringSource.contains("ports.automationPort.runHandler = { [weak self] script, action in"))
+        XCTAssertTrue(configureRuntimePortHandlers.contains("Task { @MainActor [weak self] in"))
         XCTAssertTrue(openPPTX.contains("Task { @MainActor"))
     }
 

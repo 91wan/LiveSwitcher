@@ -33,11 +33,12 @@ final class AutomationNoticeRuntimeEffectExecutionTests: XCTestCase {
     }
 
     func testAutomationNoticePortExpireDispatchesRuntimeExpiry() throws {
-        let source = try sourceText("ViewModel.swift")
+        let viewModelSource = try sourceText("ViewModel.swift")
+        let runtimeWiringSource = try sourceText("ViewModel+RuntimeWiring.swift")
 
-        XCTAssertTrue(source.contains("automationNoticePort.expireHandler"))
-        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.automationNoticeExpired(id))"))
-        XCTAssertFalse(source.contains("automationNoticePort.expireHandler = { id, date in\n            Thread.sleep"))
+        XCTAssertTrue(runtimeWiringSource.contains("ports.automationNoticePort.expireHandler"))
+        XCTAssertTrue(viewModelSource.contains("dispatchRuntimeFacadeAction(.automationNoticeExpired(id))"))
+        XCTAssertFalse(runtimeWiringSource.contains("automationNoticePort.expireHandler = { id, date in\n            Thread.sleep"))
     }
 
     func testAutomationNoticePortDoesNotRecordSupportEvent() throws {
