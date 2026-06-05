@@ -3,11 +3,11 @@ import XCTest
 
 @MainActor
 final class SupportRuntimeProductionBoundaryTests: XCTestCase {
-    func testProductionRuntimeWiresSupportButNotAutomation() {
+    func testProductionRuntimeWiresSupportAndAutomationCommand() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.automation))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
     }
 
     func testProductionSupportEventIngressRecordsThroughRuntimeState() {

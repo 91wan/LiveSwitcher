@@ -14,6 +14,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
                 .pptOwned,
                 .automationNoticeOwned,
                 .supportOwned,
+                .automationCommandOwned,
                 .fullRuntime
             ]
         )
@@ -33,6 +34,10 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeBridgeMode.supportOwned.owns(.automationNotice))
         XCTAssertTrue(LiveRuntimeBridgeMode.supportOwned.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(.automation))
+        XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(.automationCommand))
+        XCTAssertTrue(LiveRuntimeBridgeMode.automationCommandOwned.owns(.support))
+        XCTAssertTrue(LiveRuntimeBridgeMode.automationCommandOwned.owns(.automationCommand))
+        XCTAssertFalse(LiveRuntimeBridgeMode.automationCommandOwned.owns(.automation))
         XCTAssertFalse(LiveRuntimeBridgeMode.projectionOwned.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.pptOwned.owns(.support))
     }

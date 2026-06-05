@@ -3,14 +3,15 @@ import XCTest
 
 @MainActor
 final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
-    func testProjectionIsStillProductionOwnedThroughSupportOwningMode() {
+    func testProjectionIsStillProductionOwnedThroughAutomationCommandOwningMode() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .supportOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.projection))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.ppt))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationNotice))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationCommand))
         XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.automation))
     }
 
@@ -48,7 +49,7 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
 
         XCTAssertFalse(storeSource.contains("defaultEnvironment(for:"))
         XCTAssertFalse(storeSource.contains("connectedPortKinds.contains(.persistence)"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionSupportOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionAutomationCommandOwning()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

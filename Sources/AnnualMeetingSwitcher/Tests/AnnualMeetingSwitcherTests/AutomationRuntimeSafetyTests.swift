@@ -10,7 +10,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
         XCTAssertFalse(runAutomationScript.contains("Task.detached(priority: .userInitiated)"))
         XCTAssertFalse(openPPTX.contains("Task.detached(priority: .userInitiated)"))
-        XCTAssertTrue(runAutomationScript.contains("Task { @MainActor"))
+        XCTAssertTrue(source.contains("automationPort.runHandler = { [weak self] script, action in"))
+        XCTAssertTrue(source.contains("Task { @MainActor [weak self] in"))
         XCTAssertTrue(openPPTX.contains("Task { @MainActor"))
     }
 

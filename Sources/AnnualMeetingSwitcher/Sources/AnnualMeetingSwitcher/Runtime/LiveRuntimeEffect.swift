@@ -100,7 +100,7 @@ extension LiveRuntimeEffect {
             return .ppt
 
         case .runAppleScript:
-            return .automation
+            return .automationCommand
 
         case .showAutomationNotice,
              .expireAutomationNotice:

@@ -48,22 +48,25 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         )
     }
 
-    func testRunAppleScriptStillRequiresAutomationDomain() {
+    func testRunAppleScriptRequiresAutomationCommandDomain() {
         XCTAssertEqual(
             LiveRuntimeEffect.runAppleScript(script: "tell app", action: "keynote.next-slide").requiredBridgeDomain,
-            .automation
+            .automationCommand
         )
     }
 
-    func testProductionSupportOwnedModeDoesNotOwnAutomationDomain() {
+    func testProductionAutomationCommandModeOwnsCommandButNotFullAutomationDomain() {
         XCTAssertFalse(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode.owns(.automation))
+        XCTAssertFalse(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode.owns(.automationCommand))
+        XCTAssertTrue(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode.owns(.automationCommand))
+        XCTAssertFalse(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode.owns(.automation))
         XCTAssertTrue(LiveRuntimeEnvironment.fullRuntimeForTests().bridgeMode.owns(.automation))
     }
 
     func testSupportOwnedModeBlocksRunAppleScriptEffect() {
         let effect = LiveRuntimeEffect.runAppleScript(script: "tell app", action: "keynote.next-slide")
 
-        XCTAssertEqual(effect.requiredBridgeDomain, .automation)
+        XCTAssertEqual(effect.requiredBridgeDomain, .automationCommand)
         XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(effect.requiredBridgeDomain))
     }
 

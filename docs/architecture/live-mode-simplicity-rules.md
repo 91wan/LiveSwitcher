@@ -67,6 +67,10 @@ product boundary.
 - Automation notice runtime hardening does not add live controls. Expiry
   cleanup, stale-expiry guards, suppression cleanup, and action-log filtering
   stay behind the existing notice surface.
+- Automation command runtime migration does not add live controls. It only moves
+  existing fire-and-forget AppleScript command execution behind Runtime; WPS
+  fallback branching, result-returning queries, scans, and PPT/WPS key
+  forwarding remain ViewModel-owned.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live
@@ -91,14 +95,17 @@ product boundary.
   preference surfaces.
 - Current authoritative runtime domains: Audio, Media playback, BGM playback,
   Projection output, PPT EventTap lifecycle, Automation notice lifecycle, and
-  Support ingress/storage.
+  Support ingress/storage, and Automation command execution.
 - Mirror-only live domains are Program queue, Panic, and Automation. PPT key
-  forwarding, WPS automation, automation execution, Support event production,
-  and telemetry remain ViewModel-owned implementation details.
-- Runtime-backed actions must respect the production `.supportOwned`
+  forwarding, WPS fallback branching, result-returning queries, scans, Support
+  event production, and telemetry remain ViewModel-owned implementation
+  details.
+- Runtime-backed actions must respect the production `.automationCommandOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
   lifecycle, automation notices, Support ingress, audio routing, image assets,
-  and persistence may execute; unowned automation execution must not.
+  persistence, and fire-and-forget automation command execution may execute;
+  result-returning queries, scans, WPS fallback branching, and PPT/WPS key
+  forwarding must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.
