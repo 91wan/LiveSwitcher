@@ -296,6 +296,10 @@ final class SwitcherViewModel {
     let bgmDelegate = BGMPlayerDelegate()
     private let userDefaults: UserDefaults
 
+    var persistenceFacadeUserDefaults: UserDefaults {
+        userDefaults
+    }
+
     // MARK: - Init
 
     init(
@@ -572,42 +576,6 @@ final class SwitcherViewModel {
 
     var isPageInterceptEventTapActiveForRuntimeSnapshot: Bool {
         pageInterceptEventTap != nil
-    }
-
-    func persistConsoleModeFromRuntime(_ mode: ConsoleMode) {
-        persistenceStore.saveConsoleMode(mode)
-    }
-
-    func persistThemeOverrideFromRuntime(_ theme: ThemeOverride) {
-        persistenceStore.saveThemeOverride(theme)
-    }
-
-    func persistAudioStrategyFromRuntime(_ strategy: AudioStrategy) {
-        persistenceStore.saveAudioStrategy(strategy)
-    }
-
-    func persistSpeakerModeFromRuntime(_ isEnabled: Bool) {
-        persistenceStore.saveSpeakerMode(isEnabled)
-    }
-
-    func persistBGMPlayModeFromRuntime(_ playMode: BGMPlayMode) {
-        persistenceStore.saveBGMPlayMode(playMode)
-    }
-
-    func persistAutoPlayNextVideoOnEndFromRuntime(_ isEnabled: Bool) {
-        persistenceStore.saveAutoPlayNextVideoOnEnd(isEnabled)
-    }
-
-    func persistAutoAdvanceAtScheduledTimeFromRuntime(_ isEnabled: Bool) {
-        persistenceStore.saveAutoAdvanceAtScheduledTime(isEnabled)
-    }
-
-    func persistShowAgendaTimelineFromRuntime(_ isEnabled: Bool) {
-        persistenceStore.saveShowAgendaTimeline(isEnabled)
-    }
-
-    func persistCornerLogoPositionFromRuntime(_ position: CornerLogoPosition) {
-        persistenceStore.saveCornerLogoPosition(position)
     }
 
     func resetLastAudioRoutingTransitionForTesting() {
@@ -1014,67 +982,6 @@ final class SwitcherViewModel {
                 self?.refreshExternalDisplayAvailability()
             }
         }
-    }
-
-    // MARK: - 持久化
-
-    func saveData() {
-        persistenceStore.save(makePersistentStateSnapshot())
-        saveDataDidRun?()
-    }
-
-    func loadData() {
-        let result = persistenceStore.load()
-        applyPersistentState(result.state)
-        for event in result.supportEvents {
-            recordSupportEvent(kind: event.kind, detail: event.detail, timestamp: event.timestamp)
-        }
-    }
-
-    private var persistenceStore: SwitcherPersistenceStore {
-        SwitcherPersistenceStore(userDefaults: userDefaults)
-    }
-
-    func makePersistentStateSnapshot() -> SwitcherPersistentState {
-        SwitcherPersistentState(
-            audioStrategy: audioStrategy,
-            isSpeakerMode: isSpeakerMode,
-            bgmPlayMode: bgmPlayMode,
-            programItems: programItems,
-            bgmItems: bgmItems,
-            backgroundWallpapers: backgroundWallpapers,
-            activeWallpaperURL: activeWallpaperURL,
-            cornerLogoURL: cornerLogoURL,
-            cornerLogoPosition: cornerLogoPosition,
-            autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd,
-            autoAdvanceAtScheduledTime: autoAdvanceAtScheduledTime,
-            showAgendaTimeline: showAgendaTimeline,
-            consoleMode: consoleMode,
-            themeOverride: themeOverride,
-            lowerThirdPresets: lowerThirdPresets,
-            countdownPresets: countdownPresets,
-            tickerPresets: tickerPresets
-        )
-    }
-
-    func applyPersistentState(_ state: SwitcherPersistentState) {
-        audioStrategy = state.audioStrategy
-        isSpeakerMode = state.isSpeakerMode
-        bgmPlayMode = state.bgmPlayMode
-        programItems.append(contentsOf: state.programItems)
-        bgmItems.append(contentsOf: state.bgmItems)
-        backgroundWallpapers = state.backgroundWallpapers
-        activeWallpaperURL = state.activeWallpaperURL
-        cornerLogoURL = state.cornerLogoURL
-        cornerLogoPosition = state.cornerLogoPosition
-        autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
-        autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
-        showAgendaTimeline = state.showAgendaTimeline
-        consoleMode = state.consoleMode
-        themeOverride = state.themeOverride
-        lowerThirdPresets = state.lowerThirdPresets
-        countdownPresets = state.countdownPresets
-        tickerPresets = state.tickerPresets
     }
 
     // MARK: - 播毕回调绑定

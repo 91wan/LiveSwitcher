@@ -89,6 +89,18 @@ final class SwitcherPersistenceStoreTests: XCTestCase {
         XCTAssertFalse(source.contains("import AppKit"))
     }
 
+    func testSwitcherPersistenceStoreDoesNotImportSwiftUI() throws {
+        let source = try persistenceStoreSource()
+
+        XCTAssertFalse(source.contains("import SwiftUI"))
+    }
+
+    func testSwitcherPersistenceStoreDoesNotImportAppKit() throws {
+        let source = try persistenceStoreSource()
+
+        XCTAssertFalse(source.contains("import AppKit"))
+    }
+
     func testSwitcherPersistenceStoreDoesNotReferenceSwitcherViewModel() throws {
         let source = try persistenceStoreSource()
 
@@ -99,6 +111,24 @@ final class SwitcherPersistenceStoreTests: XCTestCase {
         let source = try persistenceStoreSource()
 
         XCTAssertFalse(source.contains("LiveRuntimeStore"))
+    }
+
+    func testSwitcherPersistenceStoreDoesNotReferenceOutputWindowController() throws {
+        let source = try persistenceStoreSource()
+
+        XCTAssertFalse(source.contains("OutputWindowController"))
+    }
+
+    func testSwitcherPersistenceStoreDoesNotReferenceAVPlayerCoordinator() throws {
+        let source = try persistenceStoreSource()
+
+        XCTAssertFalse(source.contains("AVPlayerCoordinator"))
+    }
+
+    func testSwitcherPersistenceStoreDoesNotReferenceKeynoteController() throws {
+        let source = try persistenceStoreSource()
+
+        XCTAssertFalse(source.contains("KeynoteController"))
     }
 
     private func viewModelSource() throws -> String {

@@ -59,6 +59,11 @@ product boundary.
   missing-file support event returns into `SwitcherPersistenceStore`; Live mode
   remains execution-only and code simplicity remains part of product
   simplicity.
+- Persistence store hardening does not add live controls. It only makes
+  persistence loading read-only, moves repair writes behind explicit
+  `applyRepairs(...)`, and keeps persistence facade code in
+  `ViewModel+Persistence.swift`; Live mode remains execution-only and code
+  simplicity remains part of product simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
