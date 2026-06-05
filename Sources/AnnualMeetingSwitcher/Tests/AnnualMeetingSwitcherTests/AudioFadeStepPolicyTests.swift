@@ -18,7 +18,7 @@ final class AudioFadeStepPolicyTests: XCTestCase {
     }
 
     func testViewModelUsesSharedFadeStepPolicy() throws {
-        let source = try String(contentsOf: sourceURL("ViewModel.swift"), encoding: .utf8)
+        let source = try String(contentsOf: sourceURL("ViewModel+BGMRuntimePlayback.swift"), encoding: .utf8)
 
         XCTAssertTrue(source.contains("AudioFadeStepPolicy.stepCount(duration: duration)"))
         XCTAssertFalse(source.contains("let steps = 20"))

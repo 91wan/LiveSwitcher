@@ -270,7 +270,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testBGMPlayerEnablesRealtimeMetering() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
 
         XCTAssertTrue(source.contains("bgmRealtimeLevelDB"))
         XCTAssertTrue(source.contains("player.isMeteringEnabled = true"))

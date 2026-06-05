@@ -154,7 +154,7 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
     }
 
     private func toggleBGMBody() throws -> String {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMControls.swift")
         guard let start = source.range(of: "    func toggleBGM(_ item: BGMItem) {"),
               let end = source.range(of: "    private func cueBGMDuringPanic", range: start.upperBound..<source.endIndex)
         else {

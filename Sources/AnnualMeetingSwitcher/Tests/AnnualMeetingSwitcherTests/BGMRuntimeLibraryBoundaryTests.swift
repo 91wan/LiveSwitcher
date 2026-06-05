@@ -51,13 +51,13 @@ final class BGMRuntimeLibraryBoundaryTests: XCTestCase {
     }
 
     func testBGMImportStillUsesViewModelDuplicatePolicy() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMControls.swift")
 
         XCTAssertTrue(source.contains("BGMDuplicatePolicy"))
     }
 
     func testBGMReorderStillSavesLibraryInViewModel() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMControls.swift")
         let body = try functionBody(named: "moveBGMItems(from source", in: source)
 
         XCTAssertTrue(body.contains("bgmItems.move"))

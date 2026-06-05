@@ -14,13 +14,13 @@ final class RuntimePerformanceHygieneTests: XCTestCase {
     }
 
     func testBulkProgramAndBGMImportsUseBatchAppendAPIs() throws {
-        let viewModel = try sourceText("ViewModel.swift")
+        let bgmControls = try sourceText("ViewModel+BGMControls.swift")
         let programQueue = try sourceText("ViewModel+ProgramQueue.swift")
         let leftPanel = try sourceText("Views/LeftPanel.swift")
         let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
 
         XCTAssertTrue(programQueue.contains("func addProgramItems(_ items: [ProgramItem])"))
-        XCTAssertTrue(viewModel.contains("func addBGMItems(_ items: [BGMItem])"))
+        XCTAssertTrue(bgmControls.contains("func addBGMItems(_ items: [BGMItem])"))
         XCTAssertTrue(leftPanel.contains("viewModel.addProgramItems(items)"))
         XCTAssertTrue(bgmPanel.contains("viewModel.addBGMItems(importedItems)"))
         XCTAssertFalse(leftPanel.contains("for url in panel.urls {\n                let item = ProgramItem"))
