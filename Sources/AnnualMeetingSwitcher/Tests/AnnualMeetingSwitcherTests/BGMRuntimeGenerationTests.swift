@@ -42,7 +42,7 @@ final class BGMRuntimeGenerationTests: XCTestCase {
     }
 
     func testRetiredBGMReleaseTaskDoesNotGuardOnCurrentGeneration() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let body = try functionBody(named: "releaseRetiredBGMPlayerAfterFade", in: source)
 
         XCTAssertFalse(body.contains("runtime.state.bgm.generation"))
@@ -50,7 +50,7 @@ final class BGMRuntimeGenerationTests: XCTestCase {
     }
 
     func testRetiredFallbackCleanupDoesNotGuardOnCurrentGeneration() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let body = try functionBody(named: "retireCurrentBGMFallbackPlayerForSwitch", in: source)
 
         XCTAssertFalse(body.contains("generation: Int"))
@@ -59,7 +59,7 @@ final class BGMRuntimeGenerationTests: XCTestCase {
     }
 
     func testCurrentBGMFadeTaskCannotOverwriteCurrentVolume() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let playerFadeBody = try functionBody(named: "fadeCurrentBGMPlayerVolume", in: source)
         let fallbackFadeBody = try functionBody(named: "fadeCurrentBGMFallbackVolume", in: source)
 
@@ -70,7 +70,7 @@ final class BGMRuntimeGenerationTests: XCTestCase {
     }
 
     func testBGMStopCancelsOnlyCurrentFadeTasksNotRetiredPlayerFadeTasks() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let body = try functionBody(named: "stopRuntimeBGM", in: source)
 
         XCTAssertTrue(body.contains("cleanupBag.bgmPlayerVolumeFadeTask?.cancel()"))

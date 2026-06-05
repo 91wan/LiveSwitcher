@@ -27,7 +27,7 @@ final class BGMPausedRoutingTests: XCTestCase {
     }
 
     func testAudioRoutingUsesPlaybackAwareBGMTarget() throws {
-        let source = try String(contentsOf: sourceURL("ViewModel.swift"), encoding: .utf8)
+        let source = try String(contentsOf: sourceURL("ViewModel+AudioRouting.swift"), encoding: .utf8)
         let body = try XCTUnwrap(source.functionBody(named: "applyAudioRouting"))
 
         XCTAssertTrue(source.contains("appliedBGMOutputVolume"))
@@ -36,11 +36,12 @@ final class BGMPausedRoutingTests: XCTestCase {
     }
 
     func testPausingBGMUsesSingleRoutingFadeBeforePausingPlayers() throws {
-        let source = try String(contentsOf: sourceURL("ViewModel.swift"), encoding: .utf8)
-        let body = try XCTUnwrap(source.functionBody(named: "toggleBGM"))
+        let controls = try String(contentsOf: sourceURL("ViewModel+BGMControls.swift"), encoding: .utf8)
+        let audioRouting = try String(contentsOf: sourceURL("ViewModel+AudioRouting.swift"), encoding: .utf8)
+        let body = try XCTUnwrap(controls.functionBody(named: "toggleBGM"))
 
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.operatorStoppedBGM)"))
-        XCTAssertTrue(source.contains("applyAudioRoutingForRuntimeChange"))
+        XCTAssertTrue(audioRouting.contains("applyAudioRoutingForRuntimeChange"))
         XCTAssertFalse(body.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(body.contains("fadeBGMFallbackVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(body.contains("fadeMediaVolume(to: effectiveMediaOutputVolume(), duration: fadeDur)"))

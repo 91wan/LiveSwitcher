@@ -60,7 +60,7 @@ final class BGMRuntimeTimerTests: XCTestCase {
     }
 
     func testNoArgumentStartBGMTimerIsPrivateOrRemoved() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
 
         XCTAssertFalse(source.contains("\n    func startBGMTimer()"))
     }

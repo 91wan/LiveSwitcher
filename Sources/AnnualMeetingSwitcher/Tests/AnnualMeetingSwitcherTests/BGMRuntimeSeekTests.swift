@@ -72,7 +72,7 @@ final class BGMRuntimeSeekTests: XCTestCase {
     }
 
     func testViewModelSeekBGMDoesNotDirectlyMutatePlayers() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMControls.swift")
         let beginningBody = try functionBody(named: "seekBGMToBeginning", in: source)
         let progressBody = try functionBody(named: "seekBGM(toProgress progress: Double)", in: source)
 

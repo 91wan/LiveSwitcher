@@ -26,6 +26,67 @@ final class BGMPlayerDelegate: NSObject, AVAudioPlayerDelegate {
 }
 
 extension SwitcherViewModel {
+    // MARK: - BGM Library
+
+    @discardableResult
+    func addBGMItem(_ item: BGMItem) -> Bool {
+        addBGMItems([item]) == 1
+    }
+
+    @discardableResult
+    func addBGMItems(_ items: [BGMItem]) -> Int {
+        guard !items.isEmpty else { return 0 }
+        var importedCount = 0
+        for item in items {
+            guard BGMDuplicatePolicy.decision(for: item.url, existingItems: bgmItems) != .duplicateURL else {
+                recordSupportEvent(kind: .bgmImportSkippedDuplicate, detail: "reason=duplicateURL")
+                continue
+            }
+            bgmItems.append(item)
+            importedCount += 1
+        }
+        if importedCount > 0 {
+            saveData()
+        }
+        return importedCount
+    }
+
+    func removeBGMItem(_ item: BGMItem) {
+        bgmItems.removeAll { $0.id == item.id }
+        if currentBGMItem?.id == item.id {
+            dispatchRuntimeFacadeAction(.operatorStoppedBGM)
+            recordBGMPlaybackState(isPlaying: false, reason: "removed")
+        }
+        saveData()
+    }
+
+    func moveBGMItems(from source: IndexSet, to destination: Int) {
+        bgmItems.move(fromOffsets: source, toOffset: destination)
+        saveData()
+    }
+
+    func moveBGMItems(in category: BGMCategory, from source: IndexSet, to destination: Int) {
+        let categoryOffsets = bgmItems.indices.filter { bgmItems[$0].category == category }
+        guard !categoryOffsets.isEmpty else { return }
+
+        var scopedItems = categoryOffsets.map { bgmItems[$0] }
+        scopedItems.move(fromOffsets: source, toOffset: destination)
+
+        for (scopedIndex, originalIndex) in categoryOffsets.enumerated() {
+            bgmItems[originalIndex] = scopedItems[scopedIndex]
+        }
+        saveData()
+    }
+
+    func seekBGMToBeginning() {
+        dispatchRuntimeFacadeAction(.operatorSeekedBGMToBeginning)
+    }
+
+    func seekBGM(toProgress progress: Double) {
+        dispatchRuntimeFacadeAction(.operatorSeekedBGMToProgress(progress))
+    }
+
+    // MARK: - BGM Operator Controls
 
     func bgmVolumeDown() {
         bgmVolume = max(0, bgmVolume - 0.05)
@@ -96,5 +157,45 @@ extension SwitcherViewModel {
 
     func playPreviousBGM() {
         dispatchRuntimeFacadeAction(.operatorSelectedPreviousBGM)
+    }
+
+    func toggleBGM(_ item: BGMItem) {
+        guard !isPanicMode else {
+            cueBGMDuringPanic(item)
+            return
+        }
+
+        if currentBGMItem?.id == item.id, isBGMPlaying {
+            dispatchRuntimeFacadeAction(.operatorStoppedBGM)
+            recordBGMPlaybackState(isPlaying: false, reason: "operator")
+        } else {
+            dispatchRuntimeBGMItemAction(.operatorSelectedBGM(item.id), item: item)
+            recordBGMPlaybackState(isPlaying: true, reason: "selected")
+        }
+    }
+
+    private func cueBGMDuringPanic(_ item: BGMItem) {
+        dispatchRuntimeBGMItemAction(.operatorSelectedBGM(item.id), item: item)
+        if panicPlaybackSnapshot?.currentBGMID == item.id {
+            panicPlaybackSnapshot?.wasBGMPlaying = false
+        }
+        recordBGMPlaybackState(isPlaying: false, reason: "cuedDuringPanic")
+    }
+
+    private func dispatchRuntimeBGMItemAction(_ action: LiveRuntimeAction, item: BGMItem) {
+        includeTransientRuntimeBGMItem(item)
+        defer { clearTransientRuntimeBGMItemIfNeeded(item) }
+        dispatchRuntimeFacadeAction(action)
+    }
+
+    func clearBGMTakeoverIfNeeded() {
+        guard isBGMAudioTakeoverActive else { return }
+        isBGMAudioTakeoverActive = false
+        LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
+        recordSupportEvent(kind: .bgmTakeoverChanged, detail: "isActive=false")
+    }
+
+    func recordBGMPlaybackState(isPlaying: Bool, reason: String) {
+        recordSupportEvent(kind: .bgmPlaybackChanged, detail: "isPlaying=\(isPlaying),reason=\(reason)")
     }
 }

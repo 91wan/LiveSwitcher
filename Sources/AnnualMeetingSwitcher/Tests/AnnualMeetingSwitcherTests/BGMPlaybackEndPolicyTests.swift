@@ -57,7 +57,7 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
     }
 
     func testViewModelUsesEndPolicyFromProgressTimerAndNewPlayers() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let controls = try sourceText("ViewModel+BGMControls.swift")
         let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
         let prepareBody = try XCTUnwrap(source.functionBody(named: "prepareRuntimeBGM"))
@@ -70,7 +70,7 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
     }
 
     func testBGMPauseFadeTasksAreGenerationGuarded() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let facade = try sourceText("ViewModel+RuntimeFacade.swift")
 
         XCTAssertTrue(source.contains("func prepareRuntimeBGM(_ item: BGMItem, generation: Int)"))

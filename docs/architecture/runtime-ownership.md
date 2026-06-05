@@ -17,6 +17,18 @@ persistence save/load mechanics are not runtime-owned.
 Program queue ownership remains ViewModel-owned and its queue mutation, source
 validation, switching, schedule, and auto-advance facade lives in
 `ViewModel+ProgramQueue.swift`.
+Audio routing facade code that bridges Runtime-owned audio decisions to concrete
+players, faders, and system volume observation lives in
+`ViewModel+AudioRouting.swift`.
+BGM runtime playback facade code that bridges Runtime-owned BGM state to
+`AVAudioPlayer`/`AVPlayer`, fallback playback, fade tasks, progress timers, and
+realtime metering lives in `ViewModel+BGMRuntimePlayback.swift`.
+BGM library editing and operator selection facade methods remain ViewModel-owned
+and live in `ViewModel+BGMControls.swift`.
+The main `ViewModel.swift` must not own audio routing method bodies or concrete
+BGM player lifecycle method bodies. Result-returning automation query migration
+remains blocked until the audio/BGM extraction tests and existing ownership
+gates pass.
 Presentation automation source construction, Keynote/WPS result-returning
 AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
 ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
@@ -202,6 +214,10 @@ Runtime-to-facade projection helpers live in
 `ViewModel+RuntimeFacadeSync.swift`. Concrete ViewModel Runtime port wiring
 lives in `ViewModel+RuntimeWiring.swift`. Generic closure-based Runtime port
 adapters live in `LiveRuntimeClosurePorts.swift`.
+Audio routing bridge methods live in `ViewModel+AudioRouting.swift`. BGM
+runtime playback bridge methods live in `ViewModel+BGMRuntimePlayback.swift`.
+BGM library editing and operator selection facade methods live in
+`ViewModel+BGMControls.swift`.
 Program queue methods live in `ViewModel+ProgramQueue.swift`. Presentation
 automation source construction, result-returning scans, and WPS fallback
 branching live in `ViewModel+PresentationAutomation.swift`. Automation failure

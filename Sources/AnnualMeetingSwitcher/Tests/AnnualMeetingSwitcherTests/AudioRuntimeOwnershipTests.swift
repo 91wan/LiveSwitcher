@@ -377,7 +377,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     }
 
     func testApplyAudioRoutingRequiresRuntimeStateInProduction() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+AudioRouting.swift")
         let body = try XCTUnwrap(source.functionBody(named: "applyAudioRoutingForRuntimeChange"))
 
         XCTAssertFalse(source.contains("runtimeState: LiveRuntimeState? = nil"))
@@ -399,7 +399,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     }
 
     func testLegacyAudioRoutingOutputOnlyUsedForSnapshotOrTests() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+AudioRouting.swift")
         let uses = source.components(separatedBy: "legacyAudioRoutingOutputForSnapshotOnly").count - 1
 
         XCTAssertEqual(uses, 1)

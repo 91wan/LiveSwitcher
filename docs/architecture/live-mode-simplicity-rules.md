@@ -70,6 +70,12 @@ product boundary.
   `ViewModel+PresentationAutomation.swift`, and automation failure/notice
   facade methods to `ViewModel+AutomationFailure.swift`; Live mode remains
   execution-only and code simplicity remains part of product simplicity.
+- Audio and BGM facade extraction does not add live controls. It only moves
+  audio routing bridge code to `ViewModel+AudioRouting.swift`, BGM runtime
+  playback bridge code to `ViewModel+BGMRuntimePlayback.swift`, and BGM library
+  editing/operator selection facade code to `ViewModel+BGMControls.swift`;
+  Live mode remains execution-only and code simplicity remains part of product
+  simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
