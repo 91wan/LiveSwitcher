@@ -8,6 +8,10 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))"))
     }
 
+    func testRunAutomationScriptStillDispatchesRuntimeAction() throws {
+        try testRunAutomationScriptDispatchesRuntimeAction()
+    }
+
     func testRunAutomationScriptDoesNotCallAppleScriptRunnerDirectly() throws {
         let body = try runAutomationScriptBody()
 

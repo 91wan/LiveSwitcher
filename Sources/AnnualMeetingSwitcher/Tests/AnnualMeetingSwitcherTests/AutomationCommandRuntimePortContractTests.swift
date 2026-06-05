@@ -11,17 +11,17 @@ final class AutomationCommandRuntimePortContractTests: XCTestCase {
     }
 
     func testProductionClosureAutomationPortImplementsRun() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
         let body = try XCTUnwrap(source.classBody(named: "ClosureAutomationPort"))
 
-        XCTAssertTrue(source.contains("private final class ClosureAutomationPort: AutomationPort"))
+        XCTAssertTrue(source.contains("final class ClosureAutomationPort: AutomationPort"))
         XCTAssertTrue(body.contains("var runHandler: ((String, String) -> Void)?"))
         XCTAssertTrue(body.contains("func run(script: String, action: String)"))
         XCTAssertTrue(body.contains("runHandler?(script, action)"))
     }
 
     func testAutomationPortDoesNotOwnSupportStorage() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
         let body = try XCTUnwrap(source.classBody(named: "ClosureAutomationPort"))
 
         XCTAssertFalse(body.contains("supportEvents"))
@@ -29,7 +29,7 @@ final class AutomationCommandRuntimePortContractTests: XCTestCase {
     }
 
     func testAutomationPortDoesNotOwnAutomationNoticeStorage() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
         let body = try XCTUnwrap(source.classBody(named: "ClosureAutomationPort"))
 
         XCTAssertFalse(body.contains("automationRuntimeNotice"))

@@ -69,349 +69,6 @@ private struct LiveMasterMeterCandidate {
     }
 }
 
-private final class ClosureAudioRoutingPort: AudioRoutingPort {
-    var applyHandler: ((AudioRoutingRuntimeChangeReason, LiveRuntimeState) -> Void)?
-
-    func apply(reason: AudioRoutingRuntimeChangeReason, state: LiveRuntimeState) {
-        applyHandler?(reason, state)
-    }
-}
-
-private final class ClosureMediaPlaybackPort: MediaPlaybackPort {
-    var loadHandler: ((URL, Int) -> Void)?
-    var playHandler: ((Int) -> Void)?
-    var pauseHandler: ((Int) -> Void)?
-    var restartHandler: ((Int) -> Void)?
-    var seekToStartHandler: ((Int) -> Void)?
-    var seekToEndHandler: ((Int) -> Void)?
-    var stopHandler: ((Int) -> Void)?
-    var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
-
-    func load(url: URL, generation: Int) {
-        loadHandler?(url, generation)
-    }
-
-    func play(generation: Int) {
-        playHandler?(generation)
-    }
-
-    func pause(generation: Int) {
-        pauseHandler?(generation)
-    }
-
-    func restart(generation: Int) {
-        restartHandler?(generation)
-    }
-
-    func seekToStart(generation: Int) {
-        seekToStartHandler?(generation)
-    }
-
-    func seekToEnd(generation: Int) {
-        seekToEndHandler?(generation)
-    }
-
-    func stop(generation: Int) {
-        stopHandler?(generation)
-    }
-
-    func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
-        setVolumeHandler?(volume, fade, generation)
-    }
-}
-
-private final class ClosureBGMPlaybackPort: BGMPlaybackPort {
-    var prepareHandler: ((BGMItem, Int) -> Void)?
-    var playHandler: ((Int) -> Void)?
-    var pauseHandler: ((Int) -> Void)?
-    var stopHandler: ((TimeInterval, Int) -> Void)?
-    var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
-    var seekToBeginningHandler: ((Int) -> Void)?
-    var seekToProgressHandler: ((Double, Int) -> Void)?
-    var setPlayModeHandler: ((BGMPlayMode, Int?) -> Void)?
-
-    func prepare(item: BGMItem, generation: Int) {
-        prepareHandler?(item, generation)
-    }
-
-    func play(generation: Int) {
-        playHandler?(generation)
-    }
-
-    func pause(generation: Int) {
-        pauseHandler?(generation)
-    }
-
-    func stop(fade: TimeInterval, generation: Int) {
-        stopHandler?(fade, generation)
-    }
-
-    func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
-        setVolumeHandler?(volume, fade, generation)
-    }
-
-    func seekToBeginning(generation: Int) {
-        seekToBeginningHandler?(generation)
-    }
-
-    func seek(toProgress progress: Double, generation: Int) {
-        seekToProgressHandler?(progress, generation)
-    }
-
-    func setPlayMode(_ playMode: BGMPlayMode, generation: Int?) {
-        setPlayModeHandler?(playMode, generation)
-    }
-}
-
-private final class ClosureBGMTimerPort: BGMTimerPort {
-    var startHandler: ((Int) -> Void)?
-    var stopHandler: ((Int) -> Void)?
-
-    func start(generation: Int) {
-        startHandler?(generation)
-    }
-
-    func stop(generation: Int) {
-        stopHandler?(generation)
-    }
-}
-
-private final class ClosureAutomationNoticePort: AutomationNoticePort {
-    var showHandler: ((AutomationRuntimeNotice) -> Void)?
-    var expireHandler: ((UUID, Date) -> Void)?
-
-    func show(_ notice: AutomationRuntimeNotice) {
-        showHandler?(notice)
-    }
-
-    func expire(id: UUID, at date: Date) {
-        expireHandler?(id, date)
-    }
-}
-
-private final class ClosureSupportEventPort: SupportEventPort {
-    var recordHandler: ((LiveSupportEvent) -> Void)?
-
-    func record(_ event: LiveSupportEvent) {
-        recordHandler?(event)
-    }
-}
-
-private final class ClosureAutomationPort: AutomationPort {
-    var runHandler: ((String, String) -> Void)?
-
-    func run(script: String, action: String) {
-        runHandler?(script, action)
-    }
-}
-
-private final class ClosureProjectionPort: ProjectionPort {
-    var hasExternalDisplayHandler: (() -> Bool)?
-    var startHandler: (() -> Void)?
-    var stopHandler: (() -> Void)?
-    var showHandler: (() -> Void)?
-    var hideHandler: (() -> Void)?
-
-    var hasExternalDisplay: Bool {
-        hasExternalDisplayHandler?() ?? false
-    }
-
-    func start() {
-        startHandler?()
-    }
-
-    func stop() {
-        stopHandler?()
-    }
-
-    func show() {
-        showHandler?()
-    }
-
-    func hide() {
-        hideHandler?()
-    }
-}
-
-protocol BGMRuntimeCleanupHandle: AnyObject {
-    var volume: Float { get set }
-    func stop()
-    func pause()
-    func clear()
-}
-
-@MainActor
-final class BGMRuntimeCleanupCoordinator {
-    var currentGeneration = 0
-    weak var currentPlayer: BGMRuntimeCleanupHandle?
-    weak var currentFallbackPlayer: BGMRuntimeCleanupHandle?
-    private var retiredFallbacks: [UUID: BGMRuntimeCleanupHandle] = [:]
-
-    func fadeCurrentPlayerVolume(to targetVolume: Float, generation: Int) {
-        guard currentGeneration == generation else { return }
-        currentPlayer?.volume = targetVolume
-    }
-
-    func fadeRetiredPlayerVolume(_ player: BGMRuntimeCleanupHandle, to targetVolume: Float) {
-        player.volume = targetVolume
-    }
-
-    func releaseRetiredPlayer(_ player: BGMRuntimeCleanupHandle) {
-        player.stop()
-    }
-
-    func trackRetiredFallback(_ player: BGMRuntimeCleanupHandle) -> UUID {
-        let token = UUID()
-        retiredFallbacks[token] = player
-        return token
-    }
-
-    func hasRetiredFallback(_ token: UUID) -> Bool {
-        retiredFallbacks[token] != nil
-    }
-
-    func cleanupRetiredFallback(_ player: BGMRuntimeCleanupHandle, token: UUID) {
-        player.volume = 0
-        player.pause()
-        player.clear()
-        retiredFallbacks[token] = nil
-    }
-}
-
-private final class ClosureImageAssetPort: ImageAssetPort {
-    var loadBackgroundImageHandler: ((URL?) -> Void)?
-    var loadCornerLogoImageHandler: ((URL?) -> Void)?
-
-    func loadBackgroundImage(from url: URL?) {
-        loadBackgroundImageHandler?(url)
-    }
-
-    func loadCornerLogoImage(from url: URL?) {
-        loadCornerLogoImageHandler?(url)
-    }
-}
-
-private final class ClosurePersistencePort: PersistencePort {
-    var saveHandler: (() -> Void)?
-    var saveConsoleModeHandler: ((ConsoleMode) -> Void)?
-    var saveThemeOverrideHandler: ((ThemeOverride) -> Void)?
-    var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
-    var saveSpeakerModeHandler: ((Bool) -> Void)?
-    var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
-    var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
-    var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
-    var saveShowAgendaTimelineHandler: ((Bool) -> Void)?
-    var saveCornerLogoPositionHandler: ((CornerLogoPosition) -> Void)?
-
-    func save() {
-        saveHandler?()
-    }
-
-    func saveConsoleMode(_ mode: ConsoleMode) {
-        saveConsoleModeHandler?(mode)
-    }
-
-    func saveThemeOverride(_ theme: ThemeOverride) {
-        saveThemeOverrideHandler?(theme)
-    }
-
-    func saveAudioStrategy(_ strategy: AudioStrategy) {
-        saveAudioStrategyHandler?(strategy)
-    }
-
-    func saveSpeakerMode(_ isEnabled: Bool) {
-        saveSpeakerModeHandler?(isEnabled)
-    }
-
-    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
-        saveBGMPlayModeHandler?(playMode)
-    }
-
-    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {
-        saveAutoPlayNextVideoOnEndHandler?(isEnabled)
-    }
-
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
-        saveAutoAdvanceAtScheduledTimeHandler?(isEnabled)
-    }
-
-    func saveShowAgendaTimeline(_ isEnabled: Bool) {
-        saveShowAgendaTimelineHandler?(isEnabled)
-    }
-
-    func saveCornerLogoPosition(_ position: CornerLogoPosition) {
-        saveCornerLogoPositionHandler?(position)
-    }
-}
-
-private final class ClosurePPTEventTapPort: PPTEventTapPort {
-    var startHandler: (() -> Void)?
-    var stopHandler: ((PPTStopReason) -> Void)?
-
-    func start() {
-        startHandler?()
-    }
-
-    func stop(reason: PPTStopReason) {
-        stopHandler?(reason)
-    }
-}
-
-final class ViewModelCleanupBag {
-    var mediaVolumeFadeTask: Task<Void, Never>?
-    var bgmPlayerVolumeFadeTask: Task<Void, Never>?
-    var bgmFallbackVolumeFadeTask: Task<Void, Never>?
-    var bgmProgressTimer: Timer?
-    var bgmFallbackEndObserver: NSObjectProtocol?
-    var bgmFallbackFailureObserver: NSObjectProtocol?
-    var bgmTransitionTasks: [UUID: Task<Void, Never>] = [:]
-    var retiredBGMFallbackPlayers: [UUID: AVPlayer] = [:]
-    var automationNoticeExpiryTask: Task<Void, Never>?
-    var automationNoticeExpiryTaskNoticeID: UUID?
-    var panicAudioPauseTask: Task<Void, Never>?
-    var backgroundImageLoadTask: Task<Void, Never>?
-    var cornerLogoImageLoadTask: Task<Void, Never>?
-    var systemVolumeObserver: SystemVolumeObserver?
-    var externalDisplayChangeObserver: NSObjectProtocol?
-
-    func cancelAll() {
-        mediaVolumeFadeTask?.cancel()
-        bgmPlayerVolumeFadeTask?.cancel()
-        bgmFallbackVolumeFadeTask?.cancel()
-        bgmProgressTimer?.invalidate()
-        bgmProgressTimer = nil
-        bgmTransitionTasks.values.forEach { $0.cancel() }
-        retiredBGMFallbackPlayers.values.forEach { player in
-            player.pause()
-            player.replaceCurrentItem(with: nil)
-        }
-        retiredBGMFallbackPlayers.removeAll()
-        automationNoticeExpiryTask?.cancel()
-        automationNoticeExpiryTask = nil
-        automationNoticeExpiryTaskNoticeID = nil
-        panicAudioPauseTask?.cancel()
-        backgroundImageLoadTask?.cancel()
-        cornerLogoImageLoadTask?.cancel()
-        systemVolumeObserver?.stop()
-        if let externalDisplayChangeObserver {
-            NotificationCenter.default.removeObserver(externalDisplayChangeObserver)
-            self.externalDisplayChangeObserver = nil
-        }
-        if let bgmFallbackEndObserver {
-            NotificationCenter.default.removeObserver(bgmFallbackEndObserver)
-            self.bgmFallbackEndObserver = nil
-        }
-        if let bgmFallbackFailureObserver {
-            NotificationCenter.default.removeObserver(bgmFallbackFailureObserver)
-            self.bgmFallbackFailureObserver = nil
-        }
-    }
-
-    deinit {
-        cancelAll()
-    }
-}
-
 @MainActor
 @Observable
 final class SwitcherViewModel {
@@ -959,25 +616,26 @@ final class SwitcherViewModel {
     // MARK: - Runtime facade bridge
 
     func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
+        let syncOptions = LiveRuntimeFacadeSyncPolicy.options(for: action)
         syncRuntimeEnvironmentFromFacade()
         syncRuntimeStateFromFacade(
             clearActionLog: false,
-            dispatchAudioInputsChanged: shouldDispatchAudioInputsBeforeRuntimeAction(action)
+            dispatchAudioInputsChanged: syncOptions.dispatchAudioInputsChanged
         )
         runtime.dispatch(action)
-        if shouldSyncBGMFacadeAfterRuntimeAction(action) {
+        if syncOptions.syncBGM {
             syncBGMFacadeFromRuntime()
         }
-        if shouldSyncProjectionFacadeAfterRuntimeAction(action) {
+        if syncOptions.syncProjection {
             syncProjectionFacadeFromRuntime()
         }
-        if shouldSyncPPTFacadeAfterRuntimeAction(action) {
+        if syncOptions.syncPPT {
             syncPPTFacadeFromRuntime()
         }
-        if shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action) {
+        if syncOptions.syncAutomationNotice {
             syncAutomationNoticeFacadeFromRuntime()
         }
-        if shouldSyncSupportFacadeAfterRuntimeAction(action) {
+        if syncOptions.syncSupport {
             syncSupportFacadeFromRuntime()
         }
     }
@@ -1061,52 +719,6 @@ final class SwitcherViewModel {
             && lhs.audio.isSpeakerMode == rhs.audio.isSpeakerMode
             && lhs.audio.isBGMTakeoverActive == rhs.audio.isBGMTakeoverActive
             && lhs.audio.routingContext == rhs.audio.routingContext
-    }
-
-    private func shouldDispatchAudioInputsBeforeRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .operatorSelectedAudioStrategy,
-             .operatorChangedMasterVolume,
-             .operatorChangedMediaVolume,
-             .operatorChangedBGMVolume,
-             .operatorChangedMasterMute,
-             .operatorChangedMediaMute,
-             .operatorChangedBGMMute,
-             .operatorChangedBGMTakeover,
-             .operatorToggledSpeakerMode,
-             .operatorSetSpeakerMode,
-             .mediaPlaybackChanged,
-             .mediaReachedEnd,
-             .bgmPlaybackChanged,
-             .bgmReachedEnd,
-             .bgmFailed,
-             .operatorPausedBGMForPanic,
-             .operatorResumedBGMAfterPanic,
-             .facadeAudioInputsChanged:
-            return false
-        default:
-            return true
-        }
-    }
-
-    private func shouldSyncBGMFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .operatorSelectedBGM,
-             .operatorStoppedBGM,
-             .operatorSelectedNextBGM,
-             .operatorSelectedPreviousBGM,
-             .operatorPausedBGMForPanic,
-             .operatorResumedBGMAfterPanic,
-             .operatorSelectedBGMPlayMode,
-             .bgmPrepared,
-             .bgmPlaybackChanged,
-             .bgmReachedEnd,
-             .bgmFailed,
-             .bgmProgressUpdated:
-            return true
-        default:
-            return false
-        }
     }
 
     private func audioFacadeSnapshot() -> AudioFacadeSnapshot {
@@ -1200,18 +812,6 @@ final class SwitcherViewModel {
         state.automation.notice = automationRuntimeNotice
     }
 
-    private func shouldSyncAutomationNoticeFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .automationFailed,
-             .automationNoticeRequested,
-             .automationNoticeExpired,
-             .automationNoticeDismissed:
-            return true
-        default:
-            return false
-        }
-    }
-
     func syncAutomationNoticeFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.automationNotice) else { return }
 
@@ -1220,15 +820,6 @@ final class SwitcherViewModel {
             cancelAutomationNoticeExpiryTask()
         }
         automationRuntimeNotice = notice
-    }
-
-    private func shouldSyncSupportFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .supportEventRecorded:
-            return true
-        default:
-            return false
-        }
     }
 
     func syncSupportFacadeFromRuntime() {
@@ -1265,19 +856,6 @@ final class SwitcherViewModel {
         state.ppt.isEventTapActive = pageInterceptEventTap != nil
     }
 
-    private func shouldSyncPPTFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .operatorSetPPTMode,
-             .operatorToggledPPTMode,
-             .pptEventTapStarted,
-             .pptEventTapFailed,
-             .pptEventTapStopped:
-            return true
-        default:
-            return false
-        }
-    }
-
     private func dispatchPPTIntent(_ action: LiveRuntimeAction, source: PPTModeToggleSource) {
         let previousPPT = runtime.state.ppt
         pendingPPTToggleSource = source
@@ -1292,19 +870,6 @@ final class SwitcherViewModel {
         guard runtime.bridgeMode.owns(.ppt) else { return }
 
         isPageInterceptEnabled = runtime.state.ppt.isEventTapActive
-    }
-
-    private func shouldSyncProjectionFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
-        switch action {
-        case .operatorToggledProjection,
-             .projectionStartFailed,
-             .projectionExternalDisplayLost,
-             .projectionExternalDisplayAvailable,
-             .projectionExternalDisplayUnavailable:
-            return true
-        default:
-            return false
-        }
     }
 
     func syncProjectionFacadeFromRuntime() {

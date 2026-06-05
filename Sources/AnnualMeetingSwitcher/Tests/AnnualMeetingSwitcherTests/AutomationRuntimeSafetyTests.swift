@@ -241,11 +241,13 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     func testViewModelCleanupResourcesLiveInCleanupBagInsteadOfUnsafeActorState() throws {
-        let source = try sourceText("ViewModel.swift")
+        let viewModel = try sourceText("ViewModel.swift")
+        let cleanupBag = try sourceText("Models/ViewModelCleanupBag.swift")
 
-        XCTAssertFalse(source.contains("@ObservationIgnored nonisolated(unsafe)"))
-        XCTAssertTrue(source.contains("final class ViewModelCleanupBag"))
-        XCTAssertTrue(source.contains("@ObservationIgnored let cleanupBag = ViewModelCleanupBag()"))
+        XCTAssertFalse(viewModel.contains("@ObservationIgnored nonisolated(unsafe)"))
+        XCTAssertFalse(viewModel.contains("final class ViewModelCleanupBag"))
+        XCTAssertTrue(cleanupBag.contains("final class ViewModelCleanupBag"))
+        XCTAssertTrue(viewModel.contains("@ObservationIgnored let cleanupBag = ViewModelCleanupBag()"))
     }
 
     func testExternalDisplayObserverDoesNotAddExtraMainActorTaskHop() throws {

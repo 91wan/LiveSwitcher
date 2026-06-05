@@ -45,9 +45,9 @@ final class SupportRuntimePortContractTests: XCTestCase {
     }
 
     func testClosureSupportPortExistsAndImplementsRecordWithoutStateMutation() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
 
-        XCTAssertTrue(source.contains("private final class ClosureSupportEventPort: SupportEventPort"))
+        XCTAssertTrue(source.contains("final class ClosureSupportEventPort: SupportEventPort"))
         XCTAssertTrue(source.contains("func record(_ event: LiveSupportEvent)"))
         XCTAssertTrue(source.contains("recordHandler?(event)"))
     }
