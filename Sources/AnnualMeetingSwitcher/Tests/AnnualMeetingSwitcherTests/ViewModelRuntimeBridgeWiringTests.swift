@@ -13,8 +13,8 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
         viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
 
         XCTAssertEqual(viewModel.avCoordinator.currentURL, item.sourceURL)
-        XCTAssertEqual(viewModel.activeRuntimeMediaGenerationForCallbacks, viewModel.runtime.state.media.generation)
-        XCTAssertEqual(viewModel.activeRuntimeMediaURLForCallbacks, item.sourceURL)
+        XCTAssertEqual(viewModel.activeRuntimeMediaCallbackGenerationForTesting, viewModel.runtime.state.media.generation)
+        XCTAssertEqual(viewModel.activeRuntimeMediaCallbackURLForTesting, item.sourceURL)
     }
 
     func testMediaPortStopStillClearsActiveMediaCallbackGeneration() {
@@ -26,8 +26,8 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
 
         ports.mediaPlaybackPort.stop(generation: 7)
 
-        XCTAssertNil(viewModel.activeRuntimeMediaGenerationForCallbacks)
-        XCTAssertNil(viewModel.activeRuntimeMediaURLForCallbacks)
+        XCTAssertNil(viewModel.activeRuntimeMediaCallbackGenerationForTesting)
+        XCTAssertNil(viewModel.activeRuntimeMediaCallbackURLForTesting)
     }
 
     func testBGMPortPrepareStillPreparesRuntimeBGM() {

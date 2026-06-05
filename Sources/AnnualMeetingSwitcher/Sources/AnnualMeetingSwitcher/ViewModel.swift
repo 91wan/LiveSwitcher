@@ -6,58 +6,6 @@ import AVFoundation
 import Carbon         // V25: 翻页拦截器 CGEventTap
 import ApplicationServices // V25: AXIsProcessTrusted
 
-// MARK: - 节目单数据模型
-
-struct ProgramItem: Identifiable, Equatable {
-    let id: UUID
-    var title: String
-    var subtitle: String
-    /// 媒体文件 URL（可选）
-    var sourceURL: URL?
-    var scheduledStartAt: Date?
-    var scheduledDuration: TimeInterval?
-
-    init(
-        id: UUID = UUID(),
-        title: String,
-        subtitle: String = "",
-        sourceURL: URL? = nil,
-        scheduledStartAt: Date? = nil,
-        scheduledDuration: TimeInterval? = nil
-    ) {
-        self.id = id
-        self.title = title
-        self.subtitle = subtitle
-        self.sourceURL = sourceURL
-        self.scheduledStartAt = scheduledStartAt
-        self.scheduledDuration = scheduledDuration
-    }
-}
-
-// MARK: - BGM 播放模式
-
-enum BGMPlayMode: String, CaseIterable {
-    case loopAll   = "列表循环播放"
-    case loopOne   = "单曲循环"
-    case sequential = "顺序播放"
-}
-
-// MARK: - BGM 数据模型
-
-struct BGMItem: Identifiable, Equatable {
-    let id: UUID
-    var title: String
-    var url: URL
-    var category: BGMCategory
-
-    init(id: UUID = UUID(), title: String, url: URL, category: BGMCategory = .warmUp) {
-        self.id = id
-        self.title = title
-        self.url = url
-        self.category = category
-    }
-}
-
 // MARK: - 导播台核心 ViewModel
 
 private struct LiveMasterMeterCandidate {
@@ -101,8 +49,8 @@ final class SwitcherViewModel {
     }
     var currentProgramSwitchedAt: Date?
     @ObservationIgnored private var suppressCurrentProgramFacadeDispatch = false
-    @ObservationIgnored var activeRuntimeMediaGenerationForCallbacks: Int?
-    @ObservationIgnored var activeRuntimeMediaURLForCallbacks: URL?
+    @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
+    @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
     private var needsMutedMediaStartupAfterClearedProgram = false
     var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
@@ -182,7 +130,7 @@ final class SwitcherViewModel {
 
     var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
-    let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
+    private let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
 
     // MARK: - 背景壁纸（多张）
 
@@ -211,7 +159,7 @@ final class SwitcherViewModel {
     var bgmItems: [BGMItem] = []
     var currentBGMItem: BGMItem?
     var isBGMPlaying: Bool = false
-    @ObservationIgnored var transientRuntimeBGMItem: BGMItem?
+    @ObservationIgnored private var transientRuntimeBGMItem: BGMItem?
     var isBGMAudioTakeoverActive: Bool = false {
         didSet {
             guard oldValue != isBGMAudioTakeoverActive else { return }
@@ -219,7 +167,7 @@ final class SwitcherViewModel {
         }
     }
     var bgmPlayMode: BGMPlayMode = .loopAll
-    var supportEvents: [LiveSupportEvent] = []
+    private(set) var supportEvents: [LiveSupportEvent] = []
 
     /// V26.3: 主讲人模式（一键压限 BGM）
     var isSpeakerMode: Bool = false {
@@ -312,9 +260,9 @@ final class SwitcherViewModel {
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
-    @ObservationIgnored var activeRuntimeBGMGenerationForCallbacks: Int?
-    @ObservationIgnored var activeRuntimeBGMItemIDForCallbacks: UUID?
-    @ObservationIgnored var activeRuntimeBGMURLForCallbacks: URL?
+    @ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks: Int?
+    @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
+    @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
     @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     private var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
@@ -338,7 +286,7 @@ final class SwitcherViewModel {
         dispatchPPTIntent(.operatorSetPPTMode(enabled, source: source), source: source)
     }
 
-    var pageInterceptEventTap: CFMachPort?
+    private var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?
     private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
     nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
@@ -346,11 +294,11 @@ final class SwitcherViewModel {
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
-    let userDefaults: UserDefaults
+    private let userDefaults: UserDefaults
 
     // MARK: - UserDefaults Keys
 
-    enum UDKeys {
+    private enum UDKeys {
         static let pushList = "pushList_paths"
         static let pushListTitles = "pushList_titles"
         static let pushListSubtitles = "pushList_subtitles"
@@ -581,8 +529,125 @@ final class SwitcherViewModel {
         syncRuntimeAudioInputsFromFacade(reason: reason)
     }
 
+    var runtimeSpeakerModeDuckedRatio: Float {
+        speakerModeDuckedRatio
+    }
+
+    func applySupportEventsProjectionFromRuntime(_ events: [LiveSupportEvent]) {
+        supportEvents = events
+    }
+
+    func setActiveRuntimeMediaCallbackIdentity(generation: Int, url: URL) {
+        activeRuntimeMediaGenerationForCallbacks = generation
+        activeRuntimeMediaURLForCallbacks = url
+    }
+
+    func clearActiveRuntimeMediaCallbackIdentity(ifGeneration generation: Int) {
+        guard activeRuntimeMediaGenerationForCallbacks == generation else { return }
+
+        activeRuntimeMediaGenerationForCallbacks = nil
+        activeRuntimeMediaURLForCallbacks = nil
+    }
+
+    func validatedRuntimeMediaCallbackGeneration() -> Int? {
+        guard let generation = activeRuntimeMediaGenerationForCallbacks else { return nil }
+        guard currentProgramItem?.sourceKind == .media else { return nil }
+        guard avCoordinator.currentURL == activeRuntimeMediaURLForCallbacks else { return nil }
+        return generation
+    }
+
+    func setActiveRuntimeBGMCallbackIdentity(item: BGMItem, generation: Int) {
+        activeRuntimeBGMGenerationForCallbacks = generation
+        activeRuntimeBGMItemIDForCallbacks = item.id
+        activeRuntimeBGMURLForCallbacks = item.url
+    }
+
+    func clearActiveRuntimeBGMCallbackIdentity() {
+        activeRuntimeBGMGenerationForCallbacks = nil
+        activeRuntimeBGMItemIDForCallbacks = nil
+        activeRuntimeBGMURLForCallbacks = nil
+    }
+
+    func validatedRuntimeBGMCallbackGeneration() -> Int? {
+        guard let generation = activeRuntimeBGMGenerationForCallbacks else { return nil }
+        guard currentBGMItem?.id == activeRuntimeBGMItemIDForCallbacks else { return nil }
+        guard currentBGMItem?.url == activeRuntimeBGMURLForCallbacks else { return nil }
+        return generation
+    }
+
+    func includeTransientRuntimeBGMItem(_ item: BGMItem) {
+        transientRuntimeBGMItem = item
+    }
+
+    func clearTransientRuntimeBGMItemIfNeeded(_ item: BGMItem) {
+        guard transientRuntimeBGMItem?.id == item.id else { return }
+        transientRuntimeBGMItem = nil
+    }
+
+    func runtimeBGMItemsForSnapshot() -> [BGMItem] {
+        var items = bgmItems
+        if runtime.bridgeMode.owns(.bgm),
+           let currentRuntimeItem = runtime.state.bgm.currentItem,
+           !items.contains(where: { $0.id == currentRuntimeItem.id }) {
+            items.append(currentRuntimeItem)
+        }
+        if let transientRuntimeBGMItem,
+           !items.contains(where: { $0.id == transientRuntimeBGMItem.id }) {
+            items.append(transientRuntimeBGMItem)
+        }
+        return items
+    }
+
+    var isPageInterceptEventTapActiveForRuntimeSnapshot: Bool {
+        pageInterceptEventTap != nil
+    }
+
+    func persistConsoleModeFromRuntime(_ mode: ConsoleMode) {
+        userDefaults.set(mode.rawValue, forKey: UDKeys.consoleMode)
+    }
+
+    func persistThemeOverrideFromRuntime(_ theme: ThemeOverride) {
+        userDefaults.set(theme.rawValue, forKey: UDKeys.themeOverride)
+    }
+
+    func persistAudioStrategyFromRuntime(_ strategy: AudioStrategy) {
+        userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
+    }
+
+    func persistSpeakerModeFromRuntime(_ isEnabled: Bool) {
+        userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
+    }
+
+    func persistBGMPlayModeFromRuntime(_ playMode: BGMPlayMode) {
+        userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
+    }
+
+    func persistAutoPlayNextVideoOnEndFromRuntime(_ isEnabled: Bool) {
+        userDefaults.set(isEnabled, forKey: UDKeys.autoPlayNextVideoOnEnd)
+    }
+
+    func persistAutoAdvanceAtScheduledTimeFromRuntime(_ isEnabled: Bool) {
+        userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
+    }
+
+    func persistShowAgendaTimelineFromRuntime(_ isEnabled: Bool) {
+        userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
+    }
+
+    func persistCornerLogoPositionFromRuntime(_ position: CornerLogoPosition) {
+        userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
+    }
+
     func resetLastAudioRoutingTransitionForTesting() {
         lastAudioRoutingTransition = nil
+    }
+
+    var activeRuntimeMediaCallbackGenerationForTesting: Int? {
+        activeRuntimeMediaGenerationForCallbacks
+    }
+
+    var activeRuntimeMediaCallbackURLForTesting: URL? {
+        activeRuntimeMediaURLForCallbacks
     }
 
     var bgmTransitionGenerationForTesting: Int {
@@ -610,9 +675,7 @@ final class SwitcherViewModel {
     }
 
     func seedActiveRuntimeBGMCallbackForTesting(item: BGMItem, generation: Int) {
-        activeRuntimeBGMGenerationForCallbacks = generation
-        activeRuntimeBGMItemIDForCallbacks = item.id
-        activeRuntimeBGMURLForCallbacks = item.url
+        setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
     }
 
     func invalidateBGMTransitionGeneration() {
@@ -685,9 +748,7 @@ final class SwitcherViewModel {
     }
 
     func prepareRuntimeBGM(_ item: BGMItem, generation: Int) {
-        activeRuntimeBGMGenerationForCallbacks = generation
-        activeRuntimeBGMItemIDForCallbacks = item.id
-        activeRuntimeBGMURLForCallbacks = item.url
+        setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
         bgmTransitionGeneration = generation
         let fadeDuration = liveAudioFadeDuration
 
@@ -721,7 +782,9 @@ final class SwitcherViewModel {
 
     func playRuntimeBGM(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
-        activeRuntimeBGMGenerationForCallbacks = generation
+        if let item = runtime.state.bgm.currentItem {
+            setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
+        }
         bgmTransitionGeneration = generation
         rewindBGMIfAtEndBeforeResume()
         bgmAudioPlayer?.volume = 0
@@ -742,9 +805,7 @@ final class SwitcherViewModel {
 
     func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
-        activeRuntimeBGMGenerationForCallbacks = nil
-        activeRuntimeBGMItemIDForCallbacks = nil
-        activeRuntimeBGMURLForCallbacks = nil
+        clearActiveRuntimeBGMCallbackIdentity()
         bgmTransitionGeneration = generation
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
@@ -1985,8 +2046,8 @@ final class SwitcherViewModel {
     }
 
     private func dispatchRuntimeBGMItemAction(_ action: LiveRuntimeAction, item: BGMItem) {
-        transientRuntimeBGMItem = item
-        defer { transientRuntimeBGMItem = nil }
+        includeTransientRuntimeBGMItem(item)
+        defer { clearTransientRuntimeBGMItemIfNeeded(item) }
         dispatchRuntimeFacadeAction(action)
     }
 

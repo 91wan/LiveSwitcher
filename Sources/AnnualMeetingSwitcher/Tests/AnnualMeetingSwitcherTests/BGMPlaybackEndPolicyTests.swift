@@ -71,9 +71,11 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
 
     func testBGMPauseFadeTasksAreGenerationGuarded() throws {
         let source = try sourceText("ViewModel.swift")
+        let facade = try sourceText("ViewModel+RuntimeFacade.swift")
 
         XCTAssertTrue(source.contains("func prepareRuntimeBGM(_ item: BGMItem, generation: Int)"))
-        XCTAssertTrue(source.contains("activeRuntimeBGMGenerationForCallbacks = generation"))
+        XCTAssertTrue(source.contains("setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)"))
+        XCTAssertTrue(facade.contains("validatedRuntimeBGMCallbackGeneration()"))
         XCTAssertTrue(source.contains("self.bgmTransitionGeneration == generation"))
     }
 

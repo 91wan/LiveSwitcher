@@ -60,8 +60,7 @@ extension SwitcherViewModel {
             self?.stopPPTEventTapFromRuntime(reason: reason)
         }
         ports.mediaPlaybackPort.loadHandler = { [weak self] url, generation in
-            self?.activeRuntimeMediaGenerationForCallbacks = generation
-            self?.activeRuntimeMediaURLForCallbacks = url
+            self?.setActiveRuntimeMediaCallbackIdentity(generation: generation, url: url)
             self?.avCoordinator.load(url: url)
         }
         ports.mediaPlaybackPort.playHandler = { [weak self] _ in
@@ -80,10 +79,7 @@ extension SwitcherViewModel {
             self?.avCoordinator.seekToEnd()
         }
         ports.mediaPlaybackPort.stopHandler = { [weak self] generation in
-            if self?.activeRuntimeMediaGenerationForCallbacks == generation {
-                self?.activeRuntimeMediaGenerationForCallbacks = nil
-                self?.activeRuntimeMediaURLForCallbacks = nil
-            }
+            self?.clearActiveRuntimeMediaCallbackIdentity(ifGeneration: generation)
             self?.avCoordinator.stop()
         }
         ports.mediaPlaybackPort.setVolumeHandler = { [weak self] volume, fade, _ in
@@ -132,31 +128,31 @@ extension SwitcherViewModel {
             self?.saveData()
         }
         ports.persistencePort.saveConsoleModeHandler = { [weak self] mode in
-            self?.userDefaults.set(mode.rawValue, forKey: UDKeys.consoleMode)
+            self?.persistConsoleModeFromRuntime(mode)
         }
         ports.persistencePort.saveThemeOverrideHandler = { [weak self] theme in
-            self?.userDefaults.set(theme.rawValue, forKey: UDKeys.themeOverride)
+            self?.persistThemeOverrideFromRuntime(theme)
         }
         ports.persistencePort.saveAudioStrategyHandler = { [weak self] strategy in
-            self?.userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
+            self?.persistAudioStrategyFromRuntime(strategy)
         }
         ports.persistencePort.saveSpeakerModeHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
+            self?.persistSpeakerModeFromRuntime(isEnabled)
         }
         ports.persistencePort.saveBGMPlayModeHandler = { [weak self] playMode in
-            self?.userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
+            self?.persistBGMPlayModeFromRuntime(playMode)
         }
         ports.persistencePort.saveAutoPlayNextVideoOnEndHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoPlayNextVideoOnEnd)
+            self?.persistAutoPlayNextVideoOnEndFromRuntime(isEnabled)
         }
         ports.persistencePort.saveAutoAdvanceAtScheduledTimeHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
+            self?.persistAutoAdvanceAtScheduledTimeFromRuntime(isEnabled)
         }
         ports.persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
-            self?.userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
+            self?.persistShowAgendaTimelineFromRuntime(isEnabled)
         }
         ports.persistencePort.saveCornerLogoPositionHandler = { [weak self] position in
-            self?.userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
+            self?.persistCornerLogoPositionFromRuntime(position)
         }
     }
 }

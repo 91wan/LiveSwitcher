@@ -13,7 +13,7 @@ extension SwitcherViewModel {
     }
 
     func syncSupportFacadeFromRuntime() {
-        supportEvents = runtime.state.support.events
+        applySupportEventsProjectionFromRuntime(runtime.state.support.events)
     }
 
     func syncPPTFacadeFromRuntime() {

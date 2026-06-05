@@ -160,6 +160,14 @@ adapters live in `LiveRuntimeClosurePorts.swift`.
 ViewModel-owned orchestration for domains that are not part of the current
 Runtime migration contract, but generic Runtime dispatch, snapshot, sync, port
 wiring, and closure adapter mechanics belong in the narrow files above.
+Moving bridge mechanics out of the core file must not expose private ViewModel
+storage as broad module-wide mutable state. Cross-file Runtime extensions must
+use narrow accessors and mutators for callback identity, support projection,
+PPT EventTap snapshot state, persistence writes, and audio configuration.
+`supportEvents` is a Runtime-backed facade projection and is not broadly
+mutable; Runtime sync updates it through the dedicated projection method.
+Core model types such as `ProgramItem`, `BGMItem`, and `BGMPlayMode` live in
+`Models/`, not in `ViewModel.swift`.
 
 Generic closure-based Runtime port adapters live in
 `LiveRuntimeClosurePorts.swift`. New Runtime ports must be added there or in a
@@ -178,8 +186,8 @@ function to `ViewModel.swift`.
 Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
 migration remains blocked until the bridge slimming tests, runtime wiring
-extraction tests, Runtime facade/snapshot extraction tests, and the existing
-runtime ownership tests pass.
+extraction tests, Runtime facade/snapshot extraction tests, ViewModel
+encapsulation gates, and the existing runtime ownership tests pass.
 
 ## Effect Wiring
 

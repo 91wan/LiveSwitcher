@@ -50,6 +50,10 @@ product boundary.
   Runtime dispatch/callback bridge code, facade-to-runtime snapshot building,
   and runtime-to-facade projection helpers out of `ViewModel.swift`; Live mode
   remains execution-only.
+- ViewModel encapsulation cleanup does not add live controls. It only restores
+  private storage boundaries and moves core model types into `Models/`; Live
+  mode remains execution-only and code simplicity remains part of product
+  simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

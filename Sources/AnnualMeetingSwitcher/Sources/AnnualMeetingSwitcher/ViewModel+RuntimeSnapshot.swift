@@ -144,21 +144,11 @@ extension SwitcherViewModel {
         }
 
         state.ppt.isRequested = isPageInterceptEnabled
-        state.ppt.isEventTapActive = pageInterceptEventTap != nil
+        state.ppt.isEventTapActive = isPageInterceptEventTapActiveForRuntimeSnapshot
     }
 
     private func syncBGMLibraryIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        var runtimeBGMItems = bgmItems
-        if runtime.bridgeMode.owns(.bgm),
-           let currentRuntimeItem = runtime.state.bgm.currentItem,
-           !runtimeBGMItems.contains(where: { $0.id == currentRuntimeItem.id }) {
-            runtimeBGMItems.append(currentRuntimeItem)
-        }
-        if let transientRuntimeBGMItem,
-           !runtimeBGMItems.contains(where: { $0.id == transientRuntimeBGMItem.id }) {
-            runtimeBGMItems.append(transientRuntimeBGMItem)
-        }
-        state.bgm.items = runtimeBGMItems
+        state.bgm.items = runtimeBGMItemsForSnapshot()
         state.bgm.playMode = bgmPlayMode
 
         guard !runtime.bridgeMode.owns(.bgm) else { return }
