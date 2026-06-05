@@ -95,6 +95,22 @@ final class SwitcherPersistenceSaveTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: "audioStrategy"), AudioStrategy.bgmOnly.rawValue)
     }
 
+    func testSaveConsoleModeWritesLegacyKey() throws {
+        let defaults = try makeDefaults()
+
+        SwitcherPersistenceStore(userDefaults: defaults).saveConsoleMode(.live)
+
+        XCTAssertEqual(defaults.string(forKey: "consoleMode"), ConsoleMode.live.rawValue)
+    }
+
+    func testSaveThemeOverrideWritesLegacyKey() throws {
+        let defaults = try makeDefaults()
+
+        SwitcherPersistenceStore(userDefaults: defaults).saveThemeOverride(.light)
+
+        XCTAssertEqual(defaults.string(forKey: "themeOverride"), ThemeOverride.light.rawValue)
+    }
+
     func testSaveSpeakerModeWritesLegacyKey() throws {
         let defaults = try makeDefaults()
 

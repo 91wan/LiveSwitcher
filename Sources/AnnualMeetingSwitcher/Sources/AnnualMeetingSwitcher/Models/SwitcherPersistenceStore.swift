@@ -2,6 +2,7 @@ import Foundation
 
 struct SwitcherPersistenceStore {
     let userDefaults: UserDefaults
+    var now: () -> Date = Date.init
 
     func save(_ state: SwitcherPersistentState) {
         saveAudioStrategy(state.audioStrategy)
@@ -40,23 +41,35 @@ struct SwitcherPersistenceStore {
     func load() -> SwitcherPersistenceLoadResult {
         var state = SwitcherPersistentState()
         var supportEvents: [LiveSupportEvent] = []
-        var repairedWallpaperPaths: [String]?
-        var repairedActiveWallpaperURL: URL?
+        var repairs: [SwitcherPersistenceRepair] = []
 
         loadProgramItems(into: &state, supportEvents: &supportEvents)
         loadBGMItems(into: &state, supportEvents: &supportEvents)
-        loadWallpapers(into: &state, supportEvents: &supportEvents, repairedWallpaperPaths: &repairedWallpaperPaths, repairedActiveWallpaperURL: &repairedActiveWallpaperURL)
-        loadCornerLogo(into: &state)
+        loadWallpapers(into: &state, supportEvents: &supportEvents, repairs: &repairs)
+        loadCornerLogo(into: &state, repairs: &repairs)
         loadPreferences(into: &state)
         loadOverlayPresets(into: &state)
 
         return SwitcherPersistenceLoadResult(
             state: state,
             supportEvents: supportEvents,
-            repairedWallpaperPaths: repairedWallpaperPaths,
-            repairedActiveWallpaperURL: repairedActiveWallpaperURL,
-            shouldRewriteWallpaperPaths: repairedWallpaperPaths != nil
+            repairs: repairs
         )
+    }
+
+    func applyRepairs(_ repairs: [SwitcherPersistenceRepair]) {
+        for repair in repairs {
+            switch repair {
+            case let .rewriteWallpaperPaths(paths):
+                userDefaults.set(paths, forKey: SwitcherPersistenceKeys.wallpapers)
+            case let .setActiveWallpaperPath(path):
+                userDefaults.set(path, forKey: SwitcherPersistenceKeys.activeWallpaper)
+            case .removeActiveWallpaper:
+                userDefaults.removeObject(forKey: SwitcherPersistenceKeys.activeWallpaper)
+            case .removeCornerLogo:
+                userDefaults.removeObject(forKey: SwitcherPersistenceKeys.cornerLogo)
+            }
+        }
     }
 
     func saveConsoleMode(_ mode: ConsoleMode) {
@@ -111,7 +124,7 @@ struct SwitcherPersistenceStore {
             return !FileManager.default.fileExists(atPath: path)
         }.count
         if missingCount > 0 {
-            supportEvents.append(LiveSupportEvent(timestamp: Date(), kind: .programItemFileMissing, detail: "count=\(missingCount)"))
+            supportEvents.append(LiveSupportEvent(timestamp: now(), kind: .programItemFileMissing, detail: "count=\(missingCount)"))
         }
         state.programItems = ProgramQueueStore.restoredProgramItems(
             paths: paths,
@@ -140,15 +153,14 @@ struct SwitcherPersistenceStore {
             return BGMItem(title: title, url: url, category: category)
         }
         if missingCount > 0 {
-            supportEvents.append(LiveSupportEvent(timestamp: Date(), kind: .bgmFileMissing, detail: "count=\(missingCount)"))
+            supportEvents.append(LiveSupportEvent(timestamp: now(), kind: .bgmFileMissing, detail: "count=\(missingCount)"))
         }
     }
 
     private func loadWallpapers(
         into state: inout SwitcherPersistentState,
         supportEvents: inout [LiveSupportEvent],
-        repairedWallpaperPaths: inout [String]?,
-        repairedActiveWallpaperURL: inout URL?
+        repairs: inout [SwitcherPersistenceRepair]
     ) {
         guard let paths = userDefaults.stringArray(forKey: SwitcherPersistenceKeys.wallpapers) else { return }
 
@@ -158,26 +170,29 @@ struct SwitcherPersistenceStore {
         }
         let droppedCount = paths.count - state.backgroundWallpapers.count
         if droppedCount > 0 {
-            supportEvents.append(LiveSupportEvent(timestamp: Date(), kind: .wallpaperFileMissing, detail: "count=\(droppedCount)"))
-            repairedWallpaperPaths = state.backgroundWallpapers.map(\.path)
-            userDefaults.set(repairedWallpaperPaths, forKey: SwitcherPersistenceKeys.wallpapers)
+            supportEvents.append(LiveSupportEvent(timestamp: now(), kind: .wallpaperFileMissing, detail: "count=\(droppedCount)"))
+            repairs.append(.rewriteWallpaperPaths(state.backgroundWallpapers.map(\.path)))
         }
 
         if let activePath = userDefaults.string(forKey: SwitcherPersistenceKeys.activeWallpaper) {
             let activeURL = URL(fileURLWithPath: activePath)
             state.activeWallpaperURL = state.backgroundWallpapers.contains(activeURL) ? activeURL : state.backgroundWallpapers.first
+            if let activeWallpaperURL = state.activeWallpaperURL {
+                if activeWallpaperURL.path != activePath {
+                    repairs.append(.setActiveWallpaperPath(activeWallpaperURL.path))
+                }
+            } else {
+                repairs.append(.removeActiveWallpaper)
+            }
         } else {
             state.activeWallpaperURL = state.backgroundWallpapers.first
-        }
-        repairedActiveWallpaperURL = state.activeWallpaperURL
-        if let activeWallpaperURL = state.activeWallpaperURL {
-            userDefaults.set(activeWallpaperURL.path, forKey: SwitcherPersistenceKeys.activeWallpaper)
-        } else {
-            userDefaults.removeObject(forKey: SwitcherPersistenceKeys.activeWallpaper)
+            if let activeWallpaperURL = state.activeWallpaperURL {
+                repairs.append(.setActiveWallpaperPath(activeWallpaperURL.path))
+            }
         }
     }
 
-    private func loadCornerLogo(into state: inout SwitcherPersistentState) {
+    private func loadCornerLogo(into state: inout SwitcherPersistentState, repairs: inout [SwitcherPersistenceRepair]) {
         if let rawPosition = userDefaults.string(forKey: SwitcherPersistenceKeys.cornerLogoPosition),
            let position = CornerLogoPosition(rawValue: rawPosition) {
             state.cornerLogoPosition = position
@@ -188,7 +203,7 @@ struct SwitcherPersistenceStore {
                 state.cornerLogoURL = logoURL
             } else {
                 state.cornerLogoURL = nil
-                userDefaults.removeObject(forKey: SwitcherPersistenceKeys.cornerLogo)
+                repairs.append(.removeCornerLogo)
             }
         }
     }

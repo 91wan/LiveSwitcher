@@ -33,6 +33,43 @@ final class SwitcherPersistenceSupportEventTests: XCTestCase {
         XCTAssertEqual(event.detail, "count=1")
     }
 
+    func testMissingProgramFileSupportEventUsesInjectedTimestamp() throws {
+        let defaults = try makeDefaults()
+        let fixedDate = Date(timeIntervalSince1970: 1_234_567_890)
+        defaults.set(["/tmp/missing-\(UUID().uuidString).mp4"], forKey: "pushList_paths")
+
+        let event = try XCTUnwrap(SwitcherPersistenceStore(userDefaults: defaults, now: { fixedDate }).load().supportEvents.first)
+
+        XCTAssertEqual(event.timestamp, fixedDate)
+    }
+
+    func testMissingBGMFileSupportEventUsesInjectedTimestamp() throws {
+        let defaults = try makeDefaults()
+        let fixedDate = Date(timeIntervalSince1970: 1_234_567_890)
+        defaults.set(["/tmp/missing-\(UUID().uuidString).mp3"], forKey: "bgmList_paths")
+
+        let event = try XCTUnwrap(SwitcherPersistenceStore(userDefaults: defaults, now: { fixedDate }).load().supportEvents.first)
+
+        XCTAssertEqual(event.timestamp, fixedDate)
+    }
+
+    func testDroppedWallpaperSupportEventUsesInjectedTimestamp() throws {
+        let defaults = try makeDefaults()
+        let fixedDate = Date(timeIntervalSince1970: 1_234_567_890)
+        defaults.set(["/tmp/missing-\(UUID().uuidString).png"], forKey: "backgroundWallpapers_paths")
+
+        let event = try XCTUnwrap(SwitcherPersistenceStore(userDefaults: defaults, now: { fixedDate }).load().supportEvents.first)
+
+        XCTAssertEqual(event.timestamp, fixedDate)
+    }
+
+    func testPersistenceStoreDoesNotCallDateDirectlyForSupportEvents() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/SwitcherPersistenceStore.swift")
+        let sourceWithoutDefaultClock = source.replacingOccurrences(of: "= Date.init", with: "")
+
+        XCTAssertFalse(sourceWithoutDefaultClock.contains("Date()"))
+    }
+
     func testPersistenceStoreDoesNotRecordSupportDirectly() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/SwitcherPersistenceStore.swift")
 

@@ -125,7 +125,7 @@ explicit owner.
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
 | Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned` or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch. Keynote/WPS result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
-| Persistence | `SwitcherPersistenceStore` + ViewModel facade | Wired preference persistence effects | extracted store | `SwitcherPersistenceStore` owns UserDefaults keys plus encode/decode and returns loaded state plus missing-file support events. `SwitcherViewModel.saveData()` / `loadData()` are thin facades: ViewModel snapshots state, applies loaded state, and records returned support events through Runtime support ingress. Runtime may persist selected preferences through the existing persistence port, but general save/load mechanics are not runtime-owned. |
+| Persistence | `SwitcherPersistenceStore` + `ViewModel+Persistence.swift` facade | Wired preference persistence effects | hardened store | `SwitcherPersistenceStore` owns UserDefaults keys plus encode/decode and returns loaded state, missing-file support events, and explicit repair operations. `SwitcherViewModel.saveData()` / `loadData()` live in `ViewModel+Persistence.swift`: ViewModel snapshots state, applies loaded state idempotently, applies returned repairs explicitly, and records returned support events through Runtime support ingress. Runtime may persist selected preferences through the existing persistence port, but general save/load mechanics are not runtime-owned. |
 
 ## Persistence Boundary
 
@@ -135,20 +135,28 @@ its own persistence key enum or write literal persistence keys directly.
 
 `SwitcherPersistenceStore` owns encoding and decoding for program queue paths,
 titles, subtitles, schedule fields, BGM library metadata, standby wallpapers,
-active wallpaper repair, corner logo repair, audio/operator preferences, and
-overlay preset JSON. It returns a `SwitcherPersistenceLoadResult` containing a
-`SwitcherPersistentState` plus support events for missing persisted files.
+active wallpaper validation, corner logo validation, audio/operator
+preferences, and overlay preset JSON. `SwitcherPersistenceStore.load()` is
+read-only: it may read UserDefaults, validate files, return state, return
+support events, and return repairs, but it must not write UserDefaults.
+Persistence repair writes are explicit via `applyRepairs(...)`.
 
-`SwitcherViewModel.saveData()` snapshots current facade state and delegates to
-the store. `SwitcherViewModel.loadData()` delegates to the store, applies the
-returned persistent state, and records each returned support event through
+`ViewModel+Persistence.swift` owns the persistence facade. `ViewModel.swift`
+must not contain save/load plumbing. `SwitcherViewModel.saveData()` snapshots
+current facade state and delegates to the store. `SwitcherViewModel.loadData()`
+delegates to the store, applies returned persistent state idempotently, applies
+returned repairs explicitly, and records each returned support event through
 `recordSupportEvent(...)`; support ingress and facade projection therefore stay
-Runtime-backed. Persistence extraction must not change Runtime bridge mode,
+Runtime-backed. Persistence hardening must not change Runtime bridge mode,
 production connected ports, UI, UserDefaults key names, defaults, or query
 ownership.
 
+`loadData()` is idempotent for restored program and BGM collections: applying a
+persistent state replaces those collections rather than appending duplicate
+items.
+
 Result-returning automation query migration must not start unless these
-persistence store tests and the existing Runtime ownership gates pass.
+persistence hardening tests and the existing Runtime ownership gates pass.
 
 ## Automation Command Boundary
 

@@ -78,7 +78,8 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
 
         XCTAssertEqual(result.state.backgroundWallpapers, [good])
         XCTAssertEqual(result.supportEvents.map(\.kind), [.wallpaperFileMissing])
-        XCTAssertEqual(defaults.stringArray(forKey: "backgroundWallpapers_paths"), [good.path])
+        XCTAssertEqual(defaults.stringArray(forKey: "backgroundWallpapers_paths"), [good.path, bad.path])
+        XCTAssertTrue(result.repairs.contains(.rewriteWallpaperPaths([good.path])))
     }
 
     func testLoadReportsDroppedWallpapers() throws {
@@ -89,7 +90,7 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
 
         XCTAssertEqual(result.supportEvents.first?.kind, .wallpaperFileMissing)
         XCTAssertEqual(result.supportEvents.first?.detail, "count=1")
-        XCTAssertTrue(result.shouldRewriteWallpaperPaths)
+        XCTAssertTrue(result.repairs.contains(.rewriteWallpaperPaths([])))
     }
 
     func testLoadRestoresActiveWallpaperFallback() throws {
@@ -102,7 +103,8 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         let result = SwitcherPersistenceStore(userDefaults: defaults).load()
 
         XCTAssertEqual(result.state.activeWallpaperURL, first)
-        XCTAssertEqual(defaults.string(forKey: "activeWallpaper_path"), first.path)
+        XCTAssertNotEqual(defaults.string(forKey: "activeWallpaper_path"), first.path)
+        XCTAssertTrue(result.repairs.contains(.setActiveWallpaperPath(first.path)))
     }
 
     func testLoadRestoresCornerLogoOnlyWhenRenderable() throws {
@@ -119,7 +121,8 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         defaults.set("/tmp/missing-\(UUID().uuidString).png", forKey: "cornerLogo_path")
         let repaired = SwitcherPersistenceStore(userDefaults: defaults).load()
         XCTAssertNil(repaired.state.cornerLogoURL)
-        XCTAssertNil(defaults.string(forKey: "cornerLogo_path"))
+        XCTAssertNotNil(defaults.string(forKey: "cornerLogo_path"))
+        XCTAssertTrue(repaired.repairs.contains(.removeCornerLogo))
     }
 
     func testLoadRestoresAudioAndConsolePreferences() throws {
