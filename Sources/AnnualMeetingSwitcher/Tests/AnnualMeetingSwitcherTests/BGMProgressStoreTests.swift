@@ -76,10 +76,12 @@ final class BGMProgressStoreTests: XCTestCase {
 
     func testBGMSwitchingUsesOwnedFadeTransitionInsteadOfImmediateHardStop() throws {
         let viewModel = try sourceText("ViewModel.swift")
+        let cleanupBag = try sourceText("Models/ViewModelCleanupBag.swift")
         let controls = try sourceText("ViewModel+BGMControls.swift")
 
-        XCTAssertTrue(viewModel.contains("bgmTransitionTasks"))
-        XCTAssertTrue(viewModel.contains("bgmTransitionTasks.values.forEach"))
+        XCTAssertTrue(cleanupBag.contains("bgmTransitionTasks"))
+        XCTAssertTrue(cleanupBag.contains("bgmTransitionTasks.values.forEach"))
+        XCTAssertTrue(viewModel.contains("cleanupBag.bgmTransitionTasks"))
         XCTAssertTrue(viewModel.contains("releaseRetiredBGMPlayerAfterFade"))
         XCTAssertFalse(controls.contains("bgmAudioPlayer?.stop()"))
     }

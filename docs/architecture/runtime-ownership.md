@@ -141,6 +141,26 @@ actions before Runtime can correlate asynchronous query results or query
 failures. Until that dedicated PR, Keynote/WPS scans, WPS fallback branching,
 and PPT/WPS key forwarding stay ViewModel-owned.
 
+## Bridge Slimming Rules
+
+Runtime ownership is now broad enough that bridge infrastructure must stay out
+of `ViewModel.swift`. The ViewModel remains a facade plus concrete platform
+bridge; it should not become a dumping ground for generic adapter classes or
+domain sync policy switches.
+
+Generic closure-based Runtime port adapters live in
+`LiveRuntimeClosurePorts.swift`. New Runtime ports must be added there or in a
+similarly narrow Runtime bridge file, not inline in `ViewModel.swift`.
+
+Facade sync decisions live in `LiveRuntimeFacadeSyncPolicy`. New Runtime domain
+migrations must update that policy instead of adding another `shouldSync...`
+function to `ViewModel.swift`.
+
+Source string tests are allowed as architecture gates for these boundaries, but
+they are not substitutes for behavior tests. Result-returning automation query
+migration remains blocked until the bridge slimming tests and the existing
+runtime ownership tests pass.
+
 ## Effect Wiring
 
 | Port | Production state | Ownership meaning |

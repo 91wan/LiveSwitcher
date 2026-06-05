@@ -71,9 +71,9 @@ final class AutomationNoticeRuntimePortContractTests: XCTestCase {
     }
 
     func testProductionClosureAutomationNoticePortImplementsShowAndExpire() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("Runtime/LiveRuntimeClosurePorts.swift")
 
-        XCTAssertTrue(source.contains("private final class ClosureAutomationNoticePort: AutomationNoticePort"))
+        XCTAssertTrue(source.contains("final class ClosureAutomationNoticePort: AutomationNoticePort"))
         XCTAssertTrue(source.contains("func show(_ notice: AutomationRuntimeNotice)"))
         XCTAssertTrue(source.contains("func expire(id: UUID, at date: Date)"))
     }

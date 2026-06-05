@@ -21,8 +21,8 @@ final class BGMRuntimePortContractTests: XCTestCase {
     }
 
     func testProductionClosureBGMPlaybackPortImplementsEveryMethod() throws {
-        let source = try sourceText("ViewModel.swift")
-        let closurePortBody = try body(named: "ClosureBGMPlaybackPort", prefix: "private final class", in: source)
+        let source = try sourceText("Runtime/LiveRuntimeClosurePorts.swift")
+        let closurePortBody = try body(named: "ClosureBGMPlaybackPort", prefix: "final class", in: source)
 
         [
             "func prepare(item: BGMItem, generation: Int)",

@@ -40,6 +40,9 @@ product boundary.
 - Live mode simplicity is independent of runtime migration.
 - Runtime migration PRs must not add live controls.
 - Runtime bridge explicitness PRs do not alter live controls.
+- Runtime bridge slimming does not add live controls. Code simplicity is part
+  of product simplicity: bridge adapters and sync policies should move out of
+  the live ViewModel surface without changing the operator workflow.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
