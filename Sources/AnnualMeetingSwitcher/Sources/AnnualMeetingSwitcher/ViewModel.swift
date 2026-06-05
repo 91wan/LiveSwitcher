@@ -296,34 +296,6 @@ final class SwitcherViewModel {
     let bgmDelegate = BGMPlayerDelegate()
     private let userDefaults: UserDefaults
 
-    // MARK: - UserDefaults Keys
-
-    private enum UDKeys {
-        static let pushList = "pushList_paths"
-        static let pushListTitles = "pushList_titles"
-        static let pushListSubtitles = "pushList_subtitles"
-        static let pushListScheduledStarts = "pushList_scheduled_starts"
-        static let pushListScheduledDurations = "pushList_scheduled_durations"
-        static let bgmList = "bgmList_paths"
-        static let bgmListTitles = "bgmList_titles"
-        static let bgmListCategories = "bgmList_categories"
-        static let bgmPlayMode = "bgmPlayMode"
-        static let wallpapers = "backgroundWallpapers_paths"
-        static let activeWallpaper = "activeWallpaper_path"
-        static let cornerLogo = "cornerLogo_path"
-        static let cornerLogoPosition = "cornerLogo_position"
-        static let audioStrategy = "audioStrategy"
-        static let speakerMode = "speakerMode"
-        static let autoPlayNextVideoOnEnd = "autoPlayNextVideoOnEnd"
-        static let autoAdvanceAtScheduledTime = "autoAdvanceAtScheduledTime"
-        static let showAgendaTimeline = "showAgendaTimeline"
-        static let consoleMode = "consoleMode"
-        static let themeOverride = "themeOverride"
-        static let lowerThirdPresets = "overlay.presets.lowerThird.json"
-        static let countdownPresets = "overlay.presets.countdown.json"
-        static let tickerPresets = "overlay.presets.ticker.json"
-    }
-
     // MARK: - Init
 
     init(
@@ -603,39 +575,39 @@ final class SwitcherViewModel {
     }
 
     func persistConsoleModeFromRuntime(_ mode: ConsoleMode) {
-        userDefaults.set(mode.rawValue, forKey: UDKeys.consoleMode)
+        persistenceStore.saveConsoleMode(mode)
     }
 
     func persistThemeOverrideFromRuntime(_ theme: ThemeOverride) {
-        userDefaults.set(theme.rawValue, forKey: UDKeys.themeOverride)
+        persistenceStore.saveThemeOverride(theme)
     }
 
     func persistAudioStrategyFromRuntime(_ strategy: AudioStrategy) {
-        userDefaults.set(strategy.rawValue, forKey: UDKeys.audioStrategy)
+        persistenceStore.saveAudioStrategy(strategy)
     }
 
     func persistSpeakerModeFromRuntime(_ isEnabled: Bool) {
-        userDefaults.set(isEnabled, forKey: UDKeys.speakerMode)
+        persistenceStore.saveSpeakerMode(isEnabled)
     }
 
     func persistBGMPlayModeFromRuntime(_ playMode: BGMPlayMode) {
-        userDefaults.set(playMode.rawValue, forKey: UDKeys.bgmPlayMode)
+        persistenceStore.saveBGMPlayMode(playMode)
     }
 
     func persistAutoPlayNextVideoOnEndFromRuntime(_ isEnabled: Bool) {
-        userDefaults.set(isEnabled, forKey: UDKeys.autoPlayNextVideoOnEnd)
+        persistenceStore.saveAutoPlayNextVideoOnEnd(isEnabled)
     }
 
     func persistAutoAdvanceAtScheduledTimeFromRuntime(_ isEnabled: Bool) {
-        userDefaults.set(isEnabled, forKey: UDKeys.autoAdvanceAtScheduledTime)
+        persistenceStore.saveAutoAdvanceAtScheduledTime(isEnabled)
     }
 
     func persistShowAgendaTimelineFromRuntime(_ isEnabled: Bool) {
-        userDefaults.set(isEnabled, forKey: UDKeys.showAgendaTimeline)
+        persistenceStore.saveShowAgendaTimeline(isEnabled)
     }
 
     func persistCornerLogoPositionFromRuntime(_ position: CornerLogoPosition) {
-        userDefaults.set(position.rawValue, forKey: UDKeys.cornerLogoPosition)
+        persistenceStore.saveCornerLogoPosition(position)
     }
 
     func resetLastAudioRoutingTransitionForTesting() {
@@ -1047,197 +1019,62 @@ final class SwitcherViewModel {
     // MARK: - 持久化
 
     func saveData() {
-        userDefaults.set(audioStrategy.rawValue, forKey: UDKeys.audioStrategy)
-        userDefaults.set(isSpeakerMode, forKey: UDKeys.speakerMode)
-        userDefaults.set(bgmPlayMode.rawValue, forKey: UDKeys.bgmPlayMode)
-
-        let persistentProgramItems = ProgramQueueStore.persistentProgramItems(from: programItems)
-        let pushPaths = persistentProgramItems.map { $0.sourceURL?.path ?? "" }
-        let pushSubtitles = persistentProgramItems.map { $0.subtitle }
-        let pushTitles = persistentProgramItems.map { $0.title }
-        let pushScheduledStarts = ProgramQueueStore.encodedScheduleStarts(for: persistentProgramItems)
-        let pushScheduledDurations = ProgramQueueStore.encodedScheduleDurations(for: persistentProgramItems)
-        userDefaults.set(pushPaths, forKey: UDKeys.pushList)
-        userDefaults.set(pushTitles, forKey: UDKeys.pushListTitles)
-        userDefaults.set(pushSubtitles, forKey: UDKeys.pushListSubtitles)
-        userDefaults.set(pushScheduledStarts, forKey: UDKeys.pushListScheduledStarts)
-        userDefaults.set(pushScheduledDurations, forKey: UDKeys.pushListScheduledDurations)
-
-        let bgmPaths = bgmItems.map { $0.url.path }
-        let bgmCategories = bgmItems.map { $0.category.rawValue }
-        let bgmTitles = bgmItems.map { $0.title }
-        userDefaults.set(bgmPaths, forKey: UDKeys.bgmList)
-        userDefaults.set(bgmCategories, forKey: UDKeys.bgmListCategories)
-        userDefaults.set(bgmTitles, forKey: UDKeys.bgmListTitles)
-
-        let wallpaperPaths = backgroundWallpapers.map { $0.path }
-        userDefaults.set(wallpaperPaths, forKey: UDKeys.wallpapers)
-        if let activeWallpaperURL {
-            userDefaults.set(activeWallpaperURL.path, forKey: UDKeys.activeWallpaper)
-        } else {
-            userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
-        }
-        if let cornerLogoURL {
-            userDefaults.set(cornerLogoURL.path, forKey: UDKeys.cornerLogo)
-        } else {
-            userDefaults.removeObject(forKey: UDKeys.cornerLogo)
-        }
-        userDefaults.set(cornerLogoPosition.rawValue, forKey: UDKeys.cornerLogoPosition)
-
-        if let lowerThirdPresetData = try? JSONEncoder().encode(lowerThirdPresets) {
-            userDefaults.set(lowerThirdPresetData, forKey: UDKeys.lowerThirdPresets)
-        }
-
-        if let countdownPresetData = try? JSONEncoder().encode(countdownPresets) {
-            userDefaults.set(countdownPresetData, forKey: UDKeys.countdownPresets)
-        }
-
-        if let tickerPresetData = try? JSONEncoder().encode(tickerPresets) {
-            userDefaults.set(tickerPresetData, forKey: UDKeys.tickerPresets)
-        }
+        persistenceStore.save(makePersistentStateSnapshot())
         saveDataDidRun?()
     }
 
     func loadData() {
-        // Fix Issue #2: loadData is called from @MainActor init, all state updates are safe
-        if let paths = userDefaults.stringArray(forKey: UDKeys.pushList) {
-            let titles = userDefaults.stringArray(forKey: UDKeys.pushListTitles) ?? []
-            let subtitles = userDefaults.stringArray(forKey: UDKeys.pushListSubtitles) ?? []
-            let scheduledStarts = userDefaults.stringArray(forKey: UDKeys.pushListScheduledStarts) ?? []
-            let scheduledDurations = userDefaults.stringArray(forKey: UDKeys.pushListScheduledDurations) ?? []
-            let missingCount = paths.enumerated().filter { index, path in
-                if path.isEmpty,
-                   index < subtitles.count,
-                   ProgramItem.isAgendaMarkerSubtitle(subtitles[index]) {
-                    return false
-                }
-                return !FileManager.default.fileExists(atPath: path)
-            }.count
-            if missingCount > 0 {
-                recordSupportEvent(kind: .programItemFileMissing, detail: "count=\(missingCount)")
-            }
-            programItems.append(
-                contentsOf: ProgramQueueStore.restoredProgramItems(
-                    paths: paths,
-                    titles: titles,
-                    subtitles: subtitles,
-                    scheduledStarts: scheduledStarts,
-                    scheduledDurations: scheduledDurations
-                )
-            )
+        let result = persistenceStore.load()
+        applyPersistentState(result.state)
+        for event in result.supportEvents {
+            recordSupportEvent(kind: event.kind, detail: event.detail, timestamp: event.timestamp)
         }
+    }
 
-        if let paths = userDefaults.stringArray(forKey: UDKeys.bgmList) {
-            let categories = userDefaults.stringArray(forKey: UDKeys.bgmListCategories) ?? []
-            let titles = userDefaults.stringArray(forKey: UDKeys.bgmListTitles) ?? []
-            var missingCount = 0
-            for (i, path) in paths.enumerated() {
-                let url = URL(fileURLWithPath: path)
-                guard FileManager.default.fileExists(atPath: path) else {
-                    missingCount += 1
-                    continue
-                }
-                let catRaw = i < categories.count ? categories[i] : BGMCategory.warmUp.rawValue
-                let cat = BGMCategory(rawValue: catRaw) ?? .warmUp
-                let title = i < titles.count ? titles[i] : url.deletingPathExtension().lastPathComponent
-                let item = BGMItem(title: title, url: url, category: cat)
-                bgmItems.append(item)
-            }
-            if missingCount > 0 {
-                recordSupportEvent(kind: .bgmFileMissing, detail: "count=\(missingCount)")
-            }
-        }
+    private var persistenceStore: SwitcherPersistenceStore {
+        SwitcherPersistenceStore(userDefaults: userDefaults)
+    }
 
-        if let paths = userDefaults.stringArray(forKey: UDKeys.wallpapers) {
-            backgroundWallpapers = paths.compactMap { path -> URL? in
-                let url = URL(fileURLWithPath: path)
-                return WallpaperImagePolicy.isRenderableImage(url: url) ? url : nil
-            }
-            let droppedCount = paths.count - backgroundWallpapers.count
-            if droppedCount > 0 {
-                recordSupportEvent(kind: .wallpaperFileMissing, detail: "count=\(droppedCount)")
-                userDefaults.set(backgroundWallpapers.map(\.path), forKey: UDKeys.wallpapers)
-            }
-            // Bug1修复：loadData后恢复activeWallpaperURL，确保暂停/空闲时大屏显示壁纸而非黑屏
-            if activeWallpaperURL == nil {
-                if let activePath = userDefaults.string(forKey: UDKeys.activeWallpaper) {
-                    let activeURL = URL(fileURLWithPath: activePath)
-                    activeWallpaperURL = backgroundWallpapers.contains(activeURL) ? activeURL : backgroundWallpapers.first
-                } else {
-                    activeWallpaperURL = backgroundWallpapers.first
-                }
-            }
-            if let activeWallpaperURL {
-                userDefaults.set(activeWallpaperURL.path, forKey: UDKeys.activeWallpaper)
-            } else {
-                userDefaults.removeObject(forKey: UDKeys.activeWallpaper)
-            }
-        }
+    func makePersistentStateSnapshot() -> SwitcherPersistentState {
+        SwitcherPersistentState(
+            audioStrategy: audioStrategy,
+            isSpeakerMode: isSpeakerMode,
+            bgmPlayMode: bgmPlayMode,
+            programItems: programItems,
+            bgmItems: bgmItems,
+            backgroundWallpapers: backgroundWallpapers,
+            activeWallpaperURL: activeWallpaperURL,
+            cornerLogoURL: cornerLogoURL,
+            cornerLogoPosition: cornerLogoPosition,
+            autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd,
+            autoAdvanceAtScheduledTime: autoAdvanceAtScheduledTime,
+            showAgendaTimeline: showAgendaTimeline,
+            consoleMode: consoleMode,
+            themeOverride: themeOverride,
+            lowerThirdPresets: lowerThirdPresets,
+            countdownPresets: countdownPresets,
+            tickerPresets: tickerPresets
+        )
+    }
 
-        if let rawPosition = userDefaults.string(forKey: UDKeys.cornerLogoPosition),
-           let position = CornerLogoPosition(rawValue: rawPosition) {
-            cornerLogoPosition = position
-        }
-        if let logoPath = userDefaults.string(forKey: UDKeys.cornerLogo) {
-            let logoURL = URL(fileURLWithPath: logoPath)
-            if WallpaperImagePolicy.isRenderableImage(url: logoURL) {
-                cornerLogoURL = logoURL
-            } else {
-                cornerLogoURL = nil
-                userDefaults.removeObject(forKey: UDKeys.cornerLogo)
-            }
-        }
-
-        if let storedAudioStrategy = userDefaults.string(forKey: UDKeys.audioStrategy),
-           let audioStrategy = AudioStrategy(persistedValue: storedAudioStrategy) {
-            self.audioStrategy = audioStrategy
-        }
-
-        if let rawPlayMode = userDefaults.string(forKey: UDKeys.bgmPlayMode),
-           let storedPlayMode = BGMPlayMode(rawValue: rawPlayMode) {
-            bgmPlayMode = storedPlayMode
-        }
-
-        if userDefaults.object(forKey: UDKeys.speakerMode) != nil {
-            isSpeakerMode = userDefaults.bool(forKey: UDKeys.speakerMode)
-        }
-
-        if userDefaults.object(forKey: UDKeys.autoPlayNextVideoOnEnd) != nil {
-            autoPlayNextVideoOnEnd = userDefaults.bool(forKey: UDKeys.autoPlayNextVideoOnEnd)
-        }
-
-        if userDefaults.object(forKey: UDKeys.autoAdvanceAtScheduledTime) != nil {
-            autoAdvanceAtScheduledTime = userDefaults.bool(forKey: UDKeys.autoAdvanceAtScheduledTime)
-        }
-
-        if userDefaults.object(forKey: UDKeys.showAgendaTimeline) != nil {
-            showAgendaTimeline = userDefaults.bool(forKey: UDKeys.showAgendaTimeline)
-        }
-
-        if let rawConsoleMode = userDefaults.string(forKey: UDKeys.consoleMode),
-           let storedConsoleMode = ConsoleMode(rawValue: rawConsoleMode) {
-            consoleMode = storedConsoleMode
-        }
-
-        if let rawTheme = userDefaults.string(forKey: UDKeys.themeOverride),
-           let storedTheme = ThemeOverride(rawValue: rawTheme) {
-            themeOverride = storedTheme
-        }
-
-        if let lowerThirdPresetData = userDefaults.data(forKey: UDKeys.lowerThirdPresets),
-           let storedPresets = try? JSONDecoder().decode([LowerThirdPreset].self, from: lowerThirdPresetData) {
-            lowerThirdPresets = LowerThirdPreset.normalized(storedPresets)
-        }
-
-        if let countdownPresetData = userDefaults.data(forKey: UDKeys.countdownPresets),
-           let storedPresets = try? JSONDecoder().decode([CountdownPreset].self, from: countdownPresetData) {
-            countdownPresets = CountdownPreset.normalized(storedPresets)
-        }
-
-        if let tickerPresetData = userDefaults.data(forKey: UDKeys.tickerPresets),
-           let storedPresets = try? JSONDecoder().decode([TickerPreset].self, from: tickerPresetData) {
-            tickerPresets = TickerPreset.normalized(storedPresets)
-        }
+    func applyPersistentState(_ state: SwitcherPersistentState) {
+        audioStrategy = state.audioStrategy
+        isSpeakerMode = state.isSpeakerMode
+        bgmPlayMode = state.bgmPlayMode
+        programItems.append(contentsOf: state.programItems)
+        bgmItems.append(contentsOf: state.bgmItems)
+        backgroundWallpapers = state.backgroundWallpapers
+        activeWallpaperURL = state.activeWallpaperURL
+        cornerLogoURL = state.cornerLogoURL
+        cornerLogoPosition = state.cornerLogoPosition
+        autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
+        autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
+        showAgendaTimeline = state.showAgendaTimeline
+        consoleMode = state.consoleMode
+        themeOverride = state.themeOverride
+        lowerThirdPresets = state.lowerThirdPresets
+        countdownPresets = state.countdownPresets
+        tickerPresets = state.tickerPresets
     }
 
     // MARK: - 播毕回调绑定

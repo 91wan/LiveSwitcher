@@ -73,10 +73,12 @@ final class ViewModelRuntimeFacadeExtractionTests: XCTestCase {
     }
 
     func testUDKeysIsNotPublic() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let viewModel = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let keys = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/SwitcherPersistenceKeys.swift")
 
-        XCTAssertTrue(source.contains("enum UDKeys"))
-        XCTAssertFalse(source.contains("public enum UDKeys"))
+        XCTAssertFalse(viewModel.contains("enum UDKeys"))
+        XCTAssertTrue(keys.contains("enum SwitcherPersistenceKeys"))
+        XCTAssertFalse(keys.contains("public enum SwitcherPersistenceKeys"))
     }
 
     func testUserDefaultsStorageIsNotPublic() throws {
