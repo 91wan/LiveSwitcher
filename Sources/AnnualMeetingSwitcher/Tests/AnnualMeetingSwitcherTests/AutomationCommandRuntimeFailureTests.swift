@@ -5,28 +5,31 @@ import XCTest
 final class AutomationCommandRuntimeFailureTests: XCTestCase {
     func testAutomationPortFailureRecordsAppleScriptFailedSupport() async throws {
         let viewModel = makeFailingViewModel()
+        let finished = makeCompletionExpectation(on: viewModel)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
     }
 
     func testAutomationPortFailureCreatesAutomationNotice() async throws {
         let viewModel = makeFailingViewModel()
+        let finished = makeCompletionExpectation(on: viewModel)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.next-slide")
     }
 
     func testAutomationPortFailureCoalescesRepeatedSupportEvents() async throws {
         let viewModel = makeFailingViewModel()
+        let finished = makeCompletionExpectation(on: viewModel, expectedFulfillmentCount: 2)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
@@ -34,7 +37,7 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [finished], timeout: 1)
 
         let events = viewModel.supportEvents.filter { $0.kind == .appleScriptFailed }
         XCTAssertEqual(events.count, 1)
@@ -43,27 +46,30 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
 
     func testAutomationPortFailureSuppressesRepeatedVisibleNotice() async throws {
         let viewModel = makeFailingViewModel()
+        let firstFinished = makeCompletionExpectation(on: viewModel)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [firstFinished], timeout: 1)
         let firstNotice = viewModel.automationRuntimeNotice
+        let secondFinished = makeCompletionExpectation(on: viewModel)
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [secondFinished], timeout: 1)
 
         XCTAssertEqual(viewModel.automationRuntimeNotice, firstNotice)
     }
 
     func testAutomationPortFailureDoesNotExposeRawScriptInSupport() async throws {
         let viewModel = makeFailingViewModel()
+        let finished = makeCompletionExpectation(on: viewModel)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [finished], timeout: 1)
 
         let renderedSupport = viewModel.supportEvents.map(\.detail).joined(separator: "\n")
         XCTAssertFalse(renderedSupport.localizedStandardContains("/Users/operator/private-show.key"))
@@ -72,11 +78,12 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
 
     func testAutomationPortFailureDoesNotExposeRawScriptInNotice() async throws {
         let viewModel = makeFailingViewModel()
+        let finished = makeCompletionExpectation(on: viewModel)
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: privateScript, action: "keynote.next-slide")
         )
-        try await settleRuntimePort()
+        await fulfillment(of: [finished], timeout: 1)
 
         let notice = try XCTUnwrap(viewModel.automationRuntimeNotice)
         XCTAssertFalse(notice.title.localizedStandardContains("/Users/operator/private-show.key"))
@@ -110,7 +117,13 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
         return viewModel
     }
 
-    private func settleRuntimePort() async throws {
-        try await Task.sleep(nanoseconds: 60_000_000)
+    private func makeCompletionExpectation(
+        on viewModel: SwitcherViewModel,
+        expectedFulfillmentCount: Int = 1
+    ) -> XCTestExpectation {
+        let finished = expectation(description: "automation command finished")
+        finished.expectedFulfillmentCount = expectedFulfillmentCount
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
+        return finished
     }
 }

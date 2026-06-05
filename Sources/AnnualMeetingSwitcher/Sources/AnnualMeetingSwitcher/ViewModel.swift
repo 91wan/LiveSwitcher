@@ -670,6 +670,7 @@ final class SwitcherViewModel {
     @ObservationIgnored var scanOpenKeynoteFilesForTesting: (() -> [String])?
     @ObservationIgnored var scanKeynoteWindowNamesForTesting: (() throws -> [String])?
     @ObservationIgnored var automationCommandRunnerForTesting: ((String, String) throws -> Void)?
+    @ObservationIgnored var automationCommandDidFinishForTesting: (() -> Void)?
     @ObservationIgnored var saveDataDidRun: (() -> Void)?
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
@@ -761,6 +762,7 @@ final class SwitcherViewModel {
         automationPort.runHandler = { [weak self] script, action in
             Task { @MainActor [weak self] in
                 guard let self else { return }
+                defer { automationCommandDidFinishForTesting?() }
                 do {
                     if let automationCommandRunnerForTesting {
                         try automationCommandRunnerForTesting(script, action)
@@ -2251,9 +2253,10 @@ final class SwitcherViewModel {
     }
 
     func handleAppleScriptFailure(_ error: Error, action: String) {
-        let message = appleScriptFailureMessage(error)
-        recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(message)")
-        dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: message))
+        let sanitizedMessage = sanitizedAutomationFailureMessage(error)
+        let supportMessage = AutomationFailureSanitizer.sanitizedSupportMessage(from: error)
+        recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(supportMessage)")
+        dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: sanitizedMessage))
         syncSupportFacadeFromRuntime()
         syncAutomationNoticeFacadeFromRuntime()
     }
@@ -2347,14 +2350,8 @@ final class SwitcherViewModel {
         return true
     }
 
-    private func appleScriptFailureMessage(_ error: Error) -> String {
-        if let error = error as? AppleScriptError {
-            return error.message
-        }
-        if let description = (error as? LocalizedError)?.errorDescription, !description.isEmpty {
-            return description
-        }
-        return String(describing: error)
+    private func sanitizedAutomationFailureMessage(_ error: Error) -> String {
+        AutomationFailureSanitizer.sanitizedMessage(from: error)
     }
 
     private static func openWithWPSOffice(url: URL) async throws {

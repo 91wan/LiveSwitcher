@@ -28,6 +28,8 @@ final class AutomationCommandRuntimeEffectExecutionTests: XCTestCase {
 
     func testAutomationPortFailureCallsHandleAppleScriptFailure() async throws {
         let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
         viewModel.automationCommandRunnerForTesting = { _, _ in
             throw AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed")
         }
@@ -35,13 +37,15 @@ final class AutomationCommandRuntimeEffectExecutionTests: XCTestCase {
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
         )
-        try await Task.sleep(nanoseconds: 50_000_000)
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "automationFailed" })
     }
 
     func testAutomationPortFailureRecordsSupportThroughViewModel() async throws {
         let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
         viewModel.automationCommandRunnerForTesting = { _, _ in
             throw AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed")
         }
@@ -49,13 +53,15 @@ final class AutomationCommandRuntimeEffectExecutionTests: XCTestCase {
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
         )
-        try await Task.sleep(nanoseconds: 50_000_000)
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
     }
 
     func testAutomationPortFailureDispatchesAutomationFailedNotice() async throws {
         let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
         viewModel.automationCommandRunnerForTesting = { _, _ in
             throw AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed")
         }
@@ -63,22 +69,52 @@ final class AutomationCommandRuntimeEffectExecutionTests: XCTestCase {
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
         )
-        try await Task.sleep(nanoseconds: 50_000_000)
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.next-slide")
     }
 
     func testAutomationPortDoesNotRecordSupportOnSuccess() async throws {
         let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
         viewModel.automationCommandRunnerForTesting = { _, _ in }
 
         viewModel.dispatchRuntimeFacadeAction(
             .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
         )
-        try await Task.sleep(nanoseconds: 50_000_000)
+        await fulfillment(of: [finished], timeout: 1)
 
         XCTAssertTrue(viewModel.supportEvents.isEmpty)
         XCTAssertNil(viewModel.automationRuntimeNotice)
+    }
+
+    func testAutomationPortFailureUsesDeterministicCompletionHook() async {
+        let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
+        viewModel.automationCommandRunnerForTesting = { _, _ in
+            throw AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed")
+        }
+
+        viewModel.dispatchRuntimeFacadeAction(
+            .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
+        )
+
+        await fulfillment(of: [finished], timeout: 1)
+    }
+
+    func testAutomationPortSuccessUsesDeterministicCompletionHook() async {
+        let viewModel = makeViewModel()
+        let finished = expectation(description: "automation command finished")
+        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
+        viewModel.automationCommandRunnerForTesting = { _, _ in }
+
+        viewModel.dispatchRuntimeFacadeAction(
+            .automationScriptRequested(script: "tell application \"Keynote\"", action: "keynote.next-slide")
+        )
+
+        await fulfillment(of: [finished], timeout: 1)
     }
 
     private func makeViewModel() -> SwitcherViewModel {

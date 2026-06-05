@@ -34,6 +34,57 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         XCTAssertTrue(try functionBody("presentFrontKeynoteDocument").contains("runAutomationScript("))
     }
 
+    func testEveryRunAutomationScriptCallSiteUsesRuntimeCommand() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let callSites = source.components(separatedBy: "runAutomationScript(").count - 1
+
+        XCTAssertGreaterThanOrEqual(callSites, 6)
+        XCTAssertTrue(try runAutomationScriptBody().contains(".automationScriptRequested(script: source, action: action)"))
+    }
+
+    func testOpenPPTXWPSFallbackBranchRemainsViewModelOwned() throws {
+        let body = try functionBody("openPPTXWithKeynote")
+
+        XCTAssertTrue(body.contains("AppleScriptRunner.run(wpsScript"))
+        XCTAssertFalse(body.contains(".automationScriptRequested"))
+    }
+
+    func testScanKeynoteWindowNamesRemainsViewModelOwned() throws {
+        let body = try functionBody("scanKeynoteWindowNames")
+
+        XCTAssertTrue(body.contains("AppleScriptRunner.run(script, action: \"keynote.scan.windows\")"))
+        XCTAssertFalse(body.contains(".automationScriptRequested"))
+    }
+
+    func testScanOpenKeynoteFilesRemainsViewModelOwned() throws {
+        let body = try functionBody("scanOpenKeynoteFiles")
+
+        XCTAssertTrue(body.contains("keynoteController.scanOpenKeynoteFiles()"))
+        XCTAssertFalse(body.contains(".automationScriptRequested"))
+    }
+
+    func testKeynoteControllerQueriesRemainForbiddenForThisMigration() throws {
+        let controller = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Engines/KeynoteController.swift")
+
+        XCTAssertTrue(controller.contains("func scanOpenKeynoteFiles"))
+        XCTAssertTrue(controller.contains("func scanKeynoteWindowNames"))
+        XCTAssertFalse(controller.contains(".automationScriptRequested"))
+    }
+
+    func testNoResultReturningQueryDispatchesAutomationScriptRequested() throws {
+        for name in ["scanKeynoteWindowNames", "scanOpenKeynoteFiles", "openPPTXWithKeynote"] {
+            XCTAssertFalse(try functionBody(name).contains(".automationScriptRequested"), name)
+        }
+    }
+
+    func testRuntimeDocsStateQueryMigrationRequiresCommandIDs() throws {
+        let docs = try sourceText("docs/architecture/runtime-ownership.md")
+        let normalizedDocs = docs.components(separatedBy: .whitespacesAndNewlines).joined(separator: " ")
+
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("query migration must introduce explicit command/query IDs"))
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("callback result actions"))
+    }
+
     func testResultReturningKeynoteScanRemainsViewModelOwnedAndDocumented() throws {
         let scanWindows = try functionBody("scanKeynoteWindowNames")
         let docs = try sourceText("docs/architecture/runtime-ownership.md")

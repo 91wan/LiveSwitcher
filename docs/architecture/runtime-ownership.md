@@ -120,6 +120,27 @@ remain blocked until a dedicated ownership PR is approved.
 | Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned` or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch. Keynote/WPS result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Persistence | ViewModel/UserDefaults | Wired preference persistence effects | bridge in progress | Runtime may persist selected preferences, but general state save remains ViewModel/UserDefaults-owned. |
 
+## Automation Command Boundary
+
+Automation command execution is fire-and-forget only. Runtime action logging and
+recorded effects must not retain raw AppleScript source, file paths, window
+names, or query payloads. Recorded `.runAppleScript` effects keep only the
+action name and store the script as `<redacted>`; the concrete automation port
+still receives the original script only at the execution boundary.
+
+Automation command failures are converted to sanitized category messages before
+they enter Runtime failure actions. Runtime `.automationFailed` actions receive
+only categories such as `compilationFailed`, `executionFailed`,
+`permissionDenied`, or `applicationNotFound`. Support `appleScriptFailed`
+details may include category plus redacted diagnostic text, but they must not
+retain raw AppleScript source, file paths, or filenames.
+
+Result-returning automation queries remain blocked from this boundary. A future
+query migration must introduce explicit command/query IDs and callback result
+actions before Runtime can correlate asynchronous query results or query
+failures. Until that dedicated PR, Keynote/WPS scans, WPS fallback branching,
+and PPT/WPS key forwarding stay ViewModel-owned.
+
 ## Effect Wiring
 
 | Port | Production state | Ownership meaning |
