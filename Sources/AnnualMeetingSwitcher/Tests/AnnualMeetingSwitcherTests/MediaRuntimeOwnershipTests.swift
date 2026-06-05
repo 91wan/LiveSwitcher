@@ -44,7 +44,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSwitchToMediaProgramDoesNotCallAVPlayerDirectlyFromViewModel() throws {
         let body = try sourceFunctionBody(
             named: "switchToProgram",
-            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+            in: programQueueExtensionPath
         )
 
         XCTAssertFalse(body.contains("avCoordinator.load("))
@@ -68,7 +68,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSeekToStartUsesRuntimeOrIsExplicitlyDocumented() throws {
         let body = try sourceFunctionBody(
             named: "seekProgramItemToStart",
-            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+            in: programQueueExtensionPath
         )
 
         XCTAssertTrue(
@@ -80,7 +80,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSeekToEndUsesRuntimeOrIsExplicitlyDocumented() throws {
         let body = try sourceFunctionBody(
             named: "seekProgramItemToEnd",
-            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+            in: programQueueExtensionPath
         )
 
         XCTAssertTrue(
@@ -90,7 +90,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     }
 
     func testViewModelDoesNotDirectlyCallAVPlayerForMediaTransport() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText(programQueueExtensionPath)
         let transportBodies = [
             try sourceFunctionBody(named: "toggleMainVideoPlayback", inSource: source),
             try sourceFunctionBody(named: "restartCurrentMediaFromBeginning", inSource: source),
@@ -137,6 +137,10 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     private func sourceText(_ relativePath: String) throws -> String {
         let url = try repositoryRoot().appendingPathComponent(relativePath)
         return try String(contentsOf: url, encoding: .utf8)
+    }
+
+    private var programQueueExtensionPath: String {
+        "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
     }
 
     private func sourceFunctionBody(named name: String, in relativePath: String) throws -> String {

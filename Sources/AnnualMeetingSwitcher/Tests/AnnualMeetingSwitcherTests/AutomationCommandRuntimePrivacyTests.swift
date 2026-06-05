@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class AutomationCommandRuntimePrivacyTests: XCTestCase {
     func testAutomationFailedActionReceivesSanitizedMessage() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AutomationFailure.swift")
         let body = try XCTUnwrap(source.functionBody(named: "handleAppleScriptFailure"))
 
         XCTAssertTrue(body.contains("let sanitizedMessage = sanitizedAutomationFailureMessage(error)"))

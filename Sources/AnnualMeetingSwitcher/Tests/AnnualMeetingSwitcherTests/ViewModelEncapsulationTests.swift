@@ -270,6 +270,60 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))
     }
 
+    func testMainViewModelDoesNotOwnProgramQueueMethodBodies() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func switchToProgram("))
+        XCTAssertFalse(source.contains("func addProgramItem("))
+        XCTAssertFalse(source.contains("func removeProgramItem("))
+        XCTAssertFalse(source.contains("func agendaAutoAdvancePrompt("))
+    }
+
+    func testMainViewModelDoesNotOwnPresentationAutomationMethodBodies() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func openAndPresentKeynote("))
+        XCTAssertFalse(source.contains("func openPPTXWithKeynote("))
+        XCTAssertFalse(source.contains("func scanKeynoteWindowNames("))
+        XCTAssertFalse(source.contains("func runAutomationScript("))
+    }
+
+    func testMainViewModelDoesNotOwnAutomationFailureMethodBodies() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func handleAppleScriptFailure("))
+        XCTAssertFalse(source.contains("func dismissAutomationRuntimeNotice("))
+        XCTAssertFalse(source.contains("func showAutomationRuntimeNotice("))
+        XCTAssertFalse(source.contains("func presentAutomationAlert("))
+    }
+
+    func testMainViewModelDoesNotOwnPersistenceMethodBodies() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func saveData("))
+        XCTAssertFalse(source.contains("func loadData("))
+        XCTAssertFalse(source.contains("func applyPersistentState("))
+    }
+
+    func testMainViewModelDoesNotOwnRuntimeBridgeMethodBodies() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func dispatchRuntimeFacadeAction("))
+        XCTAssertFalse(source.contains("func syncRuntimeStateFromFacade("))
+        XCTAssertFalse(source.contains("func makeRuntimeFacadeSnapshot("))
+        XCTAssertFalse(source.contains("func configureRuntimePortHandlers("))
+    }
+
+    func testMainViewModelStillOwnsFacadeStateAndInitOnly() throws {
+        let source = try viewModelSource()
+
+        XCTAssertTrue(source.contains("final class SwitcherViewModel"))
+        XCTAssertTrue(source.contains("init("))
+        XCTAssertTrue(source.contains("var currentProgramItem: ProgramItem?"))
+        XCTAssertTrue(source.contains("let runtime: LiveRuntimeStore"))
+        XCTAssertTrue(source.contains("deinit"))
+    }
+
     func testProductionViewModelRuntimeBridgeModeRemainsAutomationCommandOwned() {
         XCTAssertEqual(makeViewModel().runtimeBridgeMode, .automationCommandOwned)
     }

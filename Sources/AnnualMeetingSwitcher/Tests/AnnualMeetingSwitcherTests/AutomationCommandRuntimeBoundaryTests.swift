@@ -39,7 +39,7 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
     }
 
     func testEveryRunAutomationScriptCallSiteUsesRuntimeCommand() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try presentationAutomationSource()
         let callSites = source.components(separatedBy: "runAutomationScript(").count - 1
 
         XCTAssertGreaterThanOrEqual(callSites, 6)
@@ -111,8 +111,12 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
     }
 
     private func functionBody(_ name: String) throws -> String {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try presentationAutomationSource()
         return try XCTUnwrap(source.functionBody(named: name))
+    }
+
+    private func presentationAutomationSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift")
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

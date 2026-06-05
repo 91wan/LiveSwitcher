@@ -62,14 +62,14 @@ final class WPSApplicationMonitorTests: XCTestCase {
     }
 
     func testProductionWPSBundleIdentifierIsCentralizedInAppConfiguration() throws {
-        let viewModel = try sourceText("ViewModel.swift")
+        let presentationAutomation = try sourceText("ViewModel+PresentationAutomation.swift")
         let probe = try sourceText("Engines/PresentationReadinessProbe.swift")
         let monitor = try sourceText("Engines/WPSApplicationMonitor.swift")
 
-        XCTAssertTrue(viewModel.contains("AppConfiguration.wpsBundleIdentifier"))
+        XCTAssertTrue(presentationAutomation.contains("AppConfiguration.wpsBundleIdentifier"))
         XCTAssertTrue(probe.contains("AppConfiguration.wpsBundleIdentifier"))
         XCTAssertTrue(monitor.contains("AppConfiguration.wpsBundleIdentifier"))
-        XCTAssertFalse(viewModel.contains("\"com.kingsoft.wpsoffice.mac\""))
+        XCTAssertFalse(presentationAutomation.contains("\"com.kingsoft.wpsoffice.mac\""))
         XCTAssertFalse(probe.contains("\"com.kingsoft.wpsoffice.mac\""))
         XCTAssertFalse(monitor.contains("\"com.kingsoft.wpsoffice.mac\""))
     }
