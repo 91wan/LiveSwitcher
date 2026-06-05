@@ -45,7 +45,7 @@ final class ProjectionRuntimeRawSideEffectBoundaryTests: XCTestCase {
     }
 
     private func viewModelSource() throws -> String {
-        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift")
     }
 
     private func functionBody(named name: String, in source: String) throws -> String {

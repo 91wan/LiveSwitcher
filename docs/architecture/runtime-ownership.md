@@ -34,9 +34,14 @@ AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
 ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
 Automation failure support handling and the concrete automation notice facade
 live in `ViewModel+AutomationFailure.swift`.
-PPT key forwarding, WPS key forwarding, automation permission modal alerts,
+Projection output/window/support side effects live in
+`ViewModel+ProjectionOutput.swift`. PPT EventTap lifecycle, key forwarding,
+WPS key forwarding, and automation permission modal alerts live in
+`ViewModel+PPTEventTap.swift`. The thin Support ingress facade
+`recordSupportEvent(...)` lives in `ViewModel+SupportFacade.swift`.
 Support event generation call sites, persistence state application, and
-telemetry remain ViewModel-owned.
+telemetry remain ViewModel-owned. The main `ViewModel.swift` must not own
+Projection output method bodies or PPT EventTap/key-forwarding method bodies.
 For automation ownership gates, support event generation call sites, and
 telemetry remain ViewModel-owned; persistence state application is also
 ViewModel-owned.
@@ -175,7 +180,8 @@ items.
 
 Result-returning automation query migration must not start unless the
 persistence hardening tests, the program/presentation/automation-failure
-extraction tests, and the existing Runtime ownership gates pass.
+extraction tests, the Projection/PPT/Support facade extraction tests, and the
+existing Runtime ownership gates pass.
 
 ## Automation Command Boundary
 
@@ -222,7 +228,11 @@ Program queue methods live in `ViewModel+ProgramQueue.swift`. Presentation
 automation source construction, result-returning scans, and WPS fallback
 branching live in `ViewModel+PresentationAutomation.swift`. Automation failure
 support handling and notice facade methods live in
-`ViewModel+AutomationFailure.swift`.
+`ViewModel+AutomationFailure.swift`. Projection output/window/support side
+effects live in `ViewModel+ProjectionOutput.swift`. PPT EventTap lifecycle,
+key forwarding, WPS key forwarding, and automation permission modal alerts live
+in `ViewModel+PPTEventTap.swift`. The Support ingress facade lives in
+`ViewModel+SupportFacade.swift`.
 
 `ViewModel.swift` must not own Runtime bridge mechanics. It may keep
 ViewModel-owned orchestration for domains that are not part of the current
@@ -255,7 +265,8 @@ Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
 migration remains blocked until the bridge slimming tests, runtime wiring
 extraction tests, Runtime facade/snapshot extraction tests, ViewModel
-encapsulation gates, and the existing runtime ownership tests pass.
+encapsulation gates, Projection/PPT/Support facade extraction tests, and the
+existing runtime ownership tests pass.
 
 ## Effect Wiring
 
@@ -350,9 +361,12 @@ external-display callbacks. The projection reducer emits only canonical
 not pair them with `.showOutputWindow` or `.hideOutputWindow`.
 
 Production uses `ProjectionPort` effects for output-window side effects.
-ViewModel bridges those effects to `OutputWindowController`, `OutputView`
-mounting, and `ProjectionService` screen lookup. The concrete output window
-controller remains behind the projection port and is not runtime-owned.
+`ViewModel+ProjectionOutput.swift` bridges those effects to
+`OutputWindowController`, `OutputView` mounting, `ProjectionService` screen
+lookup, projection support-event generation, and the external-display observer
+facade. The concrete output window controller remains behind the projection
+port and is not runtime-owned. Main `ViewModel.swift` must not own these
+Projection output method bodies.
 Raw output-window show/hide side effects are internal ProjectionPort
 implementation details and must not be exposed as direct ViewModel bypasses.
 
@@ -380,11 +394,12 @@ decisions, and `startPPTEventTap` / `stopPPTEventTap` effects. The UI facade
 PPT appears ON only after the EventTap started callback is accepted.
 
 Production uses `PPTEventTapPort` effects for EventTap lifecycle side effects.
-ViewModel bridges those effects to the existing CGEventTap fields:
-`pageInterceptEventTap`, `pageInterceptRunLoopSource`, and
+`ViewModel+PPTEventTap.swift` bridges those effects to the existing CGEventTap
+fields: `pageInterceptEventTap`, `pageInterceptRunLoopSource`, and
 `pageInterceptSelfRefcon`. The actual key forwarding, WPS/Keynote automation,
 permission alert UI, telemetry, and PPT support event generation remain
-ViewModel-owned.
+ViewModel-owned in that facade file. Main `ViewModel.swift` must not own PPT
+EventTap or key-forwarding method bodies.
 
 PPT start success records support only after `pptEventTapStarted`. PPT start
 failure dispatches `pptEventTapFailed`, rolls back requested and active state,
@@ -450,7 +465,8 @@ the incoming event is trimmed immediately by priority retention. The reducer
 emits `.recordSupportEvent` only for that accepted event, so the port never
 receives a raw, rejected, or uncoalesced ingress payload.
 
-`ViewModel.recordSupportEvent` remains the canonical facade call site for
+`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`, which remains
+the canonical facade call site for
 existing UI, projection, PPT, BGM, automation failure, preflight, and overlay
 event generation. It must only build the `LiveSupportEvent`, dispatch
 `.supportEventRecorded`, and sync `supportEvents` from Runtime. It must not

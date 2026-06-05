@@ -191,9 +191,16 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+ProgramQueue.swift`"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+PresentationAutomation.swift`"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+AutomationFailure.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+ProjectionOutput.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+PPTEventTap.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Presentation automation source construction"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation failure support handling and the concrete automation notice facade"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection output/window/support side effects live in `ViewModel+ProjectionOutput.swift`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("PPT EventTap lifecycle, key forwarding, WPS key forwarding, and automation permission modal alerts live in `ViewModel+PPTEventTap.swift`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("The thin Support ingress facade `recordSupportEvent(...)` lives in `ViewModel+SupportFacade.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Query migration remains blocked until the program queue, presentation automation, and automation failure extraction source/behavior tests pass"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection/PPT/Support facade extraction tests"))
     }
 
     func testDocsStateSupportIngressMigratedButGenerationStaysViewModelOwned() throws {
@@ -202,7 +209,7 @@ final class RuntimeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(document.localizedStandardContains("Support storage and production ingress are runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("Production uses `.automationCommandOwned` and wires"))
-        XCTAssertTrue(document.localizedStandardContains("`ViewModel.recordSupportEvent` remains the canonical facade call site"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
         XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("returns the exact accepted event stored in `state.support.events`"))

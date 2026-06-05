@@ -123,7 +123,7 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
     }
 
     private func functionBody(named name: String) throws -> String {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift")
         guard let start = source.range(of: "func \(name)")?.lowerBound else {
             XCTFail("Missing function \(name)")
             return ""

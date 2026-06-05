@@ -123,7 +123,7 @@ final class ProjectionRuntimeStartFailureTests: XCTestCase {
     private func showOutputWindowBody() throws -> String {
         let source = try String(
             contentsOf: repositoryRoot()
-                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"),
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift"),
             encoding: .utf8
         )
         guard let start = source.range(of: "func showOutputWindowFromRuntimeProjection")?.lowerBound else {

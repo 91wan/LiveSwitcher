@@ -76,6 +76,12 @@ product boundary.
   editing/operator selection facade code to `ViewModel+BGMControls.swift`;
   Live mode remains execution-only and code simplicity remains part of product
   simplicity.
+- Projection and PPT facade extraction does not add live controls. It only
+  moves projection output/window/support side effects to
+  `ViewModel+ProjectionOutput.swift`, PPT EventTap/key-forwarding side effects
+  to `ViewModel+PPTEventTap.swift`, and the Support ingress facade to
+  `ViewModel+SupportFacade.swift`; Live mode remains execution-only and code
+  simplicity remains part of product simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

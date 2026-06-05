@@ -255,7 +255,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     func testExternalDisplayObserverDoesNotAddExtraMainActorTaskHop() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+ProjectionOutput.swift")
         let body = try XCTUnwrap(source.functionBody(named: "setupExternalDisplayObserver"))
 
         XCTAssertTrue(body.contains("queue: .main"))
@@ -288,11 +288,12 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
     func testOnlyPermissionPromptsUseModalAutomationAlerts() throws {
         let source = try sourceText("ViewModel.swift")
+        let pptEventTapSource = try sourceText("ViewModel+PPTEventTap.swift")
         let presentationAutomationSource = try sourceText("ViewModel+PresentationAutomation.swift")
         let automationFailureSource = try sourceText("ViewModel+AutomationFailure.swift")
         let runAutomationScriptBody = try XCTUnwrap(presentationAutomationSource.functionBody(named: "runAutomationScript"))
         let failureBody = try XCTUnwrap(automationFailureSource.functionBody(named: "handleAppleScriptFailure"))
-        let startPageInterceptBody = try XCTUnwrap(source.functionBody(named: "startPageIntercept"))
+        let startPageInterceptBody = try XCTUnwrap(pptEventTapSource.functionBody(named: "startPageIntercept"))
 
         XCTAssertFalse(source.contains("automationFailureAlertHandler"))
         XCTAssertFalse(runAutomationScriptBody.contains("alertTitle"))

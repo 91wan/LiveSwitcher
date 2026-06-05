@@ -76,7 +76,7 @@ final class SupportRuntimeIngressTests: XCTestCase {
     }
 
     private func viewModelFunctionBody(named marker: String) throws -> String {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+SupportFacade.swift")
         guard let markerRange = source.range(of: marker) else {
             XCTFail("Missing \(marker)")
             return ""

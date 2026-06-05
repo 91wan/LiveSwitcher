@@ -165,7 +165,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testProjectionStartRecordsSupportFromViewModelAfterRuntimeTransition() throws {
-        let body = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let body = try projectionOutputSource()
 
         XCTAssertTrue(body.contains("recordProjectionSupportAfterRuntimeToggle"))
         XCTAssertTrue(body.contains(".projectionStarted"))
@@ -173,14 +173,14 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testProjectionFailureRecordsSupportFromViewModelAfterRuntimeTransition() throws {
-        let body = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let body = try projectionOutputSource()
 
         XCTAssertTrue(body.contains(".projectionFailClosed"))
         XCTAssertTrue(body.contains(".projectionStartFailed"))
     }
 
     func testProjectionStopRecordsSupportFromViewModelAfterRuntimeTransition() throws {
-        let body = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let body = try projectionOutputSource()
 
         XCTAssertTrue(body.contains(".projectionStopped"))
     }
@@ -194,7 +194,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     private func functionBody(named name: String) throws -> String {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try projectionOutputSource()
         guard let start = source.range(of: "func \(name)")?.lowerBound else {
             XCTFail("Missing function \(name)")
             return ""
@@ -221,6 +221,10 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
 
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
+    }
+
+    private func projectionOutputSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift")
     }
 
     private func repositoryRoot() throws -> URL {
