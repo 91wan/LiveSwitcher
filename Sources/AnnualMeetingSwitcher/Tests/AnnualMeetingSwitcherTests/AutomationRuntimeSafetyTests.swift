@@ -341,16 +341,18 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(startBody.contains("guard textWidth > 0, containerWidth > 0"))
     }
 
-    func testPersistentKeysAreCentralizedInUDKeys() throws {
-        let source = try sourceText("ViewModel.swift")
+    func testPersistentKeysAreCentralizedInSwitcherPersistenceKeys() throws {
+        let viewModel = try sourceText("ViewModel.swift")
+        let source = try sourceText("Models/SwitcherPersistenceKeys.swift")
 
         XCTAssertTrue(source.contains("static let pushListTitles"))
         XCTAssertTrue(source.contains("static let pushListSubtitles"))
         XCTAssertTrue(source.contains("static let bgmListTitles"))
         XCTAssertTrue(source.contains("static let bgmPlayMode"))
-        XCTAssertFalse(source.contains("forKey: \"pushList_titles\""))
-        XCTAssertFalse(source.contains("forKey: \"pushList_subtitles\""))
-        XCTAssertFalse(source.contains("forKey: \"bgmList_titles\""))
+        XCTAssertFalse(viewModel.contains("enum UDKeys"))
+        XCTAssertFalse(viewModel.contains("forKey: \"pushList_titles\""))
+        XCTAssertFalse(viewModel.contains("forKey: \"pushList_subtitles\""))
+        XCTAssertFalse(viewModel.contains("forKey: \"bgmList_titles\""))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

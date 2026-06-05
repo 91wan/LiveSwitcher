@@ -54,6 +54,11 @@ product boundary.
   private storage boundaries and moves core model types into `Models/`; Live
   mode remains execution-only and code simplicity remains part of product
   simplicity.
+- Persistence store extraction does not add live controls. It only moves
+  UserDefaults save/load mechanics, key ownership, repaired image paths, and
+  missing-file support event returns into `SwitcherPersistenceStore`; Live mode
+  remains execution-only and code simplicity remains part of product
+  simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
