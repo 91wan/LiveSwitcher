@@ -50,6 +50,15 @@ enum LiveRuntimeEffect: Equatable {
 }
 
 extension LiveRuntimeEffect {
+    var redactedForRecording: LiveRuntimeEffect {
+        switch self {
+        case .runAppleScript(_, let action):
+            return .runAppleScript(script: "<redacted>", action: action)
+        default:
+            return self
+        }
+    }
+
     var requiredBridgeDomain: LiveRuntimeDomain {
         switch self {
         case .applyAudioRouting,
@@ -307,7 +316,7 @@ final class LiveRuntimeEffectRunner {
         currentState: @escaping () -> LiveRuntimeState,
         dispatch: @escaping (LiveRuntimeAction) -> Void
     ) {
-        recordedEffects.append(contentsOf: effects)
+        recordedEffects.append(contentsOf: effects.map(\.redactedForRecording))
         guard !recordsOnly else { return }
         _ = dispatch
         effects.forEach { run($0, currentState: currentState) }

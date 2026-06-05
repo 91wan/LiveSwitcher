@@ -71,6 +71,9 @@ product boundary.
   existing fire-and-forget AppleScript command execution behind Runtime; WPS
   fallback branching, result-returning queries, scans, and PPT/WPS key
   forwarding remain ViewModel-owned.
+- Automation command runtime hardening does not add live controls. It only
+  redacts recorded command effects, sanitizes Runtime failure action messages,
+  and replaces sleep-based command tests with deterministic completion hooks.
 - BGM library editing remains forbidden in Live mode.
 - No live-mode UI controls were added for the Media runtime migration or follow-up hardening; these changes only adjust media ownership and execution paths.
 - `LiveModeSimplicityPolicy` is the source-level policy model for allowed live

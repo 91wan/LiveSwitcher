@@ -308,6 +308,16 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(body.contains("NSWorkspace.shared.open("))
     }
 
+    func testAutomationCommandTestsDoNotUseTaskSleepForSettling() throws {
+        let effectExecution = try testSourceText("AutomationCommandRuntimeEffectExecutionTests.swift")
+        let failure = try testSourceText("AutomationCommandRuntimeFailureTests.swift")
+
+        XCTAssertFalse(effectExecution.contains("Task.sleep"))
+        XCTAssertFalse(failure.contains("Task.sleep"))
+        XCTAssertTrue(effectExecution.contains("automationCommandDidFinishForTesting"))
+        XCTAssertTrue(failure.contains("automationCommandDidFinishForTesting"))
+    }
+
     func testAVPlayerCoordinatorDeinitDoesNotScheduleObserverCleanupTask() throws {
         let source = try sourceText("Engines/AVPlayerCoordinator.swift")
         let deinitBody = try XCTUnwrap(source.functionBody(named: "deinit"))
@@ -349,6 +359,20 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func testSourceText(_ fileName: String) throws -> String {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests")
+                .appendingPathComponent(fileName)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return try String(contentsOf: candidate, encoding: .utf8)
+            }
+        }
+        throw XCTSkip("Could not locate \(fileName) from test source path.")
     }
 }
 
