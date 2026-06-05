@@ -31,7 +31,7 @@ extension SwitcherViewModel {
         runtime.updateEnvironment(
             LiveRuntimeEnvironment(
                 now: Date(),
-                speakerModeDuckedRatio: speakerModeDuckedRatio,
+                speakerModeDuckedRatio: runtimeSpeakerModeDuckedRatio,
                 liveAudioFadeDuration: liveAudioFadeDuration,
                 bridgeMode: runtime.bridgeMode
             )
@@ -48,18 +48,14 @@ extension SwitcherViewModel {
 
     func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        guard let generation = activeRuntimeMediaGenerationForCallbacks else { return }
-        guard currentProgramItem?.sourceKind == .media else { return }
-        guard avCoordinator.currentURL == activeRuntimeMediaURLForCallbacks else { return }
+        guard let generation = validatedRuntimeMediaCallbackGeneration() else { return }
         runtime.dispatch(makeAction(generation))
     }
 
     @discardableResult
     func dispatchRuntimeBGMCallback(_ makeAction: (Int) -> LiveRuntimeAction) -> Bool {
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        guard let generation = activeRuntimeBGMGenerationForCallbacks else { return false }
-        guard currentBGMItem?.id == activeRuntimeBGMItemIDForCallbacks else { return false }
-        guard currentBGMItem?.url == activeRuntimeBGMURLForCallbacks else { return false }
+        guard let generation = validatedRuntimeBGMCallbackGeneration() else { return false }
         runtime.dispatch(makeAction(generation))
         syncBGMFacadeFromRuntime()
         return true
