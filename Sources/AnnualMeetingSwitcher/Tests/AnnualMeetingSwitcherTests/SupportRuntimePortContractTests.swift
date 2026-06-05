@@ -59,7 +59,7 @@ final class SupportRuntimePortContractTests: XCTestCase {
         XCTAssertFalse(source.contains("extension SupportEventPort"))
     }
 
-    func testProductionSupportPortIsWiredAndAutomationPortIsNot() throws {
+    func testProductionSupportAndAutomationCommandPortsAreWired() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let initializer = try XCTUnwrap(source.range(of: "LiveRuntimeEffectRunner("))
         let suffix = source[initializer.lowerBound...]
@@ -67,8 +67,8 @@ final class SupportRuntimePortContractTests: XCTestCase {
         let body = String(suffix[..<runnerArguments.lowerBound])
 
         XCTAssertTrue(body.contains("support: supportPort"))
-        XCTAssertFalse(body.contains("automation:"))
-        XCTAssertTrue(source.contains("environment: .productionSupportOwning()"))
+        XCTAssertTrue(body.contains("automation: automationPort"))
+        XCTAssertTrue(source.contains("environment: .productionAutomationCommandOwning()"))
         XCTAssertTrue(source.contains("let supportPort = ClosureSupportEventPort()"))
     }
 

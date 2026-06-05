@@ -76,6 +76,7 @@ enum LiveRuntimeAction: Equatable {
     case pptEventTapFailed(reason: String)
     case pptEventTapStopped(reason: PPTStopReason)
 
+    case automationScriptRequested(script: String, action: String)
     case automationFailed(action: String, sanitizedMessage: String)
     case automationNoticeRequested(action: String)
     case automationNoticeExpired(UUID)
@@ -147,6 +148,7 @@ extension LiveRuntimeAction {
         case .pptEventTapStarted: return "pptEventTapStarted"
         case .pptEventTapFailed: return "pptEventTapFailed"
         case .pptEventTapStopped: return "pptEventTapStopped"
+        case .automationScriptRequested: return "automationScriptRequested"
         case .automationFailed: return "automationFailed"
         case .automationNoticeRequested: return "automationNoticeRequested"
         case .automationNoticeExpired: return "automationNoticeExpired"

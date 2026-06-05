@@ -9,18 +9,19 @@ final class AutomationNoticeRuntimePortContractTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automationNotice))
     }
 
-    func testProductionRuntimeWiresAutomationNoticeButNotAutomationExecution() {
+    func testProductionRuntimeWiresAutomationNoticeAndAutomationCommandExecution() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automationNotice))
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.automation))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
         XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.automation))
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationCommand))
     }
 
-    func testProductionRuntimeDoesNotWireAutomationExecutionPort() {
+    func testProductionRuntimeWiresAutomationCommandPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.automation))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
     }
 
     func testProductionRuntimeWiresSupportPortAfterSupportMigration() {
@@ -29,10 +30,10 @@ final class AutomationNoticeRuntimePortContractTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
     }
 
-    func testRunAppleScriptEffectRequiresAutomationDomain() {
+    func testRunAppleScriptEffectRequiresAutomationCommandDomain() {
         XCTAssertEqual(
             LiveRuntimeEffect.runAppleScript(script: "tell app", action: "keynote.next-slide").requiredBridgeDomain,
-            .automation
+            .automationCommand
         )
     }
 

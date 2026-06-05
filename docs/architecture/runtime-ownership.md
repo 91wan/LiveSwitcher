@@ -10,12 +10,14 @@ Current authoritative runtime domains:
 - PPT EventTap lifecycle
 - Automation notice lifecycle
 - Support event storage and ingress
+- Automation command execution
 
-Program queue, Panic orchestration, and Automation execution are not
+Program queue, Panic orchestration, and Automation query/result flows are not
 runtime-owned.
-PPT key forwarding, WPS automation implementation, Keynote/WPS/PPT automation
-execution, automation permission modal alerts, Support event generation call
-sites, and telemetry remain ViewModel-owned.
+AppleScript source construction, Keynote/WPS result-returning AppleScript
+queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT key forwarding,
+WPS key forwarding, automation permission modal alerts, Support event
+generation call sites, and telemetry remain ViewModel-owned.
 Their runtime state is either a ViewModel-owned snapshot or an explicit callback
 from an already-executed facade path. Operator actions for unowned domains must
 not mutate real domain state or infer playback/output state that the ViewModel
@@ -23,9 +25,9 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.supportOwned`.
-`.fullRuntime` remains test-only; production Support ownership is expressed by
-`.supportOwned`.
+Production bridge mode is `.automationCommandOwned`.
+`.fullRuntime` remains test-only; production Automation command ownership is
+expressed by `.automationCommandOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -49,6 +51,7 @@ Each stage includes all domains migrated in earlier stages:
 | `pptOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle |
 | `automationNoticeOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle |
 | `supportOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress |
+| `automationCommandOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution |
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
@@ -57,22 +60,25 @@ means Audio + Media + BGM + Projection. `.pptOwned` means Audio + Media + BGM
 Media + BGM + Projection + PPT EventTap lifecycle + Automation notice
 lifecycle. `.supportOwned` means Audio + Media + BGM + Projection + PPT
 EventTap lifecycle + Automation notice lifecycle + Support event storage and
-ingress.
+ingress. `.automationCommandOwned` means Audio + Media + BGM + Projection +
+PPT EventTap lifecycle + Automation notice lifecycle + Support event storage
+and ingress + Automation command execution.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
 `state.automation.notice` plus `state.automation.suppressionUntilByAction`, and
-`state.support`. It may execute the wired ports needed for current production
+`state.support`, and fire-and-forget automation command execution. It may
+execute the wired ports needed for current production
 behavior. Connected production ports: `media`, `bgm`, `bgmTimer`, `projection`,
-`ppt`, `automationNotice`, `support`, `audioRouting`, `imageAssets`, and
-`persistence`. The audio routing, projection, PPT EventTap, automation notice,
-and Support ports are wired.
+`ppt`, `automationNotice`, `support`, `automation`, `audioRouting`,
+`imageAssets`, and `persistence`. The audio routing, projection, PPT EventTap,
+automation notice, Support, and automation command ports are wired.
 Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
 from mirror-only domains can be used without making Panic runtime-owned.
 
 The reducer may record operator intent in the action log, but operator actions
-for mirror-only domains must not change Panic, Program, Automation execution, or
-unowned domain state.
+for mirror-only domains must not change Panic, Program, automation query/result
+flows, or unowned domain state.
 Mirror state changes for those domains must come from facade synchronization or
 explicit callback actions such as media playback callbacks. PPT EventTap
 lifecycle changes and automation notice lifecycle changes flow through Runtime
@@ -91,11 +97,12 @@ Effective audio output getters are pure Runtime state reads.
 A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed.
 Operator actions for mirror-only domains must not mutate real runtime domain state.
 No next domain may be migrated until the Audio, Media, BGM, Projection, PPT,
-and Automation notice ownership tests pass and production effective audio output
-plus media/BGM playback output plus projection start/stop output plus PPT
-EventTap lifecycle plus automation notice lifecycle plus Support ingress remain
-runtime-owned. Automation execution migration remains blocked until a dedicated
-ownership PR is approved.
+Automation notice, Support, and Automation command ownership tests pass and
+production effective audio output plus media/BGM playback output plus
+projection start/stop output plus PPT EventTap lifecycle plus automation notice
+lifecycle plus Support ingress plus automation command execution remain
+runtime-owned. Result-returning automation queries and key-forwarding migration
+remain blocked until a dedicated ownership PR is approved.
 
 ## Domain Ownership
 
@@ -108,8 +115,9 @@ ownership PR is approved.
 | Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
-| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. AppleScript execution, Keynote/WPS/PPT automation execution, automation permission modal alerts, support event generation call sites, and telemetry remain ViewModel-owned. |
+| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
+| Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned` or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch. Keynote/WPS result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Persistence | ViewModel/UserDefaults | Wired preference persistence effects | bridge in progress | Runtime may persist selected preferences, but general state save remains ViewModel/UserDefaults-owned. |
 
 ## Effect Wiring
@@ -126,7 +134,7 @@ ownership PR is approved.
 | `ppt` | wired | Runtime PPT EventTap lifecycle effects execute through the ViewModel bridge to the concrete CGEventTap implementation. |
 | `automationNotice` | wired | Runtime automation notice show and expiry effects execute through the ViewModel bridge to the concrete facade notice field. |
 | `support` | wired | Runtime support ingress notifies the ViewModel bridge to sync the concrete `supportEvents` facade from `runtime.state.support`. |
-| `automation` | not migrated | AppleScript execution is still ViewModel-owned. |
+| `automation` | wired | Runtime fire-and-forget command execution requests execute through the ViewModel bridge to concrete AppleScript command running. |
 
 ## Media Playback Boundary
 
@@ -272,20 +280,30 @@ actions and are suppressed from the operator-facing Runtime action log.
 diagnostics, and `automationNoticeDismissed` remains logged because it represents
 an operator-visible dismissal.
 
-Automation execution is not runtime-owned. AppleScript execution, Keynote/WPS/PPT
-automation execution, PPT key forwarding, WPS key forwarding, automation
-permission modal alerts, support event generation call sites, and telemetry
-remain ViewModel-owned. Runtime-generated automation notice failures must not
-write Support storage in `.automationNoticeOwned` or `.supportOwned`; support
-entries for automation failures are still generated by ViewModel and enter
-runtime storage only through `.supportEventRecorded`.
+Automation command execution is runtime-owned only for fire-and-forget
+AppleScript commands. Runtime owns `.automationScriptRequested`, action-log
+redaction for that request, and the `.runAppleScript` effect behind the
+Automation command domain. Production wires the `automation` port for command
+execution in `.automationCommandOwned`.
+
+ViewModel still owns AppleScript source construction, concrete
+`AppleScriptRunner.run`, failure handling, support event generation decisions,
+and dispatching `.automationFailed` for Runtime notices. Keynote/WPS
+result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback
+branching, PPT key forwarding, WPS key forwarding, automation permission modal
+alerts, telemetry, and non-command automation flows remain ViewModel-owned.
+Runtime-generated automation notice failures must not write Support storage in
+`.automationNoticeOwned`, `.supportOwned`, or `.automationCommandOwned`;
+support entries for automation failures are still generated by ViewModel and
+enter runtime storage only through `.supportEventRecorded`.
 
 ## Support Boundary
 
 Support storage and production ingress are runtime-owned. Runtime owns
 `state.support.events`, `state.support.coalescedCounts`, and
 `state.support.eventLimit`, including redaction, coalescing, priority retention,
-and trimming. Production uses `.supportOwned` and wires `SupportEventPort`.
+and trimming. Production uses `.automationCommandOwned` and wires
+`SupportEventPort`.
 `SupportRuntimeState.record` returns the exact accepted event stored in
 `state.support.events`, including a coalesced replacement event, or `nil` when
 the incoming event is trimmed immediately by priority retention. The reducer
@@ -306,14 +324,16 @@ suppressed from the operator-facing Runtime action log. Meaningful operator and
 system actions such as projection toggles, `automationFailed`, and
 `automationNoticeDismissed` remain logged. Reducer-generated support remains
 disabled in production migrated domains; ViewModel call sites still decide
-which Support events exist. Automation execution remains ViewModel-owned and is
-not wired in `.supportOwned`.
+which Support events exist. Automation command execution is wired through the
+`automation` port in `.automationCommandOwned`, but Support generation remains
+ViewModel-owned.
 
 ## Next Migration Gate
 
-Program queue and Automation execution migration remain blocked. The next
-migration may proceed only after Audio, Media, BGM, Projection, PPT, Automation
-notice, and Support ownership and hardening tests pass,
+Program queue and result-returning/key-forwarding Automation migration remain
+blocked. The next migration may proceed only after Audio, Media, BGM,
+Projection, PPT, Automation notice, Support, and Automation command ownership
+and hardening tests pass,
 cumulative bridge tests pass, bridge mode explicitness tests pass, explicit
 runtime-store tests pass, no implicit full runtime remains, the target domain
 port is connected in a dedicated PR, and ViewModel no longer owns that target
@@ -321,6 +341,8 @@ domain's migrated side effects in that future PR.
 Automation execution migration remains blocked.
 
 Remaining migration boundaries:
-- PPT key forwarding and WPS automation implementation remain ViewModel-owned.
-- Automation execution is not runtime-owned yet.
+- AppleScript source construction remains ViewModel-owned.
+- Keynote/WPS result-returning AppleScript queries and scans remain ViewModel-owned.
+- WPS fallback branching remains ViewModel-owned.
+- PPT key forwarding and WPS key forwarding remain ViewModel-owned.
 - Support event generation call sites and telemetry remain ViewModel-owned.

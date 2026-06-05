@@ -197,6 +197,14 @@ private final class ClosureSupportEventPort: SupportEventPort {
     }
 }
 
+private final class ClosureAutomationPort: AutomationPort {
+    var runHandler: ((String, String) -> Void)?
+
+    func run(script: String, action: String) {
+        runHandler?(script, action)
+    }
+}
+
 private final class ClosureProjectionPort: ProjectionPort {
     var hasExternalDisplayHandler: (() -> Bool)?
     var startHandler: (() -> Void)?
@@ -661,6 +669,7 @@ final class SwitcherViewModel {
     @ObservationIgnored var pageInterceptStartOverride: (() -> Bool)?
     @ObservationIgnored var scanOpenKeynoteFilesForTesting: (() -> [String])?
     @ObservationIgnored var scanKeynoteWindowNamesForTesting: (() throws -> [String])?
+    @ObservationIgnored var automationCommandRunnerForTesting: ((String, String) throws -> Void)?
     @ObservationIgnored var saveDataDidRun: (() -> Void)?
 
     func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
@@ -724,6 +733,7 @@ final class SwitcherViewModel {
         let pptPort = ClosurePPTEventTapPort()
         let automationNoticePort = ClosureAutomationNoticePort()
         let supportPort = ClosureSupportEventPort()
+        let automationPort = ClosureAutomationPort()
         let audioRoutingPort = ClosureAudioRoutingPort()
         let imageAssetPort = ClosureImageAssetPort()
         let persistencePort = ClosurePersistencePort()
@@ -735,6 +745,7 @@ final class SwitcherViewModel {
                 bgm: bgmPlaybackPort,
                 projection: projectionPort,
                 ppt: pptPort,
+                automation: automationPort,
                 bgmTimer: bgmTimerPort,
                 automationNotice: automationNoticePort,
                 audioRouting: audioRoutingPort,
@@ -742,10 +753,24 @@ final class SwitcherViewModel {
                 persistence: persistencePort,
                 support: supportPort
             ),
-            environment: .productionSupportOwning()
+            environment: .productionAutomationCommandOwning()
         )
         supportPort.recordHandler = { [weak self] _ in
             self?.syncSupportFacadeFromRuntime()
+        }
+        automationPort.runHandler = { [weak self] script, action in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                do {
+                    if let automationCommandRunnerForTesting {
+                        try automationCommandRunnerForTesting(script, action)
+                    } else {
+                        try AppleScriptRunner.run(script, action: action)
+                    }
+                } catch {
+                    self.handleAppleScriptFailure(error, action: action)
+                }
+            }
         }
         automationNoticePort.showHandler = { [weak self] notice in
             self?.cancelAutomationNoticeExpiryTask()
@@ -2222,13 +2247,7 @@ final class SwitcherViewModel {
     }
 
     private func runAutomationScript(_ source: String, action: String) {
-        Task { @MainActor [weak self] in
-            do {
-                try AppleScriptRunner.run(source, action: action)
-            } catch {
-                self?.handleAppleScriptFailure(error, action: action)
-            }
-        }
+        dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))
     }
 
     func handleAppleScriptFailure(_ error: Error, action: String) {

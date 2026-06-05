@@ -526,6 +526,10 @@ enum LiveRuntimeReducer {
             state.ppt.isRequested = false
             state.ppt.isEventTapActive = false
 
+        case .automationScriptRequested(let script, let action):
+            guard isRuntimeOwned(.automationCommand, in: bridgeMode) else { break }
+            effects.append(.runAppleScript(script: script, action: action))
+
         case .automationFailed(let action, let sanitizedMessage):
             requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
             if canGenerateReducerSupport(in: bridgeMode) {

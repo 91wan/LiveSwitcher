@@ -7,7 +7,7 @@ final class SupportMigrationReadinessTests: XCTestCase {
         let viewModel = makeViewModel()
 
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .supportOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
     }
 
     func testProductionRuntimeWiresSupportPortNow() {
@@ -16,10 +16,11 @@ final class SupportMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.support))
     }
 
-    func testAutomationExecutionStillNotProductionOwned() {
+    func testAutomationCommandExecutionIsProductionOwnedButFullAutomationIsNot() {
         XCTAssertTrue(LiveRuntimeBridgeMode.fullRuntime.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.automationNoticeOwned.owns(.support))
         XCTAssertTrue(makeViewModel().runtimeBridgeMode.owns(.support))
+        XCTAssertTrue(makeViewModel().runtimeBridgeMode.owns(.automationCommand))
         XCTAssertFalse(makeViewModel().runtimeBridgeMode.owns(.automation))
     }
 
