@@ -183,6 +183,19 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, or `.automationCommandOwned`"))
     }
 
+    func testDocsStateExtractedViewModelOwnedFacadesBeforeQueryMigration() throws {
+        let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
+
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue ownership remains ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+ProgramQueue.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+PresentationAutomation.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("`ViewModel+AutomationFailure.swift`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Presentation automation source construction"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation failure support handling and the concrete automation notice facade"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Query migration remains blocked until the program queue, presentation automation, and automation failure extraction source/behavior tests pass"))
+    }
+
     func testDocsStateSupportIngressMigratedButGenerationStaysViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
         let normalizedDocument = normalizedWhitespace(document)

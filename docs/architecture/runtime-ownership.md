@@ -14,11 +14,17 @@ Current authoritative runtime domains:
 
 Program queue, Panic orchestration, Automation query/result flows, and general
 persistence save/load mechanics are not runtime-owned.
-AppleScript source construction, Keynote/WPS result-returning AppleScript
-queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT key forwarding,
-WPS key forwarding, automation permission modal alerts, Support event
-generation call sites, persistence state application, and telemetry remain
-ViewModel-owned.
+Program queue ownership remains ViewModel-owned and its queue mutation, source
+validation, switching, schedule, and auto-advance facade lives in
+`ViewModel+ProgramQueue.swift`.
+Presentation automation source construction, Keynote/WPS result-returning
+AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
+ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
+Automation failure support handling and the concrete automation notice facade
+live in `ViewModel+AutomationFailure.swift`.
+PPT key forwarding, WPS key forwarding, automation permission modal alerts,
+Support event generation call sites, persistence state application, and
+telemetry remain ViewModel-owned.
 For automation ownership gates, support event generation call sites, and
 telemetry remain ViewModel-owned; persistence state application is also
 ViewModel-owned.
@@ -115,7 +121,7 @@ explicit owner.
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation. Runtime may mirror current selection only to drive media playback. |
+| Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation in `ViewModel+ProgramQueue.swift`. Runtime may mirror current selection only to drive media playback. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, timer effects, and persisted play-mode preference | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. `saveBGMPlayMode` is a BGM-domain effect. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
@@ -124,7 +130,7 @@ explicit owner.
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
-| Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned` or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch. Keynote/WPS result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
+| Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned` or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch through `ViewModel+PresentationAutomation.swift` and `ViewModel+AutomationFailure.swift`. Keynote/WPS result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Persistence | `SwitcherPersistenceStore` + `ViewModel+Persistence.swift` facade | Wired preference persistence effects | hardened store | `SwitcherPersistenceStore` owns UserDefaults keys plus encode/decode and returns loaded state, missing-file support events, and explicit repair operations. `SwitcherViewModel.saveData()` / `loadData()` live in `ViewModel+Persistence.swift`: ViewModel snapshots state, applies loaded state idempotently, applies returned repairs explicitly, and records returned support events through Runtime support ingress. Runtime may persist selected preferences through the existing persistence port, but general save/load mechanics are not runtime-owned. |
 
 ## Persistence Boundary
@@ -155,8 +161,9 @@ ownership.
 persistent state replaces those collections rather than appending duplicate
 items.
 
-Result-returning automation query migration must not start unless these
-persistence hardening tests and the existing Runtime ownership gates pass.
+Result-returning automation query migration must not start unless the
+persistence hardening tests, the program/presentation/automation-failure
+extraction tests, and the existing Runtime ownership gates pass.
 
 ## Automation Command Boundary
 
@@ -177,7 +184,9 @@ Result-returning automation queries remain blocked from this boundary. A future
 query migration must introduce explicit command/query IDs and callback result
 actions before Runtime can correlate asynchronous query results or query
 failures. Until that dedicated PR, Keynote/WPS scans, WPS fallback branching,
-and PPT/WPS key forwarding stay ViewModel-owned.
+and PPT/WPS key forwarding stay ViewModel-owned. Query migration remains
+blocked until the program queue, presentation automation, and automation
+failure extraction source/behavior tests pass.
 
 ## Bridge Slimming Rules
 
@@ -193,6 +202,11 @@ Runtime-to-facade projection helpers live in
 `ViewModel+RuntimeFacadeSync.swift`. Concrete ViewModel Runtime port wiring
 lives in `ViewModel+RuntimeWiring.swift`. Generic closure-based Runtime port
 adapters live in `LiveRuntimeClosurePorts.swift`.
+Program queue methods live in `ViewModel+ProgramQueue.swift`. Presentation
+automation source construction, result-returning scans, and WPS fallback
+branching live in `ViewModel+PresentationAutomation.swift`. Automation failure
+support handling and notice facade methods live in
+`ViewModel+AutomationFailure.swift`.
 
 `ViewModel.swift` must not own Runtime bridge mechanics. It may keep
 ViewModel-owned orchestration for domains that are not part of the current
@@ -399,6 +413,9 @@ and dispatching `.automationFailed` for Runtime notices. Keynote/WPS
 result-returning AppleScript queries, Keynote/WPS/PPT scans, WPS fallback
 branching, PPT key forwarding, WPS key forwarding, automation permission modal
 alerts, telemetry, and non-command automation flows remain ViewModel-owned.
+Presentation automation command/query boundary code lives in
+`ViewModel+PresentationAutomation.swift`; automation failure and notice facade
+code lives in `ViewModel+AutomationFailure.swift`.
 Runtime-generated automation notice failures must not write Support storage in
 `.automationNoticeOwned`, `.supportOwned`, or `.automationCommandOwned`;
 support entries for automation failures are still generated by ViewModel and

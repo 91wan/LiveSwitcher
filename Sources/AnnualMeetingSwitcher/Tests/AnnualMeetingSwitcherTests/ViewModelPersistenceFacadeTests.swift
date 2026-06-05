@@ -89,6 +89,15 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
         XCTAssertFalse(try viewModelSource().contains("enum UDKeys"))
     }
 
+    func testProgramAndAutomationExtractionDidNotMovePersistenceBackIntoViewModel() throws {
+        let source = try viewModelSource()
+
+        XCTAssertFalse(source.contains("func saveData("))
+        XCTAssertFalse(source.contains("func loadData("))
+        XCTAssertFalse(source.contains("func makePersistentStateSnapshot("))
+        XCTAssertFalse(source.contains("func applyPersistentState("))
+    }
+
     func testViewModelDoesNotDirectlyEncodeOverlayPresets() throws {
         let source = try viewModelSource()
 

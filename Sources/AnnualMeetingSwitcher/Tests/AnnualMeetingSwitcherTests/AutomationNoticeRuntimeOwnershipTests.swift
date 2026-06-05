@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class AutomationNoticeRuntimeOwnershipTests: XCTestCase {
     func testShowAutomationRuntimeNoticeUsesRuntimeNoticeAction() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+AutomationFailure.swift")
         let body = try XCTUnwrap(source.functionBody(named: "showAutomationRuntimeNotice"))
 
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))"))

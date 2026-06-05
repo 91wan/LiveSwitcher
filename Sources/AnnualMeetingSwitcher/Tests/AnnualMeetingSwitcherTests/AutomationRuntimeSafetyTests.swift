@@ -4,13 +4,13 @@ import AppKit
 
 final class AutomationRuntimeSafetyTests: XCTestCase {
     func testAppleScriptAutomationRunsOnMainActorInsteadOfDetachedThread() throws {
-        let viewModelSource = try sourceText("ViewModel.swift")
+        let presentationAutomationSource = try sourceText("ViewModel+PresentationAutomation.swift")
         let runtimeWiringSource = try sourceText("ViewModel+RuntimeWiring.swift")
-        let runAutomationScript = try XCTUnwrap(viewModelSource.functionBody(named: "runAutomationScript"))
+        let runAutomationScript = try XCTUnwrap(presentationAutomationSource.functionBody(named: "runAutomationScript"))
         let configureRuntimePortHandlers = try XCTUnwrap(
             runtimeWiringSource.functionBody(named: "configureRuntimePortHandlers")
         )
-        let openPPTX = try XCTUnwrap(viewModelSource.functionBody(named: "openPPTXWithKeynote"))
+        let openPPTX = try XCTUnwrap(presentationAutomationSource.functionBody(named: "openPPTXWithKeynote"))
 
         XCTAssertFalse(runAutomationScript.contains("Task.detached(priority: .userInitiated)"))
         XCTAssertFalse(openPPTX.contains("Task.detached(priority: .userInitiated)"))
@@ -288,14 +288,16 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
     func testOnlyPermissionPromptsUseModalAutomationAlerts() throws {
         let source = try sourceText("ViewModel.swift")
-        let runAutomationScriptBody = try XCTUnwrap(source.functionBody(named: "runAutomationScript"))
-        let failureBody = try XCTUnwrap(source.functionBody(named: "handleAppleScriptFailure"))
+        let presentationAutomationSource = try sourceText("ViewModel+PresentationAutomation.swift")
+        let automationFailureSource = try sourceText("ViewModel+AutomationFailure.swift")
+        let runAutomationScriptBody = try XCTUnwrap(presentationAutomationSource.functionBody(named: "runAutomationScript"))
+        let failureBody = try XCTUnwrap(automationFailureSource.functionBody(named: "handleAppleScriptFailure"))
         let startPageInterceptBody = try XCTUnwrap(source.functionBody(named: "startPageIntercept"))
 
         XCTAssertFalse(source.contains("automationFailureAlertHandler"))
         XCTAssertFalse(runAutomationScriptBody.contains("alertTitle"))
         XCTAssertTrue(source.contains("isPresentingAutomationAlert"))
-        XCTAssertTrue(source.contains("presentAutomationAlert("))
+        XCTAssertTrue(automationFailureSource.contains("presentAutomationAlert("))
         XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
         XCTAssertTrue(failureBody.contains("dispatchRuntimeFacadeAction(.automationFailed"))
         XCTAssertTrue(failureBody.contains("syncSupportFacadeFromRuntime()"))
@@ -305,7 +307,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     func testWPSFallbackUsesNSWorkspaceInsteadOfProcessOpen() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PresentationAutomation.swift")
         let body = try XCTUnwrap(source.functionBody(named: "openWithWPSOffice"))
 
         XCTAssertFalse(body.contains("Process()"))

@@ -64,6 +64,12 @@ product boundary.
   `applyRepairs(...)`, and keeps persistence facade code in
   `ViewModel+Persistence.swift`; Live mode remains execution-only and code
   simplicity remains part of product simplicity.
+- Program and presentation facade extraction does not add live controls. It
+  only moves Program queue methods to `ViewModel+ProgramQueue.swift`,
+  presentation automation command/query boundary methods to
+  `ViewModel+PresentationAutomation.swift`, and automation failure/notice
+  facade methods to `ViewModel+AutomationFailure.swift`; Live mode remains
+  execution-only and code simplicity remains part of product simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

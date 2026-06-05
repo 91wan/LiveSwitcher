@@ -21,7 +21,7 @@ final class KeynoteControllerScanTests: XCTestCase {
     }
 
     func testViewModelUsesKeynoteTitleCleanerForActiveWindowImports() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PresentationAutomation.swift")
         let body = try XCTUnwrap(source.functionBody(named: "scanAndAddKeynoteWindows"))
 
         XCTAssertTrue(body.contains("KeynoteController.cleanedDocumentTitle(from: name)"))

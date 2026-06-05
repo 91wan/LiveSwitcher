@@ -11,7 +11,10 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
     }
 
     func testHandleAppleScriptFailureDoesNotCallLegacyFacadeSyncInProductionPath() throws {
-        let body = try viewModelFunctionBody(named: "func handleAppleScriptFailure")
+        let body = try functionBody(
+            named: "func handleAppleScriptFailure",
+            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AutomationFailure.swift"
+        )
 
         XCTAssertTrue(body.contains("recordSupportEvent(kind: .appleScriptFailed"))
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationFailed"))
@@ -40,7 +43,14 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
     }
 
     private func viewModelFunctionBody(named marker: String) throws -> String {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        try functionBody(
+            named: marker,
+            in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+        )
+    }
+
+    private func functionBody(named marker: String, in relativePath: String) throws -> String {
+        let source = try sourceText(relativePath)
         guard let markerRange = source.range(of: marker) else {
             XCTFail("Missing \(marker)")
             return ""
