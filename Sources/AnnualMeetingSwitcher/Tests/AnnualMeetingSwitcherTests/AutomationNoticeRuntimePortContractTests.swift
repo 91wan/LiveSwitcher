@@ -64,7 +64,7 @@ final class AutomationNoticeRuntimePortContractTests: XCTestCase {
     }
 
     func testAutomationNoticePortHasNoDefaultNoOpImplementation() throws {
-        let source = try sourceText("Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(source.contains("protocol AutomationNoticePort"))
         XCTAssertFalse(source.contains("extension AutomationNoticePort"))

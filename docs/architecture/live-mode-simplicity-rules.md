@@ -111,6 +111,11 @@ product boundary.
   domains, keeps production connected ports unchanged, and keeps
   result-returning automation queries ViewModel-owned until a dedicated query
   migration is approved.
+- Runtime effect/port infrastructure splitting does not add live controls. It
+  only separates the Runtime effect enum, effect policy, port kind enum, port
+  protocols, effect runner, closure adapters, and production port bundle into
+  focused files; Live mode remains execution-only and query migration remains
+  blocked.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

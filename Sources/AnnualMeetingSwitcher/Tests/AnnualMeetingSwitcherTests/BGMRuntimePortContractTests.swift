@@ -3,7 +3,7 @@ import XCTest
 
 final class BGMRuntimePortContractTests: XCTestCase {
     func testBGMPlaybackPortRequiresSeekAndPlayModeMethods() throws {
-        let source = try sourceText("Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Runtime/LiveRuntimePorts.swift")
         let protocolBody = try body(named: "BGMPlaybackPort", prefix: "protocol", in: source)
 
         [
@@ -59,7 +59,7 @@ final class BGMRuntimePortContractTests: XCTestCase {
     }
 
     func testNoDefaultNoOpBGMPlaybackPortMethodsRemain() throws {
-        let source = try sourceText("Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Runtime/LiveRuntimePorts.swift")
 
         XCTAssertFalse(source.contains("extension BGMPlaybackPort"))
         XCTAssertFalse(source.contains("func seekToBeginning(generation: Int) {}"))

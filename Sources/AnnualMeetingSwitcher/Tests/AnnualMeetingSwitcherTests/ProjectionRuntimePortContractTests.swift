@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class ProjectionRuntimePortContractTests: XCTestCase {
     func testProjectionPortRequiresExplicitStartStop() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(source.contains("func start()"))
         XCTAssertTrue(source.contains("func stop()"))

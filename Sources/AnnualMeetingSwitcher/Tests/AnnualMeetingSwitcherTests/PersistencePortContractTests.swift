@@ -4,7 +4,7 @@ import XCTest
 final class PersistencePortContractTests: XCTestCase {
     func testPersistencePortHasNoDefaultSpecificSaveImplementations() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift"
         )
 
         XCTAssertFalse(source.contains("extension PersistencePort"))

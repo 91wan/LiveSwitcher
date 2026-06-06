@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class AutomationCommandRuntimePortContractTests: XCTestCase {
     func testAutomationPortHasNoDefaultNoOpImplementation() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(source.contains("protocol AutomationPort"))
         XCTAssertFalse(source.contains("extension AutomationPort"))

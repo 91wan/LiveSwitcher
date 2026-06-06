@@ -53,7 +53,7 @@ final class SupportRuntimePortContractTests: XCTestCase {
     }
 
     func testSupportEventPortHasNoDefaultNoOpImplementation() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(source.contains("protocol SupportEventPort"))
         XCTAssertFalse(source.contains("extension SupportEventPort"))
@@ -61,12 +61,12 @@ final class SupportRuntimePortContractTests: XCTestCase {
 
     func testProductionSupportAndAutomationCommandPortsAreWired() throws {
         let viewModelSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
-        let closurePortsSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeClosurePorts.swift")
+        let bundleSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/SwitcherRuntimePortBundle.swift")
 
-        XCTAssertTrue(closurePortsSource.contains("support: supportPort"))
-        XCTAssertTrue(closurePortsSource.contains("automation: automationPort"))
+        XCTAssertTrue(bundleSource.contains("support: supportPort"))
+        XCTAssertTrue(bundleSource.contains("automation: automationPort"))
         XCTAssertTrue(viewModelSource.contains("environment: .productionAutomationCommandOwning()"))
-        XCTAssertTrue(closurePortsSource.contains("let supportPort = ClosureSupportEventPort()"))
+        XCTAssertTrue(bundleSource.contains("let supportPort = ClosureSupportEventPort()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
