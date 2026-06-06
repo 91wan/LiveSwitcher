@@ -64,28 +64,20 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
 
     func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() {
         let viewModel = makeViewModel()
-        viewModel.testHooks.presentationQueryService = PresentationQueryService(
-            runAppleScript: { _, _ in
-                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "failed")
-            },
-            queryOpenKeynoteFiles: { ["/tmp/show/Opening.key"] }
-        )
+        let requestID = UUID()
+        injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "failed")
 
-        viewModel.scanAndAddKeynoteWindows()
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
 
         XCTAssertTrue(viewModel.programItems.isEmpty)
     }
 
     func testScanFailureStillRecordsSupportAndAutomationNotice() {
         let viewModel = makeViewModel()
-        viewModel.testHooks.presentationQueryService = PresentationQueryService(
-            runAppleScript: { _, _ in
-                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "permission denied")
-            },
-            queryOpenKeynoteFiles: { [] }
-        )
+        let requestID = UUID()
+        injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "permission denied")
 
-        viewModel.scanAndAddKeynoteWindows()
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.scan.windows")
@@ -157,5 +149,19 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         viewModel.syncProgramQueueFacadeFromRuntime()
         viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
         return viewModel
+    }
+
+    private func injectPresentationQueryFailure(
+        into viewModel: SwitcherViewModel,
+        requestID: UUID,
+        message: String
+    ) {
+        var state = viewModel.runtime.state
+        state.presentationQuery.latestFailure = PresentationQueryFailure(
+            id: requestID,
+            action: "keynote.scan.windows",
+            sanitizedMessage: message
+        )
+        viewModel.runtime.replaceStateForFacadeSync(state)
     }
 }
