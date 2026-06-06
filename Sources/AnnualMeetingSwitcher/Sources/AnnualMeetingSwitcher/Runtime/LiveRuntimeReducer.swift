@@ -554,6 +554,7 @@ enum LiveRuntimeReducer {
         case .operatorRequestedPresentationQuery(let id):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
             state.presentationQuery.activeRequestID = id
+            state.presentationQuery.latestCompletedRequestID = nil
             state.presentationQuery.latestResult = nil
             state.presentationQuery.latestFailure = nil
             effects.append(.scanPresentationQuery(id: id))
@@ -570,6 +571,7 @@ enum LiveRuntimeReducer {
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
             guard state.presentationQuery.activeRequestID == id else { break }
             state.presentationQuery.activeRequestID = nil
+            state.presentationQuery.latestCompletedRequestID = nil
             state.presentationQuery.latestResult = nil
             state.presentationQuery.latestFailure = PresentationQueryFailure(
                 id: id,
@@ -579,13 +581,7 @@ enum LiveRuntimeReducer {
 
         case .presentationQueryResultConsumed(let id):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
-            state.presentationQuery.consumedRequestIDs.insert(id)
-            if state.presentationQuery.latestCompletedRequestID == id {
-                state.presentationQuery.latestResult = nil
-            }
-            if state.presentationQuery.latestFailure?.id == id {
-                state.presentationQuery.latestFailure = nil
-            }
+            state.presentationQuery.markConsumed(id)
 
         case .supportEventRecorded(let event):
             if let accepted = state.support.record(event: event) {

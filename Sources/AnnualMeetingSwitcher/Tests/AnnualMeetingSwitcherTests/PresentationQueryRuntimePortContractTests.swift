@@ -63,6 +63,23 @@ final class PresentationQueryRuntimePortContractTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.presentationQuery))
     }
 
+    func testPresentationQueryPortHandlerOnlyDispatchesPresentationQueryActions() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeWiring.swift"
+        )
+        let handler = try XCTUnwrap(source.presentationQueryScanHandlerBody())
+
+        XCTAssertTrue(handler.contains("context.dispatch(.presentationQueryCompleted"))
+        XCTAssertTrue(handler.contains("context.dispatch(.presentationQueryFailed"))
+        XCTAssertFalse(handler.contains("addProgramItems"))
+        XCTAssertFalse(handler.contains("recordSupportEvent"))
+        XCTAssertFalse(handler.contains("showAutomation"))
+        XCTAssertFalse(handler.contains("dispatchRuntimeFacadeAction"))
+        XCTAssertFalse(handler.contains("programItems"))
+        XCTAssertFalse(handler.contains("automationRuntimeNotice"))
+        XCTAssertFalse(handler.contains("supportEvents"))
+    }
+
     func testEffectRunnerPortFieldsRemainPrivate() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffectRunner.swift"
@@ -77,5 +94,30 @@ final class PresentationQueryRuntimePortContractTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         return SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+    }
+}
+
+private extension String {
+    func presentationQueryScanHandlerBody() -> String? {
+        guard let assignment = range(of: "ports.presentationQueryPort.scanHandler =") else { return nil }
+        guard let openingBrace = self[assignment.upperBound...].firstIndex(of: "{") else { return nil }
+        return balancedPresentationQueryBody(startingAt: openingBrace)
+    }
+
+    func balancedPresentationQueryBody(startingAt openingBrace: String.Index) -> String? {
+        var depth = 0
+        var index = openingBrace
+        while index < endIndex {
+            if self[index] == "{" {
+                depth += 1
+            } else if self[index] == "}" {
+                depth -= 1
+                if depth == 0 {
+                    return String(self[openingBrace...index])
+                }
+            }
+            index = self.index(after: index)
+        }
+        return nil
     }
 }

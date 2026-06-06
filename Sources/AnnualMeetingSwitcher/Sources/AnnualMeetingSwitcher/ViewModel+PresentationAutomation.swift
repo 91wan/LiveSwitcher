@@ -189,7 +189,7 @@ extension SwitcherViewModel {
 
     func consumePresentationQueryOutcomeFromRuntime(requestID: UUID) {
         let presentationQuery = runtime.state.presentationQuery
-        guard !presentationQuery.consumedRequestIDs.contains(requestID) else { return }
+        guard !presentationQuery.hasConsumed(requestID) else { return }
 
         if presentationQuery.latestCompletedRequestID == requestID,
            let result = presentationQuery.latestResult {
@@ -198,7 +198,7 @@ extension SwitcherViewModel {
                 existingProgramItems: programItems
             )
             addProgramItems(itemsToAdd)
-            runtime.dispatch(.presentationQueryResultConsumed(id: requestID))
+            dispatchRuntimeFacadeAction(.presentationQueryResultConsumed(id: requestID))
             return
         }
 
@@ -212,9 +212,7 @@ extension SwitcherViewModel {
                 action: failure.action,
                 sanitizedMessage: failure.sanitizedMessage
             ))
-            runtime.dispatch(.presentationQueryResultConsumed(id: requestID))
-            syncSupportFacadeFromRuntime()
-            syncAutomationNoticeFacadeFromRuntime()
+            dispatchRuntimeFacadeAction(.presentationQueryResultConsumed(id: requestID))
         }
     }
 

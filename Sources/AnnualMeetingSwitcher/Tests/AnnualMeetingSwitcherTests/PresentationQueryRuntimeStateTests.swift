@@ -19,6 +19,28 @@ final class PresentationQueryRuntimeStateTests: XCTestCase {
         XCTAssertEqual(mutation.state.presentationQuery.activeRequestID, id)
     }
 
+    func testPresentationQueryRequestClearsPreviousOutcomeButPreservesConsumedIDs() {
+        let oldID = UUID()
+        let newID = UUID()
+        var state = LiveRuntimeState()
+        state.presentationQuery.latestCompletedRequestID = oldID
+        state.presentationQuery.latestResult = PresentationQueryResult(openFilePaths: ["/tmp/show/Old.key"], windowNames: [])
+        state.presentationQuery.latestFailure = PresentationQueryFailure(
+            id: oldID,
+            action: "keynote.scan.windows",
+            sanitizedMessage: "oldFailure"
+        )
+        state.presentationQuery.markConsumed(oldID)
+
+        let mutation = reduce(state, .operatorRequestedPresentationQuery(id: newID))
+
+        XCTAssertEqual(mutation.state.presentationQuery.activeRequestID, newID)
+        XCTAssertNil(mutation.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestResult)
+        XCTAssertNil(mutation.state.presentationQuery.latestFailure)
+        XCTAssertTrue(mutation.state.presentationQuery.hasConsumed(oldID))
+    }
+
     func testPresentationQueryCompletionStoresResultAndClearsActiveRequest() {
         let id = UUID()
         var state = LiveRuntimeState()
@@ -51,7 +73,51 @@ final class PresentationQueryRuntimeStateTests: XCTestCase {
         let id = UUID()
         let mutation = reduce(.presentationQueryResultConsumed(id: id))
 
-        XCTAssertTrue(mutation.state.presentationQuery.consumedRequestIDs.contains(id))
+        XCTAssertTrue(mutation.state.presentationQuery.hasConsumed(id))
+    }
+
+    func testPresentationQueryConsumedClearsMatchingCompletedResultAndFailure() {
+        let id = UUID()
+        var state = LiveRuntimeState()
+        state.presentationQuery.latestCompletedRequestID = id
+        state.presentationQuery.latestResult = PresentationQueryResult(openFilePaths: ["/tmp/show/Opening.key"], windowNames: [])
+        state.presentationQuery.latestFailure = PresentationQueryFailure(
+            id: id,
+            action: "keynote.scan.windows",
+            sanitizedMessage: "permissionDenied"
+        )
+
+        let mutation = reduce(state, .presentationQueryResultConsumed(id: id))
+
+        XCTAssertNil(mutation.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestResult)
+        XCTAssertNil(mutation.state.presentationQuery.latestFailure)
+        XCTAssertTrue(mutation.state.presentationQuery.hasConsumed(id))
+    }
+
+    func testPresentationQueryConsumedIDsAreCappedToRecentTwenty() {
+        var state = LiveRuntimeState()
+        let ids = (0..<25).map { _ in UUID() }
+        ids.forEach { state.presentationQuery.markConsumed($0) }
+
+        XCTAssertEqual(state.presentationQuery.consumedRequestIDs.count, 20)
+        XCTAssertFalse(state.presentationQuery.hasConsumed(ids[0]))
+        XCTAssertTrue(state.presentationQuery.hasConsumed(ids[24]))
+    }
+
+    func testPresentationQueryConsumedLeavesStateIdleForMatchingOutcome() {
+        let id = UUID()
+        var state = LiveRuntimeState()
+        state.presentationQuery.activeRequestID = nil
+        state.presentationQuery.latestCompletedRequestID = id
+        state.presentationQuery.latestResult = .empty
+
+        let mutation = reduce(state, .presentationQueryResultConsumed(id: id))
+
+        XCTAssertNil(mutation.state.presentationQuery.activeRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestResult)
+        XCTAssertNil(mutation.state.presentationQuery.latestFailure)
     }
 
     func testPresentationQueryCompletionDoesNotMutateProgramQueue() {

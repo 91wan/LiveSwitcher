@@ -82,6 +82,44 @@ final class PresentationQueryRuntimeDuplicatePreventionTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
     }
 
+    func testFailureIsConsumedOnceAndCleared() {
+        let viewModel = makeFailingViewModel()
+
+        viewModel.scanAndAddKeynoteWindows()
+        let supportCount = viewModel.supportEvents.count
+        let consumedIDs = viewModel.runtime.state.presentationQuery.consumedRequestIDs
+        consumedIDs.forEach {
+            viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: $0)
+        }
+
+        XCTAssertEqual(viewModel.supportEvents.count, supportCount)
+        XCTAssertNil(viewModel.runtime.state.presentationQuery.latestFailure)
+    }
+
+    func testRepeatedSameFileAndWindowResultDoesNotDuplicateProgramItems() {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key"] }
+        viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
+
+        viewModel.scanAndAddKeynoteWindows()
+        viewModel.scanAndAddKeynoteWindows()
+
+        XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
+    }
+
+    func testConsumedRequestIDsKeepOnlyRecentEntries() {
+        var state = LiveRuntimeState()
+        let ids = (0..<25).map { _ in UUID() }
+
+        ids.forEach {
+            state = reduce(state, .presentationQueryResultConsumed(id: $0)).state
+        }
+
+        XCTAssertEqual(state.presentationQuery.consumedRequestIDs.count, 20)
+        XCTAssertFalse(state.presentationQuery.hasConsumed(ids[0]))
+        XCTAssertTrue(state.presentationQuery.hasConsumed(ids[24]))
+    }
+
     private func reduce(_ action: LiveRuntimeAction) -> LiveRuntimeMutation {
         reduce(LiveRuntimeState(), action)
     }
@@ -99,5 +137,16 @@ final class PresentationQueryRuntimeDuplicatePreventionTests: XCTestCase {
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         return SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+    }
+
+    private func makeFailingViewModel() -> SwitcherViewModel {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.presentationQueryService = PresentationQueryService(
+            runAppleScript: { _, _ in
+                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "permission denied")
+            },
+            queryOpenKeynoteFiles: { [] }
+        )
+        return viewModel
     }
 }
