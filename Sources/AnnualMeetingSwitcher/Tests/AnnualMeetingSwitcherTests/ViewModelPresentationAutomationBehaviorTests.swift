@@ -150,10 +150,33 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         let suiteName = "ViewModelPresentationAutomationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return SwitcherViewModel(
+        let presentationQueryPort = ClosurePresentationQueryPort()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                presentationQuery: presentationQueryPort
+            ),
+            environment: .productionProgramQueueOwning()
+        )
+        let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: defaults
+            userDefaults: defaults,
+            runtime: runtime
         )
+        presentationQueryPort.scanHandler = { [weak viewModel] id, context in
+            guard let viewModel else { return }
+            do {
+                let result = try viewModel.scanPresentationQueryForRuntimePort()
+                context.dispatch(.presentationQueryCompleted(id: id, result: result))
+            } catch {
+                context.dispatch(.presentationQueryFailed(
+                    id: id,
+                    action: "keynote.scan.windows",
+                    sanitizedMessage: viewModel.sanitizedAutomationFailureMessage(error)
+                ))
+            }
+        }
+        return viewModel
     }
 }
