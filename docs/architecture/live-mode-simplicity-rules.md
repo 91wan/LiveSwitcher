@@ -194,5 +194,9 @@ product boundary.
   queries, and Program queue storage/mutation may execute; scans, WPS fallback
   branching, Program activation/switching, source validation, and PPT/WPS key
   forwarding must not.
+- Program activation facade extraction does not add live controls or change
+  switching behavior. Code simplicity is part of product simplicity: the live
+  action stays "select a program" while planning is pure and execution remains
+  in the ViewModel activation facade.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

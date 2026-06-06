@@ -140,7 +140,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     }
 
     private var programQueueExtensionPath: String {
-        "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
+        "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
     }
 
     private func sourceFunctionBody(named name: String, in relativePath: String) throws -> String {

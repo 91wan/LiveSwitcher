@@ -4,7 +4,7 @@ import XCTest
 @MainActor
 final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
     func testSwitchToProgramStillPerformsSourceAvailabilityCheckInViewModel() throws {
-        let source = try programQueueSource()
+        let source = try programActivationSource()
 
         XCTAssertTrue(source.contains("programSourceIsAvailable(item)"))
         XCTAssertTrue(source.contains("handleUnavailableProgramSource"))
@@ -61,7 +61,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
     }
 
     func testSwitchToHTMLStillOpensHTMLThroughViewModel() throws {
-        let source = try programQueueSource()
+        let source = try programActivationSource()
 
         XCTAssertTrue(source.contains("openHTMLInOutputWindow(url: url)"))
     }
@@ -111,6 +111,10 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
 
     private func programQueueSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift")
+    }
+
+    private func programActivationSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
     }
 
     private func makeViewModel(initialItems: [ProgramItem]) -> SwitcherViewModel {

@@ -55,7 +55,7 @@ final class ProgramQueueMigrationReadinessTests: XCTestCase {
 
     func testProgramActivationMethodsRemainViewModelOwned() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
         )
 
         XCTAssertTrue(source.contains("programSourceIsAvailable"))

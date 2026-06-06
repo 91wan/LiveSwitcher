@@ -120,7 +120,7 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
 
     func testInvalidDeckStillUsesGroupedInvalidDeckHandler() throws {
         let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift")
+            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
         )
 
         XCTAssertTrue(source.contains("actionHandlers.invalidDeck(url)"))
