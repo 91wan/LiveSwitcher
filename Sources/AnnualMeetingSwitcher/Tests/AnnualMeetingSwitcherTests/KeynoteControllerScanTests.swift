@@ -23,7 +23,7 @@ final class KeynoteControllerScanTests: XCTestCase {
     func testViewModelUsesKeynoteTitleCleanerForActiveWindowImports() throws {
         let source = try sourceText("Models/PresentationQueryResultBuilder.swift")
 
-        XCTAssertTrue(source.contains("KeynoteController.cleanedDocumentTitle(from: name)"))
+        XCTAssertTrue(source.contains("PresentationWindowTitlePolicy.cleanedDocumentTitle(from: name)"))
         XCTAssertFalse(source.contains("replacingOccurrences(of: \".key\""))
         XCTAssertFalse(source.contains("replacingOccurrences(of: \".pptx\""))
     }

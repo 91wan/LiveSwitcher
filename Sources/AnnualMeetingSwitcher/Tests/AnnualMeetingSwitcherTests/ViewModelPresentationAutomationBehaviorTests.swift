@@ -9,11 +9,27 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         )
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanAndAddKeynoteWindows"))
 
+        XCTAssertTrue(body.contains("from: result"))
+        XCTAssertFalse(body.contains("scanOpenKeynoteFiles()"))
+        XCTAssertFalse(body.contains("scanKeynoteWindowNames()"))
         XCTAssertTrue(body.contains("PresentationQueryResultBuilder.makeProgramItems("))
         XCTAssertFalse(body.contains("ProgramItem("))
         XCTAssertFalse(body.contains("itemsToAdd.append"))
         XCTAssertFalse(body.contains("alreadyAdded"))
         XCTAssertFalse(body.contains("KeynoteController.cleanedDocumentTitle"))
+    }
+
+    func testScanAndAddKeynoteWindowsUsesPresentationQueryServiceResult() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanAndAddKeynoteWindows"))
+
+        XCTAssertTrue(body.contains("let result: PresentationQueryResult"))
+        XCTAssertTrue(body.contains("scanPresentationQuery()"))
+
+        let helperBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
+        XCTAssertTrue(helperBody.contains("presentationQueryService.scanPresentationQuery()"))
     }
 
     func testScanAndAddKeynoteWindowsStillAddsOpenKeynoteFiles() {
@@ -70,7 +86,7 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
             runAppleScript: { _, _ in
                 throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "failed")
             },
-            scanOpenKeynoteFiles: { ["/tmp/show/Opening.key"] }
+            queryOpenKeynoteFiles: { ["/tmp/show/Opening.key"] }
         )
 
         viewModel.scanAndAddKeynoteWindows()
@@ -84,13 +100,42 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
             runAppleScript: { _, _ in
                 throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "permission denied")
             },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         viewModel.scanAndAddKeynoteWindows()
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.scan.windows")
+    }
+
+    func testScanKeynoteWindowNamesHookStillOverridesQueryService() {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.presentationQueryService = PresentationQueryService(
+            runAppleScript: { _, _ in
+                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "should not run")
+            },
+            queryOpenKeynoteFiles: { [] }
+        )
+        viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key"] }
+        viewModel.testHooks.scanOpenKeynoteFiles = { [] }
+
+        viewModel.scanAndAddKeynoteWindows()
+
+        XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
+    }
+
+    func testScanOpenKeynoteFilesHookStillOverridesQueryService() {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.presentationQueryService = PresentationQueryService(
+            runAppleScript: { _, _ in NSAppleEventDescriptor(string: "Ignored.key") },
+            queryOpenKeynoteFiles: { ["/tmp/show/Ignored.key"] }
+        )
+        viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
+
+        viewModel.scanAndAddKeynoteWindows()
+
+        XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
     }
 
     private func makeViewModel() -> SwitcherViewModel {

@@ -21,13 +21,27 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
         XCTAssertFalse(effect.contains("scanOpenKeynoteFile"))
     }
 
+    func testNoPresentationQueryEffectsYet() throws {
+        let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+
+        XCTAssertFalse(effect.contains("scanPresentationQuery"))
+        XCTAssertFalse(effect.contains("presentationQuery"))
+    }
+
+    func testNoPresentationQueryCallbackActionsYet() throws {
+        let action = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift")
+
+        XCTAssertFalse(action.contains("presentationQueryCompleted"))
+        XCTAssertFalse(action.contains("presentationQueryFailed"))
+    }
+
     func testResultReturningQueriesRemainViewModelOwned() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
 
         XCTAssertTrue(source.contains("func scanAndAddKeynoteWindows()"))
-        XCTAssertTrue(source.contains("presentationQueryService.scanKeynoteWindowNames()"))
+        XCTAssertTrue(source.contains("presentationQueryService.scanPresentationQuery()"))
         XCTAssertFalse(source.contains(".automationScriptRequested(script: \"keynote.scan"))
     }
 
@@ -38,6 +52,23 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
 
         XCTAssertTrue(source.contains("struct PresentationQueryService"))
         XCTAssertTrue(source.contains("var runAppleScript: (String, String) throws -> NSAppleEventDescriptor"))
-        XCTAssertTrue(source.contains("var scanOpenKeynoteFiles: () -> [String]"))
+        XCTAssertTrue(source.contains("var queryOpenKeynoteFiles: () -> [String]"))
+    }
+
+    func testPresentationQueryServiceHasNoKeynoteControllerDependency() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/PresentationQueryService.swift"
+        )
+
+        XCTAssertFalse(source.contains("KeynoteController"))
+        XCTAssertFalse(source.contains("init(keynoteController:"))
+    }
+
+    func testPresentationQueryResultBuilderHasNoKeynoteControllerDependency() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/PresentationQueryResultBuilder.swift"
+        )
+
+        XCTAssertFalse(source.contains("KeynoteController"))
     }
 }

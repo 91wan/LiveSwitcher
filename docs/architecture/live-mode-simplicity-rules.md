@@ -101,6 +101,11 @@ product boundary.
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;
   result-returning queries remain ViewModel-owned until a dedicated query
   ID/callback Runtime migration is approved.
+- Presentation query service hardening does not add live controls. It only
+  removes model-layer dependencies on `KeynoteController`, introduces
+  `PresentationQueryResult` as the query payload, and isolates title cleanup in
+  `PresentationWindowTitlePolicy`; Live mode remains execution-only and code
+  simplicity remains part of product simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
