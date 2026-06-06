@@ -1,6 +1,20 @@
 import XCTest
 
 final class AutomationQueryMigrationReadinessTests: XCTestCase {
+    func testRuntimeEffectRunnerCarriesDispatchForFutureQueryCallbacks() throws {
+        let runner = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffectRunner.swift"
+        )
+        let context = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffectExecutionContext.swift"
+        )
+
+        XCTAssertTrue(runner.contains("LiveRuntimeEffectExecutionContext("))
+        XCTAssertTrue(runner.contains("dispatch: dispatch"))
+        XCTAssertFalse(runner.contains("_ = dispatch"))
+        XCTAssertTrue(context.contains("let dispatch: (LiveRuntimeAction) -> Void"))
+    }
+
     func testNoAutomationQueryOwnedBridgeModeYet() throws {
         let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
 
@@ -73,6 +87,14 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
     }
 
     func testPresentationQueryServiceRemainsViewModelOwned() throws {
+        try assertPresentationQueryServiceStillRemainsViewModelOwned()
+    }
+
+    func testPresentationQueryServiceStillRemainsViewModelOwned() throws {
+        try assertPresentationQueryServiceStillRemainsViewModelOwned()
+    }
+
+    private func assertPresentationQueryServiceStillRemainsViewModelOwned() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )

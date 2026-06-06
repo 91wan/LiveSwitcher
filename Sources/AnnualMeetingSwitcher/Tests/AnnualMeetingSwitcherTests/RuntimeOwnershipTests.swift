@@ -178,6 +178,10 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Automation command execution is runtime-owned only for fire-and-forget"))
         XCTAssertTrue(document.localizedStandardContains("ViewModel still owns AppleScript source construction"))
         XCTAssertTrue(document.localizedStandardContains("Keynote/WPS result-returning AppleScript queries"))
+        XCTAssertTrue(document.localizedStandardContains("LiveRuntimeEffectExecutionContext"))
+        XCTAssertTrue(document.localizedStandardContains("Future callback-capable Runtime ports must use"))
+        XCTAssertTrue(document.localizedStandardContains("`PresentationQueryService` remains ViewModel-owned"))
+        XCTAssertTrue(document.localizedStandardContains("callback context tests"))
         XCTAssertTrue(document.localizedStandardContains("WPS fallback branching"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("support event generation call sites, and telemetry remain ViewModel-owned"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, or `.automationCommandOwned`"))
@@ -199,7 +203,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection output/window/support side effects live in `ViewModel+ProjectionOutput.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("PPT EventTap lifecycle, key forwarding, WPS key forwarding, and automation permission modal alerts live in `ViewModel+PPTEventTap.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("The thin Support ingress facade `recordSupportEvent(...)` lives in `ViewModel+SupportFacade.swift`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Query migration remains blocked until the program queue, presentation automation, and automation failure extraction source/behavior tests pass"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Query migration remains blocked until the callback context tests, program queue, presentation automation, and automation failure extraction source/behavior tests pass"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection/PPT/Support facade extraction tests"))
     }
 

@@ -68,68 +68,73 @@ final class LiveRuntimeEffectRunner {
     ) {
         recordedEffects.append(contentsOf: effects.map(\.redactedForRecording))
         guard !recordsOnly else { return }
-        _ = dispatch
-        effects.forEach { run($0, currentState: currentState) }
+
+        let context = LiveRuntimeEffectExecutionContext(
+            currentState: currentState,
+            dispatch: dispatch
+        )
+
+        effects.forEach { run($0, context: context) }
     }
 
-    private func run(_ effect: LiveRuntimeEffect, currentState: () -> LiveRuntimeState) {
+    private func run(_ effect: LiveRuntimeEffect, context: LiveRuntimeEffectExecutionContext) {
         switch effect {
         case .loadMedia(let url, let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.load(url: url, generation: generation)
         case .playMedia(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.play(generation: generation)
         case .pauseMedia(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.pause(generation: generation)
         case .restartMedia(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.restart(generation: generation)
         case .seekMediaToStart(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.seekToStart(generation: generation)
         case .seekMediaToEnd(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.seekToEnd(generation: generation)
         case .stopMedia(let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.stop(generation: generation)
         case .setMediaVolume(let volume, let fade, let generation):
-            guard isCurrentMediaGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.setVolume(volume, fade: fade, generation: generation)
 
         case .prepareBGM(let item, let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.prepare(item: item, generation: generation)
         case .playBGM(let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.play(generation: generation)
         case .pauseBGM(let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.pause(generation: generation)
         case .stopBGM(let fade, let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.stop(fade: fade, generation: generation)
         case .setBGMVolume(let volume, let fade, let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.setVolume(volume, fade: fade, generation: generation)
         case .seekBGMToBeginning(let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.seekToBeginning(generation: generation)
         case .seekBGMToProgress(let progress, let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgm?.seek(toProgress: progress, generation: generation)
         case .setBGMPlayMode(let playMode, let generation):
             if let generation {
-                guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+                guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             }
             bgm?.setPlayMode(playMode, generation: generation)
         case .startBGMTimer(let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgmTimer?.start(generation: generation)
         case .stopBGMTimer(let generation):
-            guard isCurrentBGMGeneration(generation, currentState: currentState) else { return }
+            guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgmTimer?.stop(generation: generation)
 
         case .startProjection:
@@ -154,7 +159,7 @@ final class LiveRuntimeEffectRunner {
             automationNotice?.expire(id: id, at: date)
 
         case .applyAudioRouting(let reason):
-            audioRouting?.apply(reason: reason, state: currentState())
+            audioRouting?.apply(reason: reason, state: context.currentState())
         case .loadBackgroundImage(let url):
             imageAssets?.loadBackgroundImage(from: url)
         case .loadCornerLogoImage(let url):

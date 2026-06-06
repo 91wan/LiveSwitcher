@@ -116,6 +116,11 @@ product boundary.
   protocols, effect runner, closure adapters, and production port bundle into
   focused files; Live mode remains execution-only and query migration remains
   blocked.
+- Runtime effect callback readiness does not add live controls. It only gives
+  effect execution an explicit current-state and dispatch context for future
+  callback-capable ports; callback paths must stay explicit and testable, Live
+  mode remains execution-only, and result-returning queries remain
+  ViewModel-owned.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution
