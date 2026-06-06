@@ -2,6 +2,46 @@ import XCTest
 @testable import LiveSwitcher
 
 final class PresentationQueryResultBuilderTests: XCTestCase {
+    func testBuildsProgramItemsFromPresentationQueryResult() {
+        let items = PresentationQueryResultBuilder.makeProgramItems(
+            from: PresentationQueryResult(
+                openFilePaths: ["/tmp/show/Opening.key"],
+                windowNames: ["Ignored.key"]
+            ),
+            existingProgramItems: []
+        )
+
+        XCTAssertEqual(items.map(\.title), ["Opening"])
+    }
+
+    func testPresentationQueryResultEmptyBuildsNoItems() {
+        let items = PresentationQueryResultBuilder.makeProgramItems(
+            from: .empty,
+            existingProgramItems: []
+        )
+
+        XCTAssertTrue(items.isEmpty)
+    }
+
+    func testPresentationQueryResultIsEquatable() {
+        XCTAssertEqual(
+            PresentationQueryResult(openFilePaths: ["/tmp/Opening.key"], windowNames: ["Opening.key"]),
+            PresentationQueryResult(openFilePaths: ["/tmp/Opening.key"], windowNames: ["Opening.key"])
+        )
+        XCTAssertNotEqual(
+            PresentationQueryResult(openFilePaths: ["/tmp/Opening.key"], windowNames: ["Opening.key"]),
+            PresentationQueryResult(openFilePaths: [], windowNames: ["Opening.key"])
+        )
+    }
+
+    func testPresentationQueryResultBuilderDoesNotReferenceKeynoteController() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/PresentationQueryResultBuilder.swift"
+        )
+
+        XCTAssertFalse(source.contains("KeynoteController"))
+    }
+
     func testBuildsProgramItemsFromOpenFilePaths() {
         let items = PresentationQueryResultBuilder.makeProgramItems(
             openFilePaths: ["/tmp/show/Opening.key", "/tmp/show/Finale.pptx"],
@@ -58,7 +98,7 @@ final class PresentationQueryResultBuilderTests: XCTestCase {
         XCTAssertEqual(items.map(\.sourceURL), [nil, nil])
     }
 
-    func testCleansKeynoteWindowTitles() {
+    func testCleansKeynoteWindowTitlesThroughPresentationWindowTitlePolicy() {
         let items = PresentationQueryResultBuilder.makeProgramItems(
             openFilePaths: [],
             windowNames: ["Annual Show.KEY", "Legacy Deck.PPT"],

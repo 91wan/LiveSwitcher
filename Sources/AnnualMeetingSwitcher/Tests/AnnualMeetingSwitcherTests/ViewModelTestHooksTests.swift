@@ -11,7 +11,7 @@ final class ViewModelTestHooksTests: XCTestCase {
         hooks.scanKeynoteWindowNames = { [] }
         hooks.presentationQueryService = PresentationQueryService(
             runAppleScript: { _, _ in NSAppleEventDescriptor.list() },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
         hooks.automationCommandRunner = { _, _ in }
         hooks.automationCommandDidFinish = {}

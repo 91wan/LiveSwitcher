@@ -28,11 +28,7 @@ final class KeynoteController {
     }
 
     static func cleanedDocumentTitle(from windowName: String) -> String {
-        let extensionName = (windowName as NSString).pathExtension.lowercased()
-        guard ["key", "keynote", "ppt", "pptx"].contains(extensionName) else {
-            return windowName
-        }
-        return (windowName as NSString).deletingPathExtension
+        PresentationWindowTitlePolicy.cleanedDocumentTitle(from: windowName)
     }
 
     // MARK: - Issue #5: 用 System Events 精确扫描 Keynote 窗口名

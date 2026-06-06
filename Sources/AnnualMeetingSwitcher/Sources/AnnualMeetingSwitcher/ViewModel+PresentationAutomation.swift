@@ -7,7 +7,14 @@ extension SwitcherViewModel {
             return presentationQueryService
         }
 
-        return PresentationQueryService(keynoteController: keynoteController)
+        return PresentationQueryService(
+            runAppleScript: { script, action in
+                try AppleScriptRunner.run(script, action: action)
+            },
+            queryOpenKeynoteFiles: { [keynoteController] in
+                keynoteController.scanOpenKeynoteFiles()
+            }
+        )
     }
 
     func isLikelyValidDeckDocument(url: URL, sourceKind: ProgramSourceKind) -> Bool {
@@ -153,18 +160,33 @@ extension SwitcherViewModel {
         return presentationQueryService.queryOpenKeynoteFiles()
     }
 
+    private func scanPresentationQuery() throws -> PresentationQueryResult {
+        if testHooks.scanKeynoteWindowNames != nil || testHooks.scanOpenKeynoteFiles != nil {
+            let windowNames: [String]
+            if let scanKeynoteWindowNames = testHooks.scanKeynoteWindowNames {
+                windowNames = try scanKeynoteWindowNames()
+            } else {
+                windowNames = try presentationQueryService.scanKeynoteWindowNames()
+            }
+            let openFilePaths = scanOpenKeynoteFiles()
+            return PresentationQueryResult(
+                openFilePaths: openFilePaths,
+                windowNames: windowNames
+            )
+        }
+        return try presentationQueryService.scanPresentationQuery()
+    }
+
     func scanAndAddKeynoteWindows() {
-        let windowNames: [String]
+        let result: PresentationQueryResult
         do {
-            windowNames = try scanKeynoteWindowNames()
+            result = try scanPresentationQuery()
         } catch {
+            handleAppleScriptFailure(error, action: "keynote.scan.windows")
             return
         }
-
-        let docPaths = scanOpenKeynoteFiles()
         let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
-            openFilePaths: docPaths,
-            windowNames: windowNames,
+            from: result,
             existingProgramItems: programItems
         )
         addProgramItems(itemsToAdd)

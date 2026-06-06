@@ -11,7 +11,7 @@ final class PresentationQueryServiceTests: XCTestCase {
                 capturedAction = action
                 return NSAppleEventDescriptor.list()
             },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         _ = try service.scanKeynoteWindowNames()
@@ -27,7 +27,7 @@ final class PresentationQueryServiceTests: XCTestCase {
         descriptor.insert(NSAppleEventDescriptor(string: "Finale.pptx"), at: 2)
         let service = PresentationQueryService(
             runAppleScript: { _, _ in descriptor },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         XCTAssertEqual(try service.scanKeynoteWindowNames(), ["Opening.key", "Finale.pptx"])
@@ -36,7 +36,7 @@ final class PresentationQueryServiceTests: XCTestCase {
     func testScanKeynoteWindowNamesParsesSingleString() throws {
         let service = PresentationQueryService(
             runAppleScript: { _, _ in NSAppleEventDescriptor(string: "Solo.key") },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         XCTAssertEqual(try service.scanKeynoteWindowNames(), ["Solo.key"])
@@ -45,7 +45,7 @@ final class PresentationQueryServiceTests: XCTestCase {
     func testScanKeynoteWindowNamesReturnsEmptyArrayForEmptyDescriptor() throws {
         let service = PresentationQueryService(
             runAppleScript: { _, _ in NSAppleEventDescriptor.list() },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         XCTAssertEqual(try service.scanKeynoteWindowNames(), [])
@@ -55,7 +55,7 @@ final class PresentationQueryServiceTests: XCTestCase {
         let expected = AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "permission denied")
         let service = PresentationQueryService(
             runAppleScript: { _, _ in throw expected },
-            scanOpenKeynoteFiles: { [] }
+            queryOpenKeynoteFiles: { [] }
         )
 
         XCTAssertThrowsError(try service.scanKeynoteWindowNames()) { error in
@@ -74,12 +74,85 @@ final class PresentationQueryServiceTests: XCTestCase {
         XCTAssertFalse(source.contains("LiveRuntime"))
     }
 
-    func testScanOpenKeynoteFilesUsesInjectedProvider() {
+    func testPresentationQueryServiceDoesNotReferenceKeynoteController() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/PresentationQueryService.swift"
+        )
+
+        XCTAssertFalse(source.contains("KeynoteController"))
+        XCTAssertFalse(source.contains("init(keynoteController:"))
+    }
+
+    func testPresentationQueryServiceUsesInjectedAppleScriptRunner() throws {
+        var didRunAppleScript = false
+        let service = PresentationQueryService(
+            runAppleScript: { _, _ in
+                didRunAppleScript = true
+                return NSAppleEventDescriptor(string: "Opening.key")
+            },
+            queryOpenKeynoteFiles: { [] }
+        )
+
+        XCTAssertEqual(try service.scanKeynoteWindowNames(), ["Opening.key"])
+        XCTAssertTrue(didRunAppleScript)
+    }
+
+    func testPresentationQueryServiceUsesInjectedOpenFileProvider() {
         let service = PresentationQueryService(
             runAppleScript: { _, _ in NSAppleEventDescriptor.list() },
-            scanOpenKeynoteFiles: { ["/tmp/Opening.key", "/tmp/Finale.pptx"] }
+            queryOpenKeynoteFiles: { ["/tmp/Opening.key", "/tmp/Finale.pptx"] }
         )
 
         XCTAssertEqual(service.queryOpenKeynoteFiles(), ["/tmp/Opening.key", "/tmp/Finale.pptx"])
+    }
+
+    func testScanPresentationQueryScansWindowNamesBeforeOpenFiles() throws {
+        var events: [String] = []
+        let service = PresentationQueryService(
+            runAppleScript: { _, _ in
+                events.append("windows")
+                return NSAppleEventDescriptor(string: "Opening.key")
+            },
+            queryOpenKeynoteFiles: {
+                events.append("files")
+                return ["/tmp/show/Opening.key"]
+            }
+        )
+
+        let result = try service.scanPresentationQuery()
+
+        XCTAssertEqual(events, ["windows", "files"])
+        XCTAssertEqual(result, PresentationQueryResult(
+            openFilePaths: ["/tmp/show/Opening.key"],
+            windowNames: ["Opening.key"]
+        ))
+    }
+
+    func testScanPresentationQueryPropagatesWindowScanFailure() {
+        let expected = AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "failed")
+        let service = PresentationQueryService(
+            runAppleScript: { _, _ in throw expected },
+            queryOpenKeynoteFiles: { ["/tmp/show/Opening.key"] }
+        )
+
+        XCTAssertThrowsError(try service.scanPresentationQuery()) { error in
+            XCTAssertEqual(error as? AppleScriptError, expected)
+        }
+    }
+
+    func testScanPresentationQueryDoesNotQueryOpenFilesWhenWindowScanFails() {
+        var didQueryOpenFiles = false
+        let service = PresentationQueryService(
+            runAppleScript: { _, _ in
+                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "failed")
+            },
+            queryOpenKeynoteFiles: {
+                didQueryOpenFiles = true
+                return []
+            }
+        )
+
+        XCTAssertThrowsError(try service.scanPresentationQuery())
+        XCTAssertFalse(didQueryOpenFiles)
     }
 }

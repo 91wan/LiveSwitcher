@@ -2,6 +2,17 @@ import Foundation
 
 enum PresentationQueryResultBuilder {
     static func makeProgramItems(
+        from result: PresentationQueryResult,
+        existingProgramItems: [ProgramItem]
+    ) -> [ProgramItem] {
+        makeProgramItems(
+            openFilePaths: result.openFilePaths,
+            windowNames: result.windowNames,
+            existingProgramItems: existingProgramItems
+        )
+    }
+
+    static func makeProgramItems(
         openFilePaths: [String],
         windowNames: [String],
         existingProgramItems: [ProgramItem]
@@ -39,7 +50,7 @@ enum PresentationQueryResultBuilder {
     ) -> [ProgramItem] {
         var itemsToAdd: [ProgramItem] = []
         for name in windowNames {
-            let cleanName = KeynoteController.cleanedDocumentTitle(from: name)
+            let cleanName = PresentationWindowTitlePolicy.cleanedDocumentTitle(from: name)
             let alreadyAdded = existingProgramItems.contains { $0.title == cleanName }
                 || itemsToAdd.contains { $0.title == cleanName }
             guard !alreadyAdded else { continue }

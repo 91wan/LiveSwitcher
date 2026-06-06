@@ -2,29 +2,14 @@ import Foundation
 
 struct PresentationQueryService {
     var runAppleScript: (String, String) throws -> NSAppleEventDescriptor
-    var scanOpenKeynoteFiles: () -> [String]
+    var queryOpenKeynoteFiles: () -> [String]
 
     init(
         runAppleScript: @escaping (String, String) throws -> NSAppleEventDescriptor,
-        scanOpenKeynoteFiles: @escaping () -> [String]
+        queryOpenKeynoteFiles: @escaping () -> [String]
     ) {
         self.runAppleScript = runAppleScript
-        self.scanOpenKeynoteFiles = scanOpenKeynoteFiles
-    }
-
-    init(keynoteController: KeynoteController) {
-        self.init(
-            runAppleScript: { script, action in
-                try AppleScriptRunner.run(script, action: action)
-            },
-            scanOpenKeynoteFiles: { [keynoteController] in
-                keynoteController.scanOpenKeynoteFiles()
-            }
-        )
-    }
-
-    var queryOpenKeynoteFiles: () -> [String] {
-        scanOpenKeynoteFiles
+        self.queryOpenKeynoteFiles = queryOpenKeynoteFiles
     }
 
     func scanKeynoteWindowNames() throws -> [String] {
@@ -53,5 +38,14 @@ struct PresentationQueryService {
         }
 
         return []
+    }
+
+    func scanPresentationQuery() throws -> PresentationQueryResult {
+        let windowNames = try scanKeynoteWindowNames()
+        let openFilePaths = queryOpenKeynoteFiles()
+        return PresentationQueryResult(
+            openFilePaths: openFilePaths,
+            windowNames: windowNames
+        )
     }
 }
