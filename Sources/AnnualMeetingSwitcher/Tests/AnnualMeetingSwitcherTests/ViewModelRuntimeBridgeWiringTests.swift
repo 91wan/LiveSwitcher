@@ -162,8 +162,8 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
     func testAutomationPortRunStillExecutesRunnerAndRoutesFailureToSupportAndNotice() async {
         let viewModel = makeViewModel()
         let finished = expectation(description: "automation command finished")
-        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
-        viewModel.automationCommandRunnerForTesting = { _, _ in
+        viewModel.testHooks.automationCommandDidFinish = { finished.fulfill() }
+        viewModel.testHooks.automationCommandRunner = { _, _ in
             throw AppleScriptError.executionFailed(action: "keynote.next-slide", message: "failed")
         }
 

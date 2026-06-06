@@ -49,7 +49,7 @@ final class PPTModeOwnershipTests: XCTestCase {
 
     func testEnableFailureRecordsFailureButNoSuccessEvent() throws {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -60,7 +60,7 @@ final class PPTModeOwnershipTests: XCTestCase {
 
     func testEnableSuccessRecordsPPTModeChangedOnceAfterEventTapSuccess() throws {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { true }
+        viewModel.testHooks.pageInterceptStartOverride = { true }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -109,14 +109,14 @@ final class PPTModeOwnershipTests: XCTestCase {
     }
 
     func testAllPPTUIAndCommandPathsUseHelperAndAvoidDirectToggle() throws {
-        let viewModelSource = try sourceText("ViewModel.swift")
+        let pptModeSource = try sourceText("ViewModel+PPTMode.swift")
         let toolbarSource = try sourceText("Views/MainToolbar.swift")
         let appSource = try sourceText("App.swift")
 
-        XCTAssertTrue(viewModelSource.contains("func setPPTMode"))
+        XCTAssertTrue(pptModeSource.contains("func setPPTMode"))
         XCTAssertTrue(toolbarSource.contains("viewModel.togglePPTMode(source: pptModeToggleSource)"))
         XCTAssertTrue(appSource.contains("viewModel.togglePPTMode(source: .command)"))
-        XCTAssertFalse(viewModelSource.contains("isPageInterceptEnabled.toggle()"))
+        XCTAssertFalse(pptModeSource.contains("isPageInterceptEnabled.toggle()"))
         XCTAssertFalse(toolbarSource.contains("isPageInterceptEnabled.toggle()"))
         XCTAssertFalse(appSource.contains("isPageInterceptEnabled.toggle()"))
     }

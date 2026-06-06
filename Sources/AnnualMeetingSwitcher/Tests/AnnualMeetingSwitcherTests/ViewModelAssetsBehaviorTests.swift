@@ -26,7 +26,7 @@ final class ViewModelAssetsBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         let imageURL = temporaryImageURL()
         var saveCount = 0
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         XCTAssertTrue(viewModel.addWallpaper(url: imageURL))
 
@@ -71,7 +71,7 @@ final class ViewModelAssetsBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         viewModel.cornerLogoURL = temporaryImageURL()
         var saveCount = 0
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.removeCornerLogo()
 

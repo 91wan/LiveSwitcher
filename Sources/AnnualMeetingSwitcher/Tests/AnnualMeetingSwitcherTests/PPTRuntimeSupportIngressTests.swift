@@ -15,7 +15,7 @@ final class PPTRuntimeSupportIngressTests: XCTestCase {
 
     func testPPTStartFailureDoesNotRecordModeChangedOn() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -24,7 +24,7 @@ final class PPTRuntimeSupportIngressTests: XCTestCase {
 
     func testPPTStartFailureRecordsPageInterceptDisabled() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 

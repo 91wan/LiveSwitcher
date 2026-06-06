@@ -7,11 +7,11 @@ final class LiveMediaControlTests: XCTestCase {
     private func makeViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
-        viewModel.keynotePresentationHandler = { _ in }
-        viewModel.pptxOpenHandler = { _ in }
-        viewModel.activeDeckPresentationHandler = {}
-        viewModel.invalidDeckHandler = { _ in }
-        viewModel.deckStopHandler = {}
+        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.actionHandlers.pptxOpen = { _ in }
+        viewModel.actionHandlers.activeDeckPresentation = {}
+        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.actionHandlers.deckStop = {}
         return viewModel
     }
 
@@ -30,8 +30,8 @@ final class LiveMediaControlTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
         var didRestartFromBeginning = false
         var didUseStandaloneSeek = false
-        viewModel.programSeekToStartHandler = { didUseStandaloneSeek = true }
-        viewModel.programRestartFromBeginningHandler = { onReadyToPlay in
+        viewModel.actionHandlers.programSeekToStart = { didUseStandaloneSeek = true }
+        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
             didRestartFromBeginning = true
             onReadyToPlay()
         }
@@ -60,7 +60,7 @@ final class LiveMediaControlTests: XCTestCase {
         let htmlURL = try makeTempURL(ext: "html")
         defer { try? FileManager.default.removeItem(at: htmlURL) }
         var didSeekToBeginning = false
-        viewModel.programSeekToStartHandler = { didSeekToBeginning = true }
+        viewModel.actionHandlers.programSeekToStart = { didSeekToBeginning = true }
         viewModel.currentProgramItem = ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL)
         viewModel.resetLastAudioRoutingTransitionForTesting()
 

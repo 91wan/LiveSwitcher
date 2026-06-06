@@ -126,8 +126,8 @@ extension SwitcherViewModel {
     }
 
     private func scanKeynoteWindowNames() throws -> [String] {
-        if let scanKeynoteWindowNamesForTesting {
-            return try scanKeynoteWindowNamesForTesting()
+        if let scanKeynoteWindowNames = testHooks.scanKeynoteWindowNames {
+            return try scanKeynoteWindowNames()
         }
 
         let script = """
@@ -161,8 +161,8 @@ extension SwitcherViewModel {
     }
 
     private func scanOpenKeynoteFiles() -> [String] {
-        if let scanOpenKeynoteFilesForTesting {
-            return scanOpenKeynoteFilesForTesting()
+        if let scanOpenKeynoteFiles = testHooks.scanOpenKeynoteFiles {
+            return scanOpenKeynoteFiles()
         }
         return keynoteController.scanOpenKeynoteFiles()
     }

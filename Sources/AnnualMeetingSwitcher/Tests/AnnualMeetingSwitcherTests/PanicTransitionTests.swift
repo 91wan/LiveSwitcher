@@ -7,11 +7,11 @@ final class PanicTransitionTests: XCTestCase {
     private func makeViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
-        viewModel.keynotePresentationHandler = { _ in }
-        viewModel.pptxOpenHandler = { _ in }
-        viewModel.activeDeckPresentationHandler = {}
-        viewModel.invalidDeckHandler = { _ in }
-        viewModel.deckStopHandler = {}
+        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.actionHandlers.pptxOpen = { _ in }
+        viewModel.actionHandlers.activeDeckPresentation = {}
+        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.actionHandlers.deckStop = {}
         return viewModel
     }
 

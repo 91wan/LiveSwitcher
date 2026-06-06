@@ -168,28 +168,24 @@ final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
         }
     }
 
-    func testNoNewLooseViewModelTestHooksWereAdded() throws {
+    func testViewModelTestHooksAreGrouped() throws {
         let source = try viewModelSource()
-        let allowedHooks = [
-            "pageInterceptStartOverride",
-            "scanOpenKeynoteFilesForTesting",
-            "scanKeynoteWindowNamesForTesting",
-            "automationCommandRunnerForTesting",
-            "automationCommandDidFinishForTesting",
-            "saveDataDidRun"
-        ]
+
+        XCTAssertTrue(source.contains("@ObservationIgnored var testHooks = SwitcherViewModelTestHooks()"))
+
         let hookLines = source
             .split(separator: "\n")
             .map(String.init)
             .filter { $0.contains("ForTesting") || $0.contains("Override") || $0.contains("DidRun") || $0.contains("DidFinish") }
             .filter { line in
-                allowedHooks.contains { line.contains($0) }
+                line.contains("@ObservationIgnored var")
+                    && !line.contains("testHooks")
             }
 
-        XCTAssertEqual(hookLines.count, allowedHooks.count)
+        XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))
     }
 
-    func testExistingLooseTestHooksAreExplicitlyAllowedOnlyForCompatibility() throws {
+    func testOldLooseTestHookFieldsAreRemovedFromMainViewModel() throws {
         let source = try viewModelSource()
 
         [
@@ -200,7 +196,7 @@ final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
             "automationCommandDidFinishForTesting",
             "saveDataDidRun"
         ].forEach { hook in
-            XCTAssertTrue(source.contains(hook), hook)
+            XCTAssertFalse(source.contains("var \(hook)"), hook)
         }
     }
 

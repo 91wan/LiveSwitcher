@@ -20,25 +20,25 @@ extension SwitcherViewModel {
         case .keynote:
             guard let url = item.sourceURL else { return }
             if !isLikelyValidDeckDocument(url: url, sourceKind: .keynote) {
-                invalidDeckHandler(url)
+                actionHandlers.invalidDeck(url)
                 return
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
             setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil              // 清空 HTML 层
-            keynotePresentationHandler(url)
+            actionHandlers.keynotePresentation(url)
         case .pptx:
             guard let url = item.sourceURL else { return }
             if !isLikelyValidDeckDocument(url: url, sourceKind: .pptx) {
-                invalidDeckHandler(url)
+                actionHandlers.invalidDeck(url)
                 return
             }
             stopCurrentDeckPresentationIfNeeded(before: item)
             dispatchRuntimeProgramSelection(for: item)
             setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil              // 清空 HTML 层
-            pptxOpenHandler(url)
+            actionHandlers.pptxOpen(url)
         case .html:
             guard let url = item.sourceURL else { return }
             stopCurrentDeckPresentationIfNeeded(before: item)
@@ -50,7 +50,7 @@ extension SwitcherViewModel {
             dispatchRuntimeProgramSelection(for: item)
             setCurrentProgramFromOperatorSelection(item)
             currentHTMLURL = nil
-            activeDeckPresentationHandler()
+            actionHandlers.activeDeckPresentation()
         }
     }
 
@@ -73,7 +73,7 @@ extension SwitcherViewModel {
               currentProgramItem.id != nextItem.id,
               currentProgramItem.supportsPresentationControl
         else { return }
-        deckStopHandler()
+        actionHandlers.deckStop()
     }
 
     private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {
@@ -149,7 +149,7 @@ extension SwitcherViewModel {
 
         switch item.sourceKind {
         case .activeDeck, .keynote, .pptx:
-            deckStopHandler()
+            actionHandlers.deckStop()
             return
         case .html, .agendaMarker, .unsupported:
             return
@@ -237,7 +237,7 @@ extension SwitcherViewModel {
         if currentProgramItem?.id == id {
             needsMutedMediaStartupAfterClearedProgram = currentProgramItem?.sourceKind == .media
             if currentProgramItem?.supportsPresentationControl == true {
-                deckStopHandler()
+                actionHandlers.deckStop()
             }
             if currentProgramItem?.sourceKind == .media {
                 dispatchRuntimeFacadeAction(.operatorStoppedCurrentMedia)

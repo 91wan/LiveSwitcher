@@ -253,21 +253,13 @@ final class ViewModelEncapsulationTests: XCTestCase {
 
     func testNoNewUngroupedTestHooksWereAdded() throws {
         let source = try viewModelSource()
-        let allowedHooks = [
-            "pageInterceptStartOverride",
-            "scanOpenKeynoteFilesForTesting",
-            "scanKeynoteWindowNamesForTesting",
-            "automationCommandRunnerForTesting",
-            "automationCommandDidFinishForTesting",
-            "saveDataDidRun"
-        ]
         let hookLines = source
             .split(separator: "\n")
             .map(String.init)
             .filter { $0.contains("ForTesting") || $0.contains("StartOverride") || $0.contains("DidRun") }
             .filter { line in
                 line.contains("@ObservationIgnored var")
-                    && !allowedHooks.contains(where: { line.contains($0) })
+                    && !line.contains("testHooks")
             }
 
         XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))

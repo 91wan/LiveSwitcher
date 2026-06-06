@@ -235,14 +235,7 @@ final class SwitcherViewModel {
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
-    var keynotePresentationHandler: (URL) -> Void = { _ in }
-    var pptxOpenHandler: (URL) -> Void = { _ in }
-    var deckStopHandler: () -> Void = {}
-    var programSeekToStartHandler: () -> Void = {}
-    var programRestartFromBeginningHandler: (@escaping () -> Void) -> Void = { _ in }
-    var programSeekToEndHandler: () -> Void = {}
-    var activeDeckPresentationHandler: () -> Void = {}
-    var invalidDeckHandler: (URL) -> Void = { _ in }
+    @ObservationIgnored var actionHandlers = SwitcherViewModelActionHandlers()
     var isPresentingAutomationAlert = false
     let automationAlertSuppressionWindow: TimeInterval = 15
     var automationAlertSuppressionUntilByAction: [String: Date] = [:]
@@ -262,20 +255,7 @@ final class SwitcherViewModel {
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）
     var isPageInterceptEnabled: Bool = false
     @ObservationIgnored var pageInterceptSideEffectsEnabled = true
-    @ObservationIgnored var pageInterceptStartOverride: (() -> Bool)?
-    @ObservationIgnored var scanOpenKeynoteFilesForTesting: (() -> [String])?
-    @ObservationIgnored var scanKeynoteWindowNamesForTesting: (() throws -> [String])?
-    @ObservationIgnored var automationCommandRunnerForTesting: ((String, String) throws -> Void)?
-    @ObservationIgnored var automationCommandDidFinishForTesting: (() -> Void)?
-    @ObservationIgnored var saveDataDidRun: (() -> Void)?
-
-    func togglePPTMode(source: PPTModeToggleSource = .programmatic) {
-        dispatchPPTIntent(.operatorToggledPPTMode(source: source), source: source)
-    }
-
-    func setPPTMode(_ enabled: Bool, source: PPTModeToggleSource = .programmatic) {
-        dispatchPPTIntent(.operatorSetPPTMode(enabled, source: source), source: source)
-    }
+    @ObservationIgnored var testHooks = SwitcherViewModelTestHooks()
 
     private var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?
@@ -306,30 +286,7 @@ final class SwitcherViewModel {
             environment: .productionAutomationCommandOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
-        self.keynotePresentationHandler = { [weak self] url in
-            self?.openAndPresentKeynote(url: url)
-        }
-        self.pptxOpenHandler = { [weak self] url in
-            self?.openPPTXWithKeynote(url: url)
-        }
-        self.deckStopHandler = { [weak self] in
-            self?.stopDeckPresentation()
-        }
-        self.programSeekToStartHandler = { [weak self] in
-            self?.avCoordinator.seekToBeginning()
-        }
-        self.programRestartFromBeginningHandler = { [weak self] onReadyToPlay in
-            self?.avCoordinator.restartFromBeginning(onReadyToPlay: onReadyToPlay)
-        }
-        self.programSeekToEndHandler = { [weak self] in
-            self?.avCoordinator.seekToEnd()
-        }
-        self.activeDeckPresentationHandler = { [weak self] in
-            self?.presentFrontKeynoteDocument()
-        }
-        self.invalidDeckHandler = { [weak self] url in
-            self?.presentInvalidDeckAlert(for: url)
-        }
+        configureDefaultActionHandlers()
         if loadPersistedData {
             // Fix: loadData() runs on @MainActor (since class is @MainActor), safe to call
             loadData()
@@ -349,16 +306,6 @@ final class SwitcherViewModel {
 
         cleanupBag.cancelAll()
         avCoordinator.shutdownNonisolated()
-    }
-
-    private func dispatchPPTIntent(_ action: LiveRuntimeAction, source: PPTModeToggleSource) {
-        let previousPPT = runtime.state.ppt
-        setPendingPPTToggleSource(source)
-        dispatchRuntimeFacadeAction(action)
-        syncPPTFacadeFromRuntime()
-        if runtime.state.ppt == previousPPT {
-            setPendingPPTToggleSource(nil)
-        }
     }
 
     var runtimeSpeakerModeDuckedRatio: Float {

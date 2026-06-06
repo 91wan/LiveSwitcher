@@ -11,9 +11,9 @@ final class KeynoteScanPersistenceTests: XCTestCase {
             "/tmp/keynote-c/Finale.pptx"
         ]
         var saveCount = 0
-        viewModel.scanOpenKeynoteFilesForTesting = { paths }
-        viewModel.scanKeynoteWindowNamesForTesting = { [] }
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.scanOpenKeynoteFiles = { paths }
+        viewModel.testHooks.scanKeynoteWindowNames = { [] }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.scanAndAddKeynoteWindows()
 
@@ -24,9 +24,9 @@ final class KeynoteScanPersistenceTests: XCTestCase {
     func testScanningThreeActiveWindowNamesSavesOnce() {
         let viewModel = makeViewModel()
         var saveCount = 0
-        viewModel.scanOpenKeynoteFilesForTesting = { [] }
-        viewModel.scanKeynoteWindowNamesForTesting = { ["Opening.key", "Awards.key", "Finale.pptx"] }
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.scanOpenKeynoteFiles = { [] }
+        viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key", "Awards.key", "Finale.pptx"] }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.scanAndAddKeynoteWindows()
 
@@ -43,9 +43,9 @@ final class KeynoteScanPersistenceTests: XCTestCase {
             sourceURL: URL(fileURLWithPath: path)
         ))
         var saveCount = 0
-        viewModel.scanOpenKeynoteFilesForTesting = { [path] }
-        viewModel.scanKeynoteWindowNamesForTesting = { [] }
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.scanOpenKeynoteFiles = { [path] }
+        viewModel.testHooks.scanKeynoteWindowNames = { [] }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.scanAndAddKeynoteWindows()
 
@@ -57,9 +57,9 @@ final class KeynoteScanPersistenceTests: XCTestCase {
         let viewModel = makeViewModel()
         let path = "/tmp/keynote-duplicate/Opening.key"
         var saveCount = 0
-        viewModel.scanOpenKeynoteFilesForTesting = { [path, path, path] }
-        viewModel.scanKeynoteWindowNamesForTesting = { [] }
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.scanOpenKeynoteFiles = { [path, path, path] }
+        viewModel.testHooks.scanKeynoteWindowNames = { [] }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.scanAndAddKeynoteWindows()
 
@@ -74,9 +74,9 @@ final class KeynoteScanPersistenceTests: XCTestCase {
             "/tmp/keynote-second/Opening.key"
         ]
         var saveCount = 0
-        viewModel.scanOpenKeynoteFilesForTesting = { paths }
-        viewModel.scanKeynoteWindowNamesForTesting = { [] }
-        viewModel.saveDataDidRun = { saveCount += 1 }
+        viewModel.testHooks.scanOpenKeynoteFiles = { paths }
+        viewModel.testHooks.scanKeynoteWindowNames = { [] }
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         viewModel.scanAndAddKeynoteWindows()
 

@@ -323,8 +323,8 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
 
         XCTAssertFalse(effectExecution.contains("Task.sleep"))
         XCTAssertFalse(failure.contains("Task.sleep"))
-        XCTAssertTrue(effectExecution.contains("automationCommandDidFinishForTesting"))
-        XCTAssertTrue(failure.contains("automationCommandDidFinishForTesting"))
+        XCTAssertTrue(effectExecution.contains("testHooks.automationCommandDidFinish"))
+        XCTAssertTrue(failure.contains("testHooks.automationCommandDidFinish"))
     }
 
     func testAVPlayerCoordinatorDeinitDoesNotScheduleObserverCleanupTask() throws {

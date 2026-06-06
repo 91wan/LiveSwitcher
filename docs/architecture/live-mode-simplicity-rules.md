@@ -91,6 +91,11 @@ product boundary.
   and wallpaper/corner-logo library methods to `ViewModel+Assets.swift`; Live
   mode remains execution-only and code simplicity remains part of product
   simplicity.
+- ViewModel hook consolidation does not add live controls. It only groups
+  production action handlers under `SwitcherViewModelActionHandlers`, groups
+  test-only seams under `SwitcherViewModelTestHooks`, and moves PPT mode intent
+  methods into `ViewModel+PPTMode.swift`; Live mode remains execution-only and
+  code simplicity remains part of product simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

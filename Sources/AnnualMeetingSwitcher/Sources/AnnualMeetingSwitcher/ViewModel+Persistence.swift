@@ -3,7 +3,7 @@ import Foundation
 extension SwitcherViewModel {
     func saveData() {
         persistenceStore.save(makePersistentStateSnapshot())
-        saveDataDidRun?()
+        testHooks.saveDataDidRun?()
     }
 
     func loadData() {
