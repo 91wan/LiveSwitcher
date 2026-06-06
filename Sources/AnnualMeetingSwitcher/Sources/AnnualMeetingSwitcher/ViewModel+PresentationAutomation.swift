@@ -2,6 +2,14 @@ import AppKit
 
 @MainActor
 extension SwitcherViewModel {
+    private var presentationQueryService: PresentationQueryService {
+        if let presentationQueryService = testHooks.presentationQueryService {
+            return presentationQueryService
+        }
+
+        return PresentationQueryService(keynoteController: keynoteController)
+    }
+
     func isLikelyValidDeckDocument(url: URL, sourceKind: ProgramSourceKind) -> Bool {
         PresentationDocumentValidator.isLikelyValid(url: url, sourceKind: sourceKind)
     }
@@ -130,41 +138,19 @@ extension SwitcherViewModel {
             return try scanKeynoteWindowNames()
         }
 
-        let script = """
-        tell application "System Events"
-            try
-                get name of every window of application process "Keynote"
-            on error
-                return {}
-            end try
-        end tell
-        """
-        let result: NSAppleEventDescriptor
         do {
-            result = try AppleScriptRunner.run(script, action: "keynote.scan.windows")
+            return try presentationQueryService.scanKeynoteWindowNames()
         } catch {
             handleAppleScriptFailure(error, action: "keynote.scan.windows")
             throw error
         }
-
-        var windowNames: [String] = []
-        if result.numberOfItems > 0 {
-            for i in 1...result.numberOfItems {
-                if let item = result.atIndex(i), let name = item.stringValue {
-                    windowNames.append(name)
-                }
-            }
-        } else if let single = result.stringValue, !single.isEmpty {
-            windowNames.append(single)
-        }
-        return windowNames
     }
 
     private func scanOpenKeynoteFiles() -> [String] {
         if let scanOpenKeynoteFiles = testHooks.scanOpenKeynoteFiles {
             return scanOpenKeynoteFiles()
         }
-        return keynoteController.scanOpenKeynoteFiles()
+        return presentationQueryService.queryOpenKeynoteFiles()
     }
 
     func scanAndAddKeynoteWindows() {
@@ -176,37 +162,11 @@ extension SwitcherViewModel {
         }
 
         let docPaths = scanOpenKeynoteFiles()
-        var itemsToAdd: [ProgramItem] = []
-
-        if !docPaths.isEmpty {
-            for path in docPaths {
-                let url = URL(fileURLWithPath: path)
-                let alreadyAdded = programItems.contains { $0.sourceURL == url }
-                    || itemsToAdd.contains { $0.sourceURL == url }
-                if !alreadyAdded {
-                    let item = ProgramItem(
-                        title: url.deletingPathExtension().lastPathComponent,
-                        subtitle: "KEY",
-                        sourceURL: url
-                    )
-                    itemsToAdd.append(item)
-                }
-            }
-        } else if !windowNames.isEmpty {
-            for name in windowNames {
-                let cleanName = KeynoteController.cleanedDocumentTitle(from: name)
-                let alreadyAdded = programItems.contains { $0.title == cleanName }
-                    || itemsToAdd.contains { $0.title == cleanName }
-                if !alreadyAdded {
-                    let item = ProgramItem(
-                        title: cleanName,
-                        subtitle: "KEY (活动)",
-                        sourceURL: nil
-                    )
-                    itemsToAdd.append(item)
-                }
-            }
-        }
+        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
+            openFilePaths: docPaths,
+            windowNames: windowNames,
+            existingProgramItems: programItems
+        )
         addProgramItems(itemsToAdd)
     }
 

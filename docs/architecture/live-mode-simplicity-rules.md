@@ -96,6 +96,11 @@ product boundary.
   test-only seams under `SwitcherViewModelTestHooks`, and moves PPT mode intent
   methods into `ViewModel+PPTMode.swift`; Live mode remains execution-only and
   code simplicity remains part of product simplicity.
+- Presentation query service extraction does not add live controls. It only
+  moves concrete presentation query execution into `PresentationQueryService`
+  and query-result normalization/dedupe into `PresentationQueryResultBuilder`;
+  result-returning queries remain ViewModel-owned until a dedicated query
+  ID/callback Runtime migration is approved.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

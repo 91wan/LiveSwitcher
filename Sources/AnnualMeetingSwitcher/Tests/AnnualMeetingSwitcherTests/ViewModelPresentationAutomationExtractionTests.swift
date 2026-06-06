@@ -67,14 +67,15 @@ final class ViewModelPresentationAutomationExtractionTests: XCTestCase {
     func testScanKeynoteWindowNamesRemainsViewModelOwned() throws {
         let body = try functionBody("scanKeynoteWindowNames")
 
-        XCTAssertTrue(body.contains("AppleScriptRunner.run(script, action: \"keynote.scan.windows\")"))
+        XCTAssertTrue(body.contains("presentationQueryService.scanKeynoteWindowNames()"))
+        XCTAssertTrue(body.contains("handleAppleScriptFailure(error, action: \"keynote.scan.windows\")"))
         XCTAssertFalse(body.contains(".automationScriptRequested"))
     }
 
     func testScanOpenKeynoteFilesRemainsViewModelOwned() throws {
         let body = try functionBody("scanOpenKeynoteFiles")
 
-        XCTAssertTrue(body.contains("keynoteController.scanOpenKeynoteFiles()"))
+        XCTAssertTrue(body.contains("presentationQueryService.queryOpenKeynoteFiles()"))
         XCTAssertFalse(body.contains(".automationScriptRequested"))
     }
 

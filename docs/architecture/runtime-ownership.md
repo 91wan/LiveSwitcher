@@ -44,6 +44,11 @@ audio/BGM/media/assets extraction tests, and existing ownership gates pass.
 Presentation automation source construction, Keynote/WPS result-returning
 AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
 ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
+Presentation query implementation is isolated behind `PresentationQueryService`,
+and query-result normalization/dedupe is isolated behind
+`PresentationQueryResultBuilder`; these are extraction boundaries only. Query
+migration must introduce explicit command/query IDs and callback result actions
+before Runtime can own result-returning queries.
 Automation failure support handling and the concrete automation notice facade
 live in `ViewModel+AutomationFailure.swift`.
 Projection output/window/support side effects live in

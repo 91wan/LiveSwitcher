@@ -21,12 +21,11 @@ final class KeynoteControllerScanTests: XCTestCase {
     }
 
     func testViewModelUsesKeynoteTitleCleanerForActiveWindowImports() throws {
-        let source = try sourceText("ViewModel+PresentationAutomation.swift")
-        let body = try XCTUnwrap(source.functionBody(named: "scanAndAddKeynoteWindows"))
+        let source = try sourceText("Models/PresentationQueryResultBuilder.swift")
 
-        XCTAssertTrue(body.contains("KeynoteController.cleanedDocumentTitle(from: name)"))
-        XCTAssertFalse(body.contains("replacingOccurrences(of: \".key\""))
-        XCTAssertFalse(body.contains("replacingOccurrences(of: \".pptx\""))
+        XCTAssertTrue(source.contains("KeynoteController.cleanedDocumentTitle(from: name)"))
+        XCTAssertFalse(source.contains("replacingOccurrences(of: \".key\""))
+        XCTAssertFalse(source.contains("replacingOccurrences(of: \".pptx\""))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
