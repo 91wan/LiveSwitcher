@@ -7,7 +7,8 @@ final class SupportMigrationReadinessTests: XCTestCase {
         let viewModel = makeViewModel()
 
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.presentationQuery))
     }
 
     func testProductionRuntimeWiresSupportPortNow() {

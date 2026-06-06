@@ -10,6 +10,7 @@ enum LiveRuntimeBridgeMode: String, CaseIterable, Equatable {
     case automationNoticeOwned
     case supportOwned
     case automationCommandOwned
+    case presentationQueryOwned
     case fullRuntime
 }
 
@@ -23,6 +24,7 @@ enum LiveRuntimeDomain: String, CaseIterable, Equatable {
     case automationNotice
     case automation
     case automationCommand
+    case presentationQuery
     case support
     case imageAssets
     case persistence
@@ -49,6 +51,8 @@ extension LiveRuntimeBridgeMode {
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .imageAssets, .persistence]
         case .automationCommandOwned:
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .imageAssets, .persistence]
+        case .presentationQueryOwned:
+            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .imageAssets, .persistence]
         case .fullRuntime:
             return Set(LiveRuntimeDomain.allCases)
         }
@@ -69,6 +73,7 @@ struct LiveRuntimeState: Equatable {
     var ppt = PPTRuntimeState()
     var projection = ProjectionRuntimeState()
     var automation = AutomationRuntimeState()
+    var presentationQuery = PresentationQueryRuntimeState()
     var preferences = LiveRuntimePreferenceState()
     var support = SupportRuntimeState()
 }
@@ -174,6 +179,20 @@ struct ProjectionRuntimeState: Equatable {
 struct AutomationRuntimeState: Equatable {
     var notice: AutomationRuntimeNotice?
     var suppressionUntilByAction: [String: Date] = [:]
+}
+
+struct PresentationQueryRuntimeState: Equatable {
+    var activeRequestID: UUID?
+    var latestCompletedRequestID: UUID?
+    var latestResult: PresentationQueryResult?
+    var latestFailure: PresentationQueryFailure?
+    var consumedRequestIDs = Set<UUID>()
+}
+
+struct PresentationQueryFailure: Equatable {
+    var id: UUID
+    var action: String
+    var sanitizedMessage: String
 }
 
 struct LiveRuntimePreferenceState: Equatable {
@@ -388,6 +407,19 @@ struct LiveRuntimeEnvironment: Equatable {
             speakerModeDuckedRatio: speakerModeDuckedRatio,
             liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .automationCommandOwned
+        )
+    }
+
+    static func productionPresentationQueryOwning(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
+            bridgeMode: .presentationQueryOwned
         )
     }
 

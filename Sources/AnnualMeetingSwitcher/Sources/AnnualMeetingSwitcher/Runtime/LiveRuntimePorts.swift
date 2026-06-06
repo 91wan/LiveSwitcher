@@ -39,6 +39,10 @@ protocol AutomationPort {
     func run(script: String, action: String)
 }
 
+protocol PresentationQueryPort {
+    func scan(id: UUID, context: LiveRuntimeEffectExecutionContext)
+}
+
 protocol BGMTimerPort {
     func start(generation: Int)
     func stop(generation: Int)

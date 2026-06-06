@@ -32,6 +32,7 @@ enum LiveRuntimeEffect: Equatable {
     case runAppleScript(script: String, action: String)
     case showAutomationNotice(AutomationRuntimeNotice)
     case expireAutomationNotice(UUID, at: Date)
+    case scanPresentationQuery(id: UUID)
 
     case applyAudioRouting(reason: AudioRoutingRuntimeChangeReason)
     case loadBackgroundImage(URL?)

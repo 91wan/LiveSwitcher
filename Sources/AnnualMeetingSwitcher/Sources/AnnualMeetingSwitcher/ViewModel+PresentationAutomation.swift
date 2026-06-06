@@ -177,19 +177,45 @@ extension SwitcherViewModel {
         return try presentationQueryService.scanPresentationQuery()
     }
 
+    func scanPresentationQueryForRuntimePort() throws -> PresentationQueryResult {
+        try scanPresentationQuery()
+    }
+
     func scanAndAddKeynoteWindows() {
-        let result: PresentationQueryResult
-        do {
-            result = try scanPresentationQuery()
-        } catch {
-            handleAppleScriptFailure(error, action: "keynote.scan.windows")
+        let requestID = UUID()
+        dispatchRuntimeFacadeAction(.operatorRequestedPresentationQuery(id: requestID))
+        consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
+    }
+
+    func consumePresentationQueryOutcomeFromRuntime(requestID: UUID) {
+        let presentationQuery = runtime.state.presentationQuery
+        guard !presentationQuery.consumedRequestIDs.contains(requestID) else { return }
+
+        if presentationQuery.latestCompletedRequestID == requestID,
+           let result = presentationQuery.latestResult {
+            let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
+                from: result,
+                existingProgramItems: programItems
+            )
+            addProgramItems(itemsToAdd)
+            runtime.dispatch(.presentationQueryResultConsumed(id: requestID))
             return
         }
-        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
-            from: result,
-            existingProgramItems: programItems
-        )
-        addProgramItems(itemsToAdd)
+
+        if let failure = presentationQuery.latestFailure,
+           failure.id == requestID {
+            recordSupportEvent(
+                kind: .appleScriptFailed,
+                detail: "action=\(failure.action),error=\(failure.sanitizedMessage)"
+            )
+            dispatchRuntimeFacadeAction(.automationFailed(
+                action: failure.action,
+                sanitizedMessage: failure.sanitizedMessage
+            ))
+            runtime.dispatch(.presentationQueryResultConsumed(id: requestID))
+            syncSupportFacadeFromRuntime()
+            syncAutomationNoticeFacadeFromRuntime()
+        }
     }
 
     func stopDeckPresentation() {

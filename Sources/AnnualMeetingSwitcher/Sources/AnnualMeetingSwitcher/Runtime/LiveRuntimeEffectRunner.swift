@@ -8,6 +8,7 @@ final class LiveRuntimeEffectRunner {
     private let automation: AutomationPort?
     private let bgmTimer: BGMTimerPort?
     private let automationNotice: AutomationNoticePort?
+    private let presentationQuery: PresentationQueryPort?
     private let audioRouting: AudioRoutingPort?
     private let imageAssets: ImageAssetPort?
     private let persistence: PersistencePort?
@@ -22,6 +23,7 @@ final class LiveRuntimeEffectRunner {
         automation: AutomationPort? = nil,
         bgmTimer: BGMTimerPort? = nil,
         automationNotice: AutomationNoticePort? = nil,
+        presentationQuery: PresentationQueryPort? = nil,
         audioRouting: AudioRoutingPort? = nil,
         imageAssets: ImageAssetPort? = nil,
         persistence: PersistencePort? = nil,
@@ -35,6 +37,7 @@ final class LiveRuntimeEffectRunner {
         self.automation = automation
         self.bgmTimer = bgmTimer
         self.automationNotice = automationNotice
+        self.presentationQuery = presentationQuery
         self.audioRouting = audioRouting
         self.imageAssets = imageAssets
         self.persistence = persistence
@@ -54,6 +57,7 @@ final class LiveRuntimeEffectRunner {
         if automation != nil { kinds.insert(.automation) }
         if bgmTimer != nil { kinds.insert(.bgmTimer) }
         if automationNotice != nil { kinds.insert(.automationNotice) }
+        if presentationQuery != nil { kinds.insert(.presentationQuery) }
         if audioRouting != nil { kinds.insert(.audioRouting) }
         if imageAssets != nil { kinds.insert(.imageAssets) }
         if persistence != nil { kinds.insert(.persistence) }
@@ -157,6 +161,8 @@ final class LiveRuntimeEffectRunner {
             automationNotice?.show(notice)
         case .expireAutomationNotice(let id, let date):
             automationNotice?.expire(id: id, at: date)
+        case .scanPresentationQuery(let id):
+            presentationQuery?.scan(id: id, context: context)
 
         case .applyAudioRouting(let reason):
             audioRouting?.apply(reason: reason, state: context.currentState())

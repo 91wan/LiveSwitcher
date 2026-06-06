@@ -18,10 +18,10 @@ final class SupportRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode, .supportOwned)
     }
 
-    func testProductionViewModelUsesAutomationCommandOwnedRuntime() {
+    func testProductionViewModelUsesPresentationQueryOwnedRuntime() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationCommand))
         XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.automation))

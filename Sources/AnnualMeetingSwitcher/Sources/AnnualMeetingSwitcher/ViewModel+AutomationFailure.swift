@@ -100,7 +100,7 @@ extension SwitcherViewModel {
         return true
     }
 
-    private func sanitizedAutomationFailureMessage(_ error: Error) -> String {
+    func sanitizedAutomationFailureMessage(_ error: Error) -> String {
         AutomationFailureSanitizer.sanitizedMessage(from: error)
     }
 }

@@ -22,7 +22,7 @@ final class AutomationCommandRuntimeEffectExecutionTests: XCTestCase {
     func testProductionRuntimeWiresAutomationPort() {
         let viewModel = makeViewModel()
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
     }
 

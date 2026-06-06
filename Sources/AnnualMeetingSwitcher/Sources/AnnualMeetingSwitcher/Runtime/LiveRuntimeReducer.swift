@@ -551,6 +551,42 @@ enum LiveRuntimeReducer {
         case .automationNoticeDismissed:
             state.automation.notice = nil
 
+        case .operatorRequestedPresentationQuery(let id):
+            guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
+            state.presentationQuery.activeRequestID = id
+            state.presentationQuery.latestResult = nil
+            state.presentationQuery.latestFailure = nil
+            effects.append(.scanPresentationQuery(id: id))
+
+        case .presentationQueryCompleted(let id, let result):
+            guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
+            guard state.presentationQuery.activeRequestID == id else { break }
+            state.presentationQuery.activeRequestID = nil
+            state.presentationQuery.latestCompletedRequestID = id
+            state.presentationQuery.latestResult = result
+            state.presentationQuery.latestFailure = nil
+
+        case .presentationQueryFailed(let id, let action, let sanitizedMessage):
+            guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
+            guard state.presentationQuery.activeRequestID == id else { break }
+            state.presentationQuery.activeRequestID = nil
+            state.presentationQuery.latestResult = nil
+            state.presentationQuery.latestFailure = PresentationQueryFailure(
+                id: id,
+                action: action,
+                sanitizedMessage: sanitizedMessage
+            )
+
+        case .presentationQueryResultConsumed(let id):
+            guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
+            state.presentationQuery.consumedRequestIDs.insert(id)
+            if state.presentationQuery.latestCompletedRequestID == id {
+                state.presentationQuery.latestResult = nil
+            }
+            if state.presentationQuery.latestFailure?.id == id {
+                state.presentationQuery.latestFailure = nil
+            }
+
         case .supportEventRecorded(let event):
             if let accepted = state.support.record(event: event) {
                 effects.append(.recordSupportEvent(accepted))

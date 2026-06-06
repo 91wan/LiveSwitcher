@@ -248,7 +248,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "syncRuntimeEnvironmentFromFacade"))
 
         XCTAssertTrue(body.contains("bridgeMode: runtime.bridgeMode"))
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .presentationQueryOwned)
     }
 
     func testNoNewUngroupedTestHooksWereAdded() throws {
@@ -319,11 +319,11 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertTrue(source.contains("deinit"))
     }
 
-    func testProductionViewModelRuntimeBridgeModeRemainsAutomationCommandOwned() {
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .automationCommandOwned)
+    func testProductionViewModelRuntimeBridgeModeIsPresentationQueryOwned() {
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .presentationQueryOwned)
     }
 
-    func testProductionConnectedPortsRemainAutomationCommandOwnedSet() {
+    func testProductionConnectedPortsIncludePresentationQuerySet() {
         let expected: Set<LiveRuntimeEffectPortKind> = [
             .media,
             .bgm,
@@ -333,6 +333,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
             .automationNotice,
             .support,
             .automation,
+            .presentationQuery,
             .audioRouting,
             .imageAssets,
             .persistence

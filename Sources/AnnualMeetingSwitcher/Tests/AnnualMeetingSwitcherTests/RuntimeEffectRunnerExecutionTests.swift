@@ -33,7 +33,7 @@ final class RuntimeEffectRunnerExecutionTests: XCTestCase {
 
         XCTAssertEqual(
             runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
         )
     }
 

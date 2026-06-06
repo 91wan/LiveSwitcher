@@ -14,6 +14,7 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
         XCTAssertNotNil(ports.automationNoticePort)
         XCTAssertNotNil(ports.supportPort)
         XCTAssertNotNil(ports.automationPort)
+        XCTAssertNotNil(ports.presentationQueryPort)
         XCTAssertNotNil(ports.audioRoutingPort)
         XCTAssertNotNil(ports.imageAssetPort)
         XCTAssertNotNil(ports.persistencePort)
@@ -24,23 +25,23 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
 
         XCTAssertEqual(
             runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionConnectedPortsRemainAutomationCommandOwnedSet() {
+    func testProductionConnectedPortsIncludePresentationQuerySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionBridgeModeRemainsAutomationCommandOwned() {
+    func testProductionBridgeModeIsPresentationQueryOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
     }
 
     func testViewModelInitDoesNotContainRuntimePortHandlerAssignments() throws {
