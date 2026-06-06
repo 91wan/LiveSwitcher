@@ -99,7 +99,7 @@ final class ViewModelRuntimeSnapshotExtractionTests: XCTestCase {
         let first = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
         let second = ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: URL(fileURLWithPath: "/tmp/index.html"))
         let viewModel = makeViewModel(runtimeState: LiveRuntimeState(), bridgeMode: .recordingOnly)
-        viewModel.programItems = [first, second]
+        viewModel.applyProgramQueueProjectionFromRuntime([first, second])
         viewModel.currentProgramItem = second
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)

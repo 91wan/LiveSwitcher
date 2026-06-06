@@ -487,10 +487,10 @@ struct SecondaryImportButtonStyle: ButtonStyle {
     LeftPanel()
         .environment({
             let vm = SwitcherViewModel()
-            vm.programItems = [
+            vm.applyProgramQueueProjectionFromRuntime([
                 ProgramItem(title: "开场视频", subtitle: "MP4"),
                 ProgramItem(title: "年终PPT", subtitle: "KEY"),
-            ]
+            ])
             return vm
         }())
         .padding()

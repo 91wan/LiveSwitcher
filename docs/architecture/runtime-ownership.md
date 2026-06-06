@@ -21,8 +21,11 @@ validation, invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
 Automation query/result flows, BGM library metadata, and asset-library mutation
 are not runtime-owned.
 Program queue storage/mutation is runtime-owned and projected to
-`SwitcherViewModel.programItems` when `.programQueueOwned`. Program activation,
-source validation, switching side effects, and auto-advance prompt UI remain
+`SwitcherViewModel.programItems` when `.programQueueOwned`. The facade property
+has a private setter; runtime projections flow through
+`applyProgramQueueProjectionFromRuntime(_:)`, and pure queue mechanics live in
+`Runtime/ProgramQueueRuntimeMutations.swift`. Program activation, source
+validation, switching side effects, and auto-advance prompt UI remain
 ViewModel-owned in `ViewModel+ProgramQueue.swift`.
 Audio routing facade code that bridges Runtime-owned audio decisions to concrete
 players, faders, and system volume observation lives in
@@ -178,7 +181,7 @@ explicit owner.
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. `programItems` is a Runtime-backed facade projection when `.programQueueOwned`. ViewModel still owns Program activation, source validation, invalid-deck alerts, support event generation decisions, and live side effects in `ViewModel+ProgramQueue.swift`. |
+| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned`. ViewModel still owns Program activation, source validation, invalid-deck alerts, support event generation decisions, and live side effects in `ViewModel+ProgramQueue.swift`. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |

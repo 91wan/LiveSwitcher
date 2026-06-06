@@ -43,12 +43,16 @@ final class SwitcherViewModel {
     @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
     @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
     var needsMutedMediaStartupAfterClearedProgram = false
-    var programItems: [ProgramItem] = []
+    private(set) var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
         didSet {
             guard oldValue != showAgendaTimeline else { return }
             dispatchRuntimeFacadeAction(.operatorSetShowAgendaTimeline(showAgendaTimeline))
         }
+    }
+
+    func applyProgramQueueProjectionFromRuntime(_ items: [ProgramItem]) {
+        programItems = items
     }
 
     // MARK: - 推流状态

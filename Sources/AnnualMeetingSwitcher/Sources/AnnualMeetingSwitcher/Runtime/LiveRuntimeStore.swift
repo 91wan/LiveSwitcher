@@ -91,6 +91,7 @@ final class LiveRuntimeStore {
         return [
             "mode=\(state.mode.rawValue)",
             "program=\(programSummary)",
+            "queueCount=\(state.program.items.count)",
             "mediaPlaying=\(state.media.isPlaying)",
             "bgm=\(state.bgm.currentID?.uuidString ?? "none")",
             "bgmPlaying=\(state.bgm.isPlaying)",

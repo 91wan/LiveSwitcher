@@ -69,7 +69,7 @@ final class LiveRuntimePPTAutomationBridgeTests: XCTestCase {
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("mp4")
         let item = ProgramItem(title: "Missing Video", subtitle: "VIDEO", sourceURL: missingURL)
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
 
         viewModel.switchToProgram(item)
 

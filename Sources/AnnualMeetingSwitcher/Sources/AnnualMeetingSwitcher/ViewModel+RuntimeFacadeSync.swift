@@ -19,7 +19,8 @@ extension SwitcherViewModel {
     func syncProgramQueueFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.programQueue) else { return }
 
-        programItems = runtime.state.program.items
+        applyProgramQueueProjectionFromRuntime(runtime.state.program.items)
+        reconcileCurrentProgramAfterProgramQueueProjection()
     }
 
     func syncPPTFacadeFromRuntime() {
@@ -45,5 +46,16 @@ extension SwitcherViewModel {
         bgmCurrentTime = bgm.currentTime
         bgmDuration = bgm.duration
         bgmPlayMode = bgm.playMode
+    }
+
+    private func reconcileCurrentProgramAfterProgramQueueProjection() {
+        guard let currentProgramItem,
+              let runtimeItem = programItems.first(where: { $0.id == currentProgramItem.id }),
+              runtimeItem != currentProgramItem
+        else { return }
+
+        suppressCurrentProgramFacadeDispatch = true
+        defer { suppressCurrentProgramFacadeDispatch = false }
+        self.currentProgramItem = runtimeItem
     }
 }

@@ -48,7 +48,7 @@ extension SwitcherViewModel {
         if runtime.bridgeMode.owns(.programQueue) {
             dispatchRuntimeFacadeAction(.facadeLoadedProgramQueue(state.programItems))
         } else {
-            programItems = state.programItems
+            applyProgramQueueProjectionFromRuntime(state.programItems)
         }
         bgmItems = state.bgmItems
         backgroundWallpapers = state.backgroundWallpapers

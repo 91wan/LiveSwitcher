@@ -8,7 +8,7 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.avCoordinator.isPlaying = true
 
@@ -22,7 +22,7 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.isPanicMode = true
         viewModel.panicPlaybackSnapshot = PanicPlaybackSnapshot(
@@ -44,7 +44,7 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         let oldItem = mediaProgram()
         let newItem = mediaProgram()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.programItems = [oldItem, newItem]
+        viewModel.applyProgramQueueProjectionFromRuntime([oldItem, newItem])
         viewModel.currentProgramItem = newItem
         viewModel.isPanicMode = true
         viewModel.panicPlaybackSnapshot = PanicPlaybackSnapshot(

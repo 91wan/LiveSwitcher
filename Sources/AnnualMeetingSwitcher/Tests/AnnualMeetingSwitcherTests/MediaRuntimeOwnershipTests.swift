@@ -7,7 +7,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let media = MediaRuntimeOwnershipPortSpy()
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: false))
 
@@ -20,7 +20,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let media = MediaRuntimeOwnershipPortSpy()
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: true))
 
@@ -56,7 +56,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let media = MediaRuntimeOwnershipPortSpy()
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: true))
 
