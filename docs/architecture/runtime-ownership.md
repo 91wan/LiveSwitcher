@@ -294,9 +294,18 @@ mutable; Runtime sync updates it through the dedicated projection method.
 Core model types such as `ProgramItem`, `BGMItem`, and `BGMPlayMode` live in
 `Models/`, not in `ViewModel.swift`.
 
-Generic closure-based Runtime port adapters live in
-`LiveRuntimeClosurePorts.swift`. New Runtime ports must be added there or in a
-similarly narrow Runtime bridge file, not inline in `ViewModel.swift`.
+Runtime effect infrastructure is split by responsibility. `LiveRuntimeEffect.swift`
+owns only the `LiveRuntimeEffect` enum; it must not contain port protocols,
+effect-domain policy, redaction policy, port kind declarations, or the effect
+runner. `LiveRuntimeEffect+Policy.swift` owns effect redaction and
+`requiredBridgeDomain`. `LiveRuntimeEffectPortKind.swift` owns the port-kind
+enum. `LiveRuntimePorts.swift` owns Runtime port protocols and must not add
+default no-op/fallback implementations. `LiveRuntimeEffectRunner.swift` owns
+side-effect execution, connected-port reporting, recorded-effect redaction, and
+generation guards. Generic closure-based Runtime port adapters live in
+`LiveRuntimeClosurePorts.swift`; production Runtime port bundle construction
+lives in `SwitcherRuntimePortBundle.swift`. New Runtime ports must preserve
+this split and must not be added inline in `ViewModel.swift`.
 Concrete `SwitcherViewModel` Runtime port handler wiring lives in
 `ViewModel+RuntimeWiring.swift`. `SwitcherViewModel.init` must not contain raw
 Runtime port handler assignments. Future Runtime domain migrations must add
@@ -310,7 +319,8 @@ function to `ViewModel.swift`.
 
 Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
-migration remains blocked until the bridge slimming tests, runtime wiring
+migration remains blocked until the Runtime effect/port infrastructure split
+tests, bridge slimming tests, runtime wiring
 extraction tests, Runtime facade/snapshot extraction tests, ViewModel
 encapsulation gates, Projection/PPT/Support facade extraction tests,
 media/assets extraction tests, and the existing runtime ownership tests pass.

@@ -14,11 +14,11 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
     }
 
     func testNoAutomationQueryPortYet() throws {
-        let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
-        XCTAssertFalse(effect.contains("AutomationQueryPort"))
-        XCTAssertFalse(effect.contains("scanKeynoteWindow"))
-        XCTAssertFalse(effect.contains("scanOpenKeynoteFile"))
+        XCTAssertFalse(ports.contains("AutomationQueryPort"))
+        XCTAssertFalse(ports.contains("scanKeynoteWindow"))
+        XCTAssertFalse(ports.contains("scanOpenKeynoteFile"))
     }
 
     func testNoPresentationQueryEffectsYet() throws {
@@ -84,10 +84,27 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
     func testInfrastructureDomainHardeningDidNotIntroduceQueryOwnership() throws {
         let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
         let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(state.contains("case imageAssets"))
         XCTAssertTrue(state.contains("case persistence"))
         XCTAssertFalse(state.contains("automationQuery"))
         XCTAssertFalse(effect.contains("AutomationQueryPort"))
+        XCTAssertFalse(ports.contains("AutomationQueryPort"))
+    }
+
+    func testRuntimeEffectInfrastructureSplitDidNotIntroduceQueryOwnership() throws {
+        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+        let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
+        let action = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift")
+
+        XCTAssertFalse(state.contains("automationQueryOwned"))
+        XCTAssertFalse(state.contains("automationQuery"))
+        XCTAssertFalse(effect.contains("scanPresentationQuery"))
+        XCTAssertFalse(effect.contains("presentationQuery"))
+        XCTAssertFalse(ports.contains("AutomationQueryPort"))
+        XCTAssertFalse(action.contains("presentationQueryCompleted"))
+        XCTAssertFalse(action.contains("presentationQueryFailed"))
     }
 }

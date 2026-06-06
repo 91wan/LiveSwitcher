@@ -36,7 +36,7 @@ final class PPTRuntimePortContractTests: XCTestCase {
     }
 
     func testPPTEventTapPortHasNoDefaultNoOpImplementation() throws {
-        let source = try sourceText("Runtime/LiveRuntimeEffect.swift")
+        let source = try sourceText("Runtime/LiveRuntimePorts.swift")
 
         XCTAssertTrue(source.contains("protocol PPTEventTapPort"))
         XCTAssertFalse(source.contains("extension PPTEventTapPort"))
