@@ -86,6 +86,11 @@ product boundary.
   hides raw output-window, EventTap, WPS monitor, BGM timer-generation, and
   audio-routing transition storage behind narrow ViewModel accessors before any
   future query migration; Live mode remains execution-only.
+- Media and asset facade extraction does not add live controls. It only moves
+  media callback/HTML presentation methods to `ViewModel+MediaPlayback.swift`
+  and wallpaper/corner-logo library methods to `ViewModel+Assets.swift`; Live
+  mode remains execution-only and code simplicity remains part of product
+  simplicity.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

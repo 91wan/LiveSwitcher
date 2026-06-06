@@ -25,10 +25,15 @@ BGM runtime playback facade code that bridges Runtime-owned BGM state to
 realtime metering lives in `ViewModel+BGMRuntimePlayback.swift`.
 BGM library editing and operator selection facade methods remain ViewModel-owned
 and live in `ViewModel+BGMControls.swift`.
+Media playback callback setup, playback-ended handling, and the HTML
+presentation facade live in `ViewModel+MediaPlayback.swift`.
+The wallpaper and corner-logo asset library facade lives in
+`ViewModel+Assets.swift`.
 The main `ViewModel.swift` must not own audio routing method bodies or concrete
-BGM player lifecycle method bodies. Result-returning automation query migration
-remains blocked until the audio/BGM extraction tests and existing ownership
-gates pass.
+BGM player lifecycle method bodies, media callback/HTML presentation method
+bodies, or wallpaper/corner-logo library method bodies. Result-returning
+automation query migration remains blocked until the audio/BGM/media/assets
+extraction tests and existing ownership gates pass.
 Presentation automation source construction, Keynote/WPS result-returning
 AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
 ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
@@ -223,7 +228,9 @@ adapters live in `LiveRuntimeClosurePorts.swift`.
 Audio routing bridge methods live in `ViewModel+AudioRouting.swift`. BGM
 runtime playback bridge methods live in `ViewModel+BGMRuntimePlayback.swift`.
 BGM library editing and operator selection facade methods live in
-`ViewModel+BGMControls.swift`.
+`ViewModel+BGMControls.swift`. Media callback and HTML presentation facade
+methods live in `ViewModel+MediaPlayback.swift`. Wallpaper and corner-logo asset
+library facade methods live in `ViewModel+Assets.swift`.
 Program queue methods live in `ViewModel+ProgramQueue.swift`. Presentation
 automation source construction, result-returning scans, and WPS fallback
 branching live in `ViewModel+PresentationAutomation.swift`. Automation failure
@@ -271,11 +278,11 @@ Source string tests are allowed as architecture gates for these boundaries, but
 they are not substitutes for behavior tests. Result-returning automation query
 migration remains blocked until the bridge slimming tests, runtime wiring
 extraction tests, Runtime facade/snapshot extraction tests, ViewModel
-encapsulation gates, Projection/PPT/Support facade extraction tests, and the
-existing runtime ownership tests pass. Result-returning query migration must
-also wait for the Projection/PPT encapsulation gates that hide raw output-window,
-EventTap, WPS monitor, BGM timer-generation, and audio-routing transition
-storage behind accessors.
+encapsulation gates, Projection/PPT/Support facade extraction tests,
+media/assets extraction tests, and the existing runtime ownership tests pass.
+Result-returning query migration must also wait for the Projection/PPT
+encapsulation gates that hide raw output-window, EventTap, WPS monitor, BGM
+timer-generation, and audio-routing transition storage behind accessors.
 
 ## Effect Wiring
 

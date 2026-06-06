@@ -3,7 +3,7 @@ import XCTest
 
 final class RuntimePerformanceHygieneTests: XCTestCase {
     func testWallpaperAndLogoImagesAreLoadedThroughAsyncDataPath() throws {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+Assets.swift")
 
         XCTAssertTrue(source.contains("backgroundImageLoadTask"))
         XCTAssertTrue(source.contains("cornerLogoImageLoadTask"))
