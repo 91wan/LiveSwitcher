@@ -214,6 +214,16 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Result-returning query migration must also wait for the Projection/PPT encapsulation gates"))
     }
 
+    func testDocsStateMediaAndAssetFacadesExtractedBeforeQueryMigration() throws {
+        let document = try runtimeOwnershipDocument()
+        let normalizedDocument = normalizedWhitespace(document)
+
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Media playback callback setup, playback-ended handling, and the HTML presentation facade live in `ViewModel+MediaPlayback.swift`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("wallpaper and corner-logo asset library facade lives in `ViewModel+Assets.swift`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not own audio routing method bodies or concrete BGM player lifecycle method bodies, media callback/HTML presentation method bodies, or wallpaper/corner-logo library method bodies"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("media/assets extraction tests"))
+    }
+
     func testDocsStateSupportIngressMigratedButGenerationStaysViewModelOwned() throws {
         let document = try runtimeOwnershipDocument()
         let normalizedDocument = normalizedWhitespace(document)

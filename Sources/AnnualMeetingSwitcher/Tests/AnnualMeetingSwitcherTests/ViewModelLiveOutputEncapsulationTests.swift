@@ -1,14 +1,14 @@
 import XCTest
 
 final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
-    func testOutputWindowControllerIsNotBroadMutableViewModelState() throws {
+    func testOutputWindowControllerRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("private var outputWindowController: OutputWindowControlling?"))
         XCTAssertFalse(source.contains("\n    var outputWindowController: OutputWindowControlling?"))
     }
 
-    func testExternalDisplayAvailabilityIsPrivateSet() throws {
+    func testExternalDisplayAvailabilityRemainsPrivateSet() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("private(set) var isExternalDisplayAvailable: Bool = false"))
@@ -55,33 +55,33 @@ final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
         XCTAssertTrue(offenders.isEmpty, offenders.joined(separator: "\n"))
     }
 
-    func testPageInterceptEventTapIsNotBroadMutableViewModelState() throws {
+    func testPageInterceptEventTapRemainsPrivate() throws {
         try assertPrivateViewModelStorage("pageInterceptEventTap: CFMachPort?")
     }
 
-    func testPageInterceptRunLoopSourceIsNotBroadMutableViewModelState() throws {
+    func testPageInterceptRunLoopSourceRemainsPrivate() throws {
         try assertPrivateViewModelStorage("pageInterceptRunLoopSource: CFRunLoopSource?")
     }
 
-    func testPageInterceptSelfRefconIsNotBroadMutableViewModelState() throws {
+    func testPageInterceptSelfRefconRemainsPrivate() throws {
         try assertPrivateViewModelStorage("pageInterceptSelfRefcon: UnsafeMutableRawPointer?")
     }
 
-    func testPendingPPTToggleSourceIsNotBroadMutableViewModelState() throws {
+    func testPendingPPTToggleSourceRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("@ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?"))
         XCTAssertFalse(source.contains("@ObservationIgnored var pendingPPTToggleSource: PPTModeToggleSource?"))
     }
 
-    func testPageInterceptRuntimeIsNotBroadMutableViewModelState() throws {
+    func testPageInterceptRuntimeRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("nonisolated private let pageInterceptRuntime = PageInterceptRuntime()"))
         XCTAssertFalse(source.contains("nonisolated let pageInterceptRuntime = PageInterceptRuntime()"))
     }
 
-    func testWPSApplicationMonitorIsNotBroadMutableViewModelState() throws {
+    func testWPSApplicationMonitorRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()"))
@@ -132,21 +132,21 @@ final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
         XCTAssertTrue(source.contains("state.ppt.isEventTapActive = isPageInterceptEventTapActiveForRuntimeSnapshot"))
     }
 
-    func testBGMTransitionGenerationIsNotBroadMutableViewModelState() throws {
+    func testBGMTransitionGenerationRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("private var bgmTransitionGeneration: Int = 0"))
         XCTAssertFalse(source.contains("\n    var bgmTransitionGeneration: Int = 0"))
     }
 
-    func testActiveBGMTimerGenerationIsNotBroadMutableViewModelState() throws {
+    func testActiveBGMTimerGenerationRemainsPrivate() throws {
         let source = try viewModelSource()
 
         XCTAssertTrue(source.contains("@ObservationIgnored private var activeBGMTimerGeneration: Int?"))
         XCTAssertFalse(source.contains("@ObservationIgnored var activeBGMTimerGeneration: Int?"))
     }
 
-    func testLastAudioRoutingTransitionIsPrivateSetOrNarrowlyApplied() throws {
+    func testLastAudioRoutingTransitionRemainsPrivateSet() throws {
         let source = try viewModelSource()
         let audioRouting = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AudioRouting.swift")
 
