@@ -56,14 +56,15 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
     func testScanKeynoteWindowNamesRemainsViewModelOwned() throws {
         let body = try functionBody("scanKeynoteWindowNames")
 
-        XCTAssertTrue(body.contains("AppleScriptRunner.run(script, action: \"keynote.scan.windows\")"))
+        XCTAssertTrue(body.contains("presentationQueryService.scanKeynoteWindowNames()"))
+        XCTAssertTrue(body.contains("handleAppleScriptFailure(error, action: \"keynote.scan.windows\")"))
         XCTAssertFalse(body.contains(".automationScriptRequested"))
     }
 
     func testScanOpenKeynoteFilesRemainsViewModelOwned() throws {
         let body = try functionBody("scanOpenKeynoteFiles")
 
-        XCTAssertTrue(body.contains("keynoteController.scanOpenKeynoteFiles()"))
+        XCTAssertTrue(body.contains("presentationQueryService.queryOpenKeynoteFiles()"))
         XCTAssertFalse(body.contains(".automationScriptRequested"))
     }
 
@@ -93,7 +94,7 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         let scanWindows = try functionBody("scanKeynoteWindowNames")
         let docs = try sourceText("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(scanWindows.contains("AppleScriptRunner.run"))
+        XCTAssertTrue(scanWindows.contains("presentationQueryService.scanKeynoteWindowNames()"))
         XCTAssertTrue(docs.localizedStandardContains("Keynote/WPS result-returning AppleScript queries"))
     }
 

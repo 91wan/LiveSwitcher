@@ -9,6 +9,10 @@ final class ViewModelTestHooksTests: XCTestCase {
         hooks.pageInterceptStartOverride = { true }
         hooks.scanOpenKeynoteFiles = { [] }
         hooks.scanKeynoteWindowNames = { [] }
+        hooks.presentationQueryService = PresentationQueryService(
+            runAppleScript: { _, _ in NSAppleEventDescriptor.list() },
+            scanOpenKeynoteFiles: { [] }
+        )
         hooks.automationCommandRunner = { _, _ in }
         hooks.automationCommandDidFinish = {}
         hooks.saveDataDidRun = {}
@@ -16,6 +20,7 @@ final class ViewModelTestHooksTests: XCTestCase {
         XCTAssertNotNil(hooks.pageInterceptStartOverride)
         XCTAssertNotNil(hooks.scanOpenKeynoteFiles)
         XCTAssertNotNil(hooks.scanKeynoteWindowNames)
+        XCTAssertNotNil(hooks.presentationQueryService)
         XCTAssertNotNil(hooks.automationCommandRunner)
         XCTAssertNotNil(hooks.automationCommandDidFinish)
         XCTAssertNotNil(hooks.saveDataDidRun)
