@@ -20,7 +20,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [runtimeItem]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .presentationQueryOwned)
-        viewModel.programItems = [facadeItem]
+        viewModel.applyProgramQueueProjectionFromRuntime([facadeItem])
 
         viewModel.syncProgramQueueFacadeFromRuntime()
 
@@ -41,7 +41,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [item]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .programQueueOwned)
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
 
         viewModel.dispatchRuntimeFacadeAction(.operatorRemovedProgramItem(item.id))
 
@@ -90,7 +90,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
     func testPresentationQueryCompletedDoesNotSyncProgramQueueFacade() {
         let existing = programItem("Existing")
         let viewModel = makeViewModel(bridgeMode: .programQueueOwned)
-        viewModel.programItems = [existing]
+        viewModel.applyProgramQueueProjectionFromRuntime([existing])
         let id = UUID()
 
         viewModel.runtime.dispatch(.operatorRequestedPresentationQuery(id: id))
@@ -122,7 +122,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [runtimeItem]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .programQueueOwned)
-        viewModel.programItems = [staleFacadeItem]
+        viewModel.applyProgramQueueProjectionFromRuntime([staleFacadeItem])
 
         viewModel.dispatchRuntimeFacadeAction(.operatorSetShowAgendaTimeline(true))
 
@@ -160,7 +160,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [runtimeItem]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .programQueueOwned)
-        viewModel.programItems = [staleFacadeItem]
+        viewModel.applyProgramQueueProjectionFromRuntime([staleFacadeItem])
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
 

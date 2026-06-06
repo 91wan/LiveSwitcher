@@ -15,7 +15,7 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
-        viewModel.programItems = [queued]
+        viewModel.applyProgramQueueProjectionFromRuntime([queued])
 
         viewModel.currentProgramItem = detached
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
@@ -38,7 +38,7 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
-        viewModel.programItems = [queued]
+        viewModel.applyProgramQueueProjectionFromRuntime([queued])
 
         viewModel.currentProgramItem = queued
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)

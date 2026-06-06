@@ -228,7 +228,7 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: mediaURL) }
         try Data("fixture".utf8).write(to: mediaURL)
         let item = ProgramItem(title: "Opening", subtitle: "VIDEO", sourceURL: mediaURL)
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.avCoordinator.load(url: mediaURL)
         viewModel.avCoordinator.isPlaying = true

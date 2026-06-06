@@ -16,7 +16,7 @@ final class RuntimeMediaRestartBridgeTests: XCTestCase {
         )
         let item = mediaProgram()
         var viewModelRestartCount = 0
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item))
         viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in

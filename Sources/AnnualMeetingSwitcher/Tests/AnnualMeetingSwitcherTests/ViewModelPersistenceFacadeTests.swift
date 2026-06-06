@@ -196,7 +196,7 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let oldItem = ProgramItem(title: "Old", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/old.mp4"))
         let newItem = ProgramItem(title: "New", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/new.mp4"))
-        viewModel.programItems = [oldItem]
+        viewModel.applyProgramQueueProjectionFromRuntime([oldItem])
 
         viewModel.applyPersistentState(SwitcherPersistentState(programItems: [newItem]))
 

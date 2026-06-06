@@ -178,18 +178,21 @@ product boundary.
 - Setup-only controls must stay in setup views, toolbars, or dedicated
   preference surfaces.
 - Current authoritative runtime domains: Audio, Media playback, BGM playback,
-  Projection output, PPT EventTap lifecycle, Automation notice lifecycle, and
-  Support ingress/storage, and Automation command execution.
-- Mirror-only live domains are Program queue, Panic, and Automation. PPT key
-  forwarding, WPS fallback branching, result-returning queries, scans, Support
-  event production, and telemetry remain ViewModel-owned implementation
-  details.
-- Runtime-backed actions must respect the production `.automationCommandOwned`
+  Projection output, PPT EventTap lifecycle, Automation notice lifecycle,
+  Support ingress/storage, Automation command execution, Presentation query
+  lifecycle, and Program queue storage/mutation.
+- Mirror-only live domains and ViewModel-owned live domains are Panic, broader
+  Automation flows, and Program activation/switching. PPT key forwarding,
+  WPS fallback branching, scans, Support event production, source validation,
+  invalid-deck alerts, live activation side effects, and telemetry remain
+  ViewModel-owned implementation details.
+- Runtime-backed actions must respect the production `.programQueueOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
   lifecycle, automation notices, Support ingress, audio routing, image assets,
-  persistence, and fire-and-forget automation command execution may execute;
-  result-returning queries, scans, WPS fallback branching, and PPT/WPS key
+  persistence, fire-and-forget automation command execution, presentation
+  queries, and Program queue storage/mutation may execute; scans, WPS fallback
+  branching, Program activation/switching, source validation, and PPT/WPS key
   forwarding must not.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

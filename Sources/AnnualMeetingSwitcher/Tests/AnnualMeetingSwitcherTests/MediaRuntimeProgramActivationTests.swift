@@ -49,7 +49,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
     func testCurrentProgramDidSetStillMirrorsExternalChanges() {
         let item = mediaProgram()
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
 
         viewModel.currentProgramItem = item
 
@@ -97,7 +97,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
     func testCurrentProgramMirrorUpdatesFromViewModelFacade() {
         let item = mediaProgram()
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
 
         viewModel.currentProgramItem = item
 

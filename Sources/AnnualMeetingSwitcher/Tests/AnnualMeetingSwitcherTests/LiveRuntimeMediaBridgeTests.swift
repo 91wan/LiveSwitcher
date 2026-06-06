@@ -145,7 +145,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
 
         viewModel.currentProgramItem = item
 
@@ -192,7 +192,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.avCoordinator.load(url: item.sourceURL!)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
@@ -220,7 +220,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
         viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
             onReadyToPlay()
@@ -260,7 +260,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testViewModelPlaybackToggleDispatchesRuntimeMediaAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
 
         viewModel.toggleMainVideoPlayback()
@@ -276,7 +276,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
 
         viewModel.toggleMainVideoPlayback()
@@ -289,7 +289,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
     func testViewModelRestartDispatchesRuntimeRestartAction() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.currentProgramItem = item
 
         viewModel.restartCurrentMediaFromBeginning()
