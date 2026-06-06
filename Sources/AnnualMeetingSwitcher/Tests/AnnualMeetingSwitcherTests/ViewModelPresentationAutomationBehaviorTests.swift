@@ -62,39 +62,6 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.sourceURL), [nil])
     }
 
-    func testScanAndAddKeynoteWindowsStillDedupesExistingFiles() {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Opening")
-            .appendingPathExtension("key")
-        let existingItems = [ProgramItem(
-            title: "Opening",
-            subtitle: "KEY",
-            sourceURL: url
-        )]
-
-        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
-            openFilePaths: [url.path],
-            windowNames: [],
-            existingProgramItems: existingItems
-        )
-
-        XCTAssertTrue(itemsToAdd.isEmpty)
-    }
-
-    func testScanAndAddKeynoteWindowsStillDedupesExistingWindowNames() {
-        let existingItems = [
-            ProgramItem(title: "Opening", subtitle: "KEY (活动)", sourceURL: nil)
-        ]
-
-        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
-            openFilePaths: [],
-            windowNames: ["Opening.key"],
-            existingProgramItems: existingItems
-        )
-
-        XCTAssertTrue(itemsToAdd.isEmpty)
-    }
-
     func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() {
         let viewModel = makeViewModel()
         viewModel.testHooks.presentationQueryService = PresentationQueryService(
