@@ -63,29 +63,33 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanAndAddKeynoteWindowsStillDedupesExistingFiles() {
-        let viewModel = makeViewModel(initialItems: [ProgramItem(
+        let existingItems = [ProgramItem(
             title: "Opening",
             subtitle: "KEY",
             sourceURL: URL(fileURLWithPath: "/tmp/show/Opening.key")
-        )])
-        viewModel.testHooks.scanKeynoteWindowNames = { [] }
-        viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
+        )]
 
-        viewModel.scanAndAddKeynoteWindows()
+        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
+            openFilePaths: ["/tmp/show/Opening.key"],
+            windowNames: [],
+            existingProgramItems: existingItems
+        )
 
-        XCTAssertEqual(viewModel.programItems.count, 1)
+        XCTAssertTrue(itemsToAdd.isEmpty)
     }
 
     func testScanAndAddKeynoteWindowsStillDedupesExistingWindowNames() {
-        let viewModel = makeViewModel(initialItems: [
+        let existingItems = [
             ProgramItem(title: "Opening", subtitle: "KEY (活动)", sourceURL: nil)
-        ])
-        viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key"] }
-        viewModel.testHooks.scanOpenKeynoteFiles = { [] }
+        ]
 
-        viewModel.scanAndAddKeynoteWindows()
+        let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
+            openFilePaths: [],
+            windowNames: ["Opening.key"],
+            existingProgramItems: existingItems
+        )
 
-        XCTAssertEqual(viewModel.programItems.count, 1)
+        XCTAssertTrue(itemsToAdd.isEmpty)
     }
 
     func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() {
