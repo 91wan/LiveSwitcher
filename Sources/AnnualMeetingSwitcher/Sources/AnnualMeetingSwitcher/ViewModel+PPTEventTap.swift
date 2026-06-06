@@ -7,7 +7,7 @@ extension SwitcherViewModel {
     // MARK: - V25: 翻页拦截器控制
 
     func startPPTEventTapFromRuntime() {
-        if let pageInterceptStartOverride {
+        if let pageInterceptStartOverride = testHooks.pageInterceptStartOverride {
             if pageInterceptStartOverride() {
                 completePPTEventTapStartFromRuntime(detail: "state=enabled,override=true")
                 return

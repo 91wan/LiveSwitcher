@@ -222,7 +222,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.programItems = [item]
         viewModel.currentProgramItem = item
-        viewModel.programRestartFromBeginningHandler = { onReadyToPlay in
+        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
             onReadyToPlay()
         }
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))

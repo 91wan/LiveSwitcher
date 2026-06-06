@@ -108,7 +108,7 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
 
     private func makeFailingViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        viewModel.automationCommandRunnerForTesting = { _, action in
+        viewModel.testHooks.automationCommandRunner = { _, action in
             throw AppleScriptError.executionFailed(
                 action: action,
                 message: "/Users/operator/private-show.key failed"
@@ -123,7 +123,7 @@ final class AutomationCommandRuntimeFailureTests: XCTestCase {
     ) -> XCTestExpectation {
         let finished = expectation(description: "automation command finished")
         finished.expectedFulfillmentCount = expectedFulfillmentCount
-        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
+        viewModel.testHooks.automationCommandDidFinish = { finished.fulfill() }
         return finished
     }
 }

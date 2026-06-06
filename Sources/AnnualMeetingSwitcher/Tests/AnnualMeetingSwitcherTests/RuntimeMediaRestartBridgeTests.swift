@@ -19,7 +19,7 @@ final class RuntimeMediaRestartBridgeTests: XCTestCase {
         viewModel.programItems = [item]
         viewModel.currentProgramItem = item
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item))
-        viewModel.programRestartFromBeginningHandler = { onReadyToPlay in
+        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
             viewModelRestartCount += 1
             onReadyToPlay()
         }

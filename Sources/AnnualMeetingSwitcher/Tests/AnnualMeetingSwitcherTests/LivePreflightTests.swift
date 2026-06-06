@@ -11,11 +11,11 @@ final class LivePreflightTests: XCTestCase {
             userDefaults: .standard
         )
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
-        viewModel.keynotePresentationHandler = { _ in }
-        viewModel.pptxOpenHandler = { _ in }
-        viewModel.activeDeckPresentationHandler = {}
-        viewModel.invalidDeckHandler = { _ in }
-        viewModel.deckStopHandler = {}
+        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.actionHandlers.pptxOpen = { _ in }
+        viewModel.actionHandlers.activeDeckPresentation = {}
+        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.actionHandlers.deckStop = {}
         return viewModel
     }
 

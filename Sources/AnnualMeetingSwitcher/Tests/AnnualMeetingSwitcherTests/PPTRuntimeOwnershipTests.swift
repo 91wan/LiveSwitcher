@@ -90,7 +90,7 @@ final class PPTRuntimeOwnershipTests: XCTestCase {
     }
 
     private func functionBody(named name: String) throws -> String {
-        let source = try sourceText("ViewModel.swift")
+        let source = try sourceText("ViewModel+PPTMode.swift")
         guard let start = source.range(of: "func \(name)")?.lowerBound else {
             XCTFail("Missing function \(name)")
             return ""

@@ -60,8 +60,8 @@ final class AutomationCommandRuntimePrivacyTests: XCTestCase {
     func testAutomationNoticeDoesNotUseRawFailureMessage() async throws {
         let viewModel = makeViewModel()
         let finished = expectation(description: "automation command finished")
-        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
-        viewModel.automationCommandRunnerForTesting = { _, action in
+        viewModel.testHooks.automationCommandDidFinish = { finished.fulfill() }
+        viewModel.testHooks.automationCommandRunner = { _, action in
             throw AppleScriptError.executionFailed(
                 action: action,
                 message: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\""
@@ -83,8 +83,8 @@ final class AutomationCommandRuntimePrivacyTests: XCTestCase {
     func testSupportStillStoresRedactedFailureDetail() async throws {
         let viewModel = makeViewModel()
         let finished = expectation(description: "automation command finished")
-        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
-        viewModel.automationCommandRunnerForTesting = { _, action in
+        viewModel.testHooks.automationCommandDidFinish = { finished.fulfill() }
+        viewModel.testHooks.automationCommandRunner = { _, action in
             throw AppleScriptError.executionFailed(
                 action: action,
                 message: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\""
@@ -105,8 +105,8 @@ final class AutomationCommandRuntimePrivacyTests: XCTestCase {
     func testRuntimeActionLogDoesNotContainFailureMessage() async throws {
         let viewModel = makeViewModel()
         let finished = expectation(description: "automation command finished")
-        viewModel.automationCommandDidFinishForTesting = { finished.fulfill() }
-        viewModel.automationCommandRunnerForTesting = { _, action in
+        viewModel.testHooks.automationCommandDidFinish = { finished.fulfill() }
+        viewModel.testHooks.automationCommandRunner = { _, action in
             throw AppleScriptError.executionFailed(
                 action: action,
                 message: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\""

@@ -16,7 +16,7 @@ final class ViewModelPPTEventTapBehaviorTests: XCTestCase {
 
     func testStartPPTEventTapFailureStillRollsBackRuntimeState() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 

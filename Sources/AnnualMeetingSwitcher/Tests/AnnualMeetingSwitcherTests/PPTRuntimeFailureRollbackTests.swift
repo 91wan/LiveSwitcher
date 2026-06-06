@@ -5,7 +5,7 @@ import XCTest
 final class PPTRuntimeFailureRollbackTests: XCTestCase {
     func testPPTStartFailureRollsBackRuntimeState() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -16,7 +16,7 @@ final class PPTRuntimeFailureRollbackTests: XCTestCase {
 
     func testPPTStartFailureRollsBackFacadeState() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -25,7 +25,7 @@ final class PPTRuntimeFailureRollbackTests: XCTestCase {
 
     func testPPTStartFailureDoesNotRecordSuccessEvent() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
@@ -42,7 +42,7 @@ final class PPTRuntimeFailureRollbackTests: XCTestCase {
 
     func testPPTStartOverrideFailureDoesNotLeaveRequestedTrue() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .command)
 

@@ -9,10 +9,10 @@ extension SwitcherViewModel {
         ports.automationPort.runHandler = { [weak self] script, action in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                defer { automationCommandDidFinishForTesting?() }
+                defer { testHooks.automationCommandDidFinish?() }
                 do {
-                    if let automationCommandRunnerForTesting {
-                        try automationCommandRunnerForTesting(script, action)
+                    if let automationCommandRunner = testHooks.automationCommandRunner {
+                        try automationCommandRunner(script, action)
                     } else {
                         try AppleScriptRunner.run(script, action: action)
                     }

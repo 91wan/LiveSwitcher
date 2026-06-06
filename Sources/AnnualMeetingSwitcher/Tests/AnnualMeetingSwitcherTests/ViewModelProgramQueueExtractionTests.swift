@@ -125,10 +125,10 @@ final class ViewModelProgramQueueExtractionTests: XCTestCase {
             enableSystemVolumeObserver: false,
             userDefaults: defaults
         )
-        viewModel.keynotePresentationHandler = { _ in }
-        viewModel.pptxOpenHandler = { _ in }
-        viewModel.activeDeckPresentationHandler = {}
-        viewModel.deckStopHandler = {}
+        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.actionHandlers.pptxOpen = { _ in }
+        viewModel.actionHandlers.activeDeckPresentation = {}
+        viewModel.actionHandlers.deckStop = {}
         return viewModel
     }
 

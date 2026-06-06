@@ -52,7 +52,7 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
 
         XCTAssertTrue(body.contains("persistenceStore.save("))
         XCTAssertTrue(body.contains("makePersistentStateSnapshot()"))
-        XCTAssertTrue(body.contains("saveDataDidRun?()"))
+        XCTAssertTrue(body.contains("testHooks.saveDataDidRun?()"))
         XCTAssertLessThanOrEqual(body.split(separator: "\n").count, 5)
     }
 

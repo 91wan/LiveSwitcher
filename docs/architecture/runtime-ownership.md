@@ -29,11 +29,18 @@ Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`.
 The wallpaper and corner-logo asset library facade lives in
 `ViewModel+Assets.swift`.
+Production action handler closures are grouped under
+`SwitcherViewModelActionHandlers` and configured in
+`ViewModel+ActionHandlerWiring.swift`. Test-only seams are grouped under
+`SwitcherViewModelTestHooks`. Main `ViewModel.swift` may retain private
+storage and narrow bridge accessors, but it must not accumulate loose action
+handler or test-hook fields. Moving code into extensions must not widen private
+ViewModel state just to make files look smaller.
 The main `ViewModel.swift` must not own audio routing method bodies or concrete
 BGM player lifecycle method bodies, media callback/HTML presentation method
 bodies, or wallpaper/corner-logo library method bodies. Result-returning
-automation query migration remains blocked until the audio/BGM/media/assets
-extraction tests and existing ownership gates pass.
+automation query migration remains blocked until hook-consolidation tests,
+audio/BGM/media/assets extraction tests, and existing ownership gates pass.
 Presentation automation source construction, Keynote/WPS result-returning
 AppleScript queries, Keynote/WPS/PPT scans, and WPS fallback branching remain
 ViewModel-owned and live in `ViewModel+PresentationAutomation.swift`.
@@ -238,7 +245,9 @@ support handling and notice facade methods live in
 `ViewModel+AutomationFailure.swift`. Projection output/window/support side
 effects live in `ViewModel+ProjectionOutput.swift`. PPT EventTap lifecycle,
 key forwarding, WPS key forwarding, and automation permission modal alerts live
-in `ViewModel+PPTEventTap.swift`. The Support ingress facade lives in
+in `ViewModel+PPTEventTap.swift`. PPT mode intent methods live in
+`ViewModel+PPTMode.swift`. Default production action-handler wiring lives in
+`ViewModel+ActionHandlerWiring.swift`. The Support ingress facade lives in
 `ViewModel+SupportFacade.swift`.
 
 `ViewModel.swift` must not own Runtime bridge mechanics. It may keep
@@ -255,6 +264,8 @@ BGM transition generation, active BGM timer generation, and last audio-routing
 transition storage are encapsulated behind narrow ViewModel accessors. Runtime
 facade files may call those accessors, but must not treat the raw storage as
 module-wide mutable state.
+Projection read facades may remain in `ViewModel.swift` when moving them would
+require widening `isExternalDisplayAvailable` or related private storage.
 `supportEvents` is a Runtime-backed facade projection and is not broadly
 mutable; Runtime sync updates it through the dedicated projection method.
 Core model types such as `ProgramItem`, `BGMItem`, and `BGMPlayMode` live in

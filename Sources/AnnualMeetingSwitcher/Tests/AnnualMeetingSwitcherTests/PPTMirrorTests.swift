@@ -101,7 +101,7 @@ final class PPTMirrorTests: XCTestCase {
 
     func testViewModelFailureDoesNotRecordSuccess() {
         let viewModel = makeViewModel()
-        viewModel.pageInterceptStartOverride = { false }
+        viewModel.testHooks.pageInterceptStartOverride = { false }
 
         viewModel.setPPTMode(true, source: .liveMode)
 
