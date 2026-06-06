@@ -71,4 +71,23 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
 
         XCTAssertFalse(source.contains("KeynoteController"))
     }
+
+    func testPresentationQueryServiceRemainsViewModelOwned() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
+
+        XCTAssertTrue(source.contains("presentationQueryService.scanPresentationQuery()"))
+        XCTAssertFalse(source.contains("dispatchRuntimeFacadeAction(.presentationQuery"))
+    }
+
+    func testInfrastructureDomainHardeningDidNotIntroduceQueryOwnership() throws {
+        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
+
+        XCTAssertTrue(state.contains("case imageAssets"))
+        XCTAssertTrue(state.contains("case persistence"))
+        XCTAssertFalse(state.contains("automationQuery"))
+        XCTAssertFalse(effect.contains("AutomationQueryPort"))
+    }
 }

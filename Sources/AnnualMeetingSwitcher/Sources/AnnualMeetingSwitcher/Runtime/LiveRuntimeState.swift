@@ -24,6 +24,8 @@ enum LiveRuntimeDomain: String, CaseIterable, Equatable {
     case automation
     case automationCommand
     case support
+    case imageAssets
+    case persistence
 }
 
 extension LiveRuntimeBridgeMode {
@@ -32,21 +34,21 @@ extension LiveRuntimeBridgeMode {
         case .recordingOnly:
             return []
         case .audioOwned:
-            return [.audio]
+            return [.audio, .imageAssets, .persistence]
         case .mediaOwned:
-            return [.audio, .media]
+            return [.audio, .media, .imageAssets, .persistence]
         case .bgmOwned:
-            return [.audio, .media, .bgm]
+            return [.audio, .media, .bgm, .imageAssets, .persistence]
         case .projectionOwned:
-            return [.audio, .media, .bgm, .projection]
+            return [.audio, .media, .bgm, .projection, .imageAssets, .persistence]
         case .pptOwned:
-            return [.audio, .media, .bgm, .projection, .ppt]
+            return [.audio, .media, .bgm, .projection, .ppt, .imageAssets, .persistence]
         case .automationNoticeOwned:
-            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice]
+            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .imageAssets, .persistence]
         case .supportOwned:
-            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support]
+            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .imageAssets, .persistence]
         case .automationCommandOwned:
-            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand]
+            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .imageAssets, .persistence]
         case .fullRuntime:
             return Set(LiveRuntimeDomain.allCases)
         }

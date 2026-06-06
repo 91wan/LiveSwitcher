@@ -154,4 +154,8 @@ private final class PreferencePersistencePortSpy: PersistencePort {
     func saveThemeOverride(_ theme: ThemeOverride) {
         savedThemeOverrides.append(theme)
     }
+
+    func saveAudioStrategy(_ strategy: AudioStrategy) {}
+    func saveSpeakerMode(_ isEnabled: Bool) {}
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {}
 }

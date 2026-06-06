@@ -6,7 +6,7 @@ final class SupportRuntimeOwnershipTests: XCTestCase {
     func testSupportOwnedModeOwnsPriorDomainsAndSupport() {
         XCTAssertEqual(
             LiveRuntimeBridgeMode.supportOwned.ownedDomains,
-            [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support]
+            [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .imageAssets, .persistence]
         )
     }
 
