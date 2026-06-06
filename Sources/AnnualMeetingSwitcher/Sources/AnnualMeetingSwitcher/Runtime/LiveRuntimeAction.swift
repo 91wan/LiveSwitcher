@@ -53,6 +53,12 @@ enum LiveRuntimeAction: Equatable {
     case operatorSetAutoAdvanceAtScheduledTime(Bool)
     case operatorSetShowAgendaTimeline(Bool)
     case operatorSetCornerLogoPosition(CornerLogoPosition)
+    case operatorAddedProgramItems([ProgramItem])
+    case operatorRemovedProgramItem(UUID)
+    case operatorMovedProgramItems(fromOffsets: [Int], toOffset: Int)
+    case operatorUpdatedProgramItemSchedule(id: UUID, scheduledStartAt: Date?, scheduledDuration: TimeInterval?)
+    case operatorAddedAgendaMarker(title: String)
+    case facadeLoadedProgramQueue([ProgramItem])
 
     case mediaLoaded(url: URL, generation: Int)
     case mediaPlaybackChanged(isPlaying: Bool, generation: Int)
@@ -133,6 +139,12 @@ extension LiveRuntimeAction {
         case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
         case .operatorSetShowAgendaTimeline: return "operatorSetShowAgendaTimeline"
         case .operatorSetCornerLogoPosition: return "operatorSetCornerLogoPosition"
+        case .operatorAddedProgramItems: return "operatorAddedProgramItems"
+        case .operatorRemovedProgramItem: return "operatorRemovedProgramItem"
+        case .operatorMovedProgramItems: return "operatorMovedProgramItems"
+        case .operatorUpdatedProgramItemSchedule: return "operatorUpdatedProgramItemSchedule"
+        case .operatorAddedAgendaMarker: return "operatorAddedAgendaMarker"
+        case .facadeLoadedProgramQueue: return "facadeLoadedProgramQueue"
         case .mediaLoaded: return "mediaLoaded"
         case .mediaPlaybackChanged: return "mediaPlaybackChanged"
         case .mediaReachedEnd: return "mediaReachedEnd"

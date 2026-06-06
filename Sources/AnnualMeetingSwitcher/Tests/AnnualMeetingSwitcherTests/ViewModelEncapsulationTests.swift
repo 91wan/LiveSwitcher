@@ -248,7 +248,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "syncRuntimeEnvironmentFromFacade"))
 
         XCTAssertTrue(body.contains("bridgeMode: runtime.bridgeMode"))
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .presentationQueryOwned)
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .programQueueOwned)
     }
 
     func testNoNewUngroupedTestHooksWereAdded() throws {
@@ -319,8 +319,8 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertTrue(source.contains("deinit"))
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsPresentationQueryOwned() {
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .presentationQueryOwned)
+    func testProductionViewModelRuntimeBridgeModeIsProgramQueueOwned() {
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .programQueueOwned)
     }
 
     func testProductionConnectedPortsIncludePresentationQuerySet() {

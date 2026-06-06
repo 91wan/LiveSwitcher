@@ -60,6 +60,13 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         )
     }
 
+    func testProgramQueueOwnedModeOwnsPriorDomainsAndProgramQueue() {
+        XCTAssertEqual(
+            LiveRuntimeBridgeMode.programQueueOwned.ownedDomains,
+            [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .imageAssets, .persistence]
+        )
+    }
+
     func testFullRuntimeOwnsAllDomains() {
         XCTAssertEqual(LiveRuntimeBridgeMode.fullRuntime.ownedDomains, Set(LiveRuntimeDomain.allCases))
     }
@@ -115,6 +122,16 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(mode.owns(.automationCommand))
         XCTAssertTrue(mode.owns(.presentationQuery))
+        XCTAssertFalse(mode.owns(.programQueue))
+        XCTAssertFalse(mode.owns(.automation))
+    }
+
+    func testProgramQueueOwnedModeOwnsProgramQueueButNotFullAutomation() {
+        let mode = LiveRuntimeBridgeMode.programQueueOwned
+
+        XCTAssertTrue(mode.owns(.automationCommand))
+        XCTAssertTrue(mode.owns(.presentationQuery))
+        XCTAssertTrue(mode.owns(.programQueue))
         XCTAssertFalse(mode.owns(.automation))
     }
 

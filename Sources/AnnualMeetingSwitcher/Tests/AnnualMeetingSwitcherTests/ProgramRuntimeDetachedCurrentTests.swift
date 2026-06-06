@@ -6,7 +6,10 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
     func testDetachedCurrentDoesNotInflateRuntimeQueue() {
         let queued = mediaProgram(title: "Queued", path: "/tmp/queued.mp4")
         let detached = mediaProgram(title: "Detached", path: "/tmp/detached.mp4")
-        let runtime = RuntimeTestFactory.fullRuntimeStore()
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionPresentationQueryOwning()
+        )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
@@ -26,7 +29,10 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
 
     func testDetachedCurrentClearsWhenCurrentReturnsToQueue() {
         let queued = mediaProgram(title: "Queued", path: "/tmp/queued.mp4")
-        let runtime = RuntimeTestFactory.fullRuntimeStore()
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionPresentationQueryOwning()
+        )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,

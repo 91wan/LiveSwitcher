@@ -283,7 +283,7 @@ final class SwitcherViewModel {
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: runtimePorts.makeEffectRunner(),
-            environment: .productionPresentationQueryOwning()
+            environment: .productionProgramQueueOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
         configureDefaultActionHandlers()

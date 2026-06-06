@@ -11,12 +11,19 @@ Current authoritative runtime domains:
 - Automation notice lifecycle
 - Support event storage and ingress
 - Automation command execution
+- Image asset side-effect bridge
+- Persistence side-effect bridge
+- Presentation query lifecycle
+- Program queue storage/mutation
 
-Program queue, Panic orchestration, Automation query/result flows, and general
-persistence save/load mechanics are not runtime-owned.
-Program queue ownership remains ViewModel-owned and its queue mutation, source
-validation, switching, schedule, and auto-advance facade lives in
-`ViewModel+ProgramQueue.swift`.
+Panic orchestration, Program activation/switching side effects, source
+validation, invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
+Automation query/result flows, BGM library metadata, and asset-library mutation
+are not runtime-owned.
+Program queue storage/mutation is runtime-owned and projected to
+`SwitcherViewModel.programItems` when `.programQueueOwned`. Program activation,
+source validation, switching side effects, and auto-advance prompt UI remain
+ViewModel-owned in `ViewModel+ProgramQueue.swift`.
 Audio routing facade code that bridges Runtime-owned audio decisions to concrete
 players, faders, and system volume observation lives in
 `ViewModel+AudioRouting.swift`.
@@ -78,9 +85,9 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.presentationQueryOwned`.
-`.fullRuntime` remains test-only; production presentation-query ownership is
-expressed by `.presentationQueryOwned`.
+Production bridge mode is `.programQueueOwned`.
+`.fullRuntime` remains test-only; production program-queue ownership is
+expressed by `.programQueueOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -106,6 +113,7 @@ Each stage includes all domains migrated in earlier stages:
 | `supportOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress |
 | `automationCommandOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution |
 | `presentationQueryOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle |
+| `programQueueOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation |
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
@@ -117,14 +125,16 @@ EventTap lifecycle + Automation notice lifecycle + Support event storage and
 ingress. `.automationCommandOwned` means Audio + Media + BGM + Projection +
 PPT EventTap lifecycle + Automation notice lifecycle + Support event storage
 and ingress + Automation command execution. `.presentationQueryOwned` adds the
-narrow presentation query request/result/failure lifecycle without migrating
-Program queue mutation or broader automation ownership.
+narrow presentation query request/result/failure lifecycle. `.programQueueOwned`
+adds Program queue storage/mutation without migrating Program activation side
+effects or broader automation ownership.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
 `state.automation.notice` plus `state.automation.suppressionUntilByAction`, and
-`state.support`, fire-and-forget automation command execution, and
-`state.presentationQuery`. It may
+`state.support`, fire-and-forget automation command execution,
+`state.presentationQuery`, and Program queue storage/mutation in
+`state.program.items`. It may
 execute the wired ports needed for current production
 behavior. Connected production ports: `media`, `bgm`, `bgmTimer`, `projection`,
 `ppt`, `automationNotice`, `support`, `automation`, `presentationQuery`, `audioRouting`,
@@ -168,7 +178,7 @@ explicit owner.
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | ViewModel owner | Snapshot and action log | not migrated | ViewModel owns queue mutation, source validation, and non-media activation in `ViewModel+ProgramQueue.swift`. Runtime may mirror current selection only to drive media playback. |
+| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. `programItems` is a Runtime-backed facade projection when `.programQueueOwned`. ViewModel still owns Program activation, source validation, invalid-deck alerts, support event generation decisions, and live side effects in `ViewModel+ProgramQueue.swift`. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
@@ -178,7 +188,7 @@ explicit owner.
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
-| Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned`, `.presentationQueryOwned`, or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch through `ViewModel+PresentationAutomation.swift` and `ViewModel+AutomationFailure.swift`. WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
+| Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch through `ViewModel+PresentationAutomation.swift` and `ViewModel+AutomationFailure.swift`. WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Presentation query lifecycle | Runtime owner | Operator query request, active query ID, callback result/failure state, and `scanPresentationQuery` effect | authoritative lifecycle, ViewModel-owned consumption | Runtime owns `.operatorRequestedPresentationQuery`, `.presentationQueryCompleted`, `.presentationQueryFailed`, `.presentationQueryResultConsumed`, `state.presentationQuery`, and `PresentationQueryPort`. `PresentationQueryPort` executes the existing `PresentationQueryService` through ViewModel wiring and dispatches callback actions through `LiveRuntimeEffectExecutionContext`. ViewModel owns result consumption: building program queue items, adding them, support event generation, and automation failure notice dispatch. |
 | Persistence | `SwitcherPersistenceStore` + `ViewModel+Persistence.swift` facade | Wired preference persistence effects | hardened bridge domain and store | `SwitcherPersistenceStore` owns UserDefaults keys plus encode/decode and returns loaded state, missing-file support events, and explicit repair operations. `SwitcherViewModel.saveData()` / `loadData()` live in `ViewModel+Persistence.swift`: ViewModel snapshots state, applies loaded state idempotently, applies returned repairs explicitly, and records returned support events through Runtime support ingress. Runtime may persist selected preferences through the existing `PersistencePort` and `.persistence` domain, but general save/load mechanics are not runtime-owned. |
 
@@ -241,17 +251,14 @@ only categories such as `compilationFailed`, `executionFailed`,
 details may include category plus redacted diagnostic text, but they must not
 retain raw AppleScript source, file paths, or filenames.
 
-Result-returning automation queries remain blocked from this boundary. A future
-query migration must introduce explicit command/query IDs and callback result
-actions before Runtime can correlate asynchronous query results or query
+Broader result-returning automation queries remain blocked from this boundary.
+Future query migrations must introduce explicit command/query IDs and callback
+result actions before Runtime can correlate asynchronous query results or query
 failures. Future callback-capable Runtime ports must use
 `LiveRuntimeEffectExecutionContext.dispatch`; effect callbacks must not bypass
 Runtime by directly calling ViewModel dispatch closures. Until that dedicated
-PR, Keynote/WPS scans, WPS fallback branching, and PPT/WPS key forwarding stay
-ViewModel-owned, and `PresentationQueryService` remains ViewModel-owned. Query
-migration remains blocked until the callback context tests, program queue,
-presentation automation, and automation failure extraction source/behavior
-tests pass.
+PR, WPS fallback branching and PPT/WPS key forwarding stay ViewModel-owned, and
+`PresentationQueryService` remains ViewModel-owned.
 
 ## Bridge Slimming Rules
 
@@ -508,7 +515,7 @@ Automation command execution is runtime-owned only for fire-and-forget
 AppleScript commands. Runtime owns `.automationScriptRequested`, action-log
 redaction for that request, and the `.runAppleScript` effect behind the
 Automation command domain. Production wires the `automation` port for command
-execution in `.presentationQueryOwned`.
+execution in `.programQueueOwned`.
 
 Presentation query lifecycle is runtime-owned for operator-initiated Keynote
 scan requests. Runtime stores the active request ID, emits
@@ -527,8 +534,8 @@ Presentation automation command/query boundary code lives in
 `ViewModel+PresentationAutomation.swift`; automation failure and notice facade
 code lives in `ViewModel+AutomationFailure.swift`.
 Runtime-generated automation notice failures must not write Support storage in
-`.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, or
-`.presentationQueryOwned`;
+`.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`,
+`.presentationQueryOwned`, or `.programQueueOwned`;
 support entries for automation failures are still generated by ViewModel and
 enter runtime storage only through `.supportEventRecorded`.
 
@@ -537,7 +544,7 @@ enter runtime storage only through `.supportEventRecorded`.
 Support storage and production ingress are runtime-owned. Runtime owns
 `state.support.events`, `state.support.coalescedCounts`, and
 `state.support.eventLimit`, including redaction, coalescing, priority retention,
-and trimming. Production uses `.presentationQueryOwned` and wires
+and trimming. Production uses `.programQueueOwned` and wires
 `SupportEventPort`.
 `SupportRuntimeState.record` returns the exact accepted event stored in
 `state.support.events`, including a coalesced replacement event, or `nil` when
@@ -561,15 +568,16 @@ system actions such as projection toggles, `automationFailed`, and
 `automationNoticeDismissed` remain logged. Reducer-generated support remains
 disabled in production migrated domains; ViewModel call sites still decide
 which Support events exist. Automation command execution is wired through the
-`automation` port in `.presentationQueryOwned`, but Support generation remains
+`automation` port in `.programQueueOwned`, but Support generation remains
 ViewModel-owned.
 
 ## Next Migration Gate
 
-Program queue, broader automation query ownership, and key-forwarding
-Automation migration remain blocked. The next migration may proceed only after
-Audio, Media, BGM, Projection, PPT, Automation notice, Support, Automation
-command, and Presentation query ownership and hardening tests pass,
+Program activation/switching side effects, broader automation query ownership,
+and key-forwarding Automation migration remain blocked. The next migration may
+proceed only after Audio, Media, BGM, Projection, PPT, Automation notice,
+Support, Automation command, Presentation query, and Program queue storage
+ownership and hardening tests pass,
 cumulative bridge tests pass, bridge mode explicitness tests pass, explicit
 runtime-store tests pass, no implicit full runtime remains, the target domain
 port is connected in a dedicated PR, and ViewModel no longer owns that target

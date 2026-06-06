@@ -45,7 +45,11 @@ extension SwitcherViewModel {
         audioStrategy = state.audioStrategy
         isSpeakerMode = state.isSpeakerMode
         bgmPlayMode = state.bgmPlayMode
-        programItems = state.programItems
+        if runtime.bridgeMode.owns(.programQueue) {
+            dispatchRuntimeFacadeAction(.facadeLoadedProgramQueue(state.programItems))
+        } else {
+            programItems = state.programItems
+        }
         bgmItems = state.bgmItems
         backgroundWallpapers = state.backgroundWallpapers
         activeWallpaperURL = state.activeWallpaperURL

@@ -7,10 +7,10 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeStore().bridgeMode, .audioOwned)
     }
 
-    func testProductionViewModelRuntimeIsPresentationQueryOwning() {
+    func testProductionViewModelRuntimeIsProgramQueueOwning() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
     }
 
     func testFullRuntimeMustBeExplicitInTests() {
@@ -23,6 +23,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode, .supportOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode, .automationCommandOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.productionPresentationQueryOwning().bridgeMode, .presentationQueryOwned)
+        XCTAssertEqual(LiveRuntimeEnvironment.productionProgramQueueOwning().bridgeMode, .programQueueOwned)
         XCTAssertEqual(LiveRuntimeEnvironment.recordingOnlyForTests().bridgeMode, .recordingOnly)
     }
 
@@ -40,6 +41,7 @@ final class RuntimeEnvironmentExplicitnessTests: XCTestCase {
                     && !line.contains(".productionSupportOwning(")
                     && !line.contains(".productionAutomationCommandOwning(")
                     && !line.contains(".productionPresentationQueryOwning(")
+                    && !line.contains(".productionProgramQueueOwning(")
                     && !line.contains(".fullRuntimeForTests(")
                     && !line.contains(".recordingOnlyForTests("))
         }

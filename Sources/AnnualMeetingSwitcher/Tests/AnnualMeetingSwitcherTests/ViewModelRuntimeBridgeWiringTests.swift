@@ -8,7 +8,7 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
     func testMediaPortLoadStillLoadsAVCoordinatorAndSetsCallbackGeneration() {
         let viewModel = makeViewModel()
         let item = mediaProgram()
-        viewModel.programItems = [item]
+        viewModel.addProgramItem(item)
 
         viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
 

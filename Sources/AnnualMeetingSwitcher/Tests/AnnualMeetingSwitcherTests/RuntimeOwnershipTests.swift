@@ -101,8 +101,8 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("production presentation-query ownership is expressed by `.presentationQueryOwned`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue, broader automation query ownership, and key-forwarding Automation migration remain blocked"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("production program-queue ownership is expressed by `.programQueueOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program activation/switching side effects, broader automation query ownership, and key-forwarding Automation migration remain blocked"))
         XCTAssertTrue(document.localizedStandardContains("Support storage, production ingress, and facade projection use Runtime state"))
     }
 
@@ -184,17 +184,17 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("LiveRuntimeEffectExecutionContext"))
         XCTAssertTrue(document.localizedStandardContains("Future callback-capable Runtime ports must use"))
         XCTAssertTrue(document.localizedStandardContains("`PresentationQueryService` remains ViewModel-owned"))
-        XCTAssertTrue(document.localizedStandardContains("callback context tests"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Future callback-capable Runtime ports must use `LiveRuntimeEffectExecutionContext.dispatch`"))
         XCTAssertTrue(document.localizedStandardContains("WPS fallback branching"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("support event generation call sites, and telemetry remain ViewModel-owned"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, or `.presentationQueryOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, `.presentationQueryOwned`, or `.programQueueOwned`"))
     }
 
     func testDocsStateExtractedViewModelOwnedFacadesBeforeQueryMigration() throws {
         let document = try runtimeOwnershipDocument()
         let normalizedDocument = normalizedWhitespace(document)
 
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue ownership remains ViewModel-owned"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program queue storage/mutation is runtime-owned"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+ProgramQueue.swift`"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+PresentationAutomation.swift`"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+AutomationFailure.swift`"))
@@ -206,7 +206,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection output/window/support side effects live in `ViewModel+ProjectionOutput.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("PPT EventTap lifecycle, key forwarding, WPS key forwarding, and automation permission modal alerts live in `ViewModel+PPTEventTap.swift`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("The thin Support ingress facade `recordSupportEvent(...)` lives in `ViewModel+SupportFacade.swift`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Query migration remains blocked until the callback context tests, program queue, presentation automation, and automation failure extraction source/behavior tests pass"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Broader result-returning automation queries remain blocked from this boundary"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Projection/PPT/Support facade extraction tests"))
     }
 
@@ -236,7 +236,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("Support storage and production ingress are runtime-owned"))
-        XCTAssertTrue(document.localizedStandardContains("Production uses `.presentationQueryOwned` and wires"))
+        XCTAssertTrue(document.localizedStandardContains("Production uses `.programQueueOwned` and wires"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
         XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))

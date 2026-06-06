@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class ProgramQueueMigrationReadinessTests: XCTestCase {
-    func testRuntimeDoesNotIntroduceProgramQueueOwnershipYet() throws {
+    func testRuntimeIntroducesProgramQueueOwnershipStage() throws {
         let state = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift"
         )
@@ -11,19 +11,25 @@ final class ProgramQueueMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
         )
 
-        XCTAssertFalse(state.contains("programQueueOwned"))
-        XCTAssertFalse(action.contains("operatorAddedProgramItems"))
-        XCTAssertFalse(action.contains("operatorRemovedProgramItem"))
-        XCTAssertFalse(action.contains("operatorMovedProgramItems"))
+        XCTAssertTrue(state.contains("programQueueOwned"))
+        XCTAssertTrue(state.contains("case programQueue"))
+        XCTAssertTrue(action.contains("operatorAddedProgramItems"))
+        XCTAssertTrue(action.contains("operatorRemovedProgramItem"))
+        XCTAssertTrue(action.contains("operatorMovedProgramItems"))
     }
 
-    func testViewModelStillOwnsProgramQueueMutation() throws {
+    func testViewModelQueueMutationMethodsDispatchRuntimeActions() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
         )
 
         XCTAssertTrue(source.contains("func addProgramItems(_ items: [ProgramItem])"))
-        XCTAssertTrue(source.contains("programItems.append(contentsOf: items)"))
+        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.operatorAddedProgramItems"))
+        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.operatorRemovedProgramItem"))
+        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.operatorMovedProgramItems"))
+        XCTAssertFalse(source.contains("programItems.append(contentsOf:"))
+        XCTAssertFalse(source.contains("programItems.removeAll"))
+        XCTAssertFalse(source.contains("programItems.move(fromOffsets:"))
     }
 
     func testPresentationQueryRuntimePortDoesNotMutateProgramQueue() throws {
@@ -45,6 +51,19 @@ final class ProgramQueueMigrationReadinessTests: XCTestCase {
 
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
         XCTAssertEqual(viewModel.runtime.state.program.items.map(\.title), ["Opening"])
+    }
+
+    func testProgramActivationMethodsRemainViewModelOwned() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
+        )
+
+        XCTAssertTrue(source.contains("programSourceIsAvailable"))
+        XCTAssertTrue(source.contains("actionHandlers.invalidDeck"))
+        XCTAssertTrue(source.contains("actionHandlers.keynotePresentation"))
+        XCTAssertTrue(source.contains("actionHandlers.pptxOpen"))
+        XCTAssertTrue(source.contains("openHTMLInOutputWindow"))
+        XCTAssertTrue(source.contains("actionHandlers.activeDeckPresentation"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

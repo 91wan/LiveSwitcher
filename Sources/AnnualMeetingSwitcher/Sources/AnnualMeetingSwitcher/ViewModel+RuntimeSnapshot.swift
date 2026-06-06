@@ -53,9 +53,12 @@ extension SwitcherViewModel {
     private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
         var state = runtime.state
         state.mode = consoleMode
-        state.program.items = programItems
+        syncProgramQueueIntoRuntimeSnapshot(&state)
+        let queueItemsForCurrentLookup = runtime.bridgeMode.owns(.programQueue)
+            ? state.program.items
+            : programItems
         if let currentProgramItem,
-           !programItems.contains(where: { $0.id == currentProgramItem.id }) {
+           !queueItemsForCurrentLookup.contains(where: { $0.id == currentProgramItem.id }) {
             state.program.currentDetachedItem = currentProgramItem
         } else {
             state.program.currentDetachedItem = nil
@@ -103,6 +106,15 @@ extension SwitcherViewModel {
         syncAutomationNoticeIntoRuntimeSnapshot(&state)
         syncSupportIntoRuntimeSnapshot(&state)
         return state
+    }
+
+    private func syncProgramQueueIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.programQueue) else {
+            state.program.items = runtime.state.program.items
+            return
+        }
+
+        state.program.items = programItems
     }
 
     private func syncSupportIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {

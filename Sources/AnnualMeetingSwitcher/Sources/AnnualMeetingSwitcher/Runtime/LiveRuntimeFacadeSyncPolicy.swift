@@ -7,6 +7,7 @@ struct LiveRuntimeFacadeSyncOptions: Equatable {
     var syncPPT: Bool
     var syncAutomationNotice: Bool
     var syncSupport: Bool
+    var syncProgramQueue: Bool
 }
 
 enum LiveRuntimeFacadeSyncPolicy {
@@ -17,7 +18,8 @@ enum LiveRuntimeFacadeSyncPolicy {
             syncProjection: shouldSyncProjectionFacadeAfterRuntimeAction(action),
             syncPPT: shouldSyncPPTFacadeAfterRuntimeAction(action),
             syncAutomationNotice: shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action),
-            syncSupport: shouldSyncSupportFacadeAfterRuntimeAction(action)
+            syncSupport: shouldSyncSupportFacadeAfterRuntimeAction(action),
+            syncProgramQueue: shouldSyncProgramQueueFacadeAfterRuntimeAction(action)
         )
     }
 
@@ -44,6 +46,12 @@ enum LiveRuntimeFacadeSyncPolicy {
              .presentationQueryCompleted,
              .presentationQueryFailed,
              .presentationQueryResultConsumed,
+             .operatorAddedProgramItems,
+             .operatorRemovedProgramItem,
+             .operatorMovedProgramItems,
+             .operatorUpdatedProgramItemSchedule,
+             .operatorAddedAgendaMarker,
+             .facadeLoadedProgramQueue,
              .facadeAudioInputsChanged:
             return false
         default:
@@ -112,6 +120,21 @@ enum LiveRuntimeFacadeSyncPolicy {
     private static func shouldSyncSupportFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .supportEventRecorded:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func shouldSyncProgramQueueFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorAddedProgramItems,
+             .operatorRemovedProgramItem,
+             .operatorMovedProgramItems,
+             .operatorUpdatedProgramItemSchedule,
+             .operatorAddedAgendaMarker,
+             .facadeLoadedProgramQueue,
+             .presentationQueryResultConsumed:
             return true
         default:
             return false

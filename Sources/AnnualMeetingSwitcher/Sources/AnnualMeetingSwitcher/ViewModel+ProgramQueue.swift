@@ -204,17 +204,13 @@ extension SwitcherViewModel {
 
     func addProgramItems(_ items: [ProgramItem]) {
         guard !items.isEmpty else { return }
-        programItems.append(contentsOf: items)
+        dispatchRuntimeFacadeAction(.operatorAddedProgramItems(items))
         saveData()
     }
 
     func addAgendaMarker(title: String = "Break") {
-        let start = programItems.last.flatMap { item -> Date? in
-            guard let scheduledStartAt = item.scheduledStartAt,
-                  let scheduledDuration = item.scheduledDuration else { return nil }
-            return scheduledStartAt.addingTimeInterval(scheduledDuration)
-        }
-        addProgramItem(ProgramItem.agendaMarker(title: title, scheduledStartAt: start))
+        dispatchRuntimeFacadeAction(.operatorAddedAgendaMarker(title: title))
+        saveData()
     }
 
     func updateProgramItemSchedule(
@@ -222,34 +218,43 @@ extension SwitcherViewModel {
         scheduledStartAt: Date?,
         scheduledDuration: TimeInterval?
     ) {
-        guard let index = programItems.firstIndex(where: { $0.id == id }) else { return }
-        programItems[index].scheduledStartAt = scheduledStartAt
-        programItems[index].scheduledDuration = scheduledDuration
+        dispatchRuntimeFacadeAction(.operatorUpdatedProgramItemSchedule(
+            id: id,
+            scheduledStartAt: scheduledStartAt,
+            scheduledDuration: scheduledDuration
+        ))
         if currentProgramItem?.id == id {
-            currentProgramItem = programItems[index]
+            if let updatedItem = programItems.first(where: { $0.id == id }) {
+                currentProgramItem = updatedItem
+            }
         }
         agendaAutoAdvancePromptedItemIDs.remove(id)
         saveData()
     }
 
     func removeProgramItem(withID id: UUID) {
-        programItems.removeAll { $0.id == id }
-        if currentProgramItem?.id == id {
-            needsMutedMediaStartupAfterClearedProgram = currentProgramItem?.sourceKind == .media
-            if currentProgramItem?.supportsPresentationControl == true {
+        let removedItem = programItems.first { $0.id == id }
+        let isCurrent = currentProgramItem?.id == id
+        if isCurrent {
+            needsMutedMediaStartupAfterClearedProgram = removedItem?.sourceKind == .media
+            if removedItem?.supportsPresentationControl == true {
                 actionHandlers.deckStop()
             }
-            if currentProgramItem?.sourceKind == .media {
+            if removedItem?.sourceKind == .media {
                 dispatchRuntimeFacadeAction(.operatorStoppedCurrentMedia)
             }
             currentProgramItem = nil
             currentHTMLURL = nil   // Bug2修复：删除HTML条目时清空大屏
         }
+        dispatchRuntimeFacadeAction(.operatorRemovedProgramItem(id))
         saveData()
     }
 
     func moveProgramItems(from source: IndexSet, to destination: Int) {
-        programItems.move(fromOffsets: source, toOffset: destination)
+        dispatchRuntimeFacadeAction(.operatorMovedProgramItems(
+            fromOffsets: Array(source),
+            toOffset: destination
+        ))
         saveData()
     }
 
