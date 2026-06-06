@@ -66,6 +66,9 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode.owns(.automation))
         XCTAssertTrue(LiveRuntimeEnvironment.productionPresentationQueryOwning().bridgeMode.owns(.presentationQuery))
         XCTAssertFalse(LiveRuntimeEnvironment.productionPresentationQueryOwning().bridgeMode.owns(.automation))
+        XCTAssertTrue(LiveRuntimeEnvironment.productionProgramQueueOwning().bridgeMode.owns(.programQueue))
+        XCTAssertTrue(LiveRuntimeEnvironment.productionProgramQueueOwning().bridgeMode.owns(.presentationQuery))
+        XCTAssertFalse(LiveRuntimeEnvironment.productionProgramQueueOwning().bridgeMode.owns(.automation))
         XCTAssertTrue(LiveRuntimeEnvironment.fullRuntimeForTests().bridgeMode.owns(.automation))
     }
 

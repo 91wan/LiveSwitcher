@@ -16,6 +16,12 @@ extension SwitcherViewModel {
         applySupportEventsProjectionFromRuntime(runtime.state.support.events)
     }
 
+    func syncProgramQueueFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.programQueue) else { return }
+
+        programItems = runtime.state.program.items
+    }
+
     func syncPPTFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.ppt) else { return }
 

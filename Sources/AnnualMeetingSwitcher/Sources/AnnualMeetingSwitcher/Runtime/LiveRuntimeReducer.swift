@@ -381,6 +381,47 @@ enum LiveRuntimeReducer {
             state.preferences.cornerLogoPosition = position
             effects.append(.saveCornerLogoPosition(position))
 
+        case .operatorAddedProgramItems(let items):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            guard !items.isEmpty else { break }
+            state.program.items.append(contentsOf: items)
+
+        case .operatorRemovedProgramItem(let id):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            state.program.items.removeAll { $0.id == id }
+            if state.program.currentID == id {
+                state.program.currentID = nil
+            }
+
+        case .operatorMovedProgramItems(let fromOffsets, let toOffset):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            moveProgramItems(&state.program.items, fromOffsets: fromOffsets, toOffset: toOffset)
+
+        case .operatorUpdatedProgramItemSchedule(let id, let scheduledStartAt, let scheduledDuration):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            guard let index = state.program.items.firstIndex(where: { $0.id == id }) else { break }
+            state.program.items[index].scheduledStartAt = scheduledStartAt
+            state.program.items[index].scheduledDuration = scheduledDuration
+
+        case .operatorAddedAgendaMarker(let title):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            let start = state.program.items.last.flatMap { item -> Date? in
+                guard let scheduledStartAt = item.scheduledStartAt,
+                      let scheduledDuration = item.scheduledDuration
+                else { return nil }
+                return scheduledStartAt.addingTimeInterval(scheduledDuration)
+            }
+            state.program.items.append(ProgramItem.agendaMarker(title: title, scheduledStartAt: start))
+
+        case .facadeLoadedProgramQueue(let items):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            state.program.items = items
+            if let currentID = state.program.currentID,
+               !items.contains(where: { $0.id == currentID }),
+               state.program.currentDetachedItem?.id != currentID {
+                state.program.currentID = nil
+            }
+
         case .mediaLoaded(let url, let generation):
             guard generation == state.media.generation else { break }
             state.media.loadedURL = url
@@ -971,6 +1012,22 @@ enum LiveRuntimeReducer {
 
     private static func isRuntimeOwned(_ domain: LiveRuntimeDomain, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
         bridgeMode.owns(domain)
+    }
+
+    private static func moveProgramItems(_ items: inout [ProgramItem], fromOffsets: [Int], toOffset: Int) {
+        let validOffsets = Array(Set(fromOffsets))
+            .filter { items.indices.contains($0) }
+            .sorted()
+        guard !validOffsets.isEmpty else { return }
+
+        let movingItems = validOffsets.map { items[$0] }
+        for index in validOffsets.reversed() {
+            items.remove(at: index)
+        }
+
+        let removedBeforeDestination = validOffsets.filter { $0 < toOffset }.count
+        let insertionIndex = min(max(0, toOffset - removedBeforeDestination), items.count)
+        items.insert(contentsOf: movingItems, at: insertionIndex)
     }
 
     private static func canGenerateReducerSupport(in bridgeMode: LiveRuntimeBridgeMode) -> Bool {

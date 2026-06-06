@@ -98,14 +98,14 @@ final class ViewModelProgramQueueExtractionTests: XCTestCase {
         XCTAssertTrue(body.contains("programItems: programItems"))
     }
 
-    func testProgramQueueOwnershipRemainsViewModelOwned() {
+    func testProgramQueueStorageIsRuntimeOwnedAndProjectedToViewModel() {
         let viewModel = makeViewModel()
         let item = mediaProgram()
 
         viewModel.addProgramItem(item)
 
         XCTAssertEqual(viewModel.programItems.map(\.id), [item.id])
-        XCTAssertTrue(viewModel.runtime.state.program.items.isEmpty)
+        XCTAssertEqual(viewModel.runtime.state.program.items.map(\.id), [item.id])
     }
 
     private func viewModelSource() throws -> String {

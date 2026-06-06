@@ -68,14 +68,14 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         XCTAssertEqual(audioRouting.reasons.filter { $0 == .programChanged }.count, 1)
     }
 
-    func testProgramQueueStillOwnedByViewModel() {
+    func testProgramQueueStorageIsRuntimeOwnedAndProjectedToViewModel() {
         let item = mediaProgram()
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         viewModel.addProgramItem(item)
 
         XCTAssertEqual(viewModel.programItems.map(\.id), [item.id])
-        XCTAssertTrue(viewModel.runtime.state.program.items.isEmpty)
+        XCTAssertEqual(viewModel.runtime.state.program.items.map(\.id), [item.id])
     }
 
     func testRuntimeDoesNotMutateProgramItemsOnMediaPlaybackToggle() {

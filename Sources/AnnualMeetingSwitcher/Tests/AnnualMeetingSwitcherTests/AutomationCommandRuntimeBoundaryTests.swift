@@ -86,7 +86,7 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         let docs = try sourceText("docs/architecture/runtime-ownership.md")
         let normalizedDocs = docs.components(separatedBy: .whitespacesAndNewlines).joined(separator: " ")
 
-        XCTAssertTrue(normalizedDocs.localizedStandardContains("query migration must introduce explicit command/query IDs"))
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("Future query migrations must introduce explicit command/query IDs"))
         XCTAssertTrue(normalizedDocs.localizedStandardContains("callback result actions"))
     }
 

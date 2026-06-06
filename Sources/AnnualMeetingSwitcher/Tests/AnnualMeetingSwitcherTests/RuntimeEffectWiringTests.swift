@@ -12,10 +12,10 @@ final class RuntimeEffectWiringTests: XCTestCase {
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsPresentationQueryOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramQueueOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
     }
 
     func testNoProductionPortLostDuringBridgeSlimming() {

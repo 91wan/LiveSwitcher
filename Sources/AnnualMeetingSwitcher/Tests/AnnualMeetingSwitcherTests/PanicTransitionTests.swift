@@ -238,7 +238,7 @@ final class PanicTransitionTests: XCTestCase {
         }
         let first = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: firstURL)
         let second = ProgramItem(title: "Awards", subtitle: "MP4", sourceURL: secondURL)
-        viewModel.programItems = [first, second]
+        viewModel.addProgramItems([first, second])
         viewModel.autoPlayNextVideoOnEnd = true
         viewModel.switchToProgram(first)
         viewModel.togglePanicMode()

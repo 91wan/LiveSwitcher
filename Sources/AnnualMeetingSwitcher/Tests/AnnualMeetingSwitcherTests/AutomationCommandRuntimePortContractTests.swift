@@ -51,7 +51,7 @@ final class AutomationCommandRuntimePortContractTests: XCTestCase {
     func testAutomationCommandOwnedModeWiresAutomationPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
     }
 
