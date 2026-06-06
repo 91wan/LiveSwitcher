@@ -81,6 +81,10 @@ enum LiveRuntimeAction: Equatable {
     case automationNoticeRequested(action: String)
     case automationNoticeExpired(UUID)
     case automationNoticeDismissed
+    case operatorRequestedPresentationQuery(id: UUID)
+    case presentationQueryCompleted(id: UUID, result: PresentationQueryResult)
+    case presentationQueryFailed(id: UUID, action: String, sanitizedMessage: String)
+    case presentationQueryResultConsumed(id: UUID)
 
     case supportEventRecorded(LiveSupportEvent)
 }
@@ -153,6 +157,10 @@ extension LiveRuntimeAction {
         case .automationNoticeRequested: return "automationNoticeRequested"
         case .automationNoticeExpired: return "automationNoticeExpired"
         case .automationNoticeDismissed: return "automationNoticeDismissed"
+        case .operatorRequestedPresentationQuery: return "operatorRequestedPresentationQuery"
+        case .presentationQueryCompleted: return "presentationQueryCompleted"
+        case .presentationQueryFailed: return "presentationQueryFailed"
+        case .presentationQueryResultConsumed: return "presentationQueryResultConsumed"
         case .supportEventRecorded: return "supportEventRecorded"
         }
     }

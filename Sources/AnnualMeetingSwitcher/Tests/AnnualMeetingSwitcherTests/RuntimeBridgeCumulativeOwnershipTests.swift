@@ -53,6 +53,13 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         )
     }
 
+    func testPresentationQueryOwnedModeOwnsPriorDomainsAndPresentationQuery() {
+        XCTAssertEqual(
+            LiveRuntimeBridgeMode.presentationQueryOwned.ownedDomains,
+            [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .imageAssets, .persistence]
+        )
+    }
+
     func testFullRuntimeOwnsAllDomains() {
         XCTAssertEqual(LiveRuntimeBridgeMode.fullRuntime.ownedDomains, Set(LiveRuntimeDomain.allCases))
     }
@@ -99,6 +106,15 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         let mode = LiveRuntimeBridgeMode.automationCommandOwned
 
         XCTAssertTrue(mode.owns(.automationCommand))
+        XCTAssertFalse(mode.owns(.presentationQuery))
+        XCTAssertFalse(mode.owns(.automation))
+    }
+
+    func testPresentationQueryOwnedModeOwnsPresentationQueryButNotFullAutomation() {
+        let mode = LiveRuntimeBridgeMode.presentationQueryOwned
+
+        XCTAssertTrue(mode.owns(.automationCommand))
+        XCTAssertTrue(mode.owns(.presentationQuery))
         XCTAssertFalse(mode.owns(.automation))
     }
 
@@ -109,10 +125,10 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         }
     }
 
-    func testAutomationCommandOwnedStillOwnsPriorDomains() {
-        let mode = LiveRuntimeBridgeMode.automationCommandOwned
+    func testPresentationQueryOwnedStillOwnsPriorDomains() {
+        let mode = LiveRuntimeBridgeMode.presentationQueryOwned
 
-        for domain in [LiveRuntimeDomain.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand] {
+        for domain in [LiveRuntimeDomain.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery] {
             XCTAssertTrue(mode.owns(domain), "\(domain)")
         }
     }

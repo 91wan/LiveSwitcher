@@ -51,6 +51,7 @@ final class RuntimeEffectInfrastructureSplitTests: XCTestCase {
             "protocol AutomationPort",
             "protocol BGMTimerPort",
             "protocol AutomationNoticePort",
+            "protocol PresentationQueryPort",
             "protocol AudioRoutingPort",
             "protocol ImageAssetPort",
             "protocol PersistencePort",
@@ -103,29 +104,30 @@ final class RuntimeEffectInfrastructureSplitTests: XCTestCase {
 
         XCTAssertEqual(
             runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testSwitcherRuntimePortBundleConnectedPortsRemainAutomationCommandOwnedSet() {
+    func testSwitcherRuntimePortBundleConnectedPortsIncludePresentationQuerySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .automationCommandOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .presentationQueryOwned)
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testNoAutomationQueryTypesWereAddedDuringEffectSplit() throws {
+    func testEffectSplitHasNarrowPresentationQueryButNoBroadAutomationQuery() throws {
         let state = try runtimeSource("LiveRuntimeState.swift")
         let effect = try runtimeSource("LiveRuntimeEffect.swift")
         let ports = try runtimeSource("LiveRuntimePorts.swift")
 
         XCTAssertFalse(state.contains("automationQueryOwned"))
         XCTAssertFalse(state.contains("automationQuery"))
-        XCTAssertFalse(effect.contains("scanPresentationQuery"))
-        XCTAssertFalse(effect.contains("presentationQuery"))
+        XCTAssertTrue(state.contains("presentationQueryOwned"))
+        XCTAssertTrue(effect.contains("scanPresentationQuery"))
+        XCTAssertTrue(ports.contains("PresentationQueryPort"))
         XCTAssertFalse(ports.contains("AutomationQueryPort"))
     }
 

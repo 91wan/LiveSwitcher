@@ -21,6 +21,20 @@ extension SwitcherViewModel {
                 }
             }
         }
+        ports.presentationQueryPort.scanHandler = { [weak self] id, context in
+            guard let self else { return }
+            do {
+                let result = try scanPresentationQueryForRuntimePort()
+                context.dispatch(.presentationQueryCompleted(id: id, result: result))
+            } catch {
+                let sanitizedMessage = sanitizedAutomationFailureMessage(error)
+                context.dispatch(.presentationQueryFailed(
+                    id: id,
+                    action: "keynote.scan.windows",
+                    sanitizedMessage: sanitizedMessage
+                ))
+            }
+        }
         ports.automationNoticePort.showHandler = { [weak self] notice in
             self?.cancelAutomationNoticeExpiryTask()
             self?.automationRuntimeNotice = notice

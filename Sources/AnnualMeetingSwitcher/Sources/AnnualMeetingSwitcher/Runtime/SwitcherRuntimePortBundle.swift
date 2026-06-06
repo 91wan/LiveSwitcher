@@ -7,6 +7,7 @@ struct SwitcherRuntimePortBundle {
     let automationNoticePort = ClosureAutomationNoticePort()
     let supportPort = ClosureSupportEventPort()
     let automationPort = ClosureAutomationPort()
+    let presentationQueryPort = ClosurePresentationQueryPort()
     let audioRoutingPort = ClosureAudioRoutingPort()
     let imageAssetPort = ClosureImageAssetPort()
     let persistencePort = ClosurePersistencePort()
@@ -21,6 +22,7 @@ struct SwitcherRuntimePortBundle {
             automation: automationPort,
             bgmTimer: bgmTimerPort,
             automationNotice: automationNoticePort,
+            presentationQuery: presentationQueryPort,
             audioRouting: audioRoutingPort,
             imageAssets: imageAssetPort,
             persistence: persistencePort,

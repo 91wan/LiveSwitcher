@@ -3,30 +3,38 @@ import XCTest
 
 @MainActor
 final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
-    func testScanAndAddKeynoteWindowsUsesPresentationQueryResultBuilder() throws {
+    func testScanAndAddKeynoteWindowsDispatchesPresentationQueryRequest() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanAndAddKeynoteWindows"))
 
-        XCTAssertTrue(body.contains("from: result"))
+        XCTAssertTrue(body.contains("operatorRequestedPresentationQuery"))
+        XCTAssertTrue(body.contains("consumePresentationQueryOutcomeFromRuntime"))
         XCTAssertFalse(body.contains("scanOpenKeynoteFiles()"))
         XCTAssertFalse(body.contains("scanKeynoteWindowNames()"))
-        XCTAssertTrue(body.contains("PresentationQueryResultBuilder.makeProgramItems("))
+        XCTAssertFalse(body.contains("PresentationQueryResultBuilder.makeProgramItems("))
         XCTAssertFalse(body.contains("ProgramItem("))
         XCTAssertFalse(body.contains("itemsToAdd.append"))
         XCTAssertFalse(body.contains("alreadyAdded"))
         XCTAssertFalse(body.contains("KeynoteController.cleanedDocumentTitle"))
     }
 
-    func testScanAndAddKeynoteWindowsUsesPresentationQueryServiceResult() throws {
+    func testConsumePresentationQueryOutcomeUsesPresentationQueryResultBuilder() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
-        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanAndAddKeynoteWindows"))
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
 
-        XCTAssertTrue(body.contains("let result: PresentationQueryResult"))
-        XCTAssertTrue(body.contains("scanPresentationQuery()"))
+        XCTAssertTrue(body.contains("from: result"))
+        XCTAssertTrue(body.contains("PresentationQueryResultBuilder.makeProgramItems("))
+        XCTAssertTrue(body.contains("presentationQueryResultConsumed"))
+    }
+
+    func testRuntimePortUsesPresentationQueryServiceResult() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
 
         let helperBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
         XCTAssertTrue(helperBody.contains("presentationQueryService.scanPresentationQuery()"))

@@ -64,6 +64,9 @@ extension LiveRuntimeEffect {
         case .runAppleScript:
             return .automationCommand
 
+        case .scanPresentationQuery:
+            return .presentationQuery
+
         case .showAutomationNotice,
              .expireAutomationNotice:
             return .automationNotice

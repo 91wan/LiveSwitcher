@@ -48,7 +48,7 @@ final class RuntimeStoreInitializationTests: XCTestCase {
     func testProductionViewModelPassesAutomationCommandOwningExplicitly() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
 
-        XCTAssertTrue(source.contains("environment: .productionAutomationCommandOwning()"))
+        XCTAssertTrue(source.contains("environment: .productionPresentationQueryOwning()"))
     }
 
     private func liveRuntimeStoreSource() throws -> String {

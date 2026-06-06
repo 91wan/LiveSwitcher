@@ -55,11 +55,17 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         )
     }
 
-    func testProductionAutomationCommandModeOwnsCommandButNotFullAutomationDomain() {
+    func testScanPresentationQueryRequiresPresentationQueryDomain() {
+        XCTAssertEqual(LiveRuntimeEffect.scanPresentationQuery(id: UUID()).requiredBridgeDomain, .presentationQuery)
+    }
+
+    func testProductionPresentationQueryModeOwnsQueryButNotFullAutomationDomain() {
         XCTAssertFalse(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode.owns(.automation))
         XCTAssertFalse(LiveRuntimeEnvironment.productionSupportOwning().bridgeMode.owns(.automationCommand))
         XCTAssertTrue(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode.owns(.automationCommand))
         XCTAssertFalse(LiveRuntimeEnvironment.productionAutomationCommandOwning().bridgeMode.owns(.automation))
+        XCTAssertTrue(LiveRuntimeEnvironment.productionPresentationQueryOwning().bridgeMode.owns(.presentationQuery))
+        XCTAssertFalse(LiveRuntimeEnvironment.productionPresentationQueryOwning().bridgeMode.owns(.automation))
         XCTAssertTrue(LiveRuntimeEnvironment.fullRuntimeForTests().bridgeMode.owns(.automation))
     }
 

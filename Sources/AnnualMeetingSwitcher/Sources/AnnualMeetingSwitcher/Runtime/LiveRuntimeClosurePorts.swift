@@ -136,6 +136,14 @@ final class ClosureAutomationPort: AutomationPort {
     }
 }
 
+final class ClosurePresentationQueryPort: PresentationQueryPort {
+    var scanHandler: ((UUID, LiveRuntimeEffectExecutionContext) -> Void)?
+
+    func scan(id: UUID, context: LiveRuntimeEffectExecutionContext) {
+        scanHandler?(id, context)
+    }
+}
+
 final class ClosureProjectionPort: ProjectionPort {
     var hasExternalDisplayHandler: (() -> Bool)?
     var startHandler: (() -> Void)?
