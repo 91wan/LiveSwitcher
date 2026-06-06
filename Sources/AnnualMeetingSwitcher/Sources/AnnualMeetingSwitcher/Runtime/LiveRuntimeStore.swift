@@ -114,6 +114,8 @@ enum LiveRuntimeActionLogPolicy {
              .automationNoticeRequested,
              .automationNoticeExpired,
              .supportEventRecorded,
+             .presentationQueryCompleted,
+             .presentationQueryResultConsumed,
              .bgmProgressUpdated,
              .mediaSeekCompleted:
             return false

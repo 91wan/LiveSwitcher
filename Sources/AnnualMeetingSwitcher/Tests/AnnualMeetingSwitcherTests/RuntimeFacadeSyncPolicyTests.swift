@@ -93,6 +93,33 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncSupport)
     }
 
+    func testPresentationQueryActionsDoNotDispatchAudioInputs() {
+        for action in presentationQueryActions {
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
+        }
+    }
+
+    func testPresentationQueryActionsDoNotSyncUnrelatedFacades() {
+        for action in presentationQueryActions {
+            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
+
+            XCTAssertFalse(options.syncBGM, action.redactedName)
+            XCTAssertFalse(options.syncProjection, action.redactedName)
+            XCTAssertFalse(options.syncPPT, action.redactedName)
+            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
+            XCTAssertFalse(options.syncSupport, action.redactedName)
+        }
+    }
+
+    func testAutomationFailedStillSyncsAutomationNoticeFacade() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
+            action: "keynote.scan.windows",
+            sanitizedMessage: "permissionDenied"
+        ))
+
+        XCTAssertTrue(options.syncAutomationNotice)
+    }
+
     func testPolicyMatchesPreviousViewModelBehaviorForKnownActions() {
         XCTAssertEqual(
             LiveRuntimeFacadeSyncPolicy.options(for: .operatorSelectedProgram(UUID())),
@@ -168,5 +195,15 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
             isMediaPlaying: false,
             isBGMPlaying: false
         )
+    }
+
+    private var presentationQueryActions: [LiveRuntimeAction] {
+        let id = UUID()
+        return [
+            .operatorRequestedPresentationQuery(id: id),
+            .presentationQueryCompleted(id: id, result: .empty),
+            .presentationQueryFailed(id: id, action: "keynote.scan.windows", sanitizedMessage: "permissionDenied"),
+            .presentationQueryResultConsumed(id: id)
+        ]
     }
 }

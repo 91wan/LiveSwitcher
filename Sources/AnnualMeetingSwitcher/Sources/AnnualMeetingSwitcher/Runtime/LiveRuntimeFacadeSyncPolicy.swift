@@ -40,6 +40,10 @@ enum LiveRuntimeFacadeSyncPolicy {
              .bgmFailed,
              .operatorPausedBGMForPanic,
              .operatorResumedBGMAfterPanic,
+             .operatorRequestedPresentationQuery,
+             .presentationQueryCompleted,
+             .presentationQueryFailed,
+             .presentationQueryResultConsumed,
              .facadeAudioInputsChanged:
             return false
         default:

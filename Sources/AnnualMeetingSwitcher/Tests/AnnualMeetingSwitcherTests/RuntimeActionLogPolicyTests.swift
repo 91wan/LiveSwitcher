@@ -51,6 +51,56 @@ final class RuntimeActionLogPolicyTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "automationFailed" })
     }
 
+    func testPresentationQueryCompletedAndConsumedAreNotLogged() {
+        let id = UUID()
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .presentationQueryOwned)
+        )
+
+        runtime.dispatch(.operatorRequestedPresentationQuery(id: id))
+        runtime.dispatch(.presentationQueryCompleted(
+            id: id,
+            result: PresentationQueryResult(openFilePaths: ["/tmp/private/Opening.key"], windowNames: ["Opening.key"])
+        ))
+        runtime.dispatch(.presentationQueryResultConsumed(id: id))
+
+        XCTAssertFalse(LiveRuntimeActionLogPolicy.shouldLog(.presentationQueryCompleted(id: id, result: .empty)))
+        XCTAssertFalse(LiveRuntimeActionLogPolicy.shouldLog(.presentationQueryResultConsumed(id: id)))
+        XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "presentationQueryCompleted" })
+        XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "presentationQueryResultConsumed" })
+        XCTAssertFalse(runtime.actionLog.contains { entry in
+            entry.oldStateSummary.contains("/tmp/private")
+                || entry.newStateSummary.contains("/tmp/private")
+                || entry.oldStateSummary.contains("Opening.key")
+                || entry.newStateSummary.contains("Opening.key")
+        })
+    }
+
+    func testOperatorRequestedPresentationQueryAndFailureStillLog() {
+        let id = UUID()
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .presentationQueryOwned)
+        )
+
+        runtime.dispatch(.operatorRequestedPresentationQuery(id: id))
+        runtime.dispatch(.presentationQueryFailed(
+            id: id,
+            action: "keynote.scan.windows",
+            sanitizedMessage: "permissionDenied"
+        ))
+
+        XCTAssertTrue(LiveRuntimeActionLogPolicy.shouldLog(.operatorRequestedPresentationQuery(id: id)))
+        XCTAssertTrue(LiveRuntimeActionLogPolicy.shouldLog(.presentationQueryFailed(
+            id: id,
+            action: "keynote.scan.windows",
+            sanitizedMessage: "permissionDenied"
+        )))
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRequestedPresentationQuery" })
+        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "presentationQueryFailed" })
+    }
+
     func testSupportEventRecordedIsNotLoggedButStillWritesSupportState() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),

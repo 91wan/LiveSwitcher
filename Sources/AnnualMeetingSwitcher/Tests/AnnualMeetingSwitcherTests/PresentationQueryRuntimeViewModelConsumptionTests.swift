@@ -21,7 +21,7 @@ final class PresentationQueryRuntimeViewModelConsumptionTests: XCTestCase {
         viewModel.scanAndAddKeynoteWindows()
 
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "presentationQueryResultConsumed" })
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "presentationQueryResultConsumed" })
     }
 
     func testScanAndAddKeynoteWindowsAddsOpenKeynoteFilesFromRuntimeResult() {
@@ -53,8 +53,9 @@ final class PresentationQueryRuntimeViewModelConsumptionTests: XCTestCase {
 
         viewModel.scanAndAddKeynoteWindows()
 
-        let latestID = try? XCTUnwrap(viewModel.runtime.state.presentationQuery.latestCompletedRequestID)
-        XCTAssertTrue(latestID.map { viewModel.runtime.state.presentationQuery.consumedRequestIDs.contains($0) } ?? false)
+        XCTAssertNil(viewModel.runtime.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(viewModel.runtime.state.presentationQuery.latestResult)
+        XCTAssertEqual(viewModel.runtime.state.presentationQuery.consumedRequestIDs.count, 1)
     }
 
     func testScanAndAddKeynoteWindowsDoesNotApplyConsumedResultTwice() {
@@ -71,6 +72,18 @@ final class PresentationQueryRuntimeViewModelConsumptionTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.count, countAfterFirstScan)
     }
 
+    func testScanAndAddKeynoteWindowsSyncsProgramQueueIntoRuntimeBeforeConsume() {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.scanKeynoteWindowNames = { [] }
+        viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
+
+        viewModel.scanAndAddKeynoteWindows()
+
+        XCTAssertEqual(viewModel.runtime.state.program.items.map(\.title), ["Opening"])
+        XCTAssertNil(viewModel.runtime.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(viewModel.runtime.state.presentationQuery.latestResult)
+    }
+
     func testScanAndAddKeynoteWindowsDoesNotMutateProgramQueueFromPort() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeWiring.swift"
@@ -80,6 +93,18 @@ final class PresentationQueryRuntimeViewModelConsumptionTests: XCTestCase {
         XCTAssertFalse(body.contains("addProgramItems("))
         XCTAssertFalse(body.contains("recordSupportEvent("))
         XCTAssertFalse(body.contains("showAutomationRuntimeNotice("))
+    }
+
+    func testPresentationQueryConsumptionUsesFacadeDispatchForConsume() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.presentationQueryResultConsumed"))
+        XCTAssertFalse(body.contains("runtime.dispatch(.presentationQueryResultConsumed"))
+        XCTAssertFalse(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
     }
 
     func testScanAndAddKeynoteWindowsDoesNotCallPresentationQueryServiceDirectly() throws {
