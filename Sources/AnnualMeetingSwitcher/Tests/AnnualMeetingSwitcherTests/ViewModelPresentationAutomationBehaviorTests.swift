@@ -63,14 +63,17 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanAndAddKeynoteWindowsStillDedupesExistingFiles() {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Opening")
+            .appendingPathExtension("key")
         let existingItems = [ProgramItem(
             title: "Opening",
             subtitle: "KEY",
-            sourceURL: URL(fileURLWithPath: "/tmp/show/Opening.key")
+            sourceURL: url
         )]
 
         let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems(
-            openFilePaths: ["/tmp/show/Opening.key"],
+            openFilePaths: [url.path],
             windowNames: [],
             existingProgramItems: existingItems
         )
