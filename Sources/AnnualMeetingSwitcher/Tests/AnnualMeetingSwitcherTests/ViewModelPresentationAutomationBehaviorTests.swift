@@ -63,12 +63,11 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanAndAddKeynoteWindowsStillDedupesExistingFiles() {
-        let viewModel = makeViewModel()
-        viewModel.addProgramItem(ProgramItem(
+        let viewModel = makeViewModel(initialItems: [ProgramItem(
             title: "Opening",
             subtitle: "KEY",
             sourceURL: URL(fileURLWithPath: "/tmp/show/Opening.key")
-        ))
+        )])
         viewModel.testHooks.scanKeynoteWindowNames = { [] }
         viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
 
@@ -78,8 +77,9 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanAndAddKeynoteWindowsStillDedupesExistingWindowNames() {
-        let viewModel = makeViewModel()
-        viewModel.addProgramItem(ProgramItem(title: "Opening", subtitle: "KEY (活动)", sourceURL: nil))
+        let viewModel = makeViewModel(initialItems: [
+            ProgramItem(title: "Opening", subtitle: "KEY (活动)", sourceURL: nil)
+        ])
         viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key"] }
         viewModel.testHooks.scanOpenKeynoteFiles = { [] }
 
@@ -146,12 +146,15 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
     }
 
-    private func makeViewModel() -> SwitcherViewModel {
+    private func makeViewModel(initialItems: [ProgramItem] = []) -> SwitcherViewModel {
         let suiteName = "ViewModelPresentationAutomationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let presentationQueryPort = ClosurePresentationQueryPort()
+        var state = LiveRuntimeState()
+        state.program.items = initialItems
         let runtime = LiveRuntimeStore(
+            initialState: state,
             effectRunner: LiveRuntimeEffectRunner(
                 recordsOnly: false,
                 presentationQuery: presentationQueryPort
@@ -177,6 +180,8 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
                 ))
             }
         }
+        viewModel.syncProgramQueueFacadeFromRuntime()
+        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
         return viewModel
     }
 }
