@@ -73,4 +73,13 @@ final class RuntimeStoreInitializationTests: XCTestCase {
 
 private final class RuntimeStoreInitializationPersistencePort: PersistencePort {
     func save() {}
+    func saveConsoleMode(_ mode: ConsoleMode) {}
+    func saveThemeOverride(_ theme: ThemeOverride) {}
+    func saveAudioStrategy(_ strategy: AudioStrategy) {}
+    func saveSpeakerMode(_ isEnabled: Bool) {}
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {}
+    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {}
+    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {}
+    func saveShowAgendaTimeline(_ isEnabled: Bool) {}
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {}
 }

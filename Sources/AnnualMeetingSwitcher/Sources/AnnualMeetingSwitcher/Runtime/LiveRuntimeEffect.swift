@@ -61,19 +61,24 @@ extension LiveRuntimeEffect {
 
     var requiredBridgeDomain: LiveRuntimeDomain {
         switch self {
-        case .applyAudioRouting,
-             .loadBackgroundImage,
-             .loadCornerLogoImage,
-             .saveConsoleMode,
+        case .applyAudioRouting:
+            return .audio
+
+        case .loadBackgroundImage,
+             .loadCornerLogoImage:
+            return .imageAssets
+
+        case .saveConsoleMode,
              .saveThemeOverride,
              .saveAudioStrategy,
              .saveSpeakerMode,
+             .saveBGMPlayMode,
              .saveAutoPlayNextVideoOnEnd,
              .saveAutoAdvanceAtScheduledTime,
              .saveShowAgendaTimeline,
              .saveCornerLogoPosition,
              .savePersistentState:
-            return .audio
+            return .persistence
 
         case .loadMedia,
              .playMedia,
@@ -94,8 +99,7 @@ extension LiveRuntimeEffect {
              .seekBGMToProgress,
              .setBGMPlayMode,
              .startBGMTimer,
-             .stopBGMTimer,
-             .saveBGMPlayMode:
+             .stopBGMTimer:
             return .bgm
 
         case .startProjection,
@@ -204,44 +208,6 @@ protocol PersistencePort {
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool)
     func saveShowAgendaTimeline(_ isEnabled: Bool)
     func saveCornerLogoPosition(_ position: CornerLogoPosition)
-}
-
-extension PersistencePort {
-    func saveConsoleMode(_ mode: ConsoleMode) {
-        save()
-    }
-
-    func saveThemeOverride(_ theme: ThemeOverride) {
-        save()
-    }
-
-    func saveAudioStrategy(_ strategy: AudioStrategy) {
-        save()
-    }
-
-    func saveSpeakerMode(_ isEnabled: Bool) {
-        save()
-    }
-
-    func saveBGMPlayMode(_ playMode: BGMPlayMode) {
-        save()
-    }
-
-    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {
-        save()
-    }
-
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
-        save()
-    }
-
-    func saveShowAgendaTimeline(_ isEnabled: Bool) {
-        save()
-    }
-
-    func saveCornerLogoPosition(_ position: CornerLogoPosition) {
-        save()
-    }
 }
 
 protocol SupportEventPort {

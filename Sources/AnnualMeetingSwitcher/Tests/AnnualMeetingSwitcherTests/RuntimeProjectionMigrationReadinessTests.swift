@@ -24,7 +24,7 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
     func testProjectionOwnedModeIncludesAudioMediaBGMProjection() {
         XCTAssertEqual(
             LiveRuntimeBridgeMode.projectionOwned.ownedDomains,
-            [.audio, .media, .bgm, .projection]
+            [.audio, .media, .bgm, .projection, .imageAssets, .persistence]
         )
     }
 

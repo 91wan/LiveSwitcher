@@ -106,6 +106,11 @@ product boundary.
   `PresentationQueryResult` as the query payload, and isolates title cleanup in
   `PresentationWindowTitlePolicy`; Live mode remains execution-only and code
   simplicity remains part of product simplicity.
+- Runtime infrastructure domain hardening does not add live controls. It only
+  gives image asset loading and preference persistence their own Runtime bridge
+  domains, keeps production connected ports unchanged, and keeps
+  result-returning automation queries ViewModel-owned until a dedicated query
+  migration is approved.
 - BGM runtime migration does not add live controls.
 - BGM runtime hardening does not add live controls; it only tightens ownership,
   callback identity, timer generation, seek, loop-mode, and fallback execution

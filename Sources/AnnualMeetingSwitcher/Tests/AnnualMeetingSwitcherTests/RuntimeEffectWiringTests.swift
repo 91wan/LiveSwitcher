@@ -87,6 +87,28 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(connected.contains(.automation))
     }
 
+    func testProductionRuntimeStillWiresImageAssetsPort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.imageAssets))
+    }
+
+    func testProductionRuntimeStillWiresPersistencePort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.persistence))
+    }
+
+    func testProductionRuntimeStillWiresAutomationCommandPort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
+    }
+
+    func testProductionRuntimeStillDoesNotWireAutomationQueryPort() {
+        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "automationQuery" })
+    }
+
     func testAutomationCommandMigrationKeepsPriorRuntimePortsConnected() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let connected = viewModel.runtimeConnectedPortKinds
@@ -128,4 +150,13 @@ private final class RuntimeEffectWiringAudioPort: AudioRoutingPort {
 
 private final class RuntimeEffectWiringPersistencePort: PersistencePort {
     func save() {}
+    func saveConsoleMode(_ mode: ConsoleMode) {}
+    func saveThemeOverride(_ theme: ThemeOverride) {}
+    func saveAudioStrategy(_ strategy: AudioStrategy) {}
+    func saveSpeakerMode(_ isEnabled: Bool) {}
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {}
+    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {}
+    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {}
+    func saveShowAgendaTimeline(_ isEnabled: Bool) {}
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {}
 }

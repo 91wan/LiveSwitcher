@@ -200,7 +200,9 @@ final class LiveRuntimeAudioPanicBridgeTests: XCTestCase {
 
         XCTAssertEqual(runtime.state.audio.strategy, .followSource)
         XCTAssertTrue(runtime.state.audio.isSpeakerMode)
-        XCTAssertEqual(persistence.saveCount, 2)
+        XCTAssertEqual(persistence.savedAudioStrategies, [.followSource])
+        XCTAssertEqual(persistence.savedSpeakerModes, [true])
+        XCTAssertEqual(persistence.saveCount, 0)
         XCTAssertNil(defaults.string(forKey: "audioStrategy"))
         XCTAssertNil(defaults.object(forKey: "speakerMode"))
     }
@@ -253,8 +255,24 @@ private final class AudioRoutingPortSpy: AudioRoutingPort {
 
 private final class PersistencePortSpy: PersistencePort {
     private(set) var saveCount = 0
+    private(set) var savedAudioStrategies: [AudioStrategy] = []
+    private(set) var savedSpeakerModes: [Bool] = []
 
     func save() {
         saveCount += 1
     }
+
+    func saveConsoleMode(_ mode: ConsoleMode) {}
+    func saveThemeOverride(_ theme: ThemeOverride) {}
+    func saveAudioStrategy(_ strategy: AudioStrategy) {
+        savedAudioStrategies.append(strategy)
+    }
+    func saveSpeakerMode(_ isEnabled: Bool) {
+        savedSpeakerModes.append(isEnabled)
+    }
+    func saveBGMPlayMode(_ playMode: BGMPlayMode) {}
+    func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {}
+    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {}
+    func saveShowAgendaTimeline(_ isEnabled: Bool) {}
+    func saveCornerLogoPosition(_ position: CornerLogoPosition) {}
 }

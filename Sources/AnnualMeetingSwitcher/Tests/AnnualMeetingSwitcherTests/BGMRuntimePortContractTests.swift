@@ -51,11 +51,11 @@ final class BGMRuntimePortContractTests: XCTestCase {
             .seekBGMToProgress(0.5, generation: 1),
             .setBGMPlayMode(.loopOne, generation: 1),
             .startBGMTimer(generation: 1),
-            .stopBGMTimer(generation: 1),
-            .saveBGMPlayMode(.sequential)
+            .stopBGMTimer(generation: 1)
         ].forEach { effect in
             XCTAssertEqual(effect.requiredBridgeDomain, .bgm, "\(effect) should require BGM domain")
         }
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.sequential).requiredBridgeDomain, .persistence)
     }
 
     func testNoDefaultNoOpBGMPlaybackPortMethodsRemain() throws {

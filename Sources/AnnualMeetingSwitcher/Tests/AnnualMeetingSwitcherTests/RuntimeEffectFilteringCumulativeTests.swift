@@ -28,11 +28,11 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.loadMedia(mediaURL, generation: 1).requiredBridgeDomain, .media)
         XCTAssertEqual(LiveRuntimeEffect.playMedia(generation: 1).requiredBridgeDomain, .media)
         XCTAssertEqual(LiveRuntimeEffect.prepareBGM(bgm, generation: 1).requiredBridgeDomain, .bgm)
-        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .bgm)
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .persistence)
     }
 
-    func testSaveBGMPlayModeRequiresBGMDomain() {
-        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .bgm)
+    func testSaveBGMPlayModeRequiresPersistenceDomain() {
+        XCTAssertEqual(LiveRuntimeEffect.saveBGMPlayMode(.loopOne).requiredBridgeDomain, .persistence)
     }
 
     func testShowAutomationNoticeRequiresAutomationNoticeDomain() {
@@ -70,16 +70,16 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(effect.requiredBridgeDomain))
     }
 
-    func testAudioOwnedDoesNotAllowSaveBGMPlayMode() {
+    func testAudioOwnedAllowsSaveBGMPlayModeThroughPersistenceDomain() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .audioOwned)
 
-        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
-    func testMediaOwnedDoesNotAllowSaveBGMPlayMode() {
+    func testMediaOwnedAllowsSaveBGMPlayModeThroughPersistenceDomain() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .mediaOwned)
 
-        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
     func testBGMOwningModeAllowsSaveBGMPlayMode() {
@@ -229,6 +229,54 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
 
         XCTAssertTrue(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
         XCTAssertTrue(mutation.effects.contains(.playMedia(generation: 1)))
+    }
+
+    func testRecordingOnlyBlocksImageAssetEffects() {
+        let url = URL(fileURLWithPath: "/tmp/background.png")
+        let mutation = reduce(.operatorSetActiveWallpaperURL(url), bridgeMode: .recordingOnly)
+
+        XCTAssertFalse(mutation.effects.contains(.loadBackgroundImage(url)))
+    }
+
+    func testRecordingOnlyBlocksPersistenceEffects() {
+        let mutation = reduce(.operatorSelectedAudioStrategy(.mixed), bridgeMode: .recordingOnly)
+
+        XCTAssertFalse(mutation.effects.contains(.saveAudioStrategy(.mixed)))
+    }
+
+    func testAudioOwnedAllowsImageAssetEffects() {
+        let url = URL(fileURLWithPath: "/tmp/background.png")
+        let mutation = reduce(.operatorSetActiveWallpaperURL(url), bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.loadBackgroundImage(url)))
+    }
+
+    func testAudioOwnedAllowsPersistenceEffects() {
+        let mutation = reduce(.operatorSelectedAudioStrategy(.mixed), bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.saveAudioStrategy(.mixed)))
+    }
+
+    func testAutomationCommandOwnedAllowsImageAssetEffects() {
+        let url = URL(fileURLWithPath: "/tmp/background.png")
+        let mutation = reduce(.operatorSetActiveWallpaperURL(url), bridgeMode: .automationCommandOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.loadBackgroundImage(url)))
+    }
+
+    func testAutomationCommandOwnedAllowsPersistenceEffects() {
+        let mutation = reduce(.operatorSelectedAudioStrategy(.mixed), bridgeMode: .automationCommandOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.saveAudioStrategy(.mixed)))
+    }
+
+    func testAutomationCommandOwnedStillAllowsRunAppleScript() {
+        let mutation = reduce(
+            .automationScriptRequested(script: "tell app", action: "keynote.next-slide"),
+            bridgeMode: .automationCommandOwned
+        )
+
+        XCTAssertTrue(mutation.effects.contains(.runAppleScript(script: "tell app", action: "keynote.next-slide")))
     }
 
     private func reduce(
