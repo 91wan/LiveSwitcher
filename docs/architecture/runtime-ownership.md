@@ -55,6 +55,11 @@ query facade into normalization. Title cleanup is isolated in
 policy for compatibility. Query migration must introduce explicit command/query
 IDs and callback result actions before Runtime can own result-returning
 queries.
+`LiveRuntimeEffectExecutionContext` carries `currentState` and `dispatch` for
+effect execution. Future result-returning Runtime ports must dispatch callback
+actions through that execution context, not through direct `SwitcherViewModel`
+dispatch closures. Runtime query migration remains blocked until callback
+context tests pass.
 Automation failure support handling and the concrete automation notice facade
 live in `ViewModel+AutomationFailure.swift`.
 Projection output/window/support side effects live in
@@ -236,10 +241,14 @@ retain raw AppleScript source, file paths, or filenames.
 Result-returning automation queries remain blocked from this boundary. A future
 query migration must introduce explicit command/query IDs and callback result
 actions before Runtime can correlate asynchronous query results or query
-failures. Until that dedicated PR, Keynote/WPS scans, WPS fallback branching,
-and PPT/WPS key forwarding stay ViewModel-owned. Query migration remains
-blocked until the program queue, presentation automation, and automation
-failure extraction source/behavior tests pass.
+failures. Future callback-capable Runtime ports must use
+`LiveRuntimeEffectExecutionContext.dispatch`; effect callbacks must not bypass
+Runtime by directly calling ViewModel dispatch closures. Until that dedicated
+PR, Keynote/WPS scans, WPS fallback branching, and PPT/WPS key forwarding stay
+ViewModel-owned, and `PresentationQueryService` remains ViewModel-owned. Query
+migration remains blocked until the callback context tests, program queue,
+presentation automation, and automation failure extraction source/behavior
+tests pass.
 
 ## Bridge Slimming Rules
 
