@@ -91,10 +91,11 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
 
     func testViewModelDoesNotDirectlyCallAVPlayerForMediaTransport() throws {
         let source = try sourceText(programQueueExtensionPath)
+        let queueSource = try sourceText(programQueueMutationPath)
         let transportBodies = [
             try sourceFunctionBody(named: "toggleMainVideoPlayback", inSource: source),
             try sourceFunctionBody(named: "restartCurrentMediaFromBeginning", inSource: source),
-            try sourceFunctionBody(named: "removeProgramItem", inSource: source)
+            try sourceFunctionBody(named: "removeProgramItem", inSource: queueSource)
         ].joined(separator: "\n")
 
         XCTAssertFalse(transportBodies.contains("avCoordinator.play("))
@@ -141,6 +142,10 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
 
     private var programQueueExtensionPath: String {
         "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+    }
+
+    private var programQueueMutationPath: String {
+        "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
     }
 
     private func sourceFunctionBody(named name: String, in relativePath: String) throws -> String {

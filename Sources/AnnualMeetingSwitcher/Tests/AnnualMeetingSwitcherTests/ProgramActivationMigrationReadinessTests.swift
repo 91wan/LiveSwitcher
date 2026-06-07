@@ -17,7 +17,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
     func testProgramActivationStillViewModelOwned() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(docs.contains("Program activation/switching side effects are still ViewModel-owned"))
+        XCTAssertTrue(docs.contains("Program activation/switching side\neffects are still ViewModel-owned"))
     }
 
     func testProgramActivationPlannerIsPure() throws {
