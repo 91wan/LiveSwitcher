@@ -67,13 +67,11 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
-        let successRange = try XCTUnwrap(body.range(of: "if presentationQuery.latestCompletedRequestID"))
-        let failureRange = try XCTUnwrap(body.range(of: "if let failure"))
-        let successBranch = String(body[successRange.lowerBound..<failureRange.lowerBound])
-        let failureBranch = String(body[failureRange.lowerBound...])
 
-        XCTAssertTrue(successBranch.contains("addProgramItems"))
-        XCTAssertFalse(failureBranch.contains("addProgramItems"))
+        XCTAssertTrue(body.contains("let itemsToAdd = PresentationQueryResultBuilder.makeProgramItems("))
+        XCTAssertTrue(body.contains("addProgramItems(itemsToAdd)"))
+        XCTAssertTrue(body.contains("if let failure = presentationQuery.latestFailure"))
+        XCTAssertFalse(body.contains("failure.id == requestID {\n            addProgramItems"))
     }
 
     func testScanFailureStillRecordsSupportAndAutomationNotice() throws {
