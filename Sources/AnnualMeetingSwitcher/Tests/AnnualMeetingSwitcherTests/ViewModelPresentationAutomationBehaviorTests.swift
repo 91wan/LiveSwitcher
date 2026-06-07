@@ -63,7 +63,7 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() {
-        let viewModel = makeViewModel()
+        let viewModel = makeViewModel(recordsOnly: true)
         let requestID = UUID()
         injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "failed")
 
@@ -73,7 +73,7 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
     }
 
     func testScanFailureStillRecordsSupportAndAutomationNotice() {
-        let viewModel = makeViewModel()
+        let viewModel = makeViewModel(recordsOnly: true)
         let requestID = UUID()
         injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "permission denied")
 
@@ -112,17 +112,20 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
     }
 
-    private func makeViewModel(initialItems: [ProgramItem] = []) -> SwitcherViewModel {
+    private func makeViewModel(
+        initialItems: [ProgramItem] = [],
+        recordsOnly: Bool = false
+    ) -> SwitcherViewModel {
         let suiteName = "ViewModelPresentationAutomationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        let presentationQueryPort = ClosurePresentationQueryPort()
+        let presentationQueryPort = recordsOnly ? nil : ClosurePresentationQueryPort()
         var state = LiveRuntimeState()
         state.program.items = initialItems
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: LiveRuntimeEffectRunner(
-                recordsOnly: false,
+                recordsOnly: recordsOnly,
                 presentationQuery: presentationQueryPort
             ),
             environment: .productionProgramQueueOwning()
@@ -133,7 +136,7 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
             userDefaults: defaults,
             runtime: runtime
         )
-        presentationQueryPort.scanHandler = { [weak viewModel] id, context in
+        presentationQueryPort?.scanHandler = { [weak viewModel] id, context in
             guard let viewModel else { return }
             do {
                 let result = try viewModel.scanPresentationQueryForRuntimePort()
