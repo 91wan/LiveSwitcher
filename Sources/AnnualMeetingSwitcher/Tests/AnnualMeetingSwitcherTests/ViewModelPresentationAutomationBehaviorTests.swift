@@ -33,6 +33,9 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertTrue(body.contains("addProgramItems(itemsToAdd)"))
         XCTAssertTrue(body.contains("if let failure = presentationQuery.latestFailure"))
         XCTAssertFalse(body.contains("failure.id == requestID {\n            addProgramItems"))
+        XCTAssertTrue(body.contains("recordSupportEvent("))
+        XCTAssertTrue(body.contains("kind: .appleScriptFailed"))
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationFailed("))
     }
 
     func testRuntimePortUsesPresentationQueryServiceResult() throws {
@@ -64,17 +67,6 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
 
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
         XCTAssertEqual(viewModel.programItems.map(\.sourceURL), [nil])
-    }
-
-    func testScanFailureStillRecordsSupportAndAutomationNotice() throws {
-        let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
-        )
-        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
-
-        XCTAssertTrue(body.contains("recordSupportEvent("))
-        XCTAssertTrue(body.contains("kind: .appleScriptFailed"))
-        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationFailed("))
     }
 
     func testScanKeynoteWindowNamesHookStillOverridesQueryService() {
