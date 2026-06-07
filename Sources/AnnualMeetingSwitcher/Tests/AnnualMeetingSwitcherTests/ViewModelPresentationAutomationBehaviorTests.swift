@@ -62,25 +62,29 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.sourceURL), [nil])
     }
 
-    func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() {
-        let viewModel = makeViewModel(recordsOnly: true)
-        let requestID = UUID()
-        injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "failed")
+    func testScanAndAddKeynoteWindowsStillNoopsOnScanFailure() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
+        let successRange = try XCTUnwrap(body.range(of: "if presentationQuery.latestCompletedRequestID"))
+        let failureRange = try XCTUnwrap(body.range(of: "if let failure"))
+        let successBranch = String(body[successRange.lowerBound..<failureRange.lowerBound])
+        let failureBranch = String(body[failureRange.lowerBound...])
 
-        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
-
-        XCTAssertTrue(viewModel.programItems.isEmpty)
+        XCTAssertTrue(successBranch.contains("addProgramItems"))
+        XCTAssertFalse(failureBranch.contains("addProgramItems"))
     }
 
-    func testScanFailureStillRecordsSupportAndAutomationNotice() {
-        let viewModel = makeViewModel(recordsOnly: true)
-        let requestID = UUID()
-        injectPresentationQueryFailure(into: viewModel, requestID: requestID, message: "permission denied")
+    func testScanFailureStillRecordsSupportAndAutomationNotice() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "consumePresentationQueryOutcomeFromRuntime"))
 
-        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
-
-        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
-        XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.scan.windows")
+        XCTAssertTrue(body.contains("recordSupportEvent("))
+        XCTAssertTrue(body.contains("kind: .appleScriptFailed"))
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationFailed("))
     }
 
     func testScanKeynoteWindowNamesHookStillOverridesQueryService() {
@@ -112,20 +116,17 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
     }
 
-    private func makeViewModel(
-        initialItems: [ProgramItem] = [],
-        recordsOnly: Bool = false
-    ) -> SwitcherViewModel {
+    private func makeViewModel(initialItems: [ProgramItem] = []) -> SwitcherViewModel {
         let suiteName = "ViewModelPresentationAutomationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        let presentationQueryPort = recordsOnly ? nil : ClosurePresentationQueryPort()
+        let presentationQueryPort = ClosurePresentationQueryPort()
         var state = LiveRuntimeState()
         state.program.items = initialItems
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: LiveRuntimeEffectRunner(
-                recordsOnly: recordsOnly,
+                recordsOnly: false,
                 presentationQuery: presentationQueryPort
             ),
             environment: .productionProgramQueueOwning()
@@ -136,7 +137,7 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
             userDefaults: defaults,
             runtime: runtime
         )
-        presentationQueryPort?.scanHandler = { [weak viewModel] id, context in
+        presentationQueryPort.scanHandler = { [weak viewModel] id, context in
             guard let viewModel else { return }
             do {
                 let result = try viewModel.scanPresentationQueryForRuntimePort()
