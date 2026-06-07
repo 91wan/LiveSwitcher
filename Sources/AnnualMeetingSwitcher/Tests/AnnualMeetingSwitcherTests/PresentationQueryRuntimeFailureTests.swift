@@ -32,49 +32,51 @@ final class PresentationQueryRuntimeFailureTests: XCTestCase {
     }
 
     func testViewModelConsumesQueryFailureAndRecordsSupport() {
-        let viewModel = makeFailingViewModel()
+        let viewModel = makeViewModelWithInjectedFailure()
+        let requestID = try! XCTUnwrap(viewModel.runtime.state.presentationQuery.latestFailure?.id)
 
-        viewModel.scanAndAddKeynoteWindows()
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
 
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .appleScriptFailed })
     }
 
     func testViewModelConsumesQueryFailureAndCreatesAutomationNotice() {
-        let viewModel = makeFailingViewModel()
+        let viewModel = makeViewModelWithInjectedFailure()
+        let requestID = try! XCTUnwrap(viewModel.runtime.state.presentationQuery.latestFailure?.id)
 
-        viewModel.scanAndAddKeynoteWindows()
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
 
         XCTAssertEqual(viewModel.automationRuntimeNotice?.action, "keynote.scan.windows")
     }
 
     func testViewModelConsumesQueryFailureOnlyOnce() {
-        let viewModel = makeFailingViewModel()
+        let viewModel = makeViewModelWithInjectedFailure()
+        let requestID = try! XCTUnwrap(viewModel.runtime.state.presentationQuery.latestFailure?.id)
 
-        viewModel.scanAndAddKeynoteWindows()
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
         let supportCount = viewModel.supportEvents.count
-        if let requestID = viewModel.runtime.state.presentationQuery.latestFailure?.id {
-            viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
-        }
+        viewModel.consumePresentationQueryOutcomeFromRuntime(requestID: requestID)
 
         XCTAssertEqual(viewModel.supportEvents.count, supportCount)
     }
 
     func testPresentationQueryFailureDoesNotExposeRawAppleScriptSource() {
-        let viewModel = makeFailingViewModel(message: "tell application \"Keynote\" to open POSIX file \"/tmp/private.key\"")
+        let viewModel = makeViewModel()
+        let message = viewModel.sanitizedAutomationFailureMessage(
+            AppleScriptError.executionFailed(
+                action: "keynote.scan.windows",
+                message: "tell application \"Keynote\" to open POSIX file \"/tmp/private.key\""
+            )
+        )
 
-        viewModel.scanAndAddKeynoteWindows()
+        injectPresentationQueryFailure(into: viewModel, message: message)
 
         XCTAssertFalse(String(describing: viewModel.runtime.state.presentationQuery.latestFailure).contains("tell application"))
     }
 
-    private func makeFailingViewModel(message: String = "permission denied") -> SwitcherViewModel {
+    private func makeViewModelWithInjectedFailure(message: String = "permission denied") -> SwitcherViewModel {
         let viewModel = makeViewModel()
-        viewModel.testHooks.presentationQueryService = PresentationQueryService(
-            runAppleScript: { _, _ in
-                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: message)
-            },
-            queryOpenKeynoteFiles: { [] }
-        )
+        injectPresentationQueryFailure(into: viewModel, message: message)
         return viewModel
     }
 
@@ -82,6 +84,32 @@ final class PresentationQueryRuntimeFailureTests: XCTestCase {
         let suiteName = "PresentationQueryRuntimeFailureTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionProgramQueueOwning()
+        )
+        return SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults,
+            runtime: runtime
+        )
+    }
+
+    private func injectPresentationQueryFailure(
+        into viewModel: SwitcherViewModel,
+        requestID: UUID = UUID(),
+        message: String
+    ) {
+        var state = viewModel.runtime.state
+        state.presentationQuery.activeRequestID = nil
+        state.presentationQuery.latestCompletedRequestID = nil
+        state.presentationQuery.latestResult = nil
+        state.presentationQuery.latestFailure = PresentationQueryFailure(
+            id: requestID,
+            action: "keynote.scan.windows",
+            sanitizedMessage: message
+        )
+        viewModel.runtime.replaceStateForFacadeSync(state)
     }
 }

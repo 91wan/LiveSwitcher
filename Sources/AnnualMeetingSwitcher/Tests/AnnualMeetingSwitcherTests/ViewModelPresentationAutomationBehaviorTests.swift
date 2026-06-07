@@ -157,6 +157,9 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         message: String
     ) {
         var state = viewModel.runtime.state
+        state.presentationQuery.activeRequestID = nil
+        state.presentationQuery.latestCompletedRequestID = nil
+        state.presentationQuery.latestResult = nil
         state.presentationQuery.latestFailure = PresentationQueryFailure(
             id: requestID,
             action: "keynote.scan.windows",
