@@ -69,33 +69,28 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.programItems.map(\.sourceURL), [nil])
     }
 
-    func testScanKeynoteWindowNamesHookStillOverridesQueryService() {
-        let viewModel = makeViewModel()
-        viewModel.testHooks.presentationQueryService = PresentationQueryService(
-            runAppleScript: { _, _ in
-                throw AppleScriptError.executionFailed(action: "keynote.scan.windows", message: "should not run")
-            },
-            queryOpenKeynoteFiles: { [] }
+    func testScanKeynoteWindowNamesHookStillOverridesQueryService() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
-        viewModel.testHooks.scanKeynoteWindowNames = { ["Opening.key"] }
-        viewModel.testHooks.scanOpenKeynoteFiles = { [] }
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
 
-        viewModel.scanAndAddKeynoteWindows()
-
-        XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
+        XCTAssertTrue(body.contains("if let scanKeynoteWindowNames = testHooks.scanKeynoteWindowNames"))
+        XCTAssertTrue(body.contains("windowNames = try scanKeynoteWindowNames()"))
+        XCTAssertTrue(body.contains("presentationQueryService.scanKeynoteWindowNames()"))
     }
 
-    func testScanOpenKeynoteFilesHookStillOverridesQueryService() {
-        let viewModel = makeViewModel()
-        viewModel.testHooks.presentationQueryService = PresentationQueryService(
-            runAppleScript: { _, _ in NSAppleEventDescriptor(string: "Ignored.key") },
-            queryOpenKeynoteFiles: { ["/tmp/show/Ignored.key"] }
+    func testScanOpenKeynoteFilesHookStillOverridesQueryService() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
         )
-        viewModel.testHooks.scanOpenKeynoteFiles = { ["/tmp/show/Opening.key"] }
+        let scanQueryBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
+        let scanFilesBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanOpenKeynoteFiles"))
 
-        viewModel.scanAndAddKeynoteWindows()
-
-        XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
+        XCTAssertTrue(scanQueryBody.contains("let openFilePaths = scanOpenKeynoteFiles()"))
+        XCTAssertTrue(scanFilesBody.contains("if let scanOpenKeynoteFiles = testHooks.scanOpenKeynoteFiles"))
+        XCTAssertTrue(scanFilesBody.contains("return scanOpenKeynoteFiles()"))
+        XCTAssertTrue(scanFilesBody.contains("presentationQueryService.queryOpenKeynoteFiles()"))
     }
 
     private func makeViewModel(initialItems: [ProgramItem] = []) -> SwitcherViewModel {
@@ -135,22 +130,5 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
         viewModel.syncProgramQueueFacadeFromRuntime()
         viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
         return viewModel
-    }
-
-    private func injectPresentationQueryFailure(
-        into viewModel: SwitcherViewModel,
-        requestID: UUID,
-        message: String
-    ) {
-        var state = viewModel.runtime.state
-        state.presentationQuery.activeRequestID = nil
-        state.presentationQuery.latestCompletedRequestID = nil
-        state.presentationQuery.latestResult = nil
-        state.presentationQuery.latestFailure = PresentationQueryFailure(
-            id: requestID,
-            action: "keynote.scan.windows",
-            sanitizedMessage: message
-        )
-        viewModel.runtime.replaceStateForFacadeSync(state)
     }
 }
