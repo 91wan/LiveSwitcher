@@ -45,6 +45,15 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
 
         let helperBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
         XCTAssertTrue(helperBody.contains("presentationQueryService.scanPresentationQuery()"))
+        let scanFilesBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanOpenKeynoteFiles"))
+
+        XCTAssertTrue(helperBody.contains("if let scanKeynoteWindowNames = testHooks.scanKeynoteWindowNames"))
+        XCTAssertTrue(helperBody.contains("windowNames = try scanKeynoteWindowNames()"))
+        XCTAssertTrue(helperBody.contains("presentationQueryService.scanKeynoteWindowNames()"))
+        XCTAssertTrue(helperBody.contains("let openFilePaths = scanOpenKeynoteFiles()"))
+        XCTAssertTrue(scanFilesBody.contains("if let scanOpenKeynoteFiles = testHooks.scanOpenKeynoteFiles"))
+        XCTAssertTrue(scanFilesBody.contains("return scanOpenKeynoteFiles()"))
+        XCTAssertTrue(scanFilesBody.contains("presentationQueryService.queryOpenKeynoteFiles()"))
     }
 
     func testScanAndAddKeynoteWindowsStillAddsOpenKeynoteFiles() {
@@ -67,30 +76,6 @@ final class ViewModelPresentationAutomationBehaviorTests: XCTestCase {
 
         XCTAssertEqual(viewModel.programItems.map(\.title), ["Opening"])
         XCTAssertEqual(viewModel.programItems.map(\.sourceURL), [nil])
-    }
-
-    func testScanKeynoteWindowNamesHookStillOverridesQueryService() throws {
-        let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
-        )
-        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
-
-        XCTAssertTrue(body.contains("if let scanKeynoteWindowNames = testHooks.scanKeynoteWindowNames"))
-        XCTAssertTrue(body.contains("windowNames = try scanKeynoteWindowNames()"))
-        XCTAssertTrue(body.contains("presentationQueryService.scanKeynoteWindowNames()"))
-    }
-
-    func testScanOpenKeynoteFilesHookStillOverridesQueryService() throws {
-        let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
-        )
-        let scanQueryBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanPresentationQuery"))
-        let scanFilesBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "scanOpenKeynoteFiles"))
-
-        XCTAssertTrue(scanQueryBody.contains("let openFilePaths = scanOpenKeynoteFiles()"))
-        XCTAssertTrue(scanFilesBody.contains("if let scanOpenKeynoteFiles = testHooks.scanOpenKeynoteFiles"))
-        XCTAssertTrue(scanFilesBody.contains("return scanOpenKeynoteFiles()"))
-        XCTAssertTrue(scanFilesBody.contains("presentationQueryService.queryOpenKeynoteFiles()"))
     }
 
     private func makeViewModel(initialItems: [ProgramItem] = []) -> SwitcherViewModel {
