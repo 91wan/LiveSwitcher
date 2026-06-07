@@ -24,9 +24,12 @@ Program queue storage/mutation is runtime-owned and projected to
 `SwitcherViewModel.programItems` when `.programQueueOwned`. The facade property
 has a private setter; runtime projections flow through
 `applyProgramQueueProjectionFromRuntime(_:)`, and pure queue mechanics live in
-`Runtime/ProgramQueueRuntimeMutations.swift`. Program activation, source
-validation, switching side effects, and auto-advance prompt UI remain
-ViewModel-owned in `ViewModel+ProgramQueue.swift`.
+`Runtime/ProgramQueueRuntimeMutations.swift`. Program activation/switching side
+effects are still ViewModel-owned. Program activation planning lives in pure
+model types, `ProgramActivationPlan` and `ProgramActivationPlanner`, while
+activation execution, source validation, invalid-deck alerts, and activation
+side-effect orchestration live in `ViewModel+ProgramActivation.swift`.
+`ViewModel+ProgramQueue.swift` is the queue mutation facade only.
 Audio routing facade code that bridges Runtime-owned audio decisions to concrete
 players, faders, and system volume observation lives in
 `ViewModel+AudioRouting.swift`.
@@ -181,7 +184,7 @@ explicit owner.
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned`. ViewModel still owns Program activation, source validation, invalid-deck alerts, support event generation decisions, and live side effects in `ViewModel+ProgramQueue.swift`. |
+| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned`. `ViewModel+ProgramQueue.swift` is the queue mutation facade only. ViewModel still owns Program activation, source validation, invalid-deck alerts, support event generation decisions, and live activation side effects through `ViewModel+ProgramActivation.swift`. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
@@ -577,7 +580,8 @@ ViewModel-owned.
 ## Next Migration Gate
 
 Program activation/switching side effects, broader automation query ownership,
-and key-forwarding Automation migration remain blocked. The next migration may
+and key-forwarding Automation migration remain blocked. Program activation
+migration remains a future dedicated PR. The next migration may
 proceed only after Audio, Media, BGM, Projection, PPT, Automation notice,
 Support, Automation command, Presentation query, and Program queue storage
 ownership and hardening tests pass,

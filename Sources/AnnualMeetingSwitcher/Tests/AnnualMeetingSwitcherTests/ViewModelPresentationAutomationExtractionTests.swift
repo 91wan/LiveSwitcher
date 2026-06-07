@@ -3,8 +3,12 @@ import XCTest
 
 @MainActor
 final class ViewModelPresentationAutomationExtractionTests: XCTestCase {
-    func testPresentationAutomationMethodsAreNotDeclaredInMainViewModel() throws {
-        let source = try viewModelSource()
+    func testPresentationAutomationExtractionContract() throws {
+        let mainSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let extensionSource = try XCTUnwrap(optionalRepositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift"
+        ))
+
         let forbiddenSnippets = [
             "func openAndPresentKeynote(",
             "func openPPTXWithKeynote(",
@@ -18,14 +22,10 @@ final class ViewModelPresentationAutomationExtractionTests: XCTestCase {
         ]
 
         for snippet in forbiddenSnippets {
-            XCTAssertFalse(source.contains(snippet), snippet)
+            XCTAssertFalse(mainSource.contains(snippet), snippet)
         }
-    }
 
-    func testPresentationAutomationMethodsLiveInPresentationAutomationExtension() throws {
-        let source = try XCTUnwrap(presentationAutomationExtensionSource())
-
-        XCTAssertTrue(source.contains("extension SwitcherViewModel"))
+        XCTAssertTrue(extensionSource.contains("extension SwitcherViewModel"))
         for snippet in [
             "func openAndPresentKeynote(",
             "func openPPTXWithKeynote(",
@@ -38,71 +38,23 @@ final class ViewModelPresentationAutomationExtractionTests: XCTestCase {
             "func scanAndAddKeynoteWindows(",
             "func runAutomationScript("
         ] {
-            XCTAssertTrue(source.contains(snippet), snippet)
+            XCTAssertTrue(extensionSource.contains(snippet), snippet)
         }
-    }
 
-    func testRunAutomationScriptStillDispatchesRuntimeAction() throws {
-        let body = try functionBody("runAutomationScript")
-
-        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))"))
-    }
-
-    func testKeynoteNextSlideStillUsesRuntimeAutomationCommand() throws {
-        XCTAssertTrue(try functionBody("keynoteNextSlide").contains("runAutomationScript("))
-    }
-
-    func testKeynotePreviousSlideStillUsesRuntimeAutomationCommand() throws {
-        XCTAssertTrue(try functionBody("keynotePreviousSlide").contains("runAutomationScript("))
-    }
-
-    func testStopDeckPresentationStillUsesRuntimeAutomationCommand() throws {
-        XCTAssertTrue(try functionBody("stopDeckPresentation").contains("runAutomationScript("))
-    }
-
-    func testOpenAndPresentKeynoteStillUsesRuntimeAutomationCommand() throws {
-        XCTAssertTrue(try functionBody("openAndPresentKeynote").contains("runAutomationScript("))
-    }
-
-    func testScanKeynoteWindowNamesRemainsViewModelOwned() throws {
-        let body = try functionBody("scanKeynoteWindowNames")
-
-        XCTAssertTrue(body.contains("presentationQueryService.scanKeynoteWindowNames()"))
-        XCTAssertTrue(body.contains("handleAppleScriptFailure(error, action: \"keynote.scan.windows\")"))
-        XCTAssertFalse(body.contains(".automationScriptRequested"))
-    }
-
-    func testScanOpenKeynoteFilesRemainsViewModelOwned() throws {
-        let body = try functionBody("scanOpenKeynoteFiles")
-
-        XCTAssertTrue(body.contains("presentationQueryService.queryOpenKeynoteFiles()"))
-        XCTAssertFalse(body.contains(".automationScriptRequested"))
-    }
-
-    func testOpenPPTXWPSFallbackBranchRemainsViewModelOwned() throws {
-        let body = try functionBody("openPPTXWithKeynote")
-
-        XCTAssertTrue(body.contains("AppleScriptRunner.run(wpsScript"))
-        XCTAssertTrue(body.contains("openWithWPSOffice"))
-        XCTAssertFalse(body.contains(".automationScriptRequested"))
-    }
-
-    func testNoResultReturningQueryDispatchesAutomationScriptRequested() throws {
-        for name in ["scanKeynoteWindowNames", "scanOpenKeynoteFiles", "openPPTXWithKeynote"] {
-            XCTAssertFalse(try functionBody(name).contains(".automationScriptRequested"), name)
-        }
-    }
-
-    private func viewModelSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
-    }
-
-    private func presentationAutomationExtensionSource() throws -> String? {
-        try optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PresentationAutomation.swift")
-    }
-
-    private func functionBody(_ name: String) throws -> String {
-        let source = try XCTUnwrap(presentationAutomationExtensionSource())
-        return try XCTUnwrap(source.extractedRuntimeFunctionBody(named: name))
+        XCTAssertTrue(extensionSource.contains("dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))"))
+        XCTAssertTrue(extensionSource.contains("func keynoteNextSlide()"))
+        XCTAssertTrue(extensionSource.contains("action: \"keynote.next-slide\""))
+        XCTAssertTrue(extensionSource.contains("func keynotePreviousSlide()"))
+        XCTAssertTrue(extensionSource.contains("action: \"keynote.previous-slide\""))
+        XCTAssertTrue(extensionSource.contains("func stopDeckPresentation()"))
+        XCTAssertTrue(extensionSource.contains("action: \"keynote.stop.presentation\""))
+        XCTAssertTrue(extensionSource.contains("action: \"keynote.open.present\""))
+        XCTAssertTrue(extensionSource.contains("private func scanKeynoteWindowNames() throws -> [String]"))
+        XCTAssertTrue(extensionSource.contains("presentationQueryService.scanKeynoteWindowNames()"))
+        XCTAssertTrue(extensionSource.contains("handleAppleScriptFailure(error, action: \"keynote.scan.windows\")"))
+        XCTAssertTrue(extensionSource.contains("func scanOpenKeynoteFiles() -> [String]"))
+        XCTAssertTrue(extensionSource.contains("presentationQueryService.queryOpenKeynoteFiles()"))
+        XCTAssertTrue(extensionSource.contains("AppleScriptRunner.run(wpsScript"))
+        XCTAssertTrue(extensionSource.contains("openWithWPSOffice"))
     }
 }

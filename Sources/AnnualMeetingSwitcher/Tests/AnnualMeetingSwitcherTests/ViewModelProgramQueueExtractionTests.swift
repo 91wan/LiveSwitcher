@@ -24,16 +24,11 @@ final class ViewModelProgramQueueExtractionTests: XCTestCase {
 
         XCTAssertTrue(source.contains("extension SwitcherViewModel"))
         for snippet in [
-            "func switchToProgram(",
-            "func switchToProgram(at index: Int)",
-            "func switchToProgramAfterReadinessConfirmation(",
             "func addProgramItem(",
             "func addProgramItems(",
             "func removeProgramItem(",
             "func moveProgramItems(",
-            "func agendaAutoAdvancePrompt(",
-            "func toggleMainVideoPlayback(",
-            "func restartCurrentMediaFromBeginning("
+            "func agendaAutoAdvancePrompt("
         ] {
             XCTAssertTrue(source.contains(snippet), snippet)
         }

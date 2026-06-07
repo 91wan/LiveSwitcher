@@ -65,10 +65,16 @@ final class PresentationQueryResultBuilderTests: XCTestCase {
     }
 
     func testDedupesOpenFilePathsAgainstExistingProgramItems() {
-        let existing = ProgramItem(title: "Opening", subtitle: "KEY", sourceURL: URL(fileURLWithPath: "/tmp/show/Opening.key"))
+        let openingURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Opening")
+            .appendingPathExtension("key")
+        let finaleURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Finale")
+            .appendingPathExtension("key")
+        let existing = ProgramItem(title: "Opening", subtitle: "KEY", sourceURL: openingURL)
 
         let items = PresentationQueryResultBuilder.makeProgramItems(
-            openFilePaths: ["/tmp/show/Opening.key", "/tmp/show/Finale.key"],
+            openFilePaths: [openingURL.path, finaleURL.path],
             windowNames: [],
             existingProgramItems: [existing]
         )
