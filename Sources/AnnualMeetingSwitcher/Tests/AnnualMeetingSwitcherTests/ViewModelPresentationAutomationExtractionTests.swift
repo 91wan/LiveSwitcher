@@ -49,30 +49,15 @@ final class ViewModelPresentationAutomationExtractionTests: XCTestCase {
         XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))"))
     }
 
-    func testKeynoteNextSlideStillUsesRuntimeAutomationCommand() throws {
+    func testPresentationAutomationCommandsStillUseRuntimeAutomationActions() throws {
         let source = try XCTUnwrap(presentationAutomationExtensionSource())
 
         XCTAssertTrue(source.contains("func keynoteNextSlide()"))
         XCTAssertTrue(source.contains("action: \"keynote.next-slide\""))
-    }
-
-    func testKeynotePreviousSlideStillUsesRuntimeAutomationCommand() throws {
-        let source = try XCTUnwrap(presentationAutomationExtensionSource())
-
         XCTAssertTrue(source.contains("func keynotePreviousSlide()"))
         XCTAssertTrue(source.contains("action: \"keynote.previous-slide\""))
-    }
-
-    func testStopDeckPresentationStillUsesRuntimeAutomationCommand() throws {
-        let source = try XCTUnwrap(presentationAutomationExtensionSource())
-
         XCTAssertTrue(source.contains("func stopDeckPresentation()"))
         XCTAssertTrue(source.contains("action: \"keynote.stop.presentation\""))
-    }
-
-    func testOpenAndPresentKeynoteStillUsesRuntimeAutomationCommand() throws {
-        let source = try XCTUnwrap(presentationAutomationExtensionSource())
-
         XCTAssertTrue(source.contains("func openAndPresentKeynote("))
         XCTAssertTrue(source.contains("action: \"keynote.open.present\""))
     }
