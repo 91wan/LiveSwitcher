@@ -163,7 +163,8 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
 
         viewModel.switchToProgram(item)
 
-        XCTAssertEqual(actionCount("operatorSelectedProgram", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorSelectedDetachedProgram", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorSelectedProgram", in: viewModel), 0)
         XCTAssertEqual(viewModel.runtime.state.program.currentDetachedItem?.id, item.id)
     }
 

@@ -106,7 +106,7 @@ extension LiveRuntimeAction {
     var redactedName: String {
         switch self {
         case .operatorSelectedProgram: return "operatorSelectedProgram"
-        case .operatorSelectedDetachedProgram: return "operatorSelectedProgram"
+        case .operatorSelectedDetachedProgram: return "operatorSelectedDetachedProgram"
         case .operatorClearedCurrentProgram: return "operatorClearedCurrentProgram"
         case .operatorToggledMediaPlayback: return "operatorToggledMediaPlayback"
         case .operatorRestartedCurrentMedia: return "operatorRestartedCurrentMedia"

@@ -13,13 +13,22 @@ final class ProgramSelectionRuntimeActionLogTests: XCTestCase {
         XCTAssertFalse(store.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
     }
 
-    func testOperatorSelectedProgramIsLoggedWithRedactedName() {
+    func testOperatorSelectedProgramIsLoggedByQueuedName() {
         let item = programItem("Private Title")
         let store = makeStore(initialItems: [item])
 
         store.dispatch(.operatorSelectedProgram(item.id))
 
         XCTAssertTrue(store.actionLog.contains { $0.actionName == "operatorSelectedProgram" })
+    }
+
+    func testOperatorSelectedDetachedProgramIsLoggedByDetachedName() {
+        let item = programItem("Private Title")
+        let store = makeStore()
+
+        store.dispatch(.operatorSelectedDetachedProgram(item))
+
+        XCTAssertTrue(store.actionLog.contains { $0.actionName == "operatorSelectedDetachedProgram" })
     }
 
     func testSelectionActionLogDoesNotContainTitleOrPath() {
@@ -30,6 +39,26 @@ final class ProgramSelectionRuntimeActionLogTests: XCTestCase {
 
         let log = store.actionLog.map { "\($0.oldStateSummary)|\($0.newStateSummary)" }.joined(separator: "\n")
         XCTAssertFalse(log.contains("Private Title"))
+        XCTAssertFalse(log.contains("/tmp/Private Title.mp4"))
+    }
+
+    func testDetachedSelectionActionLogDoesNotContainProgramTitle() {
+        let item = programItem("Private Title")
+        let store = makeStore()
+
+        store.dispatch(.operatorSelectedDetachedProgram(item))
+
+        let log = store.actionLog.map { "\($0.actionName)|\($0.oldStateSummary)|\($0.newStateSummary)" }.joined(separator: "\n")
+        XCTAssertFalse(log.contains("Private Title"))
+    }
+
+    func testDetachedSelectionActionLogDoesNotContainFilePath() {
+        let item = programItem("Private Title")
+        let store = makeStore()
+
+        store.dispatch(.operatorSelectedDetachedProgram(item))
+
+        let log = store.actionLog.map { "\($0.actionName)|\($0.oldStateSummary)|\($0.newStateSummary)" }.joined(separator: "\n")
         XCTAssertFalse(log.contains("/tmp/Private Title.mp4"))
     }
 
