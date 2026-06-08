@@ -2,19 +2,19 @@ import XCTest
 @testable import LiveSwitcher
 
 final class ProgramActivationPlanTests: XCTestCase {
-    func testPlanStoresRuntimeSelectionAndSideEffectWithoutRuntimeDependencies() {
+    func testPlanStoresRuntimeSelectionAndPhaseEffectsWithoutRuntimeDependencies() {
         let item = mediaItem()
         let plan = ProgramActivationPlan(
             item: item,
             runtimeSelection: .queued(item.id),
-            shouldStopCurrentDeckPresentation: false,
-            shouldClearHTML: true,
-            sideEffect: .none
+            preSelectionEffects: [],
+            postSelectionEffects: [.clearHTML, .resetMutedMediaStartupFlag]
         )
 
         XCTAssertEqual(plan.item, item)
         XCTAssertEqual(plan.runtimeSelection, .queued(item.id))
-        XCTAssertEqual(plan.sideEffect, .none)
+        XCTAssertEqual(plan.preSelectionEffects, [])
+        XCTAssertEqual(plan.postSelectionEffects, [.clearHTML, .resetMutedMediaStartupFlag])
     }
 
     func testPlanDoesNotReferenceSwitcherViewModel() throws {
@@ -27,6 +27,15 @@ final class ProgramActivationPlanTests: XCTestCase {
         let source = try planSource()
 
         XCTAssertFalse(source.contains("LiveRuntimeStore"))
+    }
+
+    func testPlanUsesExplicitPhaseTerminology() throws {
+        let source = try planSource()
+
+        XCTAssertTrue(source.contains("PreSelectionEffect"))
+        XCTAssertTrue(source.contains("PostSelectionEffect"))
+        XCTAssertTrue(source.contains("preSelectionEffects"))
+        XCTAssertTrue(source.contains("postSelectionEffects"))
     }
 
     private func planSource() throws -> String {

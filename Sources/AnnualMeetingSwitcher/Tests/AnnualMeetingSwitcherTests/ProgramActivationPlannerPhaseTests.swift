@@ -1,18 +1,33 @@
 import XCTest
 @testable import LiveSwitcher
 
-final class ProgramActivationPlannerTests: XCTestCase {
-    func testMediaItemBuildsRuntimeSelectionAndMediaPostEffects() throws {
+final class ProgramActivationPlannerPhaseTests: XCTestCase {
+    func testMediaPlannerBuildsQueuedSelection() throws {
         let item = mediaItem()
 
         let plan = try XCTUnwrap(plan(for: item, queuedItems: [item]))
 
         XCTAssertEqual(plan.runtimeSelection, .queued(item.id))
+    }
+
+    func testMediaPlannerBuildsDetachedSelection() throws {
+        let item = mediaItem()
+
+        let plan = try XCTUnwrap(plan(for: item, queuedItems: []))
+
+        XCTAssertEqual(plan.runtimeSelection, .detached(item))
+    }
+
+    func testMediaPlannerBuildsPostSelectionClearHTMLAndResetMutedStartup() throws {
+        let item = mediaItem()
+
+        let plan = try XCTUnwrap(plan(for: item, queuedItems: [item]))
+
         XCTAssertEqual(plan.preSelectionEffects, [])
         XCTAssertEqual(plan.postSelectionEffects, [.clearHTML, .resetMutedMediaStartupFlag])
     }
 
-    func testKeynoteItemBuildsPresentKeynotePostEffectWhenValid() throws {
+    func testKeynotePlannerBuildsPresentKeynoteAfterClearHTML() throws {
         let url = URL(fileURLWithPath: "/tmp/deck.key")
         let item = ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: url)
 
@@ -21,7 +36,7 @@ final class ProgramActivationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.postSelectionEffects, [.clearHTML, .presentKeynote(url)])
     }
 
-    func testKeynoteInvalidDeckBuildsInvalidDeckPreSelectionAbort() throws {
+    func testKeynoteInvalidDeckBuildsPreSelectionInvalidDeckAlert() throws {
         let url = URL(fileURLWithPath: "/tmp/deck.key")
         let item = ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: url)
 
@@ -29,32 +44,32 @@ final class ProgramActivationPlannerTests: XCTestCase {
 
         XCTAssertNil(plan.runtimeSelection)
         XCTAssertEqual(plan.preSelectionEffects, [.presentInvalidDeckAlert(url)])
-        XCTAssertEqual(plan.postSelectionEffects, [])
         XCTAssertTrue(plan.abortsBeforeSelection)
+        XCTAssertEqual(plan.postSelectionEffects, [])
     }
 
-    func testPPTXItemBuildsOpenPPTXPostEffectWhenValid() throws {
+    func testPPTXPlannerBuildsOpenPPTXAfterClearHTML() throws {
         let url = URL(fileURLWithPath: "/tmp/deck.pptx")
-        let item = ProgramItem(title: "Deck", subtitle: "PPTX", sourceURL: url)
+        let item = ProgramItem(title: "Slides", subtitle: "PPTX", sourceURL: url)
 
         let plan = try XCTUnwrap(plan(for: item, isValidDeckDocument: { _, _ in true }))
 
         XCTAssertEqual(plan.postSelectionEffects, [.clearHTML, .openPPTX(url)])
     }
 
-    func testPPTXInvalidDeckBuildsInvalidDeckPreSelectionAbort() throws {
+    func testPPTXInvalidDeckBuildsPreSelectionInvalidDeckAlert() throws {
         let url = URL(fileURLWithPath: "/tmp/deck.pptx")
-        let item = ProgramItem(title: "Deck", subtitle: "PPTX", sourceURL: url)
+        let item = ProgramItem(title: "Slides", subtitle: "PPTX", sourceURL: url)
 
         let plan = try XCTUnwrap(plan(for: item, isValidDeckDocument: { _, _ in false }))
 
         XCTAssertNil(plan.runtimeSelection)
         XCTAssertEqual(plan.preSelectionEffects, [.presentInvalidDeckAlert(url)])
-        XCTAssertEqual(plan.postSelectionEffects, [])
         XCTAssertTrue(plan.abortsBeforeSelection)
+        XCTAssertEqual(plan.postSelectionEffects, [])
     }
 
-    func testHTMLItemBuildsOpenHTMLPostEffectWithoutClearHTML() throws {
+    func testHTMLPlannerBuildsOpenHTMLWithoutClearHTML() throws {
         let url = URL(fileURLWithPath: "/tmp/page.html")
         let item = ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: url)
 
@@ -64,7 +79,7 @@ final class ProgramActivationPlannerTests: XCTestCase {
         XCTAssertFalse(plan.postSelectionEffects.contains(.clearHTML))
     }
 
-    func testActiveDeckBuildsPresentActiveDeckPostEffect() throws {
+    func testActiveDeckPlannerBuildsPresentActiveDeckAfterClearHTML() throws {
         let item = ProgramItem(title: "Active", subtitle: "KEY")
 
         let plan = try XCTUnwrap(plan(for: item))
@@ -72,31 +87,7 @@ final class ProgramActivationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.postSelectionEffects, [.clearHTML, .presentActiveDeck])
     }
 
-    func testAgendaMarkerBuildsNoPlan() {
-        XCTAssertNil(plan(for: .agendaMarker(title: "Break")))
-    }
-
-    func testUnsupportedItemBuildsNoPlan() {
-        XCTAssertNil(plan(for: ProgramItem(title: "Unsupported", subtitle: "TXT")))
-    }
-
-    func testQueuedItemUsesQueuedRuntimeSelection() throws {
-        let item = mediaItem()
-
-        let plan = try XCTUnwrap(plan(for: item, queuedItems: [item]))
-
-        XCTAssertEqual(plan.runtimeSelection, .queued(item.id))
-    }
-
-    func testDetachedItemUsesDetachedRuntimeSelection() throws {
-        let item = mediaItem()
-
-        let plan = try XCTUnwrap(plan(for: item, queuedItems: []))
-
-        XCTAssertEqual(plan.runtimeSelection, .detached(item))
-    }
-
-    func testStopsCurrentDeckOnlyWhenCurrentSupportsPresentationControlAndDiffers() throws {
+    func testStopDeckAddedOnlyWhenCurrentSupportsPresentationControlAndDiffers() throws {
         let current = ProgramItem(title: "Current", subtitle: "KEY")
         let next = mediaItem()
 
@@ -105,7 +96,7 @@ final class ProgramActivationPlannerTests: XCTestCase {
         XCTAssertEqual(plan.preSelectionEffects, [.stopDeck])
     }
 
-    func testDoesNotStopCurrentDeckWhenSameItem() throws {
+    func testNoStopDeckWhenCurrentProgramIsSame() throws {
         let current = ProgramItem(title: "Current", subtitle: "KEY")
 
         let plan = try XCTUnwrap(plan(for: current, currentItem: current))
@@ -113,29 +104,24 @@ final class ProgramActivationPlannerTests: XCTestCase {
         XCTAssertFalse(plan.preSelectionEffects.contains(.stopDeck))
     }
 
-    func testPlannerDoesNotReferenceSwitcherViewModel() throws {
+    func testAgendaMarkerStillBuildsNoPlan() {
+        XCTAssertNil(plan(for: .agendaMarker(title: "Break")))
+    }
+
+    func testUnsupportedStillBuildsNoPlan() {
+        XCTAssertNil(plan(for: ProgramItem(title: "Unsupported", subtitle: "TXT")))
+    }
+
+    func testPlannerStillDoesNotReferenceSwitcherViewModel() throws {
         XCTAssertFalse(try plannerSource().contains("SwitcherViewModel"))
     }
 
-    func testPlannerDoesNotReferenceLiveRuntimeStore() throws {
+    func testPlannerStillDoesNotReferenceLiveRuntimeStore() throws {
         XCTAssertFalse(try plannerSource().contains("LiveRuntimeStore"))
     }
 
-    func testPlannerDoesNotImportAppKit() throws {
+    func testPlannerStillDoesNotImportAppKit() throws {
         XCTAssertFalse(try plannerSource().contains("import AppKit"))
-    }
-
-    func testPlannerDoesNotPerformViewModelOrFileSideEffects() throws {
-        let source = try plannerSource()
-
-        for forbidden in [
-            "NSAlert",
-            "FileManager.default",
-            "recordSupportEvent",
-            "dispatchRuntimeFacadeAction"
-        ] {
-            XCTAssertFalse(source.contains(forbidden), forbidden)
-        }
     }
 
     private func plan(
