@@ -58,7 +58,7 @@ extension SwitcherViewModel {
         }
 
         dispatchRuntimeProgramSelection(plan.runtimeSelection)
-        setCurrentProgramFromOperatorSelection(plan.item)
+        syncCurrentProgramFacadeFromRuntime()
 
         if plan.shouldClearHTML {
             currentHTMLURL = nil
@@ -78,12 +78,6 @@ extension SwitcherViewModel {
         case .invalidDeck:
             break
         }
-    }
-
-    private func setCurrentProgramFromOperatorSelection(_ item: ProgramItem?) {
-        suppressCurrentProgramFacadeDispatch = true
-        defer { suppressCurrentProgramFacadeDispatch = false }
-        currentProgramItem = item
     }
 
     private func dispatchRuntimeProgramSelection(_ selection: ProgramActivationPlan.RuntimeSelection) {

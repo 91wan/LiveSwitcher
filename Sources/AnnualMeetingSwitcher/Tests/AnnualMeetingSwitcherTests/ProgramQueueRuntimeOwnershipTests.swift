@@ -37,13 +37,13 @@ final class ProgramQueueRuntimeOwnershipTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeBridgeMode.programQueueOwned.owns(.panic))
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramQueueOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
         let viewModel = makeViewModel()
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
     }
 
-    func testProductionConnectedPortsRemainPresentationQueryOwnedSet() {
+    func testProductionConnectedPortsRemainExplicitRuntimeSet() {
         let viewModel = makeViewModel()
 
         XCTAssertEqual(

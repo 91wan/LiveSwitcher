@@ -8,6 +8,7 @@ struct LiveRuntimeFacadeSyncOptions: Equatable {
     var syncAutomationNotice: Bool
     var syncSupport: Bool
     var syncProgramQueue: Bool
+    var syncCurrentProgram: Bool
 }
 
 enum LiveRuntimeFacadeSyncPolicy {
@@ -19,7 +20,8 @@ enum LiveRuntimeFacadeSyncPolicy {
             syncPPT: shouldSyncPPTFacadeAfterRuntimeAction(action),
             syncAutomationNotice: shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action),
             syncSupport: shouldSyncSupportFacadeAfterRuntimeAction(action),
-            syncProgramQueue: shouldSyncProgramQueueFacadeAfterRuntimeAction(action)
+            syncProgramQueue: shouldSyncProgramQueueFacadeAfterRuntimeAction(action),
+            syncCurrentProgram: shouldSyncCurrentProgramFacadeAfterRuntimeAction(action)
         )
     }
 
@@ -134,6 +136,21 @@ enum LiveRuntimeFacadeSyncPolicy {
              .operatorUpdatedProgramItemSchedule,
              .operatorAddedAgendaMarker,
              .facadeLoadedProgramQueue,
+             .presentationQueryResultConsumed:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func shouldSyncCurrentProgramFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorSelectedProgram,
+             .operatorSelectedDetachedProgram,
+             .facadeCurrentProgramChanged,
+             .operatorRemovedProgramItem,
+             .facadeLoadedProgramQueue,
+             .operatorUpdatedProgramItemSchedule,
              .presentationQueryResultConsumed:
             return true
         default:

@@ -133,11 +133,11 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .programChanged)))
     }
 
-    func testViewModelCurrentProgramItemDidSetRoutesProgramRoutingThroughRuntime() {
+    func testViewModelProgramSelectionRoutesProgramRoutingThroughRuntime() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
@@ -145,20 +145,21 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.addProgramItem(item)
 
-        viewModel.currentProgramItem = item
+        viewModel.switchToProgram(item)
 
         XCTAssertEqual(runtime.state.program.currentID, item.id)
-        XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
+        XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
         XCTAssertEqual(audioRouting.reasons, [.programChanged])
     }
 
-    func testCurrentProgramItemDidSetDoesNotApplyAudioRoutingDirectly() throws {
+    func testCurrentProgramProjectionDoesNotApplyAudioRoutingDirectly() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/ViewModel.swift")
 
         XCTAssertFalse(source.contains("applyAudioRoutingForRuntimeChange(reason: .programChanged)"))
-        XCTAssertTrue(source.contains("dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))"))
+        XCTAssertFalse(source.contains("dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged"))
+        XCTAssertTrue(source.contains("func applyCurrentProgramProjectionFromRuntime"))
     }
 
     func testMediaPlaybackCallbackRoutesAudioThroughRuntimeOnly() {
@@ -193,7 +194,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         )
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.avCoordinator.load(url: item.sourceURL!)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         viewModel.avCoordinator.isPlaying = true
@@ -221,7 +222,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         )
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
             onReadyToPlay()
         }
@@ -261,7 +262,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.toggleMainVideoPlayback()
 
@@ -277,7 +278,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         )
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.toggleMainVideoPlayback()
 
@@ -290,7 +291,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.restartCurrentMediaFromBeginning()
 

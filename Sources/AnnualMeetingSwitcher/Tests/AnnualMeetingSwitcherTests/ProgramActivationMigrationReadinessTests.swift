@@ -44,8 +44,13 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
 
     func testProgramActivationStillViewModelOwned() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
+        let normalizedDocs = docs.replacingOccurrences(
+            of: "\\s+",
+            with: " ",
+            options: .regularExpression
+        )
 
-        XCTAssertTrue(docs.contains("Program activation/switching side\neffects are still ViewModel-owned"))
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("Program activation/switching side effects are still ViewModel-owned"))
     }
 
     func testProgramActivationPlannerIsPure() throws {
@@ -97,13 +102,13 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeBridgeMode.programQueueOwned.owns(.programQueue))
     }
 
-    func testProductionViewModelRuntimeBridgeModeRemainsProgramQueueOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
     }
 
-    func testProductionConnectedPortsRemainPresentationQueryOwnedSet() {
+    func testProductionConnectedPortsRemainExplicitRuntimeSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(

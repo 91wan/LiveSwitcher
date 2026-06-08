@@ -43,7 +43,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         let current = try mediaProgram(title: "Current")
         let next = try mediaProgram(title: "Next")
         viewModel.applyProgramQueueProjectionFromRuntime([current, next])
-        setCurrentProgram(current, in: viewModel)
+        setCurrentProgram(current, in: viewModel, programItems: [current, next])
 
         viewModel.togglePause(for: next)
 
@@ -99,7 +99,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
     private func makeViewModel() -> SwitcherViewModel {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ViewModelProgramMediaTransportBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -117,17 +117,27 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
     private func setCurrentProgram(
         _ item: ProgramItem,
         in viewModel: SwitcherViewModel,
+        programItems: [ProgramItem]? = nil,
         mediaIsPlaying: Bool = false
     ) {
-        viewModel.suppressCurrentProgramFacadeDispatch = true
-        viewModel.currentProgramItem = item
-        viewModel.suppressCurrentProgramFacadeDispatch = false
-        viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, mediaIsPlaying: mediaIsPlaying), clearActionLog: true)
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        viewModel.runtime.replaceStateForFacadeSync(
+            runtimeState(
+                for: item,
+                programItems: programItems ?? [item],
+                mediaIsPlaying: mediaIsPlaying
+            ),
+            clearActionLog: true
+        )
     }
 
-    private func runtimeState(for item: ProgramItem, mediaIsPlaying: Bool) -> LiveRuntimeState {
+    private func runtimeState(
+        for item: ProgramItem,
+        programItems: [ProgramItem]? = nil,
+        mediaIsPlaying: Bool
+    ) -> LiveRuntimeState {
         var state = LiveRuntimeState()
-        state.program.items = [item]
+        state.program.items = programItems ?? [item]
         state.program.currentID = item.id
         state.media.loadedURL = item.sourceURL
         state.media.isPlaying = mediaIsPlaying

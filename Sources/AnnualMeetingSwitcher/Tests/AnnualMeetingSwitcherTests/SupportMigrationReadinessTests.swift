@@ -7,7 +7,7 @@ final class SupportMigrationReadinessTests: XCTestCase {
         let viewModel = makeViewModel()
 
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.presentationQuery))
     }
 

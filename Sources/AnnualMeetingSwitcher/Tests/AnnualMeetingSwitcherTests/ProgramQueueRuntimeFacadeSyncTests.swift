@@ -134,7 +134,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [item]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .programQueueOwned)
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.dispatchRuntimeFacadeAction(.operatorSetShowAgendaTimeline(true))
 
@@ -147,7 +147,7 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [runtimeItem]
         let viewModel = makeViewModel(initialState: state, bridgeMode: .programQueueOwned)
-        viewModel.currentProgramItem = detached
+        viewModel.applyCurrentProgramProjectionFromRuntime(detached, switchedAt: Date())
 
         viewModel.dispatchRuntimeFacadeAction(.operatorSetShowAgendaTimeline(true))
 

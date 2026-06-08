@@ -279,7 +279,10 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
-        viewModel.currentProgramItem = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4")),
+            switchedAt: Date()
+        )
         viewModel.avCoordinator.isPlaying = true
         viewModel.isBGMPlaying = true
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)

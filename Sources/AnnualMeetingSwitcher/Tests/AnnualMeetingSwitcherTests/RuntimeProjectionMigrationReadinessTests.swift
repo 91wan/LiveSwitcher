@@ -6,7 +6,7 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
     func testProjectionIsStillProductionOwnedThroughPresentationQueryOwningMode() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.projection))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.ppt))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationNotice))
@@ -50,7 +50,7 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
 
         XCTAssertFalse(storeSource.contains("defaultEnvironment(for:"))
         XCTAssertFalse(storeSource.contains("connectedPortKinds.contains(.persistence)"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionProgramQueueOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionProgramSelectionOwning()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

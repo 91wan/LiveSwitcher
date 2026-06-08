@@ -8,7 +8,7 @@ final class MediaRuntimeSeekTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: false))
 
         viewModel.seekProgramItemToStart(item)
@@ -21,7 +21,7 @@ final class MediaRuntimeSeekTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: false))
 
         viewModel.seekProgramItemToEnd(item)

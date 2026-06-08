@@ -103,18 +103,18 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
-    func testBGMOwningModeStillAllowsMediaEffects() {
+    func testBGMOwningModeBlocksProgramSelectionMediaEffects() {
         let item = mediaProgram()
         var state = LiveRuntimeState()
         state.program.items = [item]
 
         let mutation = reduce(state, .operatorSelectedProgram(item.id), bridgeMode: .bgmOwned)
 
-        XCTAssertTrue(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
-        XCTAssertTrue(mutation.effects.contains(.playMedia(generation: 1)))
+        XCTAssertFalse(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
+        XCTAssertFalse(mutation.effects.contains(.playMedia(generation: 1)))
     }
 
-    func testProjectionOwningModeStillAllowsMediaAndBGMEffects() {
+    func testProjectionOwningModeBlocksProgramSelectionButStillAllowsBGMEffects() {
         let media = mediaProgram()
         let bgm = bgmItem()
         var state = LiveRuntimeState()
@@ -124,9 +124,20 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         let mediaMutation = reduce(state, .operatorSelectedProgram(media.id), bridgeMode: .projectionOwned)
         let bgmMutation = reduce(state, .operatorSelectedBGM(bgm.id), bridgeMode: .projectionOwned)
 
-        XCTAssertTrue(mediaMutation.effects.contains(.loadMedia(media.sourceURL!, generation: 1)))
+        XCTAssertFalse(mediaMutation.effects.contains(.loadMedia(media.sourceURL!, generation: 1)))
         XCTAssertTrue(bgmMutation.effects.contains(.prepareBGM(bgm, generation: 1)))
         XCTAssertTrue(bgmMutation.effects.contains(.startBGMTimer(generation: 1)))
+    }
+
+    func testProgramSelectionOwningModeAllowsProgramSelectionMediaEffects() {
+        let item = mediaProgram()
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+
+        let mutation = reduce(state, .operatorSelectedProgram(item.id), bridgeMode: .programSelectionOwned)
+
+        XCTAssertTrue(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
+        XCTAssertTrue(mutation.effects.contains(.playMedia(generation: 1)))
     }
 
     func testBGMOwningModeBlocksProjectionEffects() {
@@ -229,15 +240,15 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertFalse(mutation.effects.contains(.startBGMTimer(generation: 1)))
     }
 
-    func testMediaOwnedAllowsMediaEffects() {
+    func testMediaOwnedBlocksProgramSelectionMediaEffects() {
         let item = mediaProgram()
         var state = LiveRuntimeState()
         state.program.items = [item]
 
         let mutation = reduce(state, .operatorSelectedProgram(item.id), bridgeMode: .mediaOwned)
 
-        XCTAssertTrue(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
-        XCTAssertTrue(mutation.effects.contains(.playMedia(generation: 1)))
+        XCTAssertFalse(mutation.effects.contains(.loadMedia(item.sourceURL!, generation: 1)))
+        XCTAssertFalse(mutation.effects.contains(.playMedia(generation: 1)))
     }
 
     func testRecordingOnlyBlocksImageAssetEffects() {

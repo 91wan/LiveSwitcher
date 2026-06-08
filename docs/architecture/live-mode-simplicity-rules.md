@@ -186,13 +186,14 @@ product boundary.
   WPS fallback branching, scans, Support event production, source validation,
   invalid-deck alerts, live activation side effects, and telemetry remain
   ViewModel-owned implementation details.
-- Runtime-backed actions must respect the production `.programQueueOwned`
+- Runtime-backed actions must respect the production `.programSelectionOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
   lifecycle, automation notices, Support ingress, audio routing, image assets,
   persistence, fire-and-forget automation command execution, presentation
-  queries, and Program queue storage/mutation may execute; scans, WPS fallback
-  branching, Program activation/switching, source validation, and PPT/WPS key
+  queries, Program queue storage/mutation, and current program selection may
+  execute; scans, WPS fallback branching, Program activation/switching, source
+  validation, and PPT/WPS key
   forwarding must not.
 - Program activation facade extraction does not add live controls or change
   switching behavior. Code simplicity is part of product simplicity: the live

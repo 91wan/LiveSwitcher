@@ -77,7 +77,7 @@ final class ViewModelMediaPlaybackBehaviorTests: XCTestCase {
     func testEndHTMLPresentationStillClearsHTMLAndCurrentProgram() {
         let viewModel = makeViewModel()
         let item = htmlProgram()
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.currentHTMLURL = item.sourceURL
 
         viewModel.endHTMLPresentation()
@@ -88,10 +88,10 @@ final class ViewModelMediaPlaybackBehaviorTests: XCTestCase {
 
     func testCurrentProgramIsMediaSourceStillReflectsCurrentProgram() {
         let viewModel = makeViewModel()
-        viewModel.currentProgramItem = mediaProgram()
+        viewModel.applyCurrentProgramProjectionFromRuntime(mediaProgram(), switchedAt: Date())
         XCTAssertTrue(viewModel.currentProgramIsMediaSource)
 
-        viewModel.currentProgramItem = htmlProgram()
+        viewModel.applyCurrentProgramProjectionFromRuntime(htmlProgram(), switchedAt: Date())
         XCTAssertFalse(viewModel.currentProgramIsMediaSource)
     }
 

@@ -105,7 +105,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: action,
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
     }
 
@@ -123,7 +123,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ProgramQueueRuntimeActivationBoundaryTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

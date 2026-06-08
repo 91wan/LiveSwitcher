@@ -9,7 +9,7 @@ final class MediaRuntimeCallbackIntegrityTests: XCTestCase {
         let html = htmlProgram()
         viewModel.addProgramItems([item, html])
         viewModel.switchToProgram(item)
-        viewModel.currentProgramItem = html
+        viewModel.applyCurrentProgramProjectionFromRuntime(html, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.dispatchRuntimeMediaCallback {

@@ -61,7 +61,10 @@ final class LiveMediaControlTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: htmlURL) }
         var didSeekToBeginning = false
         viewModel.actionHandlers.programSeekToStart = { didSeekToBeginning = true }
-        viewModel.currentProgramItem = ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL)
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL),
+            switchedAt: Date()
+        )
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
         viewModel.restartCurrentMediaFromBeginning()

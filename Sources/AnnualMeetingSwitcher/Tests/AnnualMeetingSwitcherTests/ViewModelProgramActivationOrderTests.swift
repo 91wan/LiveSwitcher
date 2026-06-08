@@ -133,7 +133,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ViewModelProgramActivationOrderTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -154,10 +154,13 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
     }
 
     private func setCurrentProgram(_ item: ProgramItem, in viewModel: SwitcherViewModel) {
-        viewModel.suppressCurrentProgramFacadeDispatch = true
-        viewModel.currentProgramItem = item
-        viewModel.suppressCurrentProgramFacadeDispatch = false
-        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+        var state = viewModel.runtime.state
+        state.program.items = viewModel.programItems
+        state.program.currentID = item.id
+        state.program.currentDetachedItem = state.program.items.contains { $0.id == item.id } ? nil : item
+        state.program.currentSwitchedAt = Date()
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
+        viewModel.syncCurrentProgramFacadeFromRuntime()
     }
 
     private func mediaProgram() throws -> ProgramItem {
