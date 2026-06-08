@@ -48,13 +48,19 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
     }
 
     func testClearHelperOwnsOnlyNilProjectionFallback() throws {
+        let programSelection = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramSelection.swift"
+        )
         let runtimeFacadeSync = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift"
         )
 
-        XCTAssertTrue(runtimeFacadeSync.contains("func clearCurrentProgramSelection(reason: ProgramSelectionClearReason)"))
-        XCTAssertTrue(runtimeFacadeSync.contains("dispatchRuntimeFacadeAction(.operatorClearedCurrentProgram(reason: reason))"))
-        XCTAssertTrue(runtimeFacadeSync.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
+        XCTAssertTrue(programSelection.contains("func clearCurrentProgramSelection(reason: ProgramSelectionClearReason)"))
+        XCTAssertTrue(programSelection.contains("dispatchRuntimeFacadeAction(.operatorClearedCurrentProgram(reason: reason))"))
+        XCTAssertTrue(programSelection.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
+
+        XCTAssertFalse(runtimeFacadeSync.contains("func clearCurrentProgramSelection"))
+        XCTAssertFalse(runtimeFacadeSync.contains("operatorClearedCurrentProgram"))
     }
 
     func testProgramActivationStillHasNoRuntimeActivationDomainOrEffects() throws {

@@ -95,11 +95,12 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         }
     }
 
-    func testProgramQueueOwnedModeDoesNotOwnProgramActivation() throws {
+    func testProgramSelectionOwnedModeDoesNotOwnProgramActivation() throws {
         let source = try runtimeStateSource()
 
         XCTAssertFalse(source.contains(".programActivation"))
-        XCTAssertTrue(LiveRuntimeBridgeMode.programQueueOwned.owns(.programQueue))
+        XCTAssertTrue(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programSelection))
+        XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.automation))
     }
 
     func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
