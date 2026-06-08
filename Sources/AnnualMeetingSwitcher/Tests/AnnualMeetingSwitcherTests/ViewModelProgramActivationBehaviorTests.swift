@@ -226,7 +226,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ViewModelProgramActivationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -247,9 +247,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
     }
 
     private func setCurrentProgram(_ item: ProgramItem, in viewModel: SwitcherViewModel) {
-        viewModel.suppressCurrentProgramFacadeDispatch = true
-        viewModel.currentProgramItem = item
-        viewModel.suppressCurrentProgramFacadeDispatch = false
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
     }
 

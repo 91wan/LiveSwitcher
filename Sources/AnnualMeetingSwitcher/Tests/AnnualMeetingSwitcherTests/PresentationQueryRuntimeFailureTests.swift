@@ -70,7 +70,7 @@ final class PresentationQueryRuntimeFailureTests: XCTestCase {
         defaults.removePersistentDomain(forName: suiteName)
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         return SwitcherViewModel(
             loadPersistedData: false,

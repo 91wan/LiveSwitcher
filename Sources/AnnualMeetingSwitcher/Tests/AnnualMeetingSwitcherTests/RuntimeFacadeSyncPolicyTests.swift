@@ -130,7 +130,8 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
                 syncPPT: false,
                 syncAutomationNotice: false,
                 syncSupport: false,
-                syncProgramQueue: false
+                syncProgramQueue: false,
+                syncCurrentProgram: true
             )
         )
         XCTAssertEqual(
@@ -142,7 +143,8 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
                 syncPPT: false,
                 syncAutomationNotice: false,
                 syncSupport: false,
-                syncProgramQueue: false
+                syncProgramQueue: false,
+                syncCurrentProgram: false
             )
         )
         XCTAssertEqual(
@@ -154,7 +156,8 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
                 syncPPT: false,
                 syncAutomationNotice: false,
                 syncSupport: false,
-                syncProgramQueue: false
+                syncProgramQueue: false,
+                syncCurrentProgram: false
             )
         )
     }

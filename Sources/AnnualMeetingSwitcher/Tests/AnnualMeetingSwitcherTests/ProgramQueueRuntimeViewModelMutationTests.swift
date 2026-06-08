@@ -48,7 +48,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testUpdateProgramItemScheduleUpdatesCurrentProgramFacadeAfterSync() {
         let item = programItem("Scheduled")
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.currentProgramItem = item
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
         let start = Date(timeIntervalSince1970: 10)
 
         viewModel.updateProgramItemSchedule(id: item.id, scheduledStartAt: start, scheduledDuration: 20)
@@ -69,7 +69,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentMediaStillStopsMediaThroughRuntimeBeforeQueueRemoval() {
         let item = programItem("Current")
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.removeProgramItem(withID: item.id)
 
@@ -83,7 +83,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentDeckStillCallsDeckStopBeforeQueueRemoval() {
         let item = ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: URL(fileURLWithPath: "/tmp/Deck.key"))
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         var actionNamesAtDeckStop: [String] = []
         viewModel.actionHandlers.deckStop = {
             actionNamesAtDeckStop = viewModel.runtime.actionLog.map(\.actionName)
@@ -98,7 +98,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentHTMLStillClearsCurrentHTML() {
         let item = ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: URL(fileURLWithPath: "/tmp/index.html"))
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.currentHTMLURL = item.sourceURL
 
         viewModel.removeProgramItem(withID: item.id)
@@ -146,7 +146,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ProgramQueueRuntimeViewModelMutationTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

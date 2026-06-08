@@ -46,14 +46,15 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         XCTAssertEqual(actionCount("facadeCurrentProgramChanged", in: viewModel), 0)
     }
 
-    func testCurrentProgramDidSetStillMirrorsExternalChanges() {
+    func testCurrentProgramProjectionDoesNotDispatchCompatibilityAction() {
         let item = mediaProgram()
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.applyProgramQueueProjectionFromRuntime([item])
 
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
-        XCTAssertEqual(actionCount("facadeCurrentProgramChanged", in: viewModel), 1)
+        XCTAssertEqual(viewModel.currentProgramItem?.id, item.id)
+        XCTAssertEqual(actionCount("facadeCurrentProgramChanged", in: viewModel), 0)
     }
 
     func testProgramSwitchDoesNotDoubleApplyProgramChangedRouting() {
@@ -94,14 +95,15 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         XCTAssertEqual(mutation.state.program.items, [item])
     }
 
-    func testCurrentProgramMirrorUpdatesFromViewModelFacade() {
+    func testCurrentProgramProjectionDoesNotBackWriteRuntimeOwnedSelection() {
         let item = mediaProgram()
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.applyProgramQueueProjectionFromRuntime([item])
 
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
-        XCTAssertEqual(viewModel.runtime.state.program.currentID, item.id)
+        XCTAssertEqual(viewModel.currentProgramItem?.id, item.id)
+        XCTAssertNil(viewModel.runtime.state.program.currentID)
     }
 
     func testRuntimeSetsMediaVolumeToZeroBeforeLoadingNewMedia() {
@@ -112,13 +114,13 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
 
         XCTAssertEqual(mutation.effects.first, .setMediaVolume(0, fade: 0, generation: 1))
     }
 
-    func testRuntimeLoadsMediaBeforePlayMedia() {
+    func testRuntimeLoadsMediaBeforePlayMedia() throws {
         let item = mediaProgram()
         var state = LiveRuntimeState()
         state.program.items = [item]
@@ -126,21 +128,19 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let effects = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         ).effects
 
-        let loadIndex = effects.firstIndex {
+        let loadIndex = try XCTUnwrap(effects.firstIndex {
             if case .loadMedia = $0 { return true }
             return false
-        }
-        let playIndex = effects.firstIndex {
+        })
+        let playIndex = try XCTUnwrap(effects.firstIndex {
             if case .playMedia = $0 { return true }
             return false
-        }
+        })
 
-        XCTAssertNotNil(loadIndex)
-        XCTAssertNotNil(playIndex)
-        XCTAssertLessThan(loadIndex!, playIndex!)
+        XCTAssertLessThan(loadIndex, playIndex)
     }
 
     func testRuntimeDoesNotPlayMediaWhenPanicMirrorIsActive() {
@@ -152,7 +152,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
 
         XCTAssertFalse(mutation.state.media.isPlaying)
@@ -170,7 +170,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let effects = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         ).effects
 
         XCTAssertEqual(effects.last, .applyAudioRouting(reason: .programChanged))
@@ -188,7 +188,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let effects = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         ).effects
 
         XCTAssertTrue(effects.contains { effect in
@@ -209,7 +209,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         let effects = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         ).effects
 
         XCTAssertTrue(effects.contains { effect in
@@ -224,7 +224,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
     ) -> SwitcherViewModel {
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, media: media, audioRouting: audioRouting),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

@@ -67,7 +67,7 @@ final class ProgramQueueRuntimePersistenceTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         let suiteName = "ProgramQueueRuntimePersistenceTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!

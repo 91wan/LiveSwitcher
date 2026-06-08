@@ -158,19 +158,31 @@ final class LiveModeMixerControlsTests: XCTestCase {
 
     @MainActor
     func testMasterMeterUsesRealtimeMediaWhenMediaIsLouder() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionAudioOwned()
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
         viewModel.masterVolume = 1
         viewModel.mediaVolume = 1
         viewModel.bgmVolume = 0.1
-        viewModel.currentProgramItem = ProgramItem(
-            title: "Clip",
-            subtitle: "MP4",
-            sourceURL: URL(fileURLWithPath: "/tmp/clip.mp4")
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(
+                title: "Clip",
+                subtitle: "MP4",
+                sourceURL: URL(fileURLWithPath: "/tmp/clip.mp4")
+            ),
+            switchedAt: Date()
         )
         viewModel.avCoordinator.isPlaying = true
         viewModel.avCoordinator.realtimeLevelDB = -9
         viewModel.bgmRealtimeLevelDB = -24
         viewModel.isBGMPlaying = true
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         XCTAssertEqual(viewModel.liveMasterMeterRealtimeDB(), -9)
         XCTAssertEqual(viewModel.liveMasterMeterFallbackVolume(), viewModel.effectiveMediaOutputVolume())

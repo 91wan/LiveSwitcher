@@ -100,7 +100,7 @@ final class ViewModelRuntimeSnapshotExtractionTests: XCTestCase {
         let second = ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: URL(fileURLWithPath: "/tmp/index.html"))
         let viewModel = makeViewModel(runtimeState: LiveRuntimeState(), bridgeMode: .recordingOnly)
         viewModel.applyProgramQueueProjectionFromRuntime([first, second])
-        viewModel.currentProgramItem = second
+        viewModel.applyCurrentProgramProjectionFromRuntime(second, switchedAt: Date())
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
 

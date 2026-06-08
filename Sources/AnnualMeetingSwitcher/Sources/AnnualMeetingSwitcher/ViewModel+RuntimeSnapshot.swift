@@ -54,17 +54,7 @@ extension SwitcherViewModel {
         var state = runtime.state
         state.mode = consoleMode
         syncProgramQueueIntoRuntimeSnapshot(&state)
-        let queueItemsForCurrentLookup = runtime.bridgeMode.owns(.programQueue)
-            ? state.program.items
-            : programItems
-        if let currentProgramItem,
-           !queueItemsForCurrentLookup.contains(where: { $0.id == currentProgramItem.id }) {
-            state.program.currentDetachedItem = currentProgramItem
-        } else {
-            state.program.currentDetachedItem = nil
-        }
-        state.program.currentID = currentProgramItem?.id
-        state.program.currentSwitchedAt = currentProgramSwitchedAt
+        syncCurrentProgramIntoRuntimeSnapshot(&state)
 
         state.media.loadedURL = avCoordinator.currentURL
         state.media.isPlaying = avCoordinator.isPlaying
@@ -115,6 +105,27 @@ extension SwitcherViewModel {
         }
 
         state.program.items = programItems
+    }
+
+    private func syncCurrentProgramIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.programSelection) else {
+            state.program.currentID = runtime.state.program.currentID
+            state.program.currentDetachedItem = runtime.state.program.currentDetachedItem
+            state.program.currentSwitchedAt = runtime.state.program.currentSwitchedAt
+            return
+        }
+
+        let queueItemsForCurrentLookup = runtime.bridgeMode.owns(.programQueue)
+            ? state.program.items
+            : programItems
+        if let currentProgramItem,
+           !queueItemsForCurrentLookup.contains(where: { $0.id == currentProgramItem.id }) {
+            state.program.currentDetachedItem = currentProgramItem
+        } else {
+            state.program.currentDetachedItem = nil
+        }
+        state.program.currentID = currentProgramItem?.id
+        state.program.currentSwitchedAt = currentProgramSwitchedAt
     }
 
     private func syncSupportIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {

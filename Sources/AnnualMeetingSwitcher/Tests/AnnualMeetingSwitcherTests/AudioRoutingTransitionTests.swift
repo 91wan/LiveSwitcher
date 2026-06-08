@@ -141,7 +141,7 @@ final class AudioRoutingTransitionTests: XCTestCase {
         XCTAssertEqual(viewModel.avCoordinator.volume, 0.4, accuracy: 0.0001)
 
         viewModel.liveAudioFadeDuration = 1.25
-        viewModel.currentProgramItem = nil
+        viewModel.applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
         viewModel.avCoordinator.volume = 0.4
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
@@ -233,11 +233,12 @@ final class AudioRoutingTransitionTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: url) }
         let item = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: url)
 
-        viewModel.currentProgramItem = item
+        let switchedAtDate = Date()
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: switchedAtDate)
         let switchedAt = viewModel.currentProgramSwitchedAt
         viewModel.resetLastAudioRoutingTransitionForTesting()
 
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: switchedAt)
 
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
         XCTAssertEqual(viewModel.currentProgramSwitchedAt, switchedAt)

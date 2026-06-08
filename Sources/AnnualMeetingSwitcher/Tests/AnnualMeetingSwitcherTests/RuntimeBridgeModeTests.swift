@@ -17,6 +17,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
                 .automationCommandOwned,
                 .presentationQueryOwned,
                 .programQueueOwned,
+                .programSelectionOwned,
                 .fullRuntime
             ]
         )
@@ -47,6 +48,9 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeBridgeMode.presentationQueryOwned.owns(.programQueue))
         XCTAssertTrue(LiveRuntimeBridgeMode.programQueueOwned.owns(.presentationQuery))
         XCTAssertTrue(LiveRuntimeBridgeMode.programQueueOwned.owns(.programQueue))
+        XCTAssertFalse(LiveRuntimeBridgeMode.programQueueOwned.owns(.programSelection))
+        XCTAssertTrue(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programQueue))
+        XCTAssertTrue(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programSelection))
         XCTAssertFalse(LiveRuntimeBridgeMode.programQueueOwned.owns(.automation))
         XCTAssertFalse(LiveRuntimeBridgeMode.projectionOwned.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.pptOwned.owns(.support))
@@ -107,7 +111,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
         })
     }
 
-    func testMediaOwnedAllowsMediaButStillBlocksOtherDomainEffects() {
+    func testProgramSelectionOwnedAllowsSelectionButStillBlocksOtherDomainEffects() {
         let item = mediaProgram()
         var state = LiveRuntimeState()
         state.program.items = [item]
@@ -117,25 +121,25 @@ final class RuntimeBridgeModeTests: XCTestCase {
         let mediaMutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedProgram(item.id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
         let bgmMutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorSelectedBGM(state.bgm.items[0].id),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
         let projectionMutation = LiveRuntimeReducer.reduce(
             state: state,
             action: .operatorToggledProjection,
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
         )
 
         XCTAssertTrue(mediaMutation.effects.contains {
             if case .loadMedia = $0 { return true }
             return false
         })
-        XCTAssertTrue(bgmMutation.effects.isEmpty)
-        XCTAssertTrue(projectionMutation.effects.isEmpty)
+        XCTAssertFalse(bgmMutation.effects.isEmpty)
+        XCTAssertFalse(projectionMutation.effects.isEmpty)
     }
 
     func testAudioOwnedModeStoresFacadeRoutingInputsInsideAudioState() {

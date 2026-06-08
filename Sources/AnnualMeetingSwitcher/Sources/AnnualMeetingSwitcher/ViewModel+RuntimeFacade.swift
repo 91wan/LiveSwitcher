@@ -28,6 +28,9 @@ extension SwitcherViewModel {
         if syncOptions.syncProgramQueue {
             syncProgramQueueFacadeFromRuntime()
         }
+        if syncOptions.syncCurrentProgram {
+            syncCurrentProgramFacadeFromRuntime()
+        }
     }
 
     private func syncRuntimeEnvironmentFromFacade() {

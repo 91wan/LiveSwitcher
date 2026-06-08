@@ -17,7 +17,7 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
         )
         viewModel.applyProgramQueueProjectionFromRuntime([queued])
 
-        viewModel.currentProgramItem = detached
+        viewModel.applyCurrentProgramProjectionFromRuntime(detached, switchedAt: Date())
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         XCTAssertEqual(runtime.state.program.items.map(\.id), [queued.id])
@@ -40,7 +40,7 @@ final class ProgramRuntimeDetachedCurrentTests: XCTestCase {
         )
         viewModel.applyProgramQueueProjectionFromRuntime([queued])
 
-        viewModel.currentProgramItem = queued
+        viewModel.applyCurrentProgramProjectionFromRuntime(queued, switchedAt: Date())
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         XCTAssertEqual(runtime.state.program.currentItem?.id, queued.id)

@@ -231,20 +231,33 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
     }
 
     func testMixedStrategyKeepsMediaAndBGMChannelsActive() {
-        let viewModel = makeViewModel()
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionAudioOwned(liveAudioFadeDuration: 0)
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
         viewModel.liveAudioFadeDuration = 0
 
         viewModel.masterVolume = 0.8
         viewModel.mediaVolume = 0.5
         viewModel.bgmVolume = 0.25
         viewModel.audioStrategy = .mixed
-        viewModel.toggleBGM(BGMItem(title: "BGM", url: URL(fileURLWithPath: "/tmp/bgm.mp3"), category: .warmUp))
-        viewModel.currentProgramItem = ProgramItem(
-            title: "片头",
-            subtitle: "MP4",
-            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+        viewModel.currentBGMItem = BGMItem(title: "BGM", url: URL(fileURLWithPath: "/tmp/bgm.mp3"), category: .warmUp)
+        viewModel.isBGMPlaying = true
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(
+                title: "片头",
+                subtitle: "MP4",
+                sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+            ),
+            switchedAt: Date()
         )
         viewModel.avCoordinator.isPlaying = true
+        viewModel.applyCurrentRuntimeAudioRouting(reason: .operatorFaderChanged)
 
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
@@ -259,10 +272,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.mediaVolume = 0.5
         viewModel.bgmVolume = 0.25
         viewModel.audioStrategy = .followProgram
-        viewModel.currentProgramItem = ProgramItem(
-            title: "片头",
-            subtitle: "MP4",
-            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(
+                title: "片头",
+                subtitle: "MP4",
+                sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
+            ),
+            switchedAt: Date()
         )
 
         viewModel.avCoordinator.isPlaying = false
@@ -284,10 +300,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.mediaVolume = 0.5
         viewModel.bgmVolume = 0.9
         viewModel.audioStrategy = .followSource
-        viewModel.currentProgramItem = ProgramItem(
-            title: "网页",
-            subtitle: "HTML",
-            sourceURL: URL(fileURLWithPath: "/tmp/lobby.html")
+        viewModel.applyCurrentProgramProjectionFromRuntime(
+            ProgramItem(
+                title: "网页",
+                subtitle: "HTML",
+                sourceURL: URL(fileURLWithPath: "/tmp/lobby.html")
+            ),
+            switchedAt: Date()
         )
         viewModel.toggleSpeakerMode()
 
@@ -1770,7 +1789,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             stopInvocationCount += 1
         }
 
-        viewModel.currentProgramItem = keynoteItem
+        viewModel.applyCurrentProgramProjectionFromRuntime(keynoteItem, switchedAt: Date())
         viewModel.toggleMainVideoPlayback()
 
         XCTAssertEqual(stopInvocationCount, 1)
@@ -1787,7 +1806,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             stopInvocationCount += 1
         }
 
-        viewModel.currentProgramItem = activeDeckItem
+        viewModel.applyCurrentProgramProjectionFromRuntime(activeDeckItem, switchedAt: Date())
         viewModel.toggleMainVideoPlayback()
 
         XCTAssertEqual(stopInvocationCount, 1)
@@ -1898,7 +1917,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             stopInvocationCount += 1
         }
 
-        viewModel.currentProgramItem = activeDeckItem
+        viewModel.applyCurrentProgramProjectionFromRuntime(activeDeckItem, switchedAt: Date())
 
         viewModel.togglePause(for: activeDeckItem)
 
@@ -1920,7 +1939,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             stopInvocationCount += 1
         }
 
-        viewModel.currentProgramItem = keynoteItem
+        viewModel.applyCurrentProgramProjectionFromRuntime(keynoteItem, switchedAt: Date())
 
         viewModel.togglePause(for: keynoteItem)
 

@@ -23,6 +23,15 @@ extension SwitcherViewModel {
         reconcileCurrentProgramAfterProgramQueueProjection()
     }
 
+    func syncCurrentProgramFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.programSelection) else { return }
+
+        applyCurrentProgramProjectionFromRuntime(
+            runtime.state.program.effectiveCurrentItem,
+            switchedAt: runtime.state.program.currentSwitchedAt
+        )
+    }
+
     func syncPPTFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.ppt) else { return }
 
@@ -49,13 +58,12 @@ extension SwitcherViewModel {
     }
 
     private func reconcileCurrentProgramAfterProgramQueueProjection() {
+        guard !runtime.bridgeMode.owns(.programSelection) else { return }
         guard let currentProgramItem,
               let runtimeItem = programItems.first(where: { $0.id == currentProgramItem.id }),
               runtimeItem != currentProgramItem
         else { return }
 
-        suppressCurrentProgramFacadeDispatch = true
-        defer { suppressCurrentProgramFacadeDispatch = false }
-        self.currentProgramItem = runtimeItem
+        applyCurrentProgramProjectionFromRuntime(runtimeItem, switchedAt: currentProgramSwitchedAt)
     }
 }

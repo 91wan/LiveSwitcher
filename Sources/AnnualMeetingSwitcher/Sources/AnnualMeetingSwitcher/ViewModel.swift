@@ -28,18 +28,8 @@ final class SwitcherViewModel {
 
     // MARK: - 节目状态
 
-    var currentProgramItem: ProgramItem? {
-        didSet {
-            let sourceChanged = currentProgramItem?.sourceURL != oldValue?.sourceURL
-                || currentProgramItem?.sourceKind != oldValue?.sourceKind
-            guard currentProgramItem?.id != oldValue?.id || sourceChanged else { return }
-            currentProgramSwitchedAt = currentProgramItem == nil ? nil : Date()
-            guard !suppressCurrentProgramFacadeDispatch else { return }
-            dispatchRuntimeFacadeAction(.facadeCurrentProgramChanged(currentProgramItem?.id))
-        }
-    }
-    var currentProgramSwitchedAt: Date?
-    @ObservationIgnored var suppressCurrentProgramFacadeDispatch = false
+    private(set) var currentProgramItem: ProgramItem?
+    private(set) var currentProgramSwitchedAt: Date?
     @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
     @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
     var needsMutedMediaStartupAfterClearedProgram = false
@@ -53,6 +43,11 @@ final class SwitcherViewModel {
 
     func applyProgramQueueProjectionFromRuntime(_ items: [ProgramItem]) {
         programItems = items
+    }
+
+    func applyCurrentProgramProjectionFromRuntime(_ item: ProgramItem?, switchedAt: Date?) {
+        currentProgramItem = item
+        currentProgramSwitchedAt = switchedAt
     }
 
     // MARK: - 推流状态
@@ -287,7 +282,7 @@ final class SwitcherViewModel {
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: runtimePorts.makeEffectRunner(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
         configureDefaultActionHandlers()

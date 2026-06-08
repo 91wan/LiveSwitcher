@@ -111,7 +111,7 @@ final class RuntimeEffectInfrastructureSplitTests: XCTestCase {
     func testSwitcherRuntimePortBundleConnectedPortsIncludePresentationQuerySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
             [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]

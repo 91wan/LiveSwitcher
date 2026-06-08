@@ -59,7 +59,7 @@ final class ProgramQueueRuntimeActionLogTests: XCTestCase {
         return LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: .productionProgramQueueOwning()
+            environment: .productionProgramSelectionOwning()
         )
     }
 

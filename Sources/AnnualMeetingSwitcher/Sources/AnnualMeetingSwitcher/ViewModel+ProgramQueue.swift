@@ -29,11 +29,6 @@ extension SwitcherViewModel {
             scheduledStartAt: scheduledStartAt,
             scheduledDuration: scheduledDuration
         ))
-        if currentProgramItem?.id == id {
-            if let updatedItem = programItems.first(where: { $0.id == id }) {
-                currentProgramItem = updatedItem
-            }
-        }
         agendaAutoAdvancePromptedItemIDs.remove(id)
         saveData()
     }
@@ -49,10 +44,12 @@ extension SwitcherViewModel {
             if removedItem?.sourceKind == .media {
                 dispatchRuntimeFacadeAction(.operatorStoppedCurrentMedia)
             }
-            currentProgramItem = nil
             currentHTMLURL = nil   // Bug2修复：删除HTML条目时清空大屏
         }
         dispatchRuntimeFacadeAction(.operatorRemovedProgramItem(id))
+        if isCurrent && !runtime.bridgeMode.owns(.programSelection) {
+            applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
+        }
         saveData()
     }
 

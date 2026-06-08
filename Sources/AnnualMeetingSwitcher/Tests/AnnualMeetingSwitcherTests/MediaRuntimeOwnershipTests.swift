@@ -8,7 +8,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: false))
 
         viewModel.toggleMainVideoPlayback()
@@ -21,7 +21,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: true))
 
         viewModel.restartCurrentMediaFromBeginning()
@@ -31,7 +31,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
 
     func testSwitchToMediaProgramUsesRuntimeLoadAndPlayEffects() {
         let media = MediaRuntimeOwnershipPortSpy()
-        let viewModel = viewModel(media: media)
+        let viewModel = viewModel(media: media, bridgeMode: .programSelectionOwned)
         let item = mediaProgram()
         viewModel.addProgramItem(item)
 
@@ -57,7 +57,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         let viewModel = viewModel(media: media)
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
-        viewModel.currentProgramItem = item
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, isPlaying: true))
 
         viewModel.removeProgramItem(withID: item.id)
@@ -104,10 +104,13 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         XCTAssertFalse(transportBodies.contains("programRestartFromBeginningHandler"))
     }
 
-    private func viewModel(media: MediaRuntimeOwnershipPortSpy) -> SwitcherViewModel {
+    private func viewModel(
+        media: MediaRuntimeOwnershipPortSpy,
+        bridgeMode: LiveRuntimeBridgeMode = .mediaOwned
+    ) -> SwitcherViewModel {
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, media: media),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
         return SwitcherViewModel(
             loadPersistedData: false,

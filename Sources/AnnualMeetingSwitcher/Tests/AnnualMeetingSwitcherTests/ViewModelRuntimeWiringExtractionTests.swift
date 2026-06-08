@@ -38,10 +38,10 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
         )
     }
 
-    func testProductionBridgeModeIsPresentationQueryOwned() {
+    func testProductionBridgeModeIsProgramSelectionOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
     }
 
     func testViewModelInitDoesNotContainRuntimePortHandlerAssignments() throws {

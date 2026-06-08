@@ -10,6 +10,8 @@ extension ProgramRuntimeState {
         items.removeAll { $0.id == id }
         if currentID == id {
             currentID = nil
+            currentDetachedItem = nil
+            currentSwitchedAt = nil
         }
     }
 
@@ -55,6 +57,8 @@ extension ProgramRuntimeState {
            !items.contains(where: { $0.id == currentID }),
            currentDetachedItem?.id != currentID {
             self.currentID = nil
+            currentDetachedItem = nil
+            currentSwitchedAt = nil
         }
     }
 }
