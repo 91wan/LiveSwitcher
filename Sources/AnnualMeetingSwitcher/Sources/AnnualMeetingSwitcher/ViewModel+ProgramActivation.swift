@@ -41,61 +41,6 @@ extension SwitcherViewModel {
         switchToProgram(programItems[index])
     }
 
-    /// Fix Issue #4: 空格键 - 暂停/继续（也处理 Keynote 播放状态）
-    func toggleMainVideoPlayback() {
-        guard let item = currentProgramItem else { return }
-
-        switch item.sourceKind {
-        case .activeDeck, .keynote, .pptx:
-            actionHandlers.deckStop()
-            return
-        case .html, .agendaMarker, .unsupported:
-            return
-        case .media:
-            break
-        }
-
-        guard !isPanicMode else {
-            if runtime.state.media.isPlaying || avCoordinator.isPlaying {
-                dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
-                if panicPlaybackSnapshot?.currentProgramID == item.id {
-                    panicPlaybackSnapshot?.wasMediaPlaying = false
-                }
-            }
-            return
-        }
-
-        // 普通视频
-        dispatchRuntimeFacadeAction(.operatorToggledMediaPlayback)
-    }
-
-    func togglePause(for item: ProgramItem) {
-        guard currentProgramItem?.id == item.id else {
-            switchToProgram(item)
-            return
-        }
-        toggleMainVideoPlayback()
-    }
-
-    func seekProgramItemToStart(_ item: ProgramItem) {
-        if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
-            dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToStart)
-        }
-    }
-
-    func restartCurrentMediaFromBeginning() {
-        guard let item = currentProgramItem,
-              programItemSupportsSeeking(item) else { return }
-        dispatchRuntimeFacadeAction(.operatorRestartedCurrentMedia)
-        recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
-    }
-
-    func seekProgramItemToEnd(_ item: ProgramItem) {
-        if currentProgramItem?.id == item.id && programItemSupportsSeeking(item) {
-            dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToEnd)
-        }
-    }
-
     func confirmAgendaAutoAdvance(_ prompt: AgendaAutoAdvancePrompt) {
         agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
         guard let item = programItems.first(where: { $0.id == prompt.itemID }) else { return }
@@ -151,68 +96,24 @@ extension SwitcherViewModel {
     }
 
     private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {
-        switch programSourceAvailabilityKind(for: item) {
-        case .media, .html, .keynote, .pptx:
-            guard let url = item.sourceURL else {
-                handleUnavailableProgramSource(item, reason: "sourceURLMissing")
-                return false
-            }
-            guard FileManager.default.fileExists(atPath: url.path) else {
-                handleUnavailableProgramSource(item, reason: "fileMissing")
-                return false
-            }
-            return true
-        case .activeDeck, .agendaMarker, .unsupported:
-            return true
-        }
+        let result = ProgramSourceAvailabilityPolicy.availability(
+            for: item,
+            fileExists: { FileManager.default.fileExists(atPath: $0) }
+        )
+        guard let reason = result.unavailableReason else { return true }
+        handleUnavailableProgramSource(item, kind: result.kind, reason: reason)
+        return false
     }
 
-    private func handleUnavailableProgramSource(_ item: ProgramItem, reason: String) {
+    private func handleUnavailableProgramSource(
+        _ item: ProgramItem,
+        kind: ProgramSourceKind,
+        reason: ProgramSourceUnavailableReason
+    ) {
         recordSupportEvent(
             kind: .programItemFileMissing,
-            detail: "sourceKind=\(programSourceKindSupportLabel(programSourceAvailabilityKind(for: item))),reason=\(reason)"
+            detail: "sourceKind=\(ProgramSourceAvailabilityPolicy.supportLabel(for: kind)),reason=\(reason.rawValue)"
         )
         showAutomationRuntimeNotice(action: "program.source.missing")
-    }
-
-    private func programSourceAvailabilityKind(for item: ProgramItem) -> ProgramSourceKind {
-        if item.sourceURL != nil || item.isAgendaMarker || item.sourceKind == .activeDeck {
-            return item.sourceKind
-        }
-
-        let label = item.subtitle.uppercased()
-        if label.contains("VIDEO") || label.contains("AUDIO") || label.contains("MEDIA") {
-            return .media
-        }
-        if label.contains("HTML") {
-            return .html
-        }
-        if label.contains("PPT") {
-            return .pptx
-        }
-        return item.sourceKind
-    }
-
-    private func programSourceKindSupportLabel(_ kind: ProgramSourceKind) -> String {
-        switch kind {
-        case .media:
-            return "media"
-        case .html:
-            return "html"
-        case .keynote:
-            return "keynote"
-        case .pptx:
-            return "pptx"
-        case .activeDeck:
-            return "activeDeck"
-        case .agendaMarker:
-            return "agendaMarker"
-        case .unsupported:
-            return "unsupported"
-        }
-    }
-
-    private func programItemSupportsSeeking(_ item: ProgramItem) -> Bool {
-        item.sourceKind.supportsSeeking
     }
 }

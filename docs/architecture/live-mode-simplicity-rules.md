@@ -198,5 +198,9 @@ product boundary.
   switching behavior. Code simplicity is part of product simplicity: the live
   action stays "select a program" while planning is pure and execution remains
   in the ViewModel activation facade.
+- Program activation hardening does not add live controls or change switching
+  behavior. It only makes activation ordering behavior-tested, isolates pure
+  source availability classification, and moves current-program media transport
+  methods out of the activation facade.
 - Source queue count in runtime state must match the ViewModel queue count;
   a current item outside the queue belongs in `currentDetachedItem`.

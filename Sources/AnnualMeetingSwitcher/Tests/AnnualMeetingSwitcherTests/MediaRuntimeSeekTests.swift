@@ -79,7 +79,7 @@ final class MediaRuntimeSeekTests: XCTestCase {
     }
 
     func testViewModelDoesNotUseProgramSeekHandlersForMigratedMediaSeek() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift")
         let seekBodies = [
             try sourceFunctionBody(named: "seekProgramItemToStart", inSource: source),
             try sourceFunctionBody(named: "seekProgramItemToEnd", inSource: source)
