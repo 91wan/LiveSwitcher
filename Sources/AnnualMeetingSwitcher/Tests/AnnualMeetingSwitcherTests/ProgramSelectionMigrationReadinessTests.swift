@@ -2,12 +2,14 @@ import XCTest
 @testable import LiveSwitcher
 
 final class ProgramSelectionMigrationReadinessTests: XCTestCase {
-    func testProgramSelectionMutationsLiveInDedicatedFile() throws {
+    func testProgramSelectionReducerLivesInDedicatedFile() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramSelectionRuntimeMutations.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramSelectionRuntimeReducer.swift"
         )
 
-        XCTAssertTrue(source.contains("func reduceSelectedProgram"))
+        XCTAssertTrue(source.contains("enum ProgramSelectionRuntimeReducer"))
+        XCTAssertTrue(source.contains("func selectProgram"))
+        XCTAssertTrue(source.contains("func clearCurrentProgram"))
         XCTAssertTrue(source.contains("func selectedProgramItem"))
     }
 
@@ -16,8 +18,43 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
         )
 
-        XCTAssertFalse(source.contains("private static func reduceSelectedProgram"))
-        XCTAssertFalse(source.contains("private static func selectedProgramItem"))
+        XCTAssertFalse(source.contains("static func reduceSelectedProgram"))
+        XCTAssertFalse(source.contains("static func selectedProgramItem"))
+    }
+
+    func testProgramSelectionClearReasonIsExplicitAndLimited() {
+        XCTAssertEqual(
+            [
+                ProgramSelectionClearReason.htmlPresentationEnded,
+                .mediaPlaybackEnded,
+                .operatorCleared
+            ],
+            [.htmlPresentationEnded, .mediaPlaybackEnded, .operatorCleared]
+        )
+    }
+
+    func testProductionSelectionClearCallersUseClearHelper() throws {
+        let mediaPlayback = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+MediaPlayback.swift"
+        )
+        let programQueue = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramQueue.swift"
+        )
+
+        XCTAssertTrue(mediaPlayback.contains("clearCurrentProgramSelection(reason: .htmlPresentationEnded)"))
+        XCTAssertTrue(mediaPlayback.contains("clearCurrentProgramSelection(reason: .mediaPlaybackEnded)"))
+        XCTAssertFalse(mediaPlayback.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
+        XCTAssertFalse(programQueue.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
+    }
+
+    func testClearHelperOwnsOnlyNilProjectionFallback() throws {
+        let runtimeFacadeSync = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift"
+        )
+
+        XCTAssertTrue(runtimeFacadeSync.contains("func clearCurrentProgramSelection(reason: ProgramSelectionClearReason)"))
+        XCTAssertTrue(runtimeFacadeSync.contains("dispatchRuntimeFacadeAction(.operatorClearedCurrentProgram(reason: reason))"))
+        XCTAssertTrue(runtimeFacadeSync.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
     }
 
     func testProgramActivationStillHasNoRuntimeActivationDomainOrEffects() throws {

@@ -24,8 +24,8 @@ enum LiveRuntimeReducer {
         switch action {
         case .operatorSelectedProgram(let id):
             guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
-            guard let item = selectedProgramItem(id, in: state) else { break }
-            reduceSelectedProgram(
+            guard let item = ProgramSelectionRuntimeReducer.selectedProgramItem(id, in: state) else { break }
+            ProgramSelectionRuntimeReducer.selectProgram(
                 item,
                 state: &state,
                 effects: &effects,
@@ -35,11 +35,19 @@ enum LiveRuntimeReducer {
 
         case .operatorSelectedDetachedProgram(let item):
             guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
-            reduceSelectedProgram(
+            ProgramSelectionRuntimeReducer.selectProgram(
                 item,
                 state: &state,
                 effects: &effects,
                 now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
+        case .operatorClearedCurrentProgram:
+            guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
+            ProgramSelectionRuntimeReducer.clearCurrentProgram(
+                state: &state,
+                effects: &effects,
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
@@ -854,7 +862,8 @@ enum LiveRuntimeReducer {
         }
     }
 
-    static func recalculateAudio(
+    // Internal for domain reducers; do not call from ViewModel.
+    internal static func recalculateAudio(
         _ state: inout LiveRuntimeState,
         speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
     ) {
@@ -891,7 +900,8 @@ enum LiveRuntimeReducer {
         syncAudioRoutingContextFromMirrorState(&state)
     }
 
-    static func syncAudioRoutingContextFromMirrorState(_ state: inout LiveRuntimeState) {
+    // Internal for domain reducers; do not call from ViewModel.
+    internal static func syncAudioRoutingContextFromMirrorState(_ state: inout LiveRuntimeState) {
         state.audio.routingContext = AudioRoutingContext(
             isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
             isMediaPlaying: state.media.isPlaying,

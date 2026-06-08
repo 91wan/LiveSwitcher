@@ -33,6 +33,20 @@ final class ProgramSelectionRuntimeActionLogTests: XCTestCase {
         XCTAssertFalse(log.contains("/tmp/Private Title.mp4"))
     }
 
+    func testOperatorClearedCurrentProgramIsLoggedWithRedactedNameOnly() {
+        let item = programItem("Private Title")
+        let store = makeStore(initialItems: [item])
+        store.dispatch(.operatorSelectedProgram(item.id))
+
+        store.dispatch(.operatorClearedCurrentProgram(reason: .htmlPresentationEnded))
+
+        XCTAssertTrue(store.actionLog.contains { $0.actionName == "operatorClearedCurrentProgram" })
+        let log = store.actionLog.map { "\($0.actionName)|\($0.oldStateSummary)|\($0.newStateSummary)" }.joined(separator: "\n")
+        XCTAssertFalse(log.contains("htmlPresentationEnded"))
+        XCTAssertFalse(log.contains("Private Title"))
+        XCTAssertFalse(log.contains("/tmp/Private Title.mp4"))
+    }
+
     private func makeStore(initialItems: [ProgramItem] = []) -> LiveRuntimeStore {
         var state = LiveRuntimeState()
         state.program.items = initialItems

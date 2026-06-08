@@ -32,6 +32,14 @@ extension SwitcherViewModel {
         )
     }
 
+    func clearCurrentProgramSelection(reason: ProgramSelectionClearReason) {
+        if runtime.bridgeMode.owns(.programSelection) {
+            dispatchRuntimeFacadeAction(.operatorClearedCurrentProgram(reason: reason))
+        } else {
+            applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
+        }
+    }
+
     func syncPPTFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.ppt) else { return }
 

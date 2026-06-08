@@ -48,7 +48,7 @@ extension SwitcherViewModel {
         }
         dispatchRuntimeFacadeAction(.operatorRemovedProgramItem(id))
         if isCurrent && !runtime.bridgeMode.owns(.programSelection) {
-            applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
+            clearCurrentProgramSelection(reason: .operatorCleared)
         }
         saveData()
     }

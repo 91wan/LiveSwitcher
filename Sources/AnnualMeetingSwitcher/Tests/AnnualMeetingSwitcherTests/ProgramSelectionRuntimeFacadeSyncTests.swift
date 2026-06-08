@@ -71,10 +71,47 @@ final class ProgramSelectionRuntimeFacadeSyncTests: XCTestCase {
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
     }
 
+    func testClearCurrentProgramSelectionDispatchesRuntimeClearWhenOwned() {
+        let item = programItem("Current")
+        let viewModel = makeViewModel(initialItems: [item], bridgeMode: .programSelectionOwned)
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
+
+        viewModel.clearCurrentProgramSelection(reason: .htmlPresentationEnded)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentProgramSwitchedAt)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorClearedCurrentProgram" })
+    }
+
+    func testClearCurrentProgramSelectionFallsBackWithoutRuntimeDispatchWhenSelectionNotOwned() {
+        let item = programItem("Current")
+        let viewModel = makeViewModel(initialItems: [item], bridgeMode: .programQueueOwned)
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date(timeIntervalSince1970: 10))
+
+        viewModel.clearCurrentProgramSelection(reason: .operatorCleared)
+
+        XCTAssertNil(viewModel.currentProgramItem)
+        XCTAssertNil(viewModel.currentProgramSwitchedAt)
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorClearedCurrentProgram" })
+    }
+
     func testProgramSelectionFacadeSyncPolicyIncludesCurrentProgramActions() {
         for action in currentProgramSyncActions {
             XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncCurrentProgram, action.redactedName)
         }
+    }
+
+    func testClearCurrentProgramSelectionSyncsCurrentProgramOnly() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: .operatorClearedCurrentProgram(reason: .operatorCleared))
+
+        XCTAssertTrue(options.syncCurrentProgram)
+        XCTAssertFalse(options.dispatchAudioInputsChanged)
+        XCTAssertFalse(options.syncBGM)
+        XCTAssertFalse(options.syncProjection)
+        XCTAssertFalse(options.syncPPT)
+        XCTAssertFalse(options.syncAutomationNotice)
+        XCTAssertFalse(options.syncSupport)
+        XCTAssertFalse(options.syncProgramQueue)
     }
 
     func testPresentationQueryRequestCompletedAndFailedDoNotSyncCurrentProgram() {
@@ -93,6 +130,7 @@ final class ProgramSelectionRuntimeFacadeSyncTests: XCTestCase {
         return [
             .operatorSelectedProgram(item.id),
             .operatorSelectedDetachedProgram(item),
+            .operatorClearedCurrentProgram(reason: .operatorCleared),
             .facadeCurrentProgramChanged(item.id),
             .operatorRemovedProgramItem(item.id),
             .facadeLoadedProgramQueue([item]),

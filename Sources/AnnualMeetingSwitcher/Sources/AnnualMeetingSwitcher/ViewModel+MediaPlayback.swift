@@ -31,7 +31,7 @@ extension SwitcherViewModel {
     /// 结束 HTML 展示，回到空闲壁纸态。
     func endHTMLPresentation() {
         currentHTMLURL = nil
-        applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
+        clearCurrentProgramSelection(reason: .htmlPresentationEnded)
     }
 
     /// 当前节目播毕后的最小状态回退。
@@ -53,7 +53,7 @@ extension SwitcherViewModel {
 
         withAnimation(.easeInOut(duration: 0.5)) {
             currentHTMLURL = nil
-            applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)
+            clearCurrentProgramSelection(reason: .mediaPlaybackEnded)
         }
     }
 

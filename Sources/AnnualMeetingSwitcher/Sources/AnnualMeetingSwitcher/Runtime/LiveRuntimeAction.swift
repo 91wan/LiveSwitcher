@@ -11,9 +11,16 @@ enum ProjectionStartFailureReason: String, Equatable {
     case externalDisplayUnavailable
 }
 
+enum ProgramSelectionClearReason: String, Equatable {
+    case htmlPresentationEnded
+    case mediaPlaybackEnded
+    case operatorCleared
+}
+
 enum LiveRuntimeAction: Equatable {
     case operatorSelectedProgram(UUID)
     case operatorSelectedDetachedProgram(ProgramItem)
+    case operatorClearedCurrentProgram(reason: ProgramSelectionClearReason)
     case operatorToggledMediaPlayback
     case operatorRestartedCurrentMedia
     case operatorSeekedCurrentMediaToStart
@@ -100,6 +107,7 @@ extension LiveRuntimeAction {
         switch self {
         case .operatorSelectedProgram: return "operatorSelectedProgram"
         case .operatorSelectedDetachedProgram: return "operatorSelectedProgram"
+        case .operatorClearedCurrentProgram: return "operatorClearedCurrentProgram"
         case .operatorToggledMediaPlayback: return "operatorToggledMediaPlayback"
         case .operatorRestartedCurrentMedia: return "operatorRestartedCurrentMedia"
         case .operatorSeekedCurrentMediaToStart: return "operatorSeekedCurrentMediaToStart"
