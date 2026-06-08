@@ -53,6 +53,36 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(normalizedDocs.localizedStandardContains("Program activation/switching side effects are still ViewModel-owned"))
     }
 
+    func testProgramActivationSideEffectsRemainViewModelOwned() throws {
+        let viewModel = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
+        )
+        let activation = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+        )
+
+        XCTAssertTrue(viewModel.contains("programActivationSideEffects = ProgramActivationSideEffectHandlers()"))
+        XCTAssertTrue(activation.contains("programActivationSideEffects.presentKeynote"))
+        XCTAssertTrue(activation.contains("programActivationSideEffects.openPPTX"))
+        XCTAssertTrue(activation.contains("programActivationSideEffects.stopDeck"))
+        XCTAssertTrue(activation.contains("programActivationSideEffects.presentActiveDeck"))
+        XCTAssertTrue(activation.contains("programActivationSideEffects.presentInvalidDeckAlert"))
+    }
+
+    func testProgramActivationSideEffectHandlersAreNotRuntimePortsYet() throws {
+        let ports = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift"
+        )
+        let effects = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift"
+        )
+
+        XCTAssertFalse(ports.contains("ProgramActivationSideEffectHandlers"))
+        XCTAssertFalse(ports.contains("ProgramActivationPort"))
+        XCTAssertFalse(effects.contains("ProgramActivationSideEffectHandlers"))
+        XCTAssertFalse(effects.contains("activateProgram"))
+    }
+
     func testProgramActivationPlannerIsPure() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/ProgramActivationPlanner.swift"

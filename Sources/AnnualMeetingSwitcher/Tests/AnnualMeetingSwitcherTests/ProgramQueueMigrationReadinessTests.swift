@@ -59,11 +59,11 @@ final class ProgramQueueMigrationReadinessTests: XCTestCase {
         )
 
         XCTAssertTrue(source.contains("programSourceIsAvailable"))
-        XCTAssertTrue(source.contains("actionHandlers.invalidDeck"))
-        XCTAssertTrue(source.contains("actionHandlers.keynotePresentation"))
-        XCTAssertTrue(source.contains("actionHandlers.pptxOpen"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.openPPTX"))
         XCTAssertTrue(source.contains("openHTMLInOutputWindow"))
-        XCTAssertTrue(source.contains("actionHandlers.activeDeckPresentation"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentActiveDeck"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

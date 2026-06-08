@@ -223,9 +223,6 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
-        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
-            onReadyToPlay()
-        }
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         audioRouting.reset()
         viewModel.resetLastAudioRoutingTransitionForTesting()

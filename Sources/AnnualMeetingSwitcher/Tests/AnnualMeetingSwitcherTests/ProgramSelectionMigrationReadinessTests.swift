@@ -86,10 +86,10 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
         )
 
-        XCTAssertTrue(source.contains("actionHandlers.keynotePresentation"))
-        XCTAssertTrue(source.contains("actionHandlers.pptxOpen"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.openPPTX"))
         XCTAssertTrue(source.contains("openHTMLInOutputWindow(url: url)"))
-        XCTAssertTrue(source.contains("actionHandlers.activeDeckPresentation"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentActiveDeck"))
         XCTAssertFalse(source.contains("activateProgram"))
     }
 }

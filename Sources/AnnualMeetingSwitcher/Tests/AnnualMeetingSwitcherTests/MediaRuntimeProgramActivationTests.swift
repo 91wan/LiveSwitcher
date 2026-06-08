@@ -231,7 +231,7 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
-        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
         return viewModel
     }
 

@@ -234,7 +234,7 @@ final class SwitcherViewModel {
     var outputWindowControllerFactory: () -> OutputWindowControlling = {
         OutputWindowController() as OutputWindowControlling
     }
-    @ObservationIgnored var actionHandlers = SwitcherViewModelActionHandlers()
+    @ObservationIgnored var programActivationSideEffects = ProgramActivationSideEffectHandlers()
     var isPresentingAutomationAlert = false
     let automationAlertSuppressionWindow: TimeInterval = 15
     var automationAlertSuppressionUntilByAction: [String: Date] = [:]
@@ -285,7 +285,7 @@ final class SwitcherViewModel {
             environment: .productionProgramSelectionOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
-        configureDefaultActionHandlers()
+        configureDefaultProgramActivationSideEffects()
         if loadPersistedData {
             // Fix: loadData() runs on @MainActor (since class is @MainActor), safe to call
             loadData()

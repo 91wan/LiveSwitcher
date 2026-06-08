@@ -33,11 +33,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             userDefaults: userDefaults ?? .standard
         )
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
-        viewModel.actionHandlers.keynotePresentation = { _ in }
-        viewModel.actionHandlers.pptxOpen = { _ in }
-        viewModel.actionHandlers.activeDeckPresentation = {}
-        viewModel.actionHandlers.invalidDeck = { _ in }
-        viewModel.actionHandlers.deckStop = {}
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.presentActiveDeck = {}
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = {}
         return viewModel
     }
 
@@ -1029,7 +1029,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         var presentFrontDeckInvocationCount = 0
 
         viewModel.outputWindowControllerFactory = { outputSpy }
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
         viewModel.switchToProgram(activeDeckItem)
@@ -1101,7 +1101,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var presentedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
 
@@ -1133,10 +1133,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentedURL: URL?
         var invalidDeckAlertURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckAlertURL = url
         }
 
@@ -1169,10 +1169,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentedURL: URL?
         var invalidDeckAlertURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckAlertURL = url
         }
 
@@ -1205,10 +1205,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var openedURL: URL?
         var invalidDeckAlertURL: URL?
-        viewModel.actionHandlers.pptxOpen = { url in
+        viewModel.programActivationSideEffects.openPPTX = { url in
             openedURL = url
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckAlertURL = url
         }
 
@@ -1241,10 +1241,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var openedURL: URL?
         var invalidDeckAlertURL: URL?
-        viewModel.actionHandlers.pptxOpen = { url in
+        viewModel.programActivationSideEffects.openPPTX = { url in
             openedURL = url
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckAlertURL = url
         }
 
@@ -1278,7 +1278,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var openedURL: URL?
-        viewModel.actionHandlers.pptxOpen = { url in
+        viewModel.programActivationSideEffects.openPPTX = { url in
             openedURL = url
         }
 
@@ -1423,7 +1423,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             .appendingPathExtension("pptx")
         let missingItem = ProgramItem(title: "已删除流程稿", subtitle: "PPTX", sourceURL: missingURL)
         var openedURL: URL?
-        viewModel.actionHandlers.pptxOpen = { openedURL = $0 }
+        viewModel.programActivationSideEffects.openPPTX = { openedURL = $0 }
 
         viewModel.switchToProgram(missingItem)
 
@@ -1785,7 +1785,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
         var stopInvocationCount = 0
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -1802,7 +1802,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let viewModel = makeViewModel()
         let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
         var stopInvocationCount = 0
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -1913,7 +1913,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let viewModel = makeViewModel()
         let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
         var stopInvocationCount = 0
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -1935,7 +1935,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
         var stopInvocationCount = 0
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -1956,7 +1956,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
         var presentFrontDeckInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2012,7 +2012,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var presentedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
 
@@ -2042,7 +2042,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var presentedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
 
@@ -2116,7 +2116,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let viewModel = makeViewModel()
         let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
         var presentFrontDeckInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2163,17 +2163,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
         let otherItem = ProgramItem(title: "其他节目", subtitle: "MP4", sourceURL: otherURL)
         let actionLogCount = viewModel.runtime.actionLog.count
-        var seekToStartCount = 0
-        viewModel.actionHandlers.programSeekToStart = {
-            seekToStartCount += 1
-        }
 
         viewModel.switchToProgram(currentItem)
         viewModel.seekProgramItemToStart(otherItem)
-        XCTAssertEqual(seekToStartCount, 0)
 
         viewModel.seekProgramItemToStart(currentItem)
-        XCTAssertEqual(seekToStartCount, 0)
         XCTAssertTrue(
             viewModel.runtime.actionLog.dropFirst(actionLogCount).contains {
                 $0.actionName == "operatorSeekedCurrentMediaToStart"
@@ -2194,17 +2188,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let currentItem = ProgramItem(title: "当前节目", subtitle: "MP4", sourceURL: currentURL)
         let otherItem = ProgramItem(title: "其他节目", subtitle: "MP4", sourceURL: otherURL)
         let actionLogCount = viewModel.runtime.actionLog.count
-        var seekToEndCount = 0
-        viewModel.actionHandlers.programSeekToEnd = {
-            seekToEndCount += 1
-        }
 
         viewModel.switchToProgram(currentItem)
         viewModel.seekProgramItemToEnd(otherItem)
-        XCTAssertEqual(seekToEndCount, 0)
 
         viewModel.seekProgramItemToEnd(currentItem)
-        XCTAssertEqual(seekToEndCount, 0)
         XCTAssertTrue(
             viewModel.runtime.actionLog.dropFirst(actionLogCount).contains {
                 $0.actionName == "operatorSeekedCurrentMediaToEnd"
@@ -2219,15 +2207,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: htmlURL) }
 
         let htmlItem = ProgramItem(title: "签到页", subtitle: "HTML", sourceURL: htmlURL)
-        var seekToStartCount = 0
-        viewModel.actionHandlers.programSeekToStart = {
-            seekToStartCount += 1
-        }
 
         viewModel.switchToProgram(htmlItem)
         viewModel.seekProgramItemToStart(htmlItem)
 
-        XCTAssertEqual(seekToStartCount, 0)
         XCTAssertEqual(viewModel.currentProgramItem, htmlItem)
         XCTAssertEqual(viewModel.currentHTMLURL, htmlURL)
         XCTAssertNil(viewModel.avCoordinator.currentURL)
@@ -2239,16 +2222,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: keynoteURL) }
 
         let keynoteItem = ProgramItem(title: "主持稿", subtitle: "KEY", sourceURL: keynoteURL)
-        var seekToEndCount = 0
-        viewModel.actionHandlers.programSeekToEnd = {
-            seekToEndCount += 1
-        }
-        viewModel.actionHandlers.keynotePresentation = { _ in }
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
 
         viewModel.switchToProgram(keynoteItem)
         viewModel.seekProgramItemToEnd(keynoteItem)
 
-        XCTAssertEqual(seekToEndCount, 0)
         XCTAssertEqual(viewModel.currentProgramItem, keynoteItem)
         XCTAssertNil(viewModel.currentHTMLURL)
         XCTAssertNil(viewModel.avCoordinator.currentURL)
@@ -2377,10 +2355,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let activeDeckItem = ProgramItem(title: "主持稿", subtitle: "KEY (活动)", sourceURL: nil)
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
         viewModel.addProgramItem(activeDeckItem)
@@ -2535,7 +2513,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
         var presentFrontDeckInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2596,7 +2574,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var presentedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             presentedURL = url
         }
 
@@ -2625,7 +2603,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         defer { try? FileManager.default.removeItem(at: videoURL) }
 
         var presentFrontDeckInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2689,7 +2667,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentFrontDeckInvocationCount = 0
         viewModel.outputWindowControllerFactory = { outputSpy }
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2726,7 +2704,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         var presentFrontDeckInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2755,7 +2733,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentFrontDeckInvocationCount = 0
         viewModel.outputWindowControllerFactory = { outputSpy }
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2788,7 +2766,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentFrontDeckInvocationCount = 0
         viewModel.outputWindowControllerFactory = { outputSpy }
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -2822,10 +2800,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let videoItem = ProgramItem(title: "返场视频", subtitle: "MP4", sourceURL: videoURL)
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -2847,10 +2825,10 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         let agendaMarker = ProgramItem.agendaMarker(title: "中场提醒")
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
 
@@ -2872,13 +2850,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
         var invalidDeckURL: URL?
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckURL = url
         }
 
@@ -2902,13 +2880,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
         var invalidDeckURL: URL?
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckURL = url
         }
 
@@ -2932,13 +2910,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
         var invalidDeckURL: URL?
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckURL = url
         }
 
@@ -2962,13 +2940,13 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         var presentFrontDeckInvocationCount = 0
         var stopInvocationCount = 0
         var invalidDeckURL: URL?
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             stopInvocationCount += 1
         }
-        viewModel.actionHandlers.invalidDeck = { url in
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { url in
             invalidDeckURL = url
         }
 
@@ -2996,7 +2974,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         var presentFrontDeckInvocationCount = 0
         viewModel.outputWindowControllerFactory = { outputSpy }
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             presentFrontDeckInvocationCount += 1
         }
 
@@ -3226,7 +3204,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
             try? FileManager.default.removeItem(at: pptxURL)
         }
         var openedPPTXCount = 0
-        viewModel.actionHandlers.pptxOpen = { _ in openedPPTXCount += 1 }
+        viewModel.programActivationSideEffects.openPPTX = { _ in openedPPTXCount += 1 }
 
         let videoItem = ProgramItem(title: "片头", subtitle: "MP4", sourceURL: videoURL)
         let htmlItem = ProgramItem(title: "大屏页", subtitle: "HTML", sourceURL: htmlURL)

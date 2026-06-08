@@ -9,8 +9,8 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let viewModel = makeViewModel(initialItems: [current, invalid])
         setCurrentProgram(current, in: viewModel)
         var events: [String] = []
-        viewModel.actionHandlers.invalidDeck = { _ in events.append("invalidDeck") }
-        viewModel.actionHandlers.deckStop = { events.append("deckStop") }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in events.append("invalidDeck") }
+        viewModel.programActivationSideEffects.stopDeck = { events.append("deckStop") }
 
         viewModel.switchToProgram(invalid)
 
@@ -20,7 +20,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
     func testInvalidDeckReturnsBeforeRuntimeSelection() throws {
         let invalid = try keynoteProgram(contents: Data())
         let viewModel = makeViewModel(initialItems: [invalid])
-        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
 
         viewModel.switchToProgram(invalid)
 
@@ -32,7 +32,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let invalid = try keynoteProgram(contents: Data())
         let viewModel = makeViewModel(initialItems: [current, invalid])
         setCurrentProgram(current, in: viewModel)
-        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
 
         viewModel.switchToProgram(invalid)
 
@@ -46,7 +46,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let viewModel = makeViewModel(initialItems: [current, next])
         setCurrentProgram(current, in: viewModel)
         var events: [String] = []
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             events.append("deckStop:\(viewModel.runtime.actionLog.isEmpty)")
         }
 
@@ -75,7 +75,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let item = try keynoteProgram(contents: Data("fixture".utf8))
         let viewModel = makeViewModel(initialItems: [item])
         var event: String?
-        viewModel.actionHandlers.keynotePresentation = { _ in
+        viewModel.programActivationSideEffects.presentKeynote = { _ in
             event = "keynote:\(viewModel.currentProgramItem?.id == item.id)"
         }
 
@@ -108,7 +108,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         let viewModel = makeViewModel(initialItems: [item])
         viewModel.currentHTMLURL = try temporaryFile(ext: "html")
         var htmlWasClearedInHandler = false
-        viewModel.actionHandlers.activeDeckPresentation = {
+        viewModel.programActivationSideEffects.presentActiveDeck = {
             htmlWasClearedInHandler = viewModel.currentHTMLURL == nil
         }
 
@@ -145,11 +145,11 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
             runtime: runtime
         )
         viewModel.syncProgramQueueFacadeFromRuntime()
-        viewModel.actionHandlers.deckStop = {}
-        viewModel.actionHandlers.keynotePresentation = { _ in }
-        viewModel.actionHandlers.pptxOpen = { _ in }
-        viewModel.actionHandlers.activeDeckPresentation = {}
-        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = {}
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.presentActiveDeck = {}
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
         return viewModel
     }
 

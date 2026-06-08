@@ -56,13 +56,16 @@ Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`.
 The wallpaper and corner-logo asset library facade lives in
 `ViewModel+Assets.swift`.
-Production action handler closures are grouped under
-`SwitcherViewModelActionHandlers` and configured in
-`ViewModel+ActionHandlerWiring.swift`. Test-only seams are grouped under
-`SwitcherViewModelTestHooks`. Main `ViewModel.swift` may retain private
-storage and narrow bridge accessors, but it must not accumulate loose action
-handler or test-hook fields. Moving code into extensions must not widen private
-ViewModel state just to make files look smaller.
+Program activation side effects are grouped under
+`ProgramActivationSideEffectHandlers` and configured in
+`ViewModel+ProgramActivationSideEffectWiring.swift`.
+`SwitcherViewModelActionHandlers` has been removed. Media seek/restart no
+longer has action-handler bypasses; media transport goes through Runtime media
+actions and `MediaPlaybackPort` effects. Test-only seams are grouped under
+`SwitcherViewModelTestHooks`. Main `ViewModel.swift` may retain private storage
+and narrow bridge accessors, but it must not accumulate loose action handler or
+test-hook fields. Moving code into extensions must not widen private ViewModel
+state just to make files look smaller.
 The main `ViewModel.swift` must not own audio routing method bodies or concrete
 BGM player lifecycle method bodies, media callback/HTML presentation method
 bodies, or wallpaper/corner-logo library method bodies. Result-returning
@@ -313,8 +316,10 @@ support handling and notice facade methods live in
 effects live in `ViewModel+ProjectionOutput.swift`. PPT EventTap lifecycle,
 key forwarding, WPS key forwarding, and automation permission modal alerts live
 in `ViewModel+PPTEventTap.swift`. PPT mode intent methods live in
-`ViewModel+PPTMode.swift`. Default production action-handler wiring lives in
-`ViewModel+ActionHandlerWiring.swift`. The Support ingress facade lives in
+`ViewModel+PPTMode.swift`. Default production Program activation side-effect
+wiring lives in `ViewModel+ProgramActivationSideEffectWiring.swift`; Program
+activation side effects remain ViewModel-owned, and Program activation Runtime
+migration remains a future dedicated PR. The Support ingress facade lives in
 `ViewModel+SupportFacade.swift`.
 
 `ViewModel.swift` must not own Runtime bridge mechanics. It may keep

@@ -7,11 +7,11 @@ final class LiveMediaControlTests: XCTestCase {
     private func makeViewModel() -> SwitcherViewModel {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
         viewModel.externalScreenProvider = { NSScreen.main ?? NSScreen.screens.first }
-        viewModel.actionHandlers.keynotePresentation = { _ in }
-        viewModel.actionHandlers.pptxOpen = { _ in }
-        viewModel.actionHandlers.activeDeckPresentation = {}
-        viewModel.actionHandlers.invalidDeck = { _ in }
-        viewModel.actionHandlers.deckStop = {}
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.presentActiveDeck = {}
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = {}
         return viewModel
     }
 
@@ -28,13 +28,6 @@ final class LiveMediaControlTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 1.0
         let videoURL = try makeTempURL(ext: "mp4")
         defer { try? FileManager.default.removeItem(at: videoURL) }
-        var didRestartFromBeginning = false
-        var didUseStandaloneSeek = false
-        viewModel.actionHandlers.programSeekToStart = { didUseStandaloneSeek = true }
-        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
-            didRestartFromBeginning = true
-            onReadyToPlay()
-        }
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
         viewModel.avCoordinator.pause()
@@ -46,8 +39,6 @@ final class LiveMediaControlTests: XCTestCase {
             RunLoop.main.run(until: Date().addingTimeInterval(0.02))
         }
 
-        XCTAssertFalse(didRestartFromBeginning)
-        XCTAssertFalse(didUseStandaloneSeek)
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.reason, .mediaPlaybackChanged)
@@ -59,8 +50,6 @@ final class LiveMediaControlTests: XCTestCase {
         let viewModel = makeViewModel()
         let htmlURL = try makeTempURL(ext: "html")
         defer { try? FileManager.default.removeItem(at: htmlURL) }
-        var didSeekToBeginning = false
-        viewModel.actionHandlers.programSeekToStart = { didSeekToBeginning = true }
         viewModel.applyCurrentProgramProjectionFromRuntime(
             ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL),
             switchedAt: Date()
@@ -69,7 +58,6 @@ final class LiveMediaControlTests: XCTestCase {
 
         viewModel.restartCurrentMediaFromBeginning()
 
-        XCTAssertFalse(didSeekToBeginning)
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
