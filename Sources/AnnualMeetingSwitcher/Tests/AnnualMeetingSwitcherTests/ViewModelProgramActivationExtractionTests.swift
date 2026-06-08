@@ -18,11 +18,9 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
             "func switchToProgram(",
             "func switchToProgramAfterReadinessConfirmation(",
             "func switchToProgram(at index: Int)",
-            "func toggleMainVideoPlayback(",
-            "func togglePause(",
-            "func seekProgramItemToStart(",
-            "func restartCurrentMediaFromBeginning(",
-            "func seekProgramItemToEnd("
+            "func confirmAgendaAutoAdvance(",
+            "executeProgramActivationPlan",
+            "programSourceIsAvailable"
         ] {
             XCTAssertTrue(source.contains(required), required)
         }
@@ -58,6 +56,7 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
 
         XCTAssertFalse(source.contains("programSourceIsAvailable"))
         XCTAssertFalse(source.contains("handleUnavailableProgramSource"))
+        XCTAssertFalse(source.contains("ProgramSourceAvailabilityPolicy"))
         XCTAssertFalse(source.contains("dispatchRuntimeProgramSelection"))
     }
 
@@ -79,6 +78,7 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
     func testSwitchToProgramExecutesActivationPlan() throws {
         let body = try XCTUnwrap(try activationSource().extractedRuntimeFunctionBody(named: "switchToProgram"))
 
+        XCTAssertTrue(body.contains("programSourceIsAvailable(item)"))
         XCTAssertTrue(body.contains("ProgramActivationPlanner.plan("))
         XCTAssertTrue(body.contains("executeProgramActivationPlan(plan)"))
     }
@@ -96,11 +96,6 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
         [
             "func switchToProgram(",
             "func switchToProgramAfterReadinessConfirmation(",
-            "func toggleMainVideoPlayback(",
-            "func togglePause(",
-            "func seekProgramItemToStart(",
-            "func restartCurrentMediaFromBeginning(",
-            "func seekProgramItemToEnd(",
             "programSourceIsAvailable",
             "handleUnavailableProgramSource",
             "dispatchRuntimeProgramSelection"

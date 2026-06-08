@@ -1,6 +1,7 @@
 import XCTest
 @testable import LiveSwitcher
 
+@MainActor
 final class ProgramActivationMigrationReadinessTests: XCTestCase {
     func testNoProgramActivationOwnedBridgeModeYet() throws {
         let source = try runtimeStateSource()
@@ -12,6 +13,33 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         let source = try runtimeStateSource()
 
         XCTAssertFalse(source.contains("case programActivation"))
+    }
+
+    func testNoProgramActivationPortYet() throws {
+        let ports = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift"
+        )
+
+        XCTAssertFalse(ports.contains("ProgramActivationPort"))
+        XCTAssertFalse(ports.contains("programActivationPort"))
+    }
+
+    func testNoActivateProgramEffectYet() throws {
+        let effect = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift"
+        )
+
+        XCTAssertFalse(effect.contains("activateProgram"))
+        XCTAssertFalse(effect.contains("programActivation"))
+    }
+
+    func testNoProgramActivationCallbackActionsYet() throws {
+        let action = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
+        )
+
+        XCTAssertFalse(action.contains("programActivationCompleted"))
+        XCTAssertFalse(action.contains("programActivationFailed"))
     }
 
     func testProgramActivationStillViewModelOwned() throws {
@@ -45,11 +73,43 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(source.contains("executeProgramActivationPlan"))
     }
 
+    func testProgramSourceAvailabilityPolicyIsPure() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/ProgramSourceAvailabilityPolicy.swift"
+        )
+
+        for forbidden in [
+            "SwitcherViewModel",
+            "LiveRuntimeStore",
+            "FileManager.default",
+            "recordSupportEvent",
+            "showAutomationRuntimeNotice",
+            "NSAlert"
+        ] {
+            XCTAssertFalse(source.contains(forbidden), forbidden)
+        }
+    }
+
     func testProgramQueueOwnedModeDoesNotOwnProgramActivation() throws {
         let source = try runtimeStateSource()
 
         XCTAssertFalse(source.contains(".programActivation"))
         XCTAssertTrue(LiveRuntimeBridgeMode.programQueueOwned.owns(.programQueue))
+    }
+
+    func testProductionViewModelRuntimeBridgeModeRemainsProgramQueueOwned() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programQueueOwned)
+    }
+
+    func testProductionConnectedPortsRemainPresentationQueryOwnedSet() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertEqual(
+            viewModel.runtimeConnectedPortKinds,
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+        )
     }
 
     private func runtimeStateSource() throws -> String {

@@ -44,7 +44,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSwitchToMediaProgramDoesNotCallAVPlayerDirectlyFromViewModel() throws {
         let body = try sourceFunctionBody(
             named: "switchToProgram",
-            in: programQueueExtensionPath
+            in: programActivationExtensionPath
         )
 
         XCTAssertFalse(body.contains("avCoordinator.load("))
@@ -68,7 +68,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSeekToStartUsesRuntimeOrIsExplicitlyDocumented() throws {
         let body = try sourceFunctionBody(
             named: "seekProgramItemToStart",
-            in: programQueueExtensionPath
+            in: programMediaTransportExtensionPath
         )
 
         XCTAssertTrue(
@@ -80,7 +80,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     func testSeekToEndUsesRuntimeOrIsExplicitlyDocumented() throws {
         let body = try sourceFunctionBody(
             named: "seekProgramItemToEnd",
-            in: programQueueExtensionPath
+            in: programMediaTransportExtensionPath
         )
 
         XCTAssertTrue(
@@ -90,7 +90,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
     }
 
     func testViewModelDoesNotDirectlyCallAVPlayerForMediaTransport() throws {
-        let source = try sourceText(programQueueExtensionPath)
+        let source = try sourceText(programMediaTransportExtensionPath)
         let queueSource = try sourceText(programQueueMutationPath)
         let transportBodies = [
             try sourceFunctionBody(named: "toggleMainVideoPlayback", inSource: source),
@@ -140,8 +140,12 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         return try String(contentsOf: url, encoding: .utf8)
     }
 
-    private var programQueueExtensionPath: String {
+    private var programActivationExtensionPath: String {
         "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+    }
+
+    private var programMediaTransportExtensionPath: String {
+        "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift"
     }
 
     private var programQueueMutationPath: String {
