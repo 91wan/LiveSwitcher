@@ -27,7 +27,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedProgram" })
     }
 
-    func testInvalidDeckReturnsBeforeCurrentProgramUpdate() throws {
+    func testInvalidDeckReturnsBeforeCurrentProgramProjection() throws {
         let current = activeDeckProgram()
         let invalid = try keynoteProgram(contents: Data())
         let viewModel = makeViewModel(initialItems: [current, invalid])
@@ -40,7 +40,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         XCTAssertNotEqual(viewModel.currentProgramItem?.id, invalid.id)
     }
 
-    func testNormalActivationStopsDeckBeforeRuntimeSelection() throws {
+    func testStopDeckRunsBeforeRuntimeSelection() throws {
         let current = activeDeckProgram()
         let next = try mediaProgram()
         let viewModel = makeViewModel(initialItems: [current, next])
@@ -56,7 +56,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.actionLog.first?.actionName, "operatorSelectedProgram")
     }
 
-    func testNormalActivationDispatchesRuntimeSelectionBeforeCurrentProgramUpdate() throws {
+    func testRuntimeSelectionRunsBeforeCurrentProgramProjection() throws {
         let current = activeDeckProgram()
         let next = try mediaProgram()
         let viewModel = makeViewModel(initialItems: [current, next])
@@ -71,7 +71,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         XCTAssertEqual(viewModel.currentProgramItem?.id, next.id)
     }
 
-    func testNormalActivationSetsCurrentProgramBeforeSideEffect() throws {
+    func testCurrentProgramProjectionRunsBeforePostSelectionSideEffects() throws {
         let item = try keynoteProgram(contents: Data("fixture".utf8))
         let viewModel = makeViewModel(initialItems: [item])
         var event: String?
@@ -84,17 +84,61 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         XCTAssertEqual(event, "keynote:true")
     }
 
-    func testMediaActivationClearsHTMLBeforeCompleting() throws {
+    func testPostSelectionEffectsRunInPlanOrder() throws {
+        let item = try keynoteProgram(contents: Data("fixture".utf8))
+        let viewModel = makeViewModel(initialItems: [item])
+        viewModel.currentHTMLURL = try temporaryFile(ext: "html")
+        var event: String?
+        viewModel.programActivationSideEffects.presentKeynote = { _ in
+            event = "keynoteAfterClearHTML:\(viewModel.currentHTMLURL == nil)"
+        }
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertEqual(event, "keynoteAfterClearHTML:true")
+    }
+
+    func testMediaActivationClearHTMLRunsBeforeResetMutedFlag() throws {
         let item = try mediaProgram()
         let viewModel = makeViewModel(initialItems: [item])
         viewModel.currentHTMLURL = try temporaryFile(ext: "html")
+        viewModel.needsMutedMediaStartupAfterClearedProgram = true
 
         viewModel.switchToProgram(item)
 
         XCTAssertNil(viewModel.currentHTMLURL)
+        XCTAssertFalse(viewModel.needsMutedMediaStartupAfterClearedProgram)
     }
 
-    func testHTMLActivationOpensHTMLAndLeavesCurrentHTMLURLSet() throws {
+    func testKeynoteActivationClearsHTMLBeforePresentKeynote() throws {
+        let item = try keynoteProgram(contents: Data("fixture".utf8))
+        let viewModel = makeViewModel(initialItems: [item])
+        viewModel.currentHTMLURL = try temporaryFile(ext: "html")
+        var htmlWasClearedInHandler = false
+        viewModel.programActivationSideEffects.presentKeynote = { _ in
+            htmlWasClearedInHandler = viewModel.currentHTMLURL == nil
+        }
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertTrue(htmlWasClearedInHandler)
+    }
+
+    func testPPTXActivationClearsHTMLBeforeOpenPPTX() throws {
+        let item = try pptxProgram(contents: Data("fixture".utf8))
+        let viewModel = makeViewModel(initialItems: [item])
+        viewModel.currentHTMLURL = try temporaryFile(ext: "html")
+        var htmlWasClearedInHandler = false
+        viewModel.programActivationSideEffects.openPPTX = { _ in
+            htmlWasClearedInHandler = viewModel.currentHTMLURL == nil
+        }
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertTrue(htmlWasClearedInHandler)
+    }
+
+    func testHTMLActivationDoesNotClearHTMLBeforeOpenHTML() throws {
         let item = try htmlProgram()
         let viewModel = makeViewModel(initialItems: [item])
 
@@ -173,6 +217,10 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
 
     private func keynoteProgram(contents: Data) throws -> ProgramItem {
         ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: try temporaryFile(ext: "key", contents: contents))
+    }
+
+    private func pptxProgram(contents: Data) throws -> ProgramItem {
+        ProgramItem(title: "Slides", subtitle: "PPTX", sourceURL: try temporaryFile(ext: "pptx", contents: contents))
     }
 
     private func activeDeckProgram() -> ProgramItem {

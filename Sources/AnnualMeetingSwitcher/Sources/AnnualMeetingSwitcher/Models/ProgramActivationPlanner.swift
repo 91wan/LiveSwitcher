@@ -10,44 +10,74 @@ enum ProgramActivationPlanner {
         let sourceKind = item.sourceKind
         guard sourceKind.isActivatableProgram else { return nil }
 
-        let sideEffect: ProgramActivationPlan.SideEffect
-        let shouldClearHTML: Bool
+        let runtimeSelection: ProgramActivationPlan.RuntimeSelection?
+        let preSelectionEffects: [ProgramActivationPlan.PreSelectionEffect]
+        let postSelectionEffects: [ProgramActivationPlan.PostSelectionEffect]
         switch sourceKind {
         case .agendaMarker, .unsupported:
             return nil
         case .media:
-            sideEffect = .none
-            shouldClearHTML = true
+            runtimeSelection = self.runtimeSelection(for: item, queuedItems: queuedItems)
+            preSelectionEffects = self.preSelectionEffects(currentItem: currentItem, nextItem: item)
+            postSelectionEffects = [.clearHTML, .resetMutedMediaStartupFlag]
         case .keynote:
             guard let url = item.sourceURL else { return nil }
-            sideEffect = isValidDeckDocument(url, .keynote) ? .presentKeynote(url) : .invalidDeck(url)
-            shouldClearHTML = true
+            if isValidDeckDocument(url, .keynote) {
+                runtimeSelection = self.runtimeSelection(for: item, queuedItems: queuedItems)
+                preSelectionEffects = self.preSelectionEffects(currentItem: currentItem, nextItem: item)
+                postSelectionEffects = [.clearHTML, .presentKeynote(url)]
+            } else {
+                runtimeSelection = nil
+                preSelectionEffects = [.presentInvalidDeckAlert(url)]
+                postSelectionEffects = []
+            }
         case .pptx:
             guard let url = item.sourceURL else { return nil }
-            sideEffect = isValidDeckDocument(url, .pptx) ? .openPPTX(url) : .invalidDeck(url)
-            shouldClearHTML = true
+            if isValidDeckDocument(url, .pptx) {
+                runtimeSelection = self.runtimeSelection(for: item, queuedItems: queuedItems)
+                preSelectionEffects = self.preSelectionEffects(currentItem: currentItem, nextItem: item)
+                postSelectionEffects = [.clearHTML, .openPPTX(url)]
+            } else {
+                runtimeSelection = nil
+                preSelectionEffects = [.presentInvalidDeckAlert(url)]
+                postSelectionEffects = []
+            }
         case .html:
             guard let url = item.sourceURL else { return nil }
-            sideEffect = .openHTML(url)
-            shouldClearHTML = false
+            runtimeSelection = self.runtimeSelection(for: item, queuedItems: queuedItems)
+            preSelectionEffects = self.preSelectionEffects(currentItem: currentItem, nextItem: item)
+            postSelectionEffects = [.openHTML(url)]
         case .activeDeck:
-            sideEffect = .presentActiveDeck
-            shouldClearHTML = true
+            runtimeSelection = self.runtimeSelection(for: item, queuedItems: queuedItems)
+            preSelectionEffects = self.preSelectionEffects(currentItem: currentItem, nextItem: item)
+            postSelectionEffects = [.clearHTML, .presentActiveDeck]
         }
-
-        let runtimeSelection: ProgramActivationPlan.RuntimeSelection = queuedItems.contains(where: { $0.id == item.id })
-            ? .queued(item.id)
-            : .detached(item)
-        let shouldStopCurrentDeckPresentation = currentItem.map {
-            $0.id != item.id && $0.supportsPresentationControl
-        } ?? false
 
         return ProgramActivationPlan(
             item: item,
             runtimeSelection: runtimeSelection,
-            shouldStopCurrentDeckPresentation: shouldStopCurrentDeckPresentation,
-            shouldClearHTML: shouldClearHTML,
-            sideEffect: sideEffect
+            preSelectionEffects: preSelectionEffects,
+            postSelectionEffects: postSelectionEffects
         )
+    }
+
+    private static func runtimeSelection(
+        for item: ProgramItem,
+        queuedItems: [ProgramItem]
+    ) -> ProgramActivationPlan.RuntimeSelection {
+        queuedItems.contains(where: { $0.id == item.id })
+            ? .queued(item.id)
+            : .detached(item)
+    }
+
+    private static func preSelectionEffects(
+        currentItem: ProgramItem?,
+        nextItem: ProgramItem
+    ) -> [ProgramActivationPlan.PreSelectionEffect] {
+        guard let currentItem,
+              currentItem.id != nextItem.id,
+              currentItem.supportsPresentationControl
+        else { return [] }
+        return [.stopDeck]
     }
 }

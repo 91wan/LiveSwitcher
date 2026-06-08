@@ -48,24 +48,33 @@ extension SwitcherViewModel {
     }
 
     private func executeProgramActivationPlan(_ plan: ProgramActivationPlan) {
-        if case .invalidDeck(let url) = plan.sideEffect {
-            programActivationSideEffects.presentInvalidDeckAlert(url)
-            return
+        for effect in plan.preSelectionEffects {
+            switch effect {
+            case .stopDeck:
+                programActivationSideEffects.stopDeck()
+            case .presentInvalidDeckAlert(let url):
+                programActivationSideEffects.presentInvalidDeckAlert(url)
+                return
+            }
         }
 
-        if plan.shouldStopCurrentDeckPresentation {
-            programActivationSideEffects.stopDeck()
-        }
+        guard let runtimeSelection = plan.runtimeSelection else { return }
 
-        dispatchRuntimeProgramSelection(plan.runtimeSelection)
+        dispatchRuntimeProgramSelection(runtimeSelection)
         syncCurrentProgramFacadeFromRuntime()
 
-        if plan.shouldClearHTML {
-            currentHTMLURL = nil
+        for effect in plan.postSelectionEffects {
+            executePostSelectionProgramActivationEffect(effect)
         }
+    }
 
-        switch plan.sideEffect {
-        case .none:
+    private func executePostSelectionProgramActivationEffect(
+        _ effect: ProgramActivationPlan.PostSelectionEffect
+    ) {
+        switch effect {
+        case .clearHTML:
+            currentHTMLURL = nil
+        case .resetMutedMediaStartupFlag:
             needsMutedMediaStartupAfterClearedProgram = false
         case .presentKeynote(let url):
             programActivationSideEffects.presentKeynote(url)
@@ -75,8 +84,6 @@ extension SwitcherViewModel {
             openHTMLInOutputWindow(url: url)
         case .presentActiveDeck:
             programActivationSideEffects.presentActiveDeck()
-        case .invalidDeck:
-            break
         }
     }
 

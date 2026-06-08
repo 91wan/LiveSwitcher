@@ -97,6 +97,11 @@ product boundary.
   grouped under `SwitcherViewModelTestHooks`, and media seek/restart remains on
   Runtime media actions without action-handler bypasses; Live mode remains
   execution-only and code simplicity remains part of product simplicity.
+- Program activation phase-plan hardening does not add live controls or change
+  switching behavior. It only makes activation order explicit: pre-selection
+  effects, Runtime current-program selection, current-program facade projection,
+  then post-selection effects. Runtime remains the selected-program source of
+  truth.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;

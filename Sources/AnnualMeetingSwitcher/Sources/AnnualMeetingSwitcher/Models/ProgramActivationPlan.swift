@@ -6,18 +6,31 @@ struct ProgramActivationPlan: Equatable {
         case detached(ProgramItem)
     }
 
-    enum SideEffect: Equatable {
-        case none
+    enum PreSelectionEffect: Equatable {
+        case stopDeck
+        case presentInvalidDeckAlert(URL)
+    }
+
+    enum PostSelectionEffect: Equatable {
+        case clearHTML
+        case resetMutedMediaStartupFlag
         case presentKeynote(URL)
         case openPPTX(URL)
         case openHTML(URL)
         case presentActiveDeck
-        case invalidDeck(URL)
     }
 
     var item: ProgramItem
-    var runtimeSelection: RuntimeSelection
-    var shouldStopCurrentDeckPresentation: Bool
-    var shouldClearHTML: Bool
-    var sideEffect: SideEffect
+    var runtimeSelection: RuntimeSelection?
+    var preSelectionEffects: [PreSelectionEffect]
+    var postSelectionEffects: [PostSelectionEffect]
+
+    var abortsBeforeSelection: Bool {
+        for effect in preSelectionEffects {
+            if case .presentInvalidDeckAlert = effect {
+                return true
+            }
+        }
+        return false
+    }
 }
