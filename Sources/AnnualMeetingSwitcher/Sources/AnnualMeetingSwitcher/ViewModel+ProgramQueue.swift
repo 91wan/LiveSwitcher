@@ -39,7 +39,7 @@ extension SwitcherViewModel {
         if isCurrent {
             needsMutedMediaStartupAfterClearedProgram = removedItem?.sourceKind == .media
             if removedItem?.supportsPresentationControl == true {
-                actionHandlers.deckStop()
+                programActivationSideEffects.stopDeck()
             }
             if removedItem?.sourceKind == .media {
                 dispatchRuntimeFacadeAction(.operatorStoppedCurrentMedia)

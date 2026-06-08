@@ -91,11 +91,12 @@ product boundary.
   and wallpaper/corner-logo library methods to `ViewModel+Assets.swift`; Live
   mode remains execution-only and code simplicity remains part of product
   simplicity.
-- ViewModel hook consolidation does not add live controls. It only groups
-  production action handlers under `SwitcherViewModelActionHandlers`, groups
-  test-only seams under `SwitcherViewModelTestHooks`, and moves PPT mode intent
-  methods into `ViewModel+PPTMode.swift`; Live mode remains execution-only and
-  code simplicity remains part of product simplicity.
+- ViewModel hook consolidation and Program activation side-effect boundary
+  cleanup do not add live controls. Production activation side effects are
+  grouped under `ProgramActivationSideEffectHandlers`, test-only seams are
+  grouped under `SwitcherViewModelTestHooks`, and media seek/restart remains on
+  Runtime media actions without action-handler bypasses; Live mode remains
+  execution-only and code simplicity remains part of product simplicity.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;

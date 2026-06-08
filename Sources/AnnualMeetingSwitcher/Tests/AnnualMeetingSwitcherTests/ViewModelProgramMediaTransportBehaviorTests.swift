@@ -18,7 +18,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         let item = activeDeckProgram()
         setCurrentProgram(item, in: viewModel)
         var didStopDeck = false
-        viewModel.actionHandlers.deckStop = { didStopDeck = true }
+        viewModel.programActivationSideEffects.stopDeck = { didStopDeck = true }
 
         viewModel.toggleMainVideoPlayback()
 
@@ -110,7 +110,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
             userDefaults: defaults,
             runtime: runtime
         )
-        viewModel.actionHandlers.deckStop = {}
+        viewModel.programActivationSideEffects.stopDeck = {}
         return viewModel
     }
 

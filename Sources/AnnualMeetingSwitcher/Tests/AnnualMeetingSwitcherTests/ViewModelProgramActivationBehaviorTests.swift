@@ -19,10 +19,10 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let item = try mediaProgram()
         let viewModel = makeViewModel(initialItems: [item])
         var presentationEvents: [String] = []
-        viewModel.actionHandlers.keynotePresentation = { _ in presentationEvents.append("keynote") }
-        viewModel.actionHandlers.pptxOpen = { _ in presentationEvents.append("pptx") }
-        viewModel.actionHandlers.activeDeckPresentation = { presentationEvents.append("activeDeck") }
-        viewModel.actionHandlers.invalidDeck = { _ in presentationEvents.append("invalidDeck") }
+        viewModel.programActivationSideEffects.presentKeynote = { _ in presentationEvents.append("keynote") }
+        viewModel.programActivationSideEffects.openPPTX = { _ in presentationEvents.append("pptx") }
+        viewModel.programActivationSideEffects.presentActiveDeck = { presentationEvents.append("activeDeck") }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in presentationEvents.append("invalidDeck") }
 
         viewModel.switchToProgram(item)
 
@@ -35,7 +35,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let viewModel = makeViewModel(initialItems: [current, item])
         setCurrentProgram(current, in: viewModel)
         var didStopDeck = false
-        viewModel.actionHandlers.deckStop = { didStopDeck = true }
+        viewModel.programActivationSideEffects.stopDeck = { didStopDeck = true }
 
         viewModel.switchToProgram(item)
 
@@ -46,7 +46,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let item = try keynoteProgram(contents: Data("fixture".utf8))
         let viewModel = makeViewModel(initialItems: [item])
         var events: [String] = []
-        viewModel.actionHandlers.keynotePresentation = { url in
+        viewModel.programActivationSideEffects.presentKeynote = { url in
             events.append("keynote:\(viewModel.runtime.actionLog.last?.actionName ?? "none"):\(viewModel.currentProgramItem?.id == item.id):\(url == item.sourceURL)")
         }
 
@@ -77,7 +77,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let item = try keynoteProgram(contents: Data())
         let viewModel = makeViewModel(initialItems: [item])
         var invalidURL: URL?
-        viewModel.actionHandlers.invalidDeck = { invalidURL = $0 }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { invalidURL = $0 }
 
         viewModel.switchToProgram(item)
 
@@ -88,7 +88,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let item = try pptxProgram(contents: Data("fixture".utf8))
         let viewModel = makeViewModel(initialItems: [item])
         var events: [String] = []
-        viewModel.actionHandlers.pptxOpen = { url in
+        viewModel.programActivationSideEffects.openPPTX = { url in
             events.append("pptx:\(viewModel.runtime.actionLog.last?.actionName ?? "none"):\(viewModel.currentProgramItem?.id == item.id):\(url == item.sourceURL)")
         }
 
@@ -129,7 +129,7 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
         let item = activeDeckProgram()
         let viewModel = makeViewModel(initialItems: [item])
         var didPresent = false
-        viewModel.actionHandlers.activeDeckPresentation = { didPresent = true }
+        viewModel.programActivationSideEffects.presentActiveDeck = { didPresent = true }
 
         viewModel.switchToProgram(item)
 
@@ -239,11 +239,11 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
             runtime: runtime
         )
         viewModel.syncProgramQueueFacadeFromRuntime()
-        viewModel.actionHandlers.deckStop = {}
-        viewModel.actionHandlers.keynotePresentation = { _ in }
-        viewModel.actionHandlers.pptxOpen = { _ in }
-        viewModel.actionHandlers.activeDeckPresentation = {}
-        viewModel.actionHandlers.invalidDeck = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = {}
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.presentActiveDeck = {}
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
         return viewModel
     }
 

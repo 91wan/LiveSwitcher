@@ -85,7 +85,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
         let viewModel = makeViewModel(initialItems: [item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         var actionNamesAtDeckStop: [String] = []
-        viewModel.actionHandlers.deckStop = {
+        viewModel.programActivationSideEffects.stopDeck = {
             actionNamesAtDeckStop = viewModel.runtime.actionLog.map(\.actionName)
         }
 

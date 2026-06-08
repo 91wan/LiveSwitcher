@@ -49,12 +49,12 @@ extension SwitcherViewModel {
 
     private func executeProgramActivationPlan(_ plan: ProgramActivationPlan) {
         if case .invalidDeck(let url) = plan.sideEffect {
-            actionHandlers.invalidDeck(url)
+            programActivationSideEffects.presentInvalidDeckAlert(url)
             return
         }
 
         if plan.shouldStopCurrentDeckPresentation {
-            actionHandlers.deckStop()
+            programActivationSideEffects.stopDeck()
         }
 
         dispatchRuntimeProgramSelection(plan.runtimeSelection)
@@ -68,13 +68,13 @@ extension SwitcherViewModel {
         case .none:
             needsMutedMediaStartupAfterClearedProgram = false
         case .presentKeynote(let url):
-            actionHandlers.keynotePresentation(url)
+            programActivationSideEffects.presentKeynote(url)
         case .openPPTX(let url):
-            actionHandlers.pptxOpen(url)
+            programActivationSideEffects.openPPTX(url)
         case .openHTML(let url):
             openHTMLInOutputWindow(url: url)
         case .presentActiveDeck:
-            actionHandlers.activeDeckPresentation()
+            programActivationSideEffects.presentActiveDeck()
         case .invalidDeck:
             break
         }

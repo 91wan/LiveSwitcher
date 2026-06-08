@@ -8,7 +8,7 @@ extension SwitcherViewModel {
 
         switch item.sourceKind {
         case .activeDeck, .keynote, .pptx:
-            actionHandlers.deckStop()
+            programActivationSideEffects.stopDeck()
             return
         case .html, .agendaMarker, .unsupported:
             return

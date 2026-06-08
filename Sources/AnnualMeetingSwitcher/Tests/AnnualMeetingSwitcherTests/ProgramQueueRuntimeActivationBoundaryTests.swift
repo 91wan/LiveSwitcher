@@ -25,7 +25,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         let item = ProgramItem(title: "Invalid", subtitle: "KEY", sourceURL: url)
         let viewModel = makeViewModel(initialItems: [item])
         var invalidDeckURL: URL?
-        viewModel.actionHandlers.invalidDeck = { invalidDeckURL = $0 }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { invalidDeckURL = $0 }
 
         viewModel.switchToProgram(item)
 
@@ -38,7 +38,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         let item = ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: url)
         let viewModel = makeViewModel(initialItems: [item])
         var openedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { openedURL = $0 }
+        viewModel.programActivationSideEffects.presentKeynote = { openedURL = $0 }
 
         viewModel.switchToProgram(item)
 
@@ -52,7 +52,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         let item = ProgramItem(title: "Deck", subtitle: "PPTX", sourceURL: url)
         let viewModel = makeViewModel(initialItems: [item])
         var openedURL: URL?
-        viewModel.actionHandlers.pptxOpen = { openedURL = $0 }
+        viewModel.programActivationSideEffects.openPPTX = { openedURL = $0 }
 
         viewModel.switchToProgram(item)
 
@@ -70,7 +70,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         let item = ProgramItem(title: "Active", subtitle: "KEY (活动)", sourceURL: nil)
         let viewModel = makeViewModel(initialItems: [item])
         var didPresentActiveDeck = false
-        viewModel.actionHandlers.activeDeckPresentation = { didPresentActiveDeck = true }
+        viewModel.programActivationSideEffects.presentActiveDeck = { didPresentActiveDeck = true }
 
         viewModel.switchToProgram(item)
 

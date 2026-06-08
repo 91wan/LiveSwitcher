@@ -3,36 +3,21 @@ import XCTest
 
 @MainActor
 final class ViewModelActionHandlerWiringTests: XCTestCase {
-    func testActionHandlersStructExists() {
-        let handlers = SwitcherViewModelActionHandlers()
+    func testProgramActivationSideEffectHandlersHaveExpectedDefaultNoopBehavior() {
+        let handlers = ProgramActivationSideEffectHandlers()
 
-        handlers.keynotePresentation(URL(fileURLWithPath: "/tmp/deck.key"))
-        handlers.pptxOpen(URL(fileURLWithPath: "/tmp/deck.pptx"))
-        handlers.deckStop()
-        handlers.programSeekToStart()
-        handlers.programRestartFromBeginning {}
-        handlers.programSeekToEnd()
-        handlers.activeDeckPresentation()
-        handlers.invalidDeck(URL(fileURLWithPath: "/tmp/invalid.key"))
+        handlers.presentKeynote(URL(fileURLWithPath: "/tmp/deck.key"))
+        handlers.openPPTX(URL(fileURLWithPath: "/tmp/deck.pptx"))
+        handlers.stopDeck()
+        handlers.presentActiveDeck()
+        handlers.presentInvalidDeckAlert(URL(fileURLWithPath: "/tmp/invalid.key"))
     }
 
-    func testActionHandlersHaveExpectedDefaultNoopBehavior() {
-        let handlers = SwitcherViewModelActionHandlers()
-
-        handlers.keynotePresentation(URL(fileURLWithPath: "/tmp/deck.key"))
-        handlers.pptxOpen(URL(fileURLWithPath: "/tmp/deck.pptx"))
-        handlers.deckStop()
-        handlers.programSeekToStart()
-        handlers.programRestartFromBeginning {}
-        handlers.programSeekToEnd()
-        handlers.activeDeckPresentation()
-        handlers.invalidDeck(URL(fileURLWithPath: "/tmp/invalid.key"))
-    }
-
-    func testViewModelUsesGroupedActionHandlers() throws {
+    func testViewModelUsesGroupedProgramActivationSideEffects() throws {
         let source = try viewModelSource()
 
-        XCTAssertTrue(source.contains("@ObservationIgnored var actionHandlers = SwitcherViewModelActionHandlers()"))
+        XCTAssertTrue(source.contains("@ObservationIgnored var programActivationSideEffects = ProgramActivationSideEffectHandlers()"))
+        XCTAssertFalse(source.contains("@ObservationIgnored var actionHandlers"))
     }
 
     func testViewModelInitDoesNotAssignLooseActionHandlerClosures() throws {
@@ -52,23 +37,25 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
         }
     }
 
-    func testConfigureDefaultActionHandlersLivesInActionHandlerWiringExtension() throws {
+    func testConfigureDefaultProgramActivationSideEffectsLivesInDedicatedExtension() throws {
         let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ActionHandlerWiring.swift")
+            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationSideEffectWiring.swift")
         )
 
-        XCTAssertTrue(source.contains("func configureDefaultActionHandlers()"))
-        XCTAssertTrue(source.contains("actionHandlers.keynotePresentation"))
-        XCTAssertTrue(source.contains("actionHandlers.pptxOpen"))
-        XCTAssertTrue(source.contains("actionHandlers.deckStop"))
+        XCTAssertTrue(source.contains("func configureDefaultProgramActivationSideEffects()"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.openPPTX"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.stopDeck"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentActiveDeck"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert"))
     }
 
-    func testKeynoteProgramSwitchStillUsesKeynotePresentationHandler() {
+    func testKeynoteProgramSwitchStillUsesPresentKeynoteSideEffect() {
         let viewModel = makeViewModel()
         let item = deckProgram(extension: "key")
         var openedURL: URL?
-        viewModel.actionHandlers.keynotePresentation = { openedURL = $0 }
-        viewModel.actionHandlers.deckStop = {}
+        viewModel.programActivationSideEffects.presentKeynote = { openedURL = $0 }
+        viewModel.programActivationSideEffects.stopDeck = {}
         viewModel.addProgramItem(item)
 
         viewModel.switchToProgram(item)
@@ -76,12 +63,12 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
         XCTAssertEqual(openedURL, item.sourceURL)
     }
 
-    func testPPTXProgramSwitchStillUsesPPTXOpenHandler() {
+    func testPPTXProgramSwitchStillUsesOpenPPTXSideEffect() {
         let viewModel = makeViewModel()
         let item = deckProgram(extension: "pptx")
         var openedURL: URL?
-        viewModel.actionHandlers.pptxOpen = { openedURL = $0 }
-        viewModel.actionHandlers.deckStop = {}
+        viewModel.programActivationSideEffects.openPPTX = { openedURL = $0 }
+        viewModel.programActivationSideEffects.stopDeck = {}
         viewModel.addProgramItem(item)
 
         viewModel.switchToProgram(item)
@@ -89,14 +76,14 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
         XCTAssertEqual(openedURL, item.sourceURL)
     }
 
-    func testDeckStopStillUsesGroupedDeckStopHandler() {
+    func testDeckStopStillUsesActivationSideEffect() {
         let viewModel = makeViewModel()
         let first = deckProgram(extension: "key")
         let second = deckProgram(extension: "pptx")
         var stopCount = 0
-        viewModel.actionHandlers.keynotePresentation = { _ in }
-        viewModel.actionHandlers.pptxOpen = { _ in }
-        viewModel.actionHandlers.deckStop = { stopCount += 1 }
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = { stopCount += 1 }
         viewModel.addProgramItems([first, second])
 
         viewModel.switchToProgram(first)
@@ -105,25 +92,25 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
         XCTAssertEqual(stopCount, 1)
     }
 
-    func testMediaSeekHandlersStillCallAVCoordinator() throws {
+    func testDefaultWiringDoesNotWireMediaSeekHandlers() throws {
         let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ActionHandlerWiring.swift")
+            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationSideEffectWiring.swift")
         )
 
-        XCTAssertTrue(source.contains("actionHandlers.programSeekToStart"))
-        XCTAssertTrue(source.contains("avCoordinator.seekToBeginning()"))
-        XCTAssertTrue(source.contains("actionHandlers.programRestartFromBeginning"))
-        XCTAssertTrue(source.contains("avCoordinator.restartFromBeginning(onReadyToPlay: onReadyToPlay)"))
-        XCTAssertTrue(source.contains("actionHandlers.programSeekToEnd"))
-        XCTAssertTrue(source.contains("avCoordinator.seekToEnd()"))
+        XCTAssertFalse(source.contains("programSeekToStart"))
+        XCTAssertFalse(source.contains("programRestartFromBeginning"))
+        XCTAssertFalse(source.contains("programSeekToEnd"))
+        XCTAssertFalse(source.contains("avCoordinator.seekToBeginning"))
+        XCTAssertFalse(source.contains("avCoordinator.restartFromBeginning"))
+        XCTAssertFalse(source.contains("avCoordinator.seekToEnd"))
     }
 
-    func testInvalidDeckStillUsesGroupedInvalidDeckHandler() throws {
+    func testInvalidDeckStillUsesActivationSideEffect() throws {
         let source = try XCTUnwrap(
             optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
         )
 
-        XCTAssertTrue(source.contains("actionHandlers.invalidDeck(url)"))
+        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert(url)"))
         XCTAssertFalse(source.contains("invalidDeckHandler(url)"))
     }
 

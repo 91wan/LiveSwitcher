@@ -15,19 +15,13 @@ final class RuntimeMediaRestartBridgeTests: XCTestCase {
             runtime: runtime
         )
         let item = mediaProgram()
-        var viewModelRestartCount = 0
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item))
-        viewModel.actionHandlers.programRestartFromBeginning = { onReadyToPlay in
-            viewModelRestartCount += 1
-            onReadyToPlay()
-        }
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
         viewModel.restartCurrentMediaFromBeginning()
 
-        XCTAssertEqual(viewModelRestartCount, 0)
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorRestartedCurrentMedia" })
         XCTAssertTrue(media.events.contains { $0.hasPrefix("restart:") })
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
