@@ -51,6 +51,51 @@ final class ProgramSelectionRuntimeStateTests: XCTestCase {
         XCTAssertEqual(mutation.state.program.currentSwitchedAt, Date(timeIntervalSince1970: 200))
     }
 
+    func testProgramSelectionOwnedClearCurrentProgramOnlyClearsSelectionAndRecalculatesAudio() {
+        let item = programItem("Current")
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+        state.program.currentID = item.id
+        state.program.currentSwitchedAt = Date(timeIntervalSince1970: 50)
+        state.media.loadedURL = item.sourceURL
+        state.media.isPlaying = true
+        state.audio.routingContext.isCurrentProgramMediaSource = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorClearedCurrentProgram(reason: .mediaPlaybackEnded),
+            environment: .productionProgramSelectionOwning()
+        )
+
+        XCTAssertNil(mutation.state.program.currentID)
+        XCTAssertNil(mutation.state.program.currentDetachedItem)
+        XCTAssertNil(mutation.state.program.currentSwitchedAt)
+        XCTAssertFalse(mutation.state.audio.routingContext.isCurrentProgramMediaSource)
+        XCTAssertEqual(mutation.state.media.loadedURL, item.sourceURL)
+        XCTAssertTrue(mutation.state.media.isPlaying)
+        XCTAssertEqual(mutation.effects, [.applyAudioRouting(reason: .programChanged)])
+    }
+
+    func testProgramQueueOwnedDoesNotClearCurrentProgramSelection() {
+        let item = programItem("Current")
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+        state.program.currentID = item.id
+        state.program.currentSwitchedAt = Date(timeIntervalSince1970: 50)
+        state.audio.routingContext.isCurrentProgramMediaSource = true
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorClearedCurrentProgram(reason: .operatorCleared),
+            environment: .productionProgramQueueOwning()
+        )
+
+        XCTAssertEqual(mutation.state.program.currentID, item.id)
+        XCTAssertEqual(mutation.state.program.currentSwitchedAt, Date(timeIntervalSince1970: 50))
+        XCTAssertTrue(mutation.state.audio.routingContext.isCurrentProgramMediaSource)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
     func testRemovingCurrentQueueItemClearsSelectionAndSwitchedAt() {
         let item = programItem("Current")
         var state = LiveRuntimeState()

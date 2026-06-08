@@ -1,7 +1,7 @@
 import Foundation
 
-extension LiveRuntimeReducer {
-    static func reduceSelectedProgram(
+enum ProgramSelectionRuntimeReducer {
+    static func selectProgram(
         _ item: ProgramItem,
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
@@ -33,8 +33,21 @@ extension LiveRuntimeReducer {
             state.media.loadedURL = nil
         }
 
-        syncAudioRoutingContextFromMirrorState(&state)
-        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        effects.append(.applyAudioRouting(reason: .programChanged))
+    }
+
+    static func clearCurrentProgram(
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
+    ) {
+        state.program.currentID = nil
+        state.program.currentDetachedItem = nil
+        state.program.currentSwitchedAt = nil
+        state.audio.routingContext.isCurrentProgramMediaSource = false
+        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
 

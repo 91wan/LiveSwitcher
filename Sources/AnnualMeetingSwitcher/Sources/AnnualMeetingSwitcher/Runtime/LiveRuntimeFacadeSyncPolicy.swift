@@ -27,7 +27,8 @@ enum LiveRuntimeFacadeSyncPolicy {
 
     private static func shouldDispatchAudioInputsBeforeRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
-        case .operatorSelectedAudioStrategy,
+        case .operatorClearedCurrentProgram,
+             .operatorSelectedAudioStrategy,
              .operatorChangedMasterVolume,
              .operatorChangedMediaVolume,
              .operatorChangedBGMVolume,
@@ -147,6 +148,7 @@ enum LiveRuntimeFacadeSyncPolicy {
         switch action {
         case .operatorSelectedProgram,
              .operatorSelectedDetachedProgram,
+             .operatorClearedCurrentProgram,
              .facadeCurrentProgramChanged,
              .operatorRemovedProgramItem,
              .facadeLoadedProgramQueue,
