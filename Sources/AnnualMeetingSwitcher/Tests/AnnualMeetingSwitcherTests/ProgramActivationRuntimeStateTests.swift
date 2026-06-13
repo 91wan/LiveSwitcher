@@ -10,6 +10,60 @@ final class ProgramActivationRuntimeStateTests: XCTestCase {
         XCTAssertFalse(state.isActive)
     }
 
+    func testStartingNewActivationClearsLatestCompletedRequest() {
+        var state = ProgramActivationRuntimeState(
+            activeRequestID: nil,
+            latestCompletedRequestID: UUID()
+        )
+        let id = UUID()
+
+        state.startRequest(id: id)
+
+        XCTAssertEqual(state.activeRequestID, id)
+        XCTAssertNil(state.latestCompletedRequestID)
+    }
+
+    func testStartingNewActivationReplacesPriorActiveRequest() {
+        var state = ProgramActivationRuntimeState(activeRequestID: UUID())
+        let id = UUID()
+
+        state.startRequest(id: id)
+
+        XCTAssertEqual(state.activeRequestID, id)
+    }
+
+    func testCompletingActiveActivationClearsActiveRequest() {
+        let id = UUID()
+        var state = ProgramActivationRuntimeState(activeRequestID: id)
+
+        state.completeRequest(id: id)
+
+        XCTAssertNil(state.activeRequestID)
+    }
+
+    func testCompletingActiveActivationStoresLatestCompletedRequest() {
+        let id = UUID()
+        var state = ProgramActivationRuntimeState(activeRequestID: id)
+
+        state.completeRequest(id: id)
+
+        XCTAssertEqual(state.latestCompletedRequestID, id)
+    }
+
+    func testCompletingStaleActivationDoesNotChangeState() {
+        let activeID = UUID()
+        let latestID = UUID()
+        var state = ProgramActivationRuntimeState(
+            activeRequestID: activeID,
+            latestCompletedRequestID: latestID
+        )
+
+        state.completeRequest(id: UUID())
+
+        XCTAssertEqual(state.activeRequestID, activeID)
+        XCTAssertEqual(state.latestCompletedRequestID, latestID)
+    }
+
     func testProgramActivationRequestMarksActiveRequest() {
         let id = UUID()
         let plan = activationPlan()
@@ -72,4 +126,3 @@ final class ProgramActivationRuntimeStateTests: XCTestCase {
         )
     }
 }
-

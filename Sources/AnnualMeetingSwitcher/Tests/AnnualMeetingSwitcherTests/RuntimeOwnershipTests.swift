@@ -101,8 +101,8 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("production current-program selection ownership is expressed by `.programSelectionOwned`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program activation/switching side effects, broader automation query ownership, and key-forwarding Automation migration remain blocked"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("production program activation lifecycle ownership is expressed by `.programActivationOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program activation/switching side effects, broader automation query ownership, source-validation migration, invalid-deck validation migration, and key-forwarding Automation migration remain blocked"))
         XCTAssertTrue(document.localizedStandardContains("Support storage, production ingress, and facade projection use Runtime state"))
     }
 
@@ -187,7 +187,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Future callback-capable Runtime ports must use `LiveRuntimeEffectExecutionContext.dispatch`"))
         XCTAssertTrue(document.localizedStandardContains("WPS fallback branching"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("support event generation call sites, and telemetry remain ViewModel-owned"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, or `.programSelectionOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or `.programActivationOwned`"))
     }
 
     func testDocsStateExtractedViewModelOwnedFacadesBeforeQueryMigration() throws {
@@ -236,7 +236,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("Support storage and production ingress are runtime-owned"))
-        XCTAssertTrue(document.localizedStandardContains("Production uses `.programSelectionOwned` and wires"))
+        XCTAssertTrue(document.localizedStandardContains("Production uses `.programActivationOwned` and wires"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
         XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))

@@ -53,15 +53,12 @@ enum LiveRuntimeReducer {
 
         case .operatorRequestedProgramActivation(let id, let plan):
             guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }
-            state.programActivation.activeRequestID = id
-            state.programActivation.latestCompletedRequestID = nil
+            state.programActivation.startRequest(id: id)
             effects.append(.executeProgramActivation(id: id, plan: plan))
 
         case .programActivationCompleted(let id):
             guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }
-            guard state.programActivation.activeRequestID == id else { break }
-            state.programActivation.activeRequestID = nil
-            state.programActivation.latestCompletedRequestID = id
+            state.programActivation.completeRequest(id: id)
 
         case .operatorToggledMediaPlayback:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }

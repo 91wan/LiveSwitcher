@@ -148,7 +148,78 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         )
     }
 
+    func testSourceAvailabilityStillRunsBeforeRuntimeActivationRequest() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+        )
+        let availabilityRange = try XCTUnwrap(source.range(of: "programSourceIsAvailable(item)"))
+        let requestRange = try XCTUnwrap(source.range(of: "operatorRequestedProgramActivation"))
+
+        XCTAssertLessThan(availabilityRange.lowerBound, requestRange.lowerBound)
+    }
+
+    func testMissingSourceStillDoesNotDispatchActivationRequest() {
+        let missingURL = URL(fileURLWithPath: "/tmp/liveswitcher-missing-program-activation-source.mp4")
+        let item = ProgramItem(title: "Missing", subtitle: "VIDEO", sourceURL: missingURL)
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        viewModel.switchToProgram(item)
+
+        XCTAssertNil(viewModel.runtime.state.programActivation.activeRequestID)
+        XCTAssertFalse(viewModel.runtime.recordedEffects.contains { effect in
+            if case .executeProgramActivation = effect { return true }
+            return false
+        })
+    }
+
+    func testProgramActivationPlannerStillCalledFromViewModel() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+        )
+
+        XCTAssertTrue(source.contains("ProgramActivationPlanner.plan("))
+    }
+
+    func testRuntimeReducerDoesNotReferenceProgramSourceAvailabilityPolicy() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+        )
+
+        XCTAssertFalse(source.contains("ProgramSourceAvailabilityPolicy"))
+    }
+
+    func testRuntimeReducerDoesNotReferenceProgramActivationPlanner() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+        )
+
+        XCTAssertFalse(source.contains("ProgramActivationPlanner"))
+    }
+
+    func testProgramActivationPortDoesNotReferenceProgramSourceAvailabilityPolicy() throws {
+        let source = try programActivationPortSource()
+
+        XCTAssertFalse(source.contains("ProgramSourceAvailabilityPolicy"))
+    }
+
+    func testProgramActivationPortDoesNotReferenceProgramActivationPlanner() throws {
+        let source = try programActivationPortSource()
+
+        XCTAssertFalse(source.contains("ProgramActivationPlanner"))
+    }
+
+    func testProgramActivationPortDoesNotValidateDeckDocument() throws {
+        let source = try programActivationPortSource()
+
+        XCTAssertFalse(source.contains("isLikelyValidDeckDocument"))
+        XCTAssertFalse(source.contains("PresentationReadinessProbe"))
+    }
+
     private func runtimeStateSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+    }
+
+    private func programActivationPortSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
     }
 }
