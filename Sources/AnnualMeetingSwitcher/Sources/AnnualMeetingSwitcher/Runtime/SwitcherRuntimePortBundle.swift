@@ -2,6 +2,7 @@ struct SwitcherRuntimePortBundle {
     let mediaPlaybackPort = ClosureMediaPlaybackPort()
     let bgmPlaybackPort = ClosureBGMPlaybackPort()
     let bgmTimerPort = ClosureBGMTimerPort()
+    let panicDelayPort = ClosurePanicDelayPort()
     let projectionPort = ClosureProjectionPort()
     let pptPort = ClosurePPTEventTapPort()
     let automationNoticePort = ClosureAutomationNoticePort()
@@ -22,6 +23,7 @@ struct SwitcherRuntimePortBundle {
             ppt: pptPort,
             automation: automationPort,
             bgmTimer: bgmTimerPort,
+            panicDelay: panicDelayPort,
             automationNotice: automationNoticePort,
             presentationQuery: presentationQueryPort,
             programActivation: programActivationPort,

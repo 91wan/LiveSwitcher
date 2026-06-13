@@ -9,6 +9,7 @@ struct LiveRuntimeFacadeSyncOptions: Equatable {
     var syncSupport: Bool
     var syncProgramQueue: Bool
     var syncCurrentProgram: Bool
+    var syncPanic: Bool
 }
 
 enum LiveRuntimeFacadeSyncPolicy {
@@ -21,7 +22,8 @@ enum LiveRuntimeFacadeSyncPolicy {
             syncAutomationNotice: shouldSyncAutomationNoticeFacadeAfterRuntimeAction(action),
             syncSupport: shouldSyncSupportFacadeAfterRuntimeAction(action),
             syncProgramQueue: shouldSyncProgramQueueFacadeAfterRuntimeAction(action),
-            syncCurrentProgram: shouldSyncCurrentProgramFacadeAfterRuntimeAction(action)
+            syncCurrentProgram: shouldSyncCurrentProgramFacadeAfterRuntimeAction(action),
+            syncPanic: shouldSyncPanicFacadeAfterRuntimeAction(action)
         )
     }
 
@@ -45,6 +47,9 @@ enum LiveRuntimeFacadeSyncPolicy {
              .bgmFailed,
              .operatorPausedBGMForPanic,
              .operatorResumedBGMAfterPanic,
+             .operatorSetPanic,
+             .operatorToggledPanic,
+             .panicBGMPauseDelayElapsed,
              .operatorRequestedPresentationQuery,
              .presentationQueryCompleted,
              .presentationQueryFailed,
@@ -72,6 +77,9 @@ enum LiveRuntimeFacadeSyncPolicy {
              .operatorSelectedPreviousBGM,
              .operatorPausedBGMForPanic,
              .operatorResumedBGMAfterPanic,
+             .operatorSetPanic,
+             .operatorToggledPanic,
+             .panicBGMPauseDelayElapsed,
              .operatorSelectedBGMPlayMode,
              .bgmPrepared,
              .bgmPlaybackChanged,
@@ -156,6 +164,17 @@ enum LiveRuntimeFacadeSyncPolicy {
              .facadeLoadedProgramQueue,
              .operatorUpdatedProgramItemSchedule,
              .presentationQueryResultConsumed:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private static func shouldSyncPanicFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
+        switch action {
+        case .operatorSetPanic,
+             .operatorToggledPanic,
+             .panicBGMPauseDelayElapsed:
             return true
         default:
             return false

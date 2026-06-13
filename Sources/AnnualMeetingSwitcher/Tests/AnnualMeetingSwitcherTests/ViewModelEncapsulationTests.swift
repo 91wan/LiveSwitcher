@@ -248,7 +248,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "syncRuntimeEnvironmentFromFacade"))
 
         XCTAssertTrue(body.contains("bridgeMode: runtime.bridgeMode"))
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .programActivationOwned)
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .panicOwned)
     }
 
     func testNoNewUngroupedTestHooksWereAdded() throws {
@@ -320,7 +320,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
     }
 
     func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .programActivationOwned)
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .panicOwned)
     }
 
     func testProductionConnectedPortsIncludeProgramActivationSet() {
@@ -328,6 +328,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
             .media,
             .bgm,
             .bgmTimer,
+            .panicDelay,
             .projection,
             .ppt,
             .automationNotice,

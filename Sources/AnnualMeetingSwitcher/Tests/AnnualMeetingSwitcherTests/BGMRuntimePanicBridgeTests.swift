@@ -12,7 +12,7 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
 
         viewModel.togglePanicMode()
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorPausedBGMForPanic" })
+        XCTAssertTrue(hasPauseBGMEffect(in: viewModel))
         XCTAssertFalse(viewModel.isBGMPlaying)
     }
 
@@ -26,7 +26,7 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
 
         viewModel.togglePanicMode()
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorResumedBGMAfterPanic" })
+        XCTAssertTrue(hasPlayBGMEffect(in: viewModel))
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
@@ -38,11 +38,11 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
         viewModel.togglePanicMode()
-        viewModel.currentBGMItem = second
+        viewModel.toggleBGM(second)
 
         viewModel.togglePanicMode()
 
-        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorResumedBGMAfterPanic" })
+        XCTAssertFalse(viewModel.isBGMPlaying)
     }
 
     func testPanicActivateFadesBGMToZeroBeforePause() {
@@ -134,6 +134,20 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
 
     private func bgmItem(title: String) -> BGMItem {
         BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"))
+    }
+
+    private func hasPauseBGMEffect(in viewModel: SwitcherViewModel) -> Bool {
+        viewModel.runtime.recordedEffects.contains {
+            if case .pauseBGM = $0 { return true }
+            return false
+        }
+    }
+
+    private func hasPlayBGMEffect(in viewModel: SwitcherViewModel) -> Bool {
+        viewModel.runtime.recordedEffects.contains {
+            if case .playBGM = $0 { return true }
+            return false
+        }
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

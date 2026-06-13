@@ -19,6 +19,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
                 .programQueueOwned,
                 .programSelectionOwned,
                 .programActivationOwned,
+                .panicOwned,
                 .fullRuntime
             ]
         )
@@ -57,6 +58,9 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeBridgeMode.programActivationOwned.owns(.programSelection))
         XCTAssertTrue(LiveRuntimeBridgeMode.programActivationOwned.owns(.programActivation))
         XCTAssertFalse(LiveRuntimeBridgeMode.programActivationOwned.owns(.panic))
+        XCTAssertTrue(LiveRuntimeBridgeMode.panicOwned.owns(.programActivation))
+        XCTAssertTrue(LiveRuntimeBridgeMode.panicOwned.owns(.panic))
+        XCTAssertFalse(LiveRuntimeBridgeMode.panicOwned.owns(.automation))
         XCTAssertFalse(LiveRuntimeBridgeMode.programQueueOwned.owns(.automation))
         XCTAssertFalse(LiveRuntimeBridgeMode.projectionOwned.owns(.support))
         XCTAssertFalse(LiveRuntimeBridgeMode.pptOwned.owns(.support))

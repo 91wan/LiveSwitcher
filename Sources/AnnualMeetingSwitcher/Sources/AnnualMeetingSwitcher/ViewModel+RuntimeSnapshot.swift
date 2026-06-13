@@ -79,8 +79,7 @@ extension SwitcherViewModel {
             isPanicMode: isPanicMode
         )
 
-        state.panic.isActive = isPanicMode
-        state.panic.snapshot = panicPlaybackSnapshot
+        syncPanicIntoRuntimeSnapshot(&state)
 
         syncPPTFacadeIntoRuntimeSnapshot(&state)
         state.preferences.themeOverride = themeOverride
@@ -144,6 +143,16 @@ extension SwitcherViewModel {
         }
 
         state.automation.notice = automationRuntimeNotice
+    }
+
+    private func syncPanicIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.panic) else {
+            state.panic = runtime.state.panic
+            return
+        }
+
+        state.panic.isActive = isPanicMode
+        state.panic.snapshot = panicPlaybackSnapshot
     }
 
     private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {

@@ -60,8 +60,8 @@ final class RuntimeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(document.localizedStandardContains("A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed"))
         XCTAssertTrue(document.localizedStandardContains("Operator actions for mirror-only domains must not mutate real runtime domain state"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("No next domain may be migrated until the Audio, Media, BGM, Projection, PPT"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("projection start/stop output plus PPT EventTap lifecycle plus automation notice lifecycle"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("No next domain may be migrated until the Audio, Media, BGM, Projection, Panic, PPT"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("projection start/stop output plus Panic transition orchestration plus PPT EventTap lifecycle plus automation notice lifecycle"))
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
@@ -93,6 +93,7 @@ final class RuntimeOwnershipTests: XCTestCase {
 
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Connected production ports: `media`, `bgm`,"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("`projection`, `ppt`, `automationNotice`, `support`, `automation`, `presentationQuery`,"))
+        XCTAssertTrue(document.localizedStandardContains("`panicDelay` | wired"))
         XCTAssertTrue(document.localizedStandardContains("ViewModel.recordSupportEvent"))
     }
 
@@ -101,8 +102,9 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("`.fullRuntime` remains test-only"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("production program activation lifecycle ownership is expressed by `.programActivationOwned`"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program activation/switching side effects, broader automation query ownership, source-validation migration, invalid-deck validation migration, and key-forwarding Automation migration remain blocked"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("production panic transition ownership is expressed by `.panicOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Program activation/switching side effects"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("Automation query/result flows"))
         XCTAssertTrue(document.localizedStandardContains("Support storage, production ingress, and facade projection use Runtime state"))
     }
 
@@ -187,7 +189,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Future callback-capable Runtime ports must use `LiveRuntimeEffectExecutionContext.dispatch`"))
         XCTAssertTrue(document.localizedStandardContains("WPS fallback branching"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("support event generation call sites, and telemetry remain ViewModel-owned"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or `.programActivationOwned`"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not write Support storage in `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, `.programActivationOwned`, or `.panicOwned`"))
     }
 
     func testDocsStateExtractedViewModelOwnedFacadesBeforeQueryMigration() throws {
@@ -236,7 +238,7 @@ final class RuntimeOwnershipTests: XCTestCase {
         let normalizedDocument = normalizedWhitespace(document)
 
         XCTAssertTrue(document.localizedStandardContains("Support storage and production ingress are runtime-owned"))
-        XCTAssertTrue(document.localizedStandardContains("Production uses `.programActivationOwned` and wires"))
+        XCTAssertTrue(document.localizedStandardContains("Production uses `.panicOwned` and wires"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
         XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))

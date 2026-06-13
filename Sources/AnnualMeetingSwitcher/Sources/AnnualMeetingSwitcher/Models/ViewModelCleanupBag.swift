@@ -13,6 +13,7 @@ final class ViewModelCleanupBag {
     var automationNoticeExpiryTask: Task<Void, Never>?
     var automationNoticeExpiryTaskNoticeID: UUID?
     var panicAudioPauseTask: Task<Void, Never>?
+    var panicAudioPauseTaskGeneration: Int?
     var backgroundImageLoadTask: Task<Void, Never>?
     var cornerLogoImageLoadTask: Task<Void, Never>?
     var systemVolumeObserver: SystemVolumeObserver?
@@ -34,6 +35,8 @@ final class ViewModelCleanupBag {
         automationNoticeExpiryTask = nil
         automationNoticeExpiryTaskNoticeID = nil
         panicAudioPauseTask?.cancel()
+        panicAudioPauseTask = nil
+        panicAudioPauseTaskGeneration = nil
         backgroundImageLoadTask?.cancel()
         cornerLogoImageLoadTask?.cancel()
         systemVolumeObserver?.stop()

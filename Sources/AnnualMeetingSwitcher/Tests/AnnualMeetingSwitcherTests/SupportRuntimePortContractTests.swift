@@ -65,7 +65,7 @@ final class SupportRuntimePortContractTests: XCTestCase {
 
         XCTAssertTrue(bundleSource.contains("support: supportPort"))
         XCTAssertTrue(bundleSource.contains("automation: automationPort"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionProgramActivationOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionPanicOwning()"))
         XCTAssertTrue(bundleSource.contains("let supportPort = ClosureSupportEventPort()"))
     }
 

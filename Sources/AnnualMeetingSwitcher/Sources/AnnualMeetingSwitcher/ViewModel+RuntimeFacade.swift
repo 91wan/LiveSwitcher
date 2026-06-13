@@ -31,6 +31,9 @@ extension SwitcherViewModel {
         if syncOptions.syncCurrentProgram {
             syncCurrentProgramFacadeFromRuntime()
         }
+        if syncOptions.syncPanic {
+            syncPanicFacadeFromRuntime()
+        }
     }
 
     private func syncRuntimeEnvironmentFromFacade() {

@@ -57,6 +57,23 @@ extension SwitcherViewModel {
         bgmPlayMode = bgm.playMode
     }
 
+    func syncPanicFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.panic) else { return }
+
+        applyPanicProjectionFromRuntime(
+            isActive: runtime.state.panic.isActive,
+            snapshot: runtime.state.panic.snapshot
+        )
+    }
+
+    func applyPanicProjectionFromRuntime(
+        isActive: Bool,
+        snapshot: PanicPlaybackSnapshot?
+    ) {
+        isPanicMode = isActive
+        panicPlaybackSnapshot = snapshot
+    }
+
     private func reconcileCurrentProgramAfterProgramQueueProjection() {
         guard !runtime.bridgeMode.owns(.programSelection) else { return }
         guard let currentProgramItem,
