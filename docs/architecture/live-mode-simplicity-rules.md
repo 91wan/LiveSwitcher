@@ -114,6 +114,11 @@ product boundary.
   and resume decisions into `PanicTransitionPolicy`; Panic remains
   ViewModel-owned, the BGM fade delay is unchanged, and emergency behavior must
   stay deterministic and tested.
+- Runtime Panic delay readiness does not add live controls or change emergency
+  behavior. It only lets Runtime represent delayed Panic BGM pause through
+  `PanicDelayPort` and `PanicRuntimeReducer`; production Panic remains
+  ViewModel-owned, `panicDelay` is not wired in production, and delayed BGM
+  pause remains a behavior invariant.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;

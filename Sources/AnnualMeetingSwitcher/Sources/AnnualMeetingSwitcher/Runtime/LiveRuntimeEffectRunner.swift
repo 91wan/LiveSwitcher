@@ -7,6 +7,7 @@ final class LiveRuntimeEffectRunner {
     private let ppt: PPTEventTapPort?
     private let automation: AutomationPort?
     private let bgmTimer: BGMTimerPort?
+    private let panicDelay: PanicDelayPort?
     private let automationNotice: AutomationNoticePort?
     private let presentationQuery: PresentationQueryPort?
     private let programActivation: ProgramActivationPort?
@@ -23,6 +24,7 @@ final class LiveRuntimeEffectRunner {
         ppt: PPTEventTapPort? = nil,
         automation: AutomationPort? = nil,
         bgmTimer: BGMTimerPort? = nil,
+        panicDelay: PanicDelayPort? = nil,
         automationNotice: AutomationNoticePort? = nil,
         presentationQuery: PresentationQueryPort? = nil,
         programActivation: ProgramActivationPort? = nil,
@@ -38,6 +40,7 @@ final class LiveRuntimeEffectRunner {
         self.ppt = ppt
         self.automation = automation
         self.bgmTimer = bgmTimer
+        self.panicDelay = panicDelay
         self.automationNotice = automationNotice
         self.presentationQuery = presentationQuery
         self.programActivation = programActivation
@@ -59,6 +62,7 @@ final class LiveRuntimeEffectRunner {
         if ppt != nil { kinds.insert(.ppt) }
         if automation != nil { kinds.insert(.automation) }
         if bgmTimer != nil { kinds.insert(.bgmTimer) }
+        if panicDelay != nil { kinds.insert(.panicDelay) }
         if automationNotice != nil { kinds.insert(.automationNotice) }
         if presentationQuery != nil { kinds.insert(.presentationQuery) }
         if programActivation != nil { kinds.insert(.programActivation) }
@@ -144,6 +148,10 @@ final class LiveRuntimeEffectRunner {
         case .stopBGMTimer(let generation):
             guard isCurrentBGMGeneration(generation, currentState: context.currentState) else { return }
             bgmTimer?.stop(generation: generation)
+        case .schedulePanicBGMPause(let generation, let snapshot, let delay):
+            panicDelay?.scheduleBGMPause(generation: generation, snapshot: snapshot, delay: delay, context: context)
+        case .cancelPanicBGMPause(let generation):
+            panicDelay?.cancelBGMPause(generation: generation)
 
         case .startProjection:
             projection?.start()

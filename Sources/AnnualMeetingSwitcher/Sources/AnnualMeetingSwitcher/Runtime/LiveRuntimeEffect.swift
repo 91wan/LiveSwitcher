@@ -20,6 +20,8 @@ enum LiveRuntimeEffect: Equatable {
     case setBGMPlayMode(BGMPlayMode, generation: Int?)
     case startBGMTimer(generation: Int)
     case stopBGMTimer(generation: Int)
+    case schedulePanicBGMPause(generation: Int, snapshot: PanicPlaybackSnapshot, delay: TimeInterval)
+    case cancelPanicBGMPause(generation: Int)
 
     case startProjection
     case stopProjection

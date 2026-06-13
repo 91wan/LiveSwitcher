@@ -121,7 +121,8 @@ enum LiveRuntimeActionLogPolicy {
              .programActivationCompleted,
              .facadeLoadedProgramQueue,
              .bgmProgressUpdated,
-             .mediaSeekCompleted:
+             .mediaSeekCompleted,
+             .panicBGMPauseDelayElapsed:
             return false
         default:
             return true

@@ -25,11 +25,15 @@ final class RuntimeTimelineTests: XCTestCase {
 
         XCTAssertTrue(store.state.panic.isActive)
         XCTAssertFalse(store.state.media.isPlaying)
-        XCTAssertFalse(store.state.bgm.isPlaying)
+        XCTAssertTrue(store.state.bgm.isPlaying)
         XCTAssertEqual(store.state.audio.effectiveMedia, 0)
         XCTAssertEqual(store.state.audio.effectiveBGM, 0)
         XCTAssertTrue(store.recordedEffects.contains(.pauseMedia(generation: store.state.media.generation)))
-        XCTAssertTrue(store.recordedEffects.contains(.pauseBGM(generation: store.state.bgm.generation)))
+        XCTAssertTrue(store.recordedEffects.contains { effect in
+            if case .schedulePanicBGMPause = effect { return true }
+            return false
+        })
+        XCTAssertFalse(store.recordedEffects.contains(.pauseBGM(generation: store.state.bgm.generation)))
 
         store.dispatch(.operatorToggledPanic)
 
@@ -111,7 +115,7 @@ final class RuntimeTimelineTests: XCTestCase {
         let automationEvents = store.state.support.events.filter { $0.kind == .appleScriptFailed }
         XCTAssertEqual(automationEvents.count, 1)
         XCTAssertTrue(automationEvents[0].detail.contains("count=100"))
-        XCTAssertTrue(store.state.support.events.contains { $0.kind == .panicModeChanged })
+        XCTAssertFalse(store.state.support.events.contains { $0.kind == .panicModeChanged })
     }
 
     func testProgramSwitchTimelineStopsPreviousRuntimeOwner() {

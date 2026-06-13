@@ -45,7 +45,7 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         XCTAssertEqual(recorded.detail, "reason=noExternalDisplay")
     }
 
-    func testFullRuntimeProjectionAndPanicMayWriteReducerSupportEvents() {
+    func testFullRuntimeProjectionMayWriteReducerSupportEventsButPanicDoesNot() {
         let projectionMutation = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: .operatorToggledProjection,
@@ -63,7 +63,7 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         )
 
         XCTAssertTrue(projectionMutation.state.support.events.contains { $0.kind == .projectionStartFailed })
-        XCTAssertTrue(panicMutation.state.support.events.contains { $0.kind == .panicModeChanged })
+        XCTAssertFalse(panicMutation.state.support.events.contains { $0.kind == .panicModeChanged })
     }
 
     func testAudioOwnedProjectionStartFailureIsNotDuplicatedByReducer() {

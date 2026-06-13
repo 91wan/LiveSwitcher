@@ -31,18 +31,19 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
 
     func testNoPanicPortYet() throws {
         let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
-        let portKinds = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffectPortKind.swift")
 
         XCTAssertFalse(ports.contains("PanicPort"))
-        XCTAssertFalse(portKinds.contains("panic"))
     }
 
-    func testNoSchedulePanicBGMPauseEffectYet() throws {
+    func testRuntimeCanNowRepresentDelayedBGMPause() throws {
         let effects = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
         let actions = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift")
+        let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
-        XCTAssertFalse(effects.contains("schedulePanicBGMPause"))
-        XCTAssertFalse(actions.contains("panicBGMPauseDelayElapsed"))
+        XCTAssertTrue(effects.contains("schedulePanicBGMPause"))
+        XCTAssertTrue(effects.contains("cancelPanicBGMPause"))
+        XCTAssertTrue(actions.contains("panicBGMPauseDelayElapsed"))
+        XCTAssertTrue(ports.contains("PanicDelayPort"))
     }
 
     func testViewModelPanicStillOwnsDelayedBGMPauseTask() throws {
@@ -58,7 +59,7 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(source.localizedStandardContains("Runtime `.panic` domain exists but is not production-owned yet"))
     }
 
-    func testRuntimePanicReducerCurrentlyPausesBGMImmediately() {
+    func testRuntimePanicReducerSchedulesDelayedBGMPauseWhenFadeDurationPositive() {
         var state = LiveRuntimeState()
         let bgm = BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
         state.bgm.items = [bgm]
@@ -71,11 +72,15 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
             environment: .fullRuntimeForTests(liveAudioFadeDuration: 1.0)
         )
 
-        XCTAssertFalse(mutation.state.bgm.isPlaying)
-        XCTAssertTrue(mutation.effects.contains { effect in
+        XCTAssertTrue(mutation.state.bgm.isPlaying)
+        XCTAssertTrue(mutation.effects.contains(where: { effect in
+            if case .schedulePanicBGMPause = effect { return true }
+            return false
+        }))
+        XCTAssertFalse(mutation.effects.contains(where: { effect in
             if case .pauseBGM = effect { return true }
             return false
-        })
+        }))
     }
 
     func testViewModelPanicPolicyDelaysBGMPauseWhenFadeDurationPositive() {
@@ -90,10 +95,17 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
-    func testPanicMigrationBlockedUntilRuntimeCanRepresentDelayedBGMPause() throws {
+    func testPanicMigrationBlockedUntilProductionPanicDelayPortIsWired() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(docs.localizedStandardContains("Panic migration is blocked until Runtime can represent delayed BGM pause"))
+        XCTAssertTrue(docs.localizedStandardContains("Panic migration is blocked until production PanicDelayPort is wired"))
+    }
+
+    func testProductionRuntimeDoesNotWirePanicDelayPortYet() throws {
+        let bundle = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/SwitcherRuntimePortBundle.swift")
+
+        XCTAssertFalse(makeViewModel().runtimeConnectedPortKinds.contains(.panicDelay))
+        XCTAssertFalse(bundle.contains("panicDelay"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

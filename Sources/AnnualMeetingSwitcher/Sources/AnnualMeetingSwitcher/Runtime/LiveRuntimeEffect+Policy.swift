@@ -53,6 +53,10 @@ extension LiveRuntimeEffect {
              .stopBGMTimer:
             return .bgm
 
+        case .schedulePanicBGMPause,
+             .cancelPanicBGMPause:
+            return .panic
+
         case .startProjection,
              .stopProjection,
              .showOutputWindow,

@@ -107,6 +107,24 @@ final class ClosureBGMTimerPort: BGMTimerPort {
     }
 }
 
+final class ClosurePanicDelayPort: PanicDelayPort {
+    var scheduleBGMPauseHandler: ((Int, PanicPlaybackSnapshot, TimeInterval, LiveRuntimeEffectExecutionContext) -> Void)?
+    var cancelBGMPauseHandler: ((Int) -> Void)?
+
+    func scheduleBGMPause(
+        generation: Int,
+        snapshot: PanicPlaybackSnapshot,
+        delay: TimeInterval,
+        context: LiveRuntimeEffectExecutionContext
+    ) {
+        scheduleBGMPauseHandler?(generation, snapshot, delay, context)
+    }
+
+    func cancelBGMPause(generation: Int) {
+        cancelBGMPauseHandler?(generation)
+    }
+}
+
 final class ClosureAutomationNoticePort: AutomationNoticePort {
     var showHandler: ((AutomationRuntimeNotice) -> Void)?
     var expireHandler: ((UUID, Date) -> Void)?
