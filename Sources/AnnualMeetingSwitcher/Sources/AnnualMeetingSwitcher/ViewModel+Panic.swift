@@ -1,13 +1,6 @@
 import SwiftUI
 import AVFoundation
 
-struct PanicPlaybackSnapshot: Equatable {
-    var currentProgramID: UUID?
-    var wasMediaPlaying: Bool
-    var currentBGMID: UUID?
-    var wasBGMPlaying: Bool
-}
-
 // MARK: - Tier1: 紧急切黑 State Extension
 
 extension SwitcherViewModel {
@@ -63,23 +56,26 @@ extension SwitcherViewModel {
     }
 
     private func capturePanicPlaybackSnapshot() {
-        panicPlaybackSnapshot = PanicPlaybackSnapshot(
-            currentProgramID: currentProgramItem?.id,
-            wasMediaPlaying: currentProgramItem?.sourceKind == .media && avCoordinator.isPlaying,
-            currentBGMID: currentBGMItem?.id,
-            wasBGMPlaying: isBGMPlaying
+        panicPlaybackSnapshot = PanicTransitionPolicy.snapshot(
+            currentProgram: currentProgramItem,
+            isMediaPlaying: avCoordinator.isPlaying,
+            currentBGM: currentBGMItem,
+            isBGMPlaying: isBGMPlaying
         )
     }
 
     private func shouldResumeMediaAfterPanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
-        guard let snapshot, snapshot.wasMediaPlaying else { return false }
-        guard currentProgramItem?.sourceKind == .media else { return false }
-        return currentProgramItem?.id == snapshot.currentProgramID
+        PanicTransitionPolicy.shouldResumeMediaAfterDeactivation(
+            snapshot: snapshot,
+            currentProgram: currentProgramItem
+        )
     }
 
     private func shouldResumeBGMAfterPanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
-        guard let snapshot, snapshot.wasBGMPlaying else { return false }
-        return currentBGMItem?.id == snapshot.currentBGMID
+        PanicTransitionPolicy.shouldResumeBGMAfterDeactivation(
+            snapshot: snapshot,
+            currentBGM: currentBGMItem
+        )
     }
 
     private func pausePlaybackForActivePanic(generation: Int) {
@@ -107,13 +103,16 @@ extension SwitcherViewModel {
     }
 
     private func shouldPauseMediaForActivePanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
-        guard let snapshot, snapshot.wasMediaPlaying else { return false }
-        guard currentProgramItem?.sourceKind == .media else { return false }
-        return currentProgramItem?.id == snapshot.currentProgramID
+        PanicTransitionPolicy.shouldPauseMediaForActivation(
+            snapshot: snapshot,
+            currentProgram: currentProgramItem
+        )
     }
 
     private func shouldPauseBGMForActivePanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {
-        guard let snapshot, snapshot.wasBGMPlaying else { return false }
-        return currentBGMItem?.id == snapshot.currentBGMID
+        PanicTransitionPolicy.shouldPauseBGMAfterFadeForActivation(
+            snapshot: snapshot,
+            currentBGM: currentBGMItem
+        )
     }
 }

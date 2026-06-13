@@ -109,6 +109,11 @@ product boundary.
 - Program activation runtime hardening does not add live controls or change
   switching behavior. Runtime request ID gates activation side effects, and
   Runtime selection acceptance gates post-selection side effects.
+- Panic transition policy hardening does not add live controls or change
+  emergency behavior. It only moves snapshot, media pause, delayed BGM pause,
+  and resume decisions into `PanicTransitionPolicy`; Panic remains
+  ViewModel-owned, the BGM fade delay is unchanged, and emergency behavior must
+  stay deterministic and tested.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;
