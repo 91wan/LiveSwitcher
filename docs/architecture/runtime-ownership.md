@@ -7,6 +7,7 @@ Current authoritative runtime domains:
 - Media playback
 - BGM playback and progress timer
 - Projection output
+- Panic transition orchestration
 - PPT EventTap lifecycle
 - Automation notice lifecycle
 - Support event storage and ingress
@@ -17,8 +18,8 @@ Current authoritative runtime domains:
 - Program queue storage/mutation
 - Current program selection state/projection
 
-Panic orchestration, Program activation/switching side effects, source
-validation, invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
+Program activation/switching side effects, source validation,
+invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
 Automation query/result flows, BGM library metadata, and asset-library mutation
 are not runtime-owned.
 Program queue storage/mutation is runtime-owned and projected to
@@ -53,12 +54,13 @@ lives in the pure `ProgramSourceAvailabilityPolicy`, while missing-source
 support/notice generation remains ViewModel-owned.
 Panic transition policy is pure and lives in `PanicTransitionPolicy`; it owns
 snapshot, immediate media pause, delayed BGM pause, and media/BGM resume
-decisions. Production Panic ownership is still ViewModel-owned: Runtime
-`.panic` domain exists but is not production-owned yet, and
-`ViewModel+Panic.swift` still owns the concrete delayed BGM pause task and
-support event generation. Runtime can now represent delayed Panic BGM pause via
-`PanicDelayPort`; `PanicRuntimeReducer` uses `PanicTransitionPolicy` for
-snapshot, pause, delayed pause, and resume decisions. Runtime `.panic` domain exists but is not production-owned yet, production bridge mode remains `.programActivationOwned`, and production migration is blocked until production `PanicDelayPort` is wired and ViewModel Panic behavior parity is proven. BGM pause after Panic activation must preserve `liveAudioFadeDuration`. The Panic reducer must not write support. Program activation remains Runtime-owned; Panic remains the next live-critical migration candidate.
+decisions. Panic transition orchestration is runtime-owned in `.panicOwned`:
+`PanicRuntimeReducer` uses `PanicTransitionPolicy` for snapshot, pause,
+delayed pause, and resume decisions, and production wires `PanicDelayPort` for
+the concrete delayed BGM pause task. BGM pause after Panic activation preserves
+`liveAudioFadeDuration`. The Panic reducer must not write support; Panic support
+events and telemetry remain ViewModel-owned. Fade-to-black remains visual-only
+and ViewModel-owned.
 Activation execution, invalid-deck alerts, and activation side-effect
 orchestration live in `ViewModel+ProgramActivationRuntimeBridge.swift` behind
 `ProgramActivationPort`. Current-program media
@@ -130,9 +132,9 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.programActivationOwned`.
-`.fullRuntime` remains test-only; production program activation lifecycle
-ownership is expressed by `.programActivationOwned`.
+Production bridge mode is `.panicOwned`.
+`.fullRuntime` remains test-only; production panic transition ownership is
+expressed by `.panicOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -161,6 +163,7 @@ Each stage includes all domains migrated in earlier stages:
 | `programQueueOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation |
 | `programSelectionOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation, Current program selection |
 | `programActivationOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation, Current program selection, Program activation request/completion lifecycle |
+| `panicOwned` | Audio, Media playback, BGM, Projection, Panic transition orchestration, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation, Current program selection, Program activation request/completion lifecycle |
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
@@ -178,7 +181,8 @@ program selection state and facade projection without migrating Program
 activation side effects or broader automation ownership. `.programActivationOwned`
 adds Program activation request/completion lifecycle and effect dispatch while
 keeping source validation, plan construction, and concrete activation side
-effects ViewModel-owned.
+effects ViewModel-owned. `.panicOwned` adds Panic transition orchestration while
+keeping fade-to-black, support event generation, and telemetry ViewModel-owned.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
@@ -187,16 +191,16 @@ In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.presentationQuery`, Program queue storage/mutation in
 `state.program.items`, and current program selection fields
 `state.program.currentID`, `state.program.currentDetachedItem`, and
-`state.program.currentSwitchedAt`, and `state.programActivation`. It may
+`state.program.currentSwitchedAt`, `state.programActivation`, and
+`state.panic`. It may
 execute the wired ports needed for current production
 behavior. Connected production ports: `media`, `bgm`, `bgmTimer`, `projection`,
 `ppt`, `automationNotice`, `support`, `automation`, `presentationQuery`,
-`programActivation`, `audioRouting`, `imageAssets`, and `persistence`. The
+`programActivation`, `panicDelay`, `audioRouting`, `imageAssets`, and `persistence`. The
 audio routing, projection, PPT EventTap, automation notice, Support, automation
-command, presentation query, and Program activation ports are wired.
-`panicDelay` is intentionally not connected in production yet.
-Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
-from mirror-only domains can be used without making Panic runtime-owned.
+command, presentation query, Program activation, and Panic delay ports are
+wired. Audio routing context is stored inside `AudioRuntimeState`, so Panic
+routing inputs flow from runtime-owned state.
 
 The reducer may record operator intent in the action log, but operator actions
 for mirror-only domains must not change Panic, automation query/result flows, or
@@ -218,10 +222,10 @@ Effective audio output getters are pure Runtime state reads.
 
 A domain is not runtime-owned until its ports are wired and its legacy ViewModel mutation has been removed.
 Operator actions for mirror-only domains must not mutate real runtime domain state.
-No next domain may be migrated until the Audio, Media, BGM, Projection, PPT,
+No next domain may be migrated until the Audio, Media, BGM, Projection, Panic, PPT,
 Automation notice, Support, and Automation command ownership tests pass and
 production effective audio output plus media/BGM playback output plus
-projection start/stop output plus PPT EventTap lifecycle plus automation notice
+projection start/stop output plus Panic transition orchestration plus PPT EventTap lifecycle plus automation notice
 lifecycle plus Support ingress plus automation command execution remain
 runtime-owned. Result-returning automation queries and key-forwarding migration
 remain blocked until a dedicated ownership PR is approved. Query migration is
@@ -240,7 +244,7 @@ explicit owner.
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Image assets | Runtime bridge infrastructure | Wallpaper and corner-logo loading side effects | hardened bridge domain | Runtime-owned bridge modes except `.recordingOnly` own `.imageAssets`, so repaired or selected image URLs can reach `ImageAssetPort` without being mislabeled as Audio. Image library mutation, file repair decisions, and setup UI remain ViewModel/Persistence-owned. |
-| Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions; Runtime readiness for delayed BGM pause | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer readiness lives in `PanicRuntimeReducer`. Runtime can represent delayed Panic BGM pause through `PanicDelayPort`, but production `.panic` is not owned and `panicDelay` is not wired in production. Panic migration is blocked until production PanicDelayPort is wired and ViewModel Panic behavior parity is proven. The Panic reducer must not write support. |
+| Panic | Runtime owner, ViewModel support/telemetry owner | Authoritative active state, transition snapshot, media/BGM pause/resume actions, delayed BGM pause scheduling, and facade projection | authoritative | Panic transition orchestration is runtime-owned in `.panicOwned`; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer orchestration lives in `PanicRuntimeReducer`. Production wires `PanicDelayPort`; the concrete delayed pause task lives in `ViewModel+PanicDelayRuntimeWiring.swift` and dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. Fade-to-black remains visual-only and ViewModel-owned. The Panic reducer must not write support. |
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
@@ -414,7 +418,7 @@ timer-generation, and audio-routing transition storage behind accessors.
 | `media` | wired | Runtime media playback effects execute through the ViewModel bridge to `AVPlayerCoordinator`. |
 | `bgm` | wired | Runtime BGM playback effects execute through the ViewModel bridge to `AVAudioPlayer` with an `AVPlayer` fallback. |
 | `bgmTimer` | wired | Runtime BGM timer effects start and stop the ViewModel-owned timer implementation by generation. |
-| `panicDelay` | not wired | Runtime can express delayed Panic BGM pause readiness, but production keeps the concrete delayed pause task in `ViewModel+Panic.swift` until production `PanicDelayPort` is wired and parity tests pass. |
+| `panicDelay` | wired | Runtime schedules delayed Panic BGM pause through `PanicDelayPort`; the ViewModel-owned task implementation dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. |
 | `audioRouting` | wired | Runtime audio routing decisions execute through the ViewModel bridge using runtime state. |
 | `imageAssets` | wired | Runtime can request background and corner-logo image reloads. |
 | `persistence` | wired | Runtime can persist selected preference updates. |
@@ -596,8 +600,8 @@ Presentation automation command/query boundary code lives in
 code lives in `ViewModel+AutomationFailure.swift`.
 Runtime-generated automation notice failures must not write Support storage in
 `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`,
-`.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or
-`.programActivationOwned`; support entries for automation failures are still
+`.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`,
+`.programActivationOwned`, or `.panicOwned`; support entries for automation failures are still
 generated by ViewModel and enter runtime storage only through
 `.supportEventRecorded`.
 
@@ -606,7 +610,7 @@ generated by ViewModel and enter runtime storage only through
 Support storage and production ingress are runtime-owned. Runtime owns
 `state.support.events`, `state.support.coalescedCounts`, and
 `state.support.eventLimit`, including redaction, coalescing, priority retention,
-and trimming. Production uses `.programActivationOwned` and wires
+and trimming. Production uses `.panicOwned` and wires
 `SupportEventPort`.
 `SupportRuntimeState.record` returns the exact accepted event stored in
 `state.support.events`, including a coalesced replacement event, or `nil` when

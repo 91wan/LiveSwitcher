@@ -45,10 +45,10 @@ final class RuntimeStoreInitializationTests: XCTestCase {
         XCTAssertFalse(source.contains("connectedPortKinds.contains(.persistence)"))
     }
 
-    func testProductionViewModelPassesAutomationCommandOwningExplicitly() throws {
+    func testProductionViewModelPassesPanicOwningExplicitly() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
 
-        XCTAssertTrue(source.contains("environment: .productionProgramActivationOwning()"))
+        XCTAssertTrue(source.contains("environment: .productionPanicOwning()"))
     }
 
     private func liveRuntimeStoreSource() throws -> String {

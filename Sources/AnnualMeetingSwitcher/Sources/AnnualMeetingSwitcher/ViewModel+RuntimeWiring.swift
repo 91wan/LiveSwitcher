@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 extension SwitcherViewModel {
     func configureRuntimePortHandlers(_ ports: SwitcherRuntimePortBundle) {
+        configurePanicDelayRuntimePortHandlers(ports)
         ports.supportPort.recordHandler = { [weak self] _ in
             self?.syncSupportFacadeFromRuntime()
         }

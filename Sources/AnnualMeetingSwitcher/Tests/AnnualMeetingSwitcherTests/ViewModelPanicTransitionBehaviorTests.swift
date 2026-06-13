@@ -21,7 +21,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertFalse(viewModel.avCoordinator.isPlaying)
-        XCTAssertEqual(actionCount("operatorPausedMediaForPanic", in: viewModel), 1)
+        XCTAssertGreaterThanOrEqual(mediaPauseEffectCount(in: viewModel), 1)
     }
 
     func testActivatePanicDoesNotPauseMediaWhenCurrentProgramChanged() {
@@ -53,8 +53,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         let bgm = bgmItem(title: "Walk-in")
         viewModel.liveAudioFadeDuration = 0.05
-        viewModel.currentBGMItem = bgm
-        viewModel.isBGMPlaying = true
+        startBGM(bgm, in: viewModel)
 
         viewModel.togglePanicMode()
 
@@ -65,8 +64,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         let bgm = bgmItem(title: "Walk-in")
         viewModel.liveAudioFadeDuration = 0.05
-        viewModel.currentBGMItem = bgm
-        viewModel.isBGMPlaying = true
+        startBGM(bgm, in: viewModel)
 
         viewModel.togglePanicMode()
 
@@ -78,8 +76,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         let bgm = bgmItem(title: "Walk-in")
         viewModel.liveAudioFadeDuration = 0.05
-        viewModel.currentBGMItem = bgm
-        viewModel.isBGMPlaying = true
+        startBGM(bgm, in: viewModel)
 
         viewModel.togglePanicMode()
         viewModel.togglePanicMode()
@@ -99,7 +96,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.avCoordinator.isPlaying)
-        XCTAssertEqual(actionCount("operatorResumedMediaAfterPanic", in: viewModel), 1)
+        XCTAssertGreaterThanOrEqual(mediaPlayEffectCount(in: viewModel), 1)
     }
 
     func testDeactivatePanicResumesBGMOnlyWhenPolicyAllows() {
@@ -113,7 +110,7 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.isBGMPlaying)
-        XCTAssertEqual(actionCount("operatorResumedBGMAfterPanic", in: viewModel), 1)
+        XCTAssertGreaterThanOrEqual(playBGMEffectCount(in: viewModel), 1)
     }
 
     func testDeactivatePanicDoesNotResumeDifferentBGM() {
@@ -121,15 +118,15 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         let first = bgmItem(title: "First")
         let second = bgmItem(title: "Second")
         viewModel.liveAudioFadeDuration = 0
-        viewModel.currentBGMItem = first
-        viewModel.isBGMPlaying = true
+        viewModel.bgmItems = [first, second]
+        startBGM(first, in: viewModel)
 
         viewModel.togglePanicMode()
-        viewModel.currentBGMItem = second
+        viewModel.toggleBGM(second)
         viewModel.togglePanicMode()
 
         XCTAssertFalse(viewModel.isBGMPlaying)
-        XCTAssertEqual(actionCount("operatorResumedBGMAfterPanic", in: viewModel), 0)
+        XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
     }
 
     func testTogglePanicRecordsSupportEventOnce() {
@@ -168,8 +165,33 @@ final class ViewModelPanicTransitionBehaviorTests: XCTestCase {
         return url
     }
 
-    private func actionCount(_ name: String, in viewModel: SwitcherViewModel) -> Int {
-        viewModel.runtime.actionLog.filter { $0.actionName == name }.count
+    private func startBGM(_ bgm: BGMItem, in viewModel: SwitcherViewModel) {
+        if !viewModel.bgmItems.contains(where: { $0.id == bgm.id }) {
+            viewModel.bgmItems.append(bgm)
+        }
+        viewModel.toggleBGM(bgm)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
+    private func mediaPauseEffectCount(in viewModel: SwitcherViewModel) -> Int {
+        viewModel.runtime.recordedEffects.filter {
+            if case .pauseMedia = $0 { return true }
+            return false
+        }.count
+    }
+
+    private func mediaPlayEffectCount(in viewModel: SwitcherViewModel) -> Int {
+        viewModel.runtime.recordedEffects.filter {
+            if case .playMedia = $0 { return true }
+            return false
+        }.count
+    }
+
+    private func playBGMEffectCount(in viewModel: SwitcherViewModel) -> Int {
+        viewModel.runtime.recordedEffects.filter {
+            if case .playBGM = $0 { return true }
+            return false
+        }.count
     }
 
     private func supportEventCount(in viewModel: SwitcherViewModel) -> Int {

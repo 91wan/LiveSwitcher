@@ -81,6 +81,13 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         )
     }
 
+    func testPanicOwnedModeOwnsPriorDomainsAndPanic() {
+        XCTAssertEqual(
+            LiveRuntimeBridgeMode.panicOwned.ownedDomains,
+            [.audio, .media, .bgm, .projection, .panic, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .programActivation, .imageAssets, .persistence]
+        )
+    }
+
     func testFullRuntimeOwnsAllDomains() {
         XCTAssertEqual(LiveRuntimeBridgeMode.fullRuntime.ownedDomains, Set(LiveRuntimeDomain.allCases))
     }
@@ -168,6 +175,14 @@ final class RuntimeBridgeCumulativeOwnershipTests: XCTestCase {
         XCTAssertTrue(mode.owns(.programSelection))
         XCTAssertTrue(mode.owns(.programActivation))
         XCTAssertFalse(mode.owns(.panic))
+    }
+
+    func testPanicOwnedModeOwnsProgramActivationAndPanicButNotFullAutomation() {
+        let mode = LiveRuntimeBridgeMode.panicOwned
+
+        XCTAssertTrue(mode.owns(.programActivation))
+        XCTAssertTrue(mode.owns(.panic))
+        XCTAssertFalse(mode.owns(.automation))
     }
 
     func testEveryProductionOwnedModeIncludesImageAssetsAndPersistence() {

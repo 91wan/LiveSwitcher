@@ -23,6 +23,25 @@ final class PanicTransitionTests: XCTestCase {
         return url
     }
 
+    private func startBGM(_ item: BGMItem, in viewModel: SwitcherViewModel) {
+        if !viewModel.bgmItems.contains(where: { $0.id == item.id }) {
+            viewModel.bgmItems.append(item)
+        }
+        viewModel.toggleBGM(item)
+        XCTAssertTrue(viewModel.isBGMPlaying)
+    }
+
+    private func replaceRuntimeBGM(_ item: BGMItem, isPlaying: Bool, in viewModel: SwitcherViewModel) {
+        var state = viewModel.runtime.state
+        if !state.bgm.items.contains(where: { $0.id == item.id }) {
+            state.bgm.items.append(item)
+        }
+        state.bgm.currentID = item.id
+        state.bgm.isPlaying = isPlaying
+        viewModel.runtime.replaceStateForFacadeSync(state)
+        viewModel.syncBGMFacadeFromRuntime()
+    }
+
     func testPanicUsesFadedAudioRouting() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 1.4
@@ -69,9 +88,10 @@ final class PanicTransitionTests: XCTestCase {
         let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
 
-        viewModel.toggleBGM(first)
+        viewModel.bgmItems = [first, second]
+        startBGM(first, in: viewModel)
         viewModel.togglePanicMode()
-        viewModel.currentBGMItem = second
+        viewModel.toggleBGM(second)
 
         viewModel.togglePanicMode()
 
@@ -91,8 +111,7 @@ final class PanicTransitionTests: XCTestCase {
         let bgm = BGMItem(title: "Walk-in", url: bgmURL, category: .warmUp)
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
-        viewModel.currentBGMItem = bgm
-        viewModel.isBGMPlaying = true
+        startBGM(bgm, in: viewModel)
 
         viewModel.togglePanicMode()
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -141,11 +160,10 @@ final class PanicTransitionTests: XCTestCase {
         let first = BGMItem(title: "First", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
 
-        viewModel.currentBGMItem = first
-        viewModel.isBGMPlaying = true
+        viewModel.bgmItems = [first, second]
+        startBGM(first, in: viewModel)
         viewModel.togglePanicMode()
-        viewModel.currentBGMItem = second
-        viewModel.isBGMPlaying = true
+        replaceRuntimeBGM(second, isPlaying: true, in: viewModel)
 
         try await Task.sleep(nanoseconds: 180_000_000)
 
@@ -310,8 +328,8 @@ final class PanicTransitionTests: XCTestCase {
         let bgmURL = try makeTempURL(ext: "mp3")
         defer { try? FileManager.default.removeItem(at: bgmURL) }
         let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = false
+        viewModel.bgmItems = [item]
+        replaceRuntimeBGM(item, isPlaying: false, in: viewModel)
 
         viewModel.togglePanicMode()
         viewModel.toggleBGM(item)
@@ -328,11 +346,10 @@ final class PanicTransitionTests: XCTestCase {
         let bgmURL = try makeTempURL(ext: "mp3")
         defer { try? FileManager.default.removeItem(at: bgmURL) }
         let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = true
+        startBGM(item, in: viewModel)
 
         viewModel.togglePanicMode()
-        viewModel.isBGMPlaying = true
+        replaceRuntimeBGM(item, isPlaying: true, in: viewModel)
         viewModel.toggleBGM(item)
 
         XCTAssertTrue(viewModel.isPanicMode)
@@ -347,11 +364,10 @@ final class PanicTransitionTests: XCTestCase {
         let bgmURL = try makeTempURL(ext: "mp3")
         defer { try? FileManager.default.removeItem(at: bgmURL) }
         let item = BGMItem(title: "Hold Music", url: bgmURL, category: .warmUp)
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = true
+        startBGM(item, in: viewModel)
 
         viewModel.togglePanicMode()
-        viewModel.isBGMPlaying = true
+        replaceRuntimeBGM(item, isPlaying: true, in: viewModel)
         viewModel.toggleBGM(item)
         viewModel.togglePanicMode()
 

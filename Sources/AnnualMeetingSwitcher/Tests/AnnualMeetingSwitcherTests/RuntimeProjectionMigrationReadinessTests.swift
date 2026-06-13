@@ -3,12 +3,13 @@ import XCTest
 
 @MainActor
 final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
-    func testProjectionIsStillProductionOwnedThroughPresentationQueryOwningMode() {
+    func testProjectionIsStillProductionOwnedThroughPanicOwningMode() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .panicOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.projection))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.ppt))
+        XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.panic))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationNotice))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationCommand))
@@ -44,13 +45,13 @@ final class RuntimeProjectionMigrationReadinessTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.hideOutputWindow.requiredBridgeDomain, .projection)
     }
 
-    func testProductionBridgeModeMustBeExplicitAfterPresentationQueryMigration() throws {
+    func testProductionBridgeModeMustBeExplicitAfterPanicMigration() throws {
         let storeSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeStore.swift")
         let viewModelSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
 
         XCTAssertFalse(storeSource.contains("defaultEnvironment(for:"))
         XCTAssertFalse(storeSource.contains("connectedPortKinds.contains(.persistence)"))
-        XCTAssertTrue(viewModelSource.contains("environment: .productionProgramActivationOwning()"))
+        XCTAssertTrue(viewModelSource.contains("environment: .productionPanicOwning()"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

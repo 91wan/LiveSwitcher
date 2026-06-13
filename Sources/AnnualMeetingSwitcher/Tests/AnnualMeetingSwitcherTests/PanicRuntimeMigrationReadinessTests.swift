@@ -3,30 +3,33 @@ import XCTest
 
 @MainActor
 final class PanicRuntimeMigrationReadinessTests: XCTestCase {
-    func testProductionViewModelRuntimeBridgeModeRemainsProgramActivationOwned() {
-        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .programActivationOwned)
+    func testProductionViewModelRuntimeBridgeModeIsPanicOwned() {
+        XCTAssertEqual(makeViewModel().runtimeBridgeMode, .panicOwned)
     }
 
-    func testProductionConnectedPortsRemainProgramActivationOwnedSet() {
+    func testProductionConnectedPortsIncludePanicDelaySet() {
         XCTAssertEqual(
             makeViewModel().runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProgramActivationOwnedModeDoesNotOwnPanic() {
+    func testProgramActivationOwnedModeStillDoesNotOwnPanic() {
         XCTAssertFalse(LiveRuntimeBridgeMode.programActivationOwned.owns(.panic))
     }
 
-    func testNoPanicOwnedBridgeModeYet() {
-        XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == "panicOwned" })
+    func testPanicOwnedBridgeModeExistsAndOwnsPanic() {
+        XCTAssertTrue(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == "panicOwned" })
+        XCTAssertTrue(LiveRuntimeBridgeMode.panicOwned.owns(.panic))
+        XCTAssertTrue(LiveRuntimeBridgeMode.panicOwned.owns(.programActivation))
         XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == "panicTransitionOwned" })
     }
 
-    func testNoProductionPanicOwningEnvironmentYet() throws {
+    func testProductionPanicOwningEnvironmentExists() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
 
-        XCTAssertFalse(source.contains("productionPanicOwning"))
+        XCTAssertTrue(source.contains("productionPanicOwning"))
+        XCTAssertEqual(LiveRuntimeEnvironment.productionPanicOwning().bridgeMode, .panicOwned)
     }
 
     func testNoPanicPortYet() throws {
@@ -46,17 +49,23 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
         XCTAssertTrue(ports.contains("PanicDelayPort"))
     }
 
-    func testViewModelPanicStillOwnsDelayedBGMPauseTask() throws {
+    func testViewModelPanicDelegatesDelayedBGMPauseTaskToRuntimePort() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Panic.swift")
+        let wiring = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PanicDelayRuntimeWiring.swift")
+        let toggleBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "togglePanicMode"))
 
-        XCTAssertTrue(source.contains("cleanupBag.panicAudioPauseTask"))
-        XCTAssertTrue(source.contains("Task.sleep"))
+        XCTAssertTrue(toggleBody.contains("runtime.bridgeMode.owns(.panic)"))
+        XCTAssertTrue(toggleBody.contains("dispatchRuntimeFacadeAction(.operatorSetPanic"))
+        XCTAssertTrue(wiring.contains("cleanupBag.panicAudioPauseTask"))
+        XCTAssertTrue(wiring.contains("Task.sleep"))
+        XCTAssertTrue(wiring.contains("context.dispatch(.panicBGMPauseDelayElapsed"))
     }
 
-    func testRuntimePanicReducerIsNotProductionOwnedYet() throws {
+    func testRuntimePanicReducerIsProductionOwned() throws {
         let source = try repositorySource("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(source.localizedStandardContains("Runtime `.panic` domain exists but is not production-owned yet"))
+        XCTAssertTrue(source.localizedStandardContains("Production bridge mode is `.panicOwned`"))
+        XCTAssertTrue(source.localizedStandardContains("Panic transition orchestration is runtime-owned"))
     }
 
     func testRuntimePanicReducerSchedulesDelayedBGMPauseWhenFadeDurationPositive() {
@@ -87,25 +96,26 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
         let viewModel = makeViewModel()
         let bgm = BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
         viewModel.liveAudioFadeDuration = 0.05
-        viewModel.currentBGMItem = bgm
-        viewModel.isBGMPlaying = true
+        viewModel.bgmItems = [bgm]
+        viewModel.toggleBGM(bgm)
+        XCTAssertTrue(viewModel.isBGMPlaying)
 
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.isBGMPlaying)
     }
 
-    func testPanicMigrationBlockedUntilProductionPanicDelayPortIsWired() throws {
+    func testPanicMigrationNoLongerDocumentsPanicDelayPortBlocker() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(docs.localizedStandardContains("Panic migration is blocked until production PanicDelayPort is wired"))
+        XCTAssertFalse(docs.localizedStandardContains("Panic migration is blocked until production PanicDelayPort is wired"))
     }
 
-    func testProductionRuntimeDoesNotWirePanicDelayPortYet() throws {
+    func testProductionRuntimeWiresPanicDelayPort() throws {
         let bundle = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/SwitcherRuntimePortBundle.swift")
 
-        XCTAssertFalse(makeViewModel().runtimeConnectedPortKinds.contains(.panicDelay))
-        XCTAssertFalse(bundle.contains("panicDelay"))
+        XCTAssertTrue(makeViewModel().runtimeConnectedPortKinds.contains(.panicDelay))
+        XCTAssertTrue(bundle.contains("panicDelay"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

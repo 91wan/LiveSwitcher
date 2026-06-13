@@ -48,12 +48,21 @@ final class PanicDelayPortContractTests: XCTestCase {
         XCTAssertTrue(LiveRuntimeEffectRunner(panicDelay: ClosurePanicDelayPort()).connectedPortKinds.contains(.panicDelay))
     }
 
-    func testProductionRuntimeDoesNotWirePanicDelayPortYet() throws {
+    func testProductionRuntimeWiresPanicDelayPort() throws {
         let bundle = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/SwitcherRuntimePortBundle.swift")
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertFalse(viewModel.runtimeConnectedPortKinds.contains(.panicDelay))
-        XCTAssertFalse(bundle.contains("panicDelay"))
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.panicDelay))
+        XCTAssertTrue(bundle.contains("panicDelay"))
+    }
+
+    func testProductionPanicDelayWiringDispatchesElapsedActionThroughContext() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PanicDelayRuntimeWiring.swift")
+
+        XCTAssertTrue(source.contains("context.dispatch(.panicBGMPauseDelayElapsed"))
+        XCTAssertFalse(source.contains("dispatchRuntimeFacadeAction"))
+        XCTAssertFalse(source.contains("recordSupportEvent"))
+        XCTAssertFalse(source.contains("runtime.dispatch"))
     }
 
     func testPanicDelayPortHasNoDefaultNoOpImplementation() throws {

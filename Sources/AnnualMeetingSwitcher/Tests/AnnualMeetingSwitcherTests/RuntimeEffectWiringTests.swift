@@ -3,24 +3,24 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsIncludeProgramActivationSet() {
+    func testProductionConnectedPortsIncludePanicDelaySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsPanicOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .panicOwned)
     }
 
     func testNoProductionPortLostDuringBridgeSlimming() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        let expected: Set<LiveRuntimeEffectPortKind> = [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+        let expected: Set<LiveRuntimeEffectPortKind> = [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
 
         XCTAssertEqual(Set(viewModel.runtimeConnectedPortKinds), expected)
         XCTAssertEqual(viewModel.runtimeConnectedPortKinds.count, expected.count)
@@ -69,6 +69,12 @@ final class RuntimeEffectWiringTests: XCTestCase {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
+    }
+
+    func testProductionRuntimeWiresPanicDelayPort() {
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+
+        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.panicDelay))
     }
 
     func testProductionRuntimeKeepsBGMFadeOutBehindBGMPort() {

@@ -9,6 +9,15 @@ extension SwitcherViewModel {
 
     /// Toggle emergency blackout mode.
     func togglePanicMode() {
+        if runtime.bridgeMode.owns(.panic) {
+            let oldValue = isPanicMode
+            dispatchRuntimeFacadeAction(.operatorSetPanic(!isPanicMode))
+            guard isPanicMode != oldValue else { return }
+            LiveSwitcherTelemetry.panicModeChanged(isOn: isPanicMode)
+            recordSupportEvent(kind: .panicModeChanged, detail: "isOn=\(isPanicMode)")
+            return
+        }
+
         if isPanicMode {
             deactivatePanic()
         } else {

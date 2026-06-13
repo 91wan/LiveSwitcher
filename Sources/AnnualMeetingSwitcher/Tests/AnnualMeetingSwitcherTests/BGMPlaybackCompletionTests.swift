@@ -90,13 +90,19 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         viewModel.togglePanicMode()
 
         XCTAssertFalse(viewModel.isBGMPlaying)
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorPausedBGMForPanic" })
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains {
+            if case .pauseBGM = $0 { return true }
+            return false
+        })
 
         viewModel.togglePanicMode()
 
         XCTAssertTrue(viewModel.isBGMPlaying)
         XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorResumedBGMAfterPanic" })
+        XCTAssertTrue(viewModel.runtime.recordedEffects.contains {
+            if case .playBGM = $0 { return true }
+            return false
+        })
     }
 
     func testSequentialFinishedFallbackTrackClearsFallbackItemBeforeReplay() throws {

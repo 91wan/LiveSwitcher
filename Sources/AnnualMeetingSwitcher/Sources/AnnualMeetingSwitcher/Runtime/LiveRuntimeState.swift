@@ -14,6 +14,7 @@ enum LiveRuntimeBridgeMode: String, CaseIterable, Equatable {
     case programQueueOwned
     case programSelectionOwned
     case programActivationOwned
+    case panicOwned
     case fullRuntime
 }
 
@@ -65,6 +66,8 @@ extension LiveRuntimeBridgeMode {
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .imageAssets, .persistence]
         case .programActivationOwned:
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .programActivation, .imageAssets, .persistence]
+        case .panicOwned:
+            return [.audio, .media, .bgm, .projection, .panic, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .programActivation, .imageAssets, .persistence]
         case .fullRuntime:
             return Set(LiveRuntimeDomain.allCases)
         }
@@ -494,6 +497,19 @@ struct LiveRuntimeEnvironment: Equatable {
             speakerModeDuckedRatio: speakerModeDuckedRatio,
             liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .programActivationOwned
+        )
+    }
+
+    static func productionPanicOwning(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
+            bridgeMode: .panicOwned
         )
     }
 

@@ -282,7 +282,7 @@ final class SwitcherViewModel {
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: runtimePorts.makeEffectRunner(),
-            environment: .productionProgramActivationOwning()
+            environment: .productionPanicOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
         configureDefaultProgramActivationSideEffects()
@@ -368,6 +368,10 @@ final class SwitcherViewModel {
            let currentRuntimeItem = runtime.state.bgm.currentItem,
            !items.contains(where: { $0.id == currentRuntimeItem.id }) {
             items.append(currentRuntimeItem)
+        }
+        if let currentBGMItem,
+           !items.contains(where: { $0.id == currentBGMItem.id }) {
+            items.append(currentBGMItem)
         }
         if let transientRuntimeBGMItem,
            !items.contains(where: { $0.id == transientRuntimeBGMItem.id }) {

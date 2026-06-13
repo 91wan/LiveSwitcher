@@ -9,6 +9,7 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
         XCTAssertNotNil(ports.mediaPlaybackPort)
         XCTAssertNotNil(ports.bgmPlaybackPort)
         XCTAssertNotNil(ports.bgmTimerPort)
+        XCTAssertNotNil(ports.panicDelayPort)
         XCTAssertNotNil(ports.projectionPort)
         XCTAssertNotNil(ports.pptPort)
         XCTAssertNotNil(ports.automationNoticePort)
@@ -26,23 +27,23 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
 
         XCTAssertEqual(
             runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionConnectedPortsIncludeProgramActivationSet() {
+    func testProductionConnectedPortsIncludePanicDelaySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionBridgeModeIsProgramActivationOwned() {
+    func testProductionBridgeModeIsPanicOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .panicOwned)
     }
 
     func testViewModelInitDoesNotContainRuntimePortHandlerAssignments() throws {
