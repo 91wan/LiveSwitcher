@@ -51,6 +51,15 @@ Rejected selection must not run post-selection side effects. Source validation
 and source availability classification remain ViewModel-owned; classification
 lives in the pure `ProgramSourceAvailabilityPolicy`, while missing-source
 support/notice generation remains ViewModel-owned.
+Panic transition policy is pure and lives in `PanicTransitionPolicy`; it owns
+snapshot, immediate media pause, delayed BGM pause, and media/BGM resume
+decisions. Production Panic ownership is still ViewModel-owned: Runtime
+`.panic` domain exists but is not production-owned yet, and
+`ViewModel+Panic.swift` still owns the concrete delayed BGM pause task and
+support event generation. Panic migration is blocked until Runtime can
+represent delayed BGM pause without changing fade behavior. BGM pause after
+Panic activation must preserve `liveAudioFadeDuration`. Program activation
+remains Runtime-owned; Panic remains the next live-critical migration candidate.
 Activation execution, invalid-deck alerts, and activation side-effect
 orchestration live in `ViewModel+ProgramActivationRuntimeBridge.swift` behind
 `ProgramActivationPort`. Current-program media
@@ -231,7 +240,7 @@ explicit owner.
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Image assets | Runtime bridge infrastructure | Wallpaper and corner-logo loading side effects | hardened bridge domain | Runtime-owned bridge modes except `.recordingOnly` own `.imageAssets`, so repaired or selected image URLs can reach `ImageAssetPort` without being mislabeled as Audio. Image library mutation, file repair decisions, and setup UI remain ViewModel/Persistence-owned. |
-| Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. |
+| Panic | ViewModel owner | Mirror-only snapshot plus runtime media/BGM pause/resume actions | not migrated | Panic orchestration remains ViewModel-owned; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`. Runtime `.panic` domain exists but is not production-owned yet. Panic migration is blocked until Runtime can represent delayed BGM pause without changing fade behavior, because BGM pause after Panic activation must preserve `liveAudioFadeDuration`. |
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
