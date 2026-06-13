@@ -35,17 +35,22 @@ detached selection use distinct payload-safe action names:
 production selection paths. Program activation request/completion lifecycle is
 Runtime-owned in `.programActivationOwned`; Runtime records the active request
 ID, emits `.executeProgramActivation(id:plan:)`, and accepts matching completion
-callbacks. Program activation concrete switching side effects are still
-ViewModel-owned. Program activation planning lives in pure model types,
-`ProgramActivationPlan` and `ProgramActivationPlanner`, and the planner call
-site remains in `ViewModel+ProgramActivation.swift`. `ProgramActivationPlan`
-explicitly models pre-selection and post-selection phases: invalid decks are
-pre-selection aborts, deck stop is a pre-selection side effect, Runtime current
-program selection runs before post-selection effects, and post-selection effects
-run only after Runtime selection and current-program facade projection. Source
-availability classification lives in the pure
-`ProgramSourceAvailabilityPolicy`, while missing-source support/notice
-generation remains ViewModel-owned.
+callbacks. `ProgramActivationPort` executes only while Runtime's active request
+ID matches its request ID, and it completes only the still-active request. Stale
+activation effects must not run side effects or clear newer activation
+requests. Program activation concrete switching side effects are still
+ViewModel-owned through `ProgramActivationSideEffectHandlers`. Program
+activation planning lives in pure model types, `ProgramActivationPlan` and
+`ProgramActivationPlanner`, and the planner call site remains in
+`ViewModel+ProgramActivation.swift`. `ProgramActivationPlan` explicitly models
+pre-selection and post-selection phases: invalid decks are pre-selection aborts,
+deck stop is a pre-selection side effect, Runtime current program selection
+runs before post-selection effects, and `ProgramActivationPort` verifies that
+Runtime accepted the requested selection before post-selection side effects run.
+Rejected selection must not run post-selection side effects. Source validation
+and source availability classification remain ViewModel-owned; classification
+lives in the pure `ProgramSourceAvailabilityPolicy`, while missing-source
+support/notice generation remains ViewModel-owned.
 Activation execution, invalid-deck alerts, and activation side-effect
 orchestration live in `ViewModel+ProgramActivationRuntimeBridge.swift` behind
 `ProgramActivationPort`. Current-program media
@@ -117,9 +122,9 @@ has not synchronized into the runtime snapshot.
 
 ## Production Bridge Mode
 
-Production bridge mode is `.programSelectionOwned`.
-`.fullRuntime` remains test-only; production current-program selection
-ownership is expressed by `.programSelectionOwned`.
+Production bridge mode is `.programActivationOwned`.
+`.fullRuntime` remains test-only; production program activation lifecycle
+ownership is expressed by `.programActivationOwned`.
 Tests must use explicit bridge mode; full-runtime behavior must use the named
 full-runtime test factory or `.fullRuntimeForTests(...)`.
 `LiveRuntimeEnvironment()` must not imply production-unsafe full runtime.
@@ -147,6 +152,7 @@ Each stage includes all domains migrated in earlier stages:
 | `presentationQueryOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle |
 | `programQueueOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation |
 | `programSelectionOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation, Current program selection |
+| `programActivationOwned` | Audio, Media playback, BGM, Projection, PPT EventTap lifecycle, Automation notice lifecycle, Support event storage and ingress, Automation command execution, Presentation query lifecycle, Program queue storage/mutation, Current program selection, Program activation request/completion lifecycle |
 | `fullRuntime` | all runtime domains, test-only until deliberately approved |
 
 `.bgmOwned` means Audio + Media + BGM, not Audio + BGM. `.projectionOwned`
@@ -161,7 +167,10 @@ and ingress + Automation command execution. `.presentationQueryOwned` adds the
 narrow presentation query request/result/failure lifecycle. `.programQueueOwned`
 adds Program queue storage/mutation. `.programSelectionOwned` adds current
 program selection state and facade projection without migrating Program
-activation side effects or broader automation ownership.
+activation side effects or broader automation ownership. `.programActivationOwned`
+adds Program activation request/completion lifecycle and effect dispatch while
+keeping source validation, plan construction, and concrete activation side
+effects ViewModel-owned.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
@@ -170,12 +179,13 @@ In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.presentationQuery`, Program queue storage/mutation in
 `state.program.items`, and current program selection fields
 `state.program.currentID`, `state.program.currentDetachedItem`, and
-`state.program.currentSwitchedAt`. It may
+`state.program.currentSwitchedAt`, and `state.programActivation`. It may
 execute the wired ports needed for current production
 behavior. Connected production ports: `media`, `bgm`, `bgmTimer`, `projection`,
-`ppt`, `automationNotice`, `support`, `automation`, `presentationQuery`, `audioRouting`,
-`imageAssets`, and `persistence`. The audio routing, projection, PPT EventTap,
-automation notice, Support, automation command, and presentation query ports are wired.
+`ppt`, `automationNotice`, `support`, `automation`, `presentationQuery`,
+`programActivation`, `audioRouting`, `imageAssets`, and `persistence`. The
+audio routing, projection, PPT EventTap, automation notice, Support, automation
+command, presentation query, and Program activation ports are wired.
 Audio routing context is stored inside `AudioRuntimeState`, so routing inputs
 from mirror-only domains can be used without making Panic runtime-owned.
 
@@ -216,7 +226,7 @@ explicit owner.
 | --- | --- | --- | --- | --- |
 | Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned` or later. `ViewModel+ProgramQueue.swift` is the queue mutation facade only. ViewModel still owns Program activation invalid-deck alerts, support event generation decisions, and live activation side effects through `ViewModel+ProgramActivationRuntimeBridge.swift`; pure source availability classification lives in `ProgramSourceAvailabilityPolicy`, and current-program media transport controls live in `ViewModel+ProgramMediaTransport.swift`. |
 | Current program selection | Runtime owner | Authoritative selected queued/detached item, switched-at timestamp, and facade projection | authoritative | Runtime owns `state.program.currentID`, `state.program.currentDetachedItem`, `state.program.currentSwitchedAt`, selected queued/detached program actions, clearing current selection when the current queue item is removed, and `currentProgramItem` / `currentProgramSwitchedAt` facade projection in `.programSelectionOwned`. Selection mechanics live in `Runtime/ProgramSelectionRuntimeReducer.swift`: `operatorSelectedProgram` means queued item selection, `operatorSelectedDetachedProgram` means detached item selection, and those redacted action names remain distinct while omitting titles and paths. `clearCurrentProgramSelection(reason:)` lives in `ViewModel+ProgramSelection.swift`; `ViewModel+RuntimeFacadeSync.swift` is Runtime-to-facade sync-only. Runtime reducer audio helpers are internal for Runtime domain reducers only and must not be called from ViewModel. `facadeCurrentProgramChanged` is compatibility-only, is suppressed from the action log, and must not be used by production selection paths. ViewModel still owns invalid-deck alerts, source availability checks, Keynote/WPS/HTML/media activation side effects, media transport controls, and support event generation decisions. Activation execution now runs explicit `ProgramActivationPlan` phases through `ProgramActivationPort`: pre-selection side effects first, Runtime selection second, current-program facade projection third, and post-selection effects last. |
-| Program activation | Runtime lifecycle owner, ViewModel side-effect owner | Active request ID, completion lifecycle, and activation effect dispatch | lifecycle authoritative | Runtime owns `state.programActivation`, `operatorRequestedProgramActivation(id:plan:)`, `programActivationCompleted(id:)`, and `.executeProgramActivation(id:plan:)`. It does not store full plans in state and redacts recorded activation effects. `ProgramActivationPort` calls back into `ViewModel+ProgramActivationRuntimeBridge.swift`, where ViewModel-owned side effects execute through `ProgramActivationSideEffectHandlers`; source availability checks and `ProgramActivationPlanner` remain outside Runtime reducers. |
+| Program activation | Runtime lifecycle owner, ViewModel side-effect owner | Active request ID, completion lifecycle, and activation effect dispatch | lifecycle authoritative | Runtime owns `state.programActivation`, `operatorRequestedProgramActivation(id:plan:)`, `programActivationCompleted(id:)`, and `.executeProgramActivation(id:plan:)`. It does not store full plans in state and redacts recorded activation effects. `ProgramActivationPort` calls back into `ViewModel+ProgramActivationRuntimeBridge.swift`; it runs only for the active request, completes only that active request, and verifies Runtime accepted selection before post-selection effects run. Stale activation effects must not run side effects, and rejected selection must not run post-selection side effects. ViewModel-owned side effects execute through `ProgramActivationSideEffectHandlers`; source validation, source availability checks, invalid-deck validation, and `ProgramActivationPlanner` remain outside Runtime reducers. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
@@ -257,7 +267,8 @@ ownership.
 Runtime infrastructure domain hardening separates port connectivity from domain
 ownership. Production still wires the same connected ports:
 `media`, `bgm`, `bgmTimer`, `projection`, `ppt`, `automationNotice`,
-`support`, `automation`, `audioRouting`, `imageAssets`, and `persistence`.
+`support`, `automation`, `presentationQuery`, `programActivation`,
+`audioRouting`, `imageAssets`, and `persistence`.
 The new `.imageAssets` and `.persistence` domains describe effect ownership,
 not new production ports. `.recordingOnly` owns neither infrastructure domain;
 every production owning mode from `.audioOwned` through `.fullRuntime` owns
@@ -555,7 +566,7 @@ Automation command execution is runtime-owned only for fire-and-forget
 AppleScript commands. Runtime owns `.automationScriptRequested`, action-log
 redaction for that request, and the `.runAppleScript` effect behind the
 Automation command domain. Production wires the `automation` port for command
-execution in `.programSelectionOwned`.
+execution in `.programActivationOwned`.
 
 Presentation query lifecycle is runtime-owned for operator-initiated Keynote
 scan requests. Runtime stores the active request ID, emits
@@ -575,16 +586,17 @@ Presentation automation command/query boundary code lives in
 code lives in `ViewModel+AutomationFailure.swift`.
 Runtime-generated automation notice failures must not write Support storage in
 `.automationNoticeOwned`, `.supportOwned`, `.automationCommandOwned`,
-`.presentationQueryOwned`, `.programQueueOwned`, or `.programSelectionOwned`;
-support entries for automation failures are still generated by ViewModel and
-enter runtime storage only through `.supportEventRecorded`.
+`.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or
+`.programActivationOwned`; support entries for automation failures are still
+generated by ViewModel and enter runtime storage only through
+`.supportEventRecorded`.
 
 ## Support Boundary
 
 Support storage and production ingress are runtime-owned. Runtime owns
 `state.support.events`, `state.support.coalescedCounts`, and
 `state.support.eventLimit`, including redaction, coalescing, priority retention,
-and trimming. Production uses `.programSelectionOwned` and wires
+and trimming. Production uses `.programActivationOwned` and wires
 `SupportEventPort`.
 `SupportRuntimeState.record` returns the exact accepted event stored in
 `state.support.events`, including a coalesced replacement event, or `nil` when
@@ -608,17 +620,18 @@ system actions such as projection toggles, `automationFailed`, and
 `automationNoticeDismissed` remain logged. Reducer-generated support remains
 disabled in production migrated domains; ViewModel call sites still decide
 which Support events exist. Automation command execution is wired through the
-`automation` port in `.programSelectionOwned`, but Support generation remains
+`automation` port in `.programActivationOwned`, but Support generation remains
 ViewModel-owned.
 
 ## Next Migration Gate
 
 Program activation/switching side effects, broader automation query ownership,
-and key-forwarding Automation migration remain blocked. Program activation
-migration remains a future dedicated PR. The next migration may
+source-validation migration, invalid-deck validation migration, and
+key-forwarding Automation migration remain blocked. The next migration may
 proceed only after Audio, Media, BGM, Projection, PPT, Automation notice,
-Support, Automation command, Presentation query, and Program queue storage
-ownership and hardening tests pass,
+Support, Automation command, Presentation query, Program queue storage, current
+program selection, and Program activation lifecycle ownership and hardening
+tests pass,
 cumulative bridge tests pass, bridge mode explicitness tests pass, explicit
 runtime-store tests pass, no implicit full runtime remains, the target domain
 port is connected in a dedicated PR, and ViewModel no longer owns that target

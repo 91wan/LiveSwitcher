@@ -7,8 +7,14 @@ extension SwitcherViewModel {
         plan: ProgramActivationPlan,
         context: LiveRuntimeEffectExecutionContext
     ) {
+        guard context.currentState().programActivation.activeRequestID == id else {
+            return
+        }
+
         defer {
-            context.dispatch(.programActivationCompleted(id: id))
+            if context.currentState().programActivation.activeRequestID == id {
+                context.dispatch(.programActivationCompleted(id: id))
+            }
         }
 
         for effect in plan.preSelectionEffects {
@@ -23,24 +29,34 @@ extension SwitcherViewModel {
 
         guard let runtimeSelection = plan.runtimeSelection else { return }
 
-        dispatchProgramActivationRuntimeSelection(runtimeSelection, context: context)
-        syncCurrentProgramFacadeFromRuntime()
+        guard dispatchProgramActivationRuntimeSelectionAndConfirm(
+            runtimeSelection,
+            expectedItemID: plan.item.id,
+            context: context
+        ) else {
+            return
+        }
 
         for effect in plan.postSelectionEffects {
             executePostSelectionProgramActivationEffect(effect)
         }
     }
 
-    private func dispatchProgramActivationRuntimeSelection(
+    private func dispatchProgramActivationRuntimeSelectionAndConfirm(
         _ selection: ProgramActivationPlan.RuntimeSelection,
+        expectedItemID: UUID,
         context: LiveRuntimeEffectExecutionContext
-    ) {
+    ) -> Bool {
         switch selection {
         case .queued(let id):
             context.dispatch(.operatorSelectedProgram(id))
         case .detached(let item):
             context.dispatch(.operatorSelectedDetachedProgram(item))
         }
+
+        syncCurrentProgramFacadeFromRuntime()
+
+        return context.currentState().program.effectiveCurrentItem?.id == expectedItemID
     }
 
     private func executePostSelectionProgramActivationEffect(

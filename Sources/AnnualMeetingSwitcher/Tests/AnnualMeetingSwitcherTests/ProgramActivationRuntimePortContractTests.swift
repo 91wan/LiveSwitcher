@@ -76,6 +76,55 @@ final class ProgramActivationRuntimePortContractTests: XCTestCase {
         XCTAssertEqual(state.program.items.map(\.title), ["Existing"])
     }
 
+    func testProductionProgramActivationPortDoesNotCallRuntimeFacadeDispatcher() throws {
+        XCTAssertFalse(try bridgeSource().contains("dispatchRuntimeFacadeAction"))
+    }
+
+    func testProductionProgramActivationPortDoesNotMutateProgramQueue() throws {
+        let source = try bridgeSource()
+
+        XCTAssertFalse(source.contains("addProgramItems"))
+        XCTAssertFalse(source.contains("removeProgramItem"))
+    }
+
+    func testProductionProgramActivationPortDoesNotRecordSupport() throws {
+        XCTAssertFalse(try bridgeSource().contains("recordSupportEvent"))
+    }
+
+    func testProductionProgramActivationPortDoesNotShowAutomationNotice() throws {
+        XCTAssertFalse(try bridgeSource().contains("showAutomationRuntimeNotice"))
+    }
+
+    func testProductionProgramActivationPortDoesNotBuildPlan() throws {
+        XCTAssertFalse(try bridgeSource().contains("ProgramActivationPlanner.plan"))
+    }
+
+    func testProductionProgramActivationPortDoesNotRunSourceAvailabilityPolicy() throws {
+        XCTAssertFalse(try bridgeSource().contains("ProgramSourceAvailabilityPolicy"))
+    }
+
+    func testProductionProgramActivationPortDoesNotUseFileManager() throws {
+        XCTAssertFalse(try bridgeSource().contains("FileManager.default"))
+    }
+
+    func testProductionProgramActivationPortDoesNotUseNSAlert() throws {
+        XCTAssertFalse(try bridgeSource().contains("NSAlert"))
+    }
+
+    func testProductionProgramActivationPortUsesContextDispatchOnly() throws {
+        let source = try bridgeSource()
+
+        XCTAssertTrue(source.contains("context.dispatch"))
+        XCTAssertFalse(source.contains("runtime.dispatch"))
+    }
+
+    func testProductionProgramActivationPortUsesContextCurrentStateForGuards() throws {
+        let source = try bridgeSource()
+
+        XCTAssertTrue(source.contains("context.currentState().programActivation.activeRequestID == id"))
+        XCTAssertTrue(source.contains("context.currentState().program.effectiveCurrentItem?.id == expectedItemID"))
+    }
+
     private func activationPlan() -> ProgramActivationPlan {
         ProgramActivationPlan(
             item: ProgramItem(title: "Private", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/private.mp4")),
@@ -83,6 +132,10 @@ final class ProgramActivationRuntimePortContractTests: XCTestCase {
             preSelectionEffects: [],
             postSelectionEffects: []
         )
+    }
+
+    private func bridgeSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
     }
 }
 
@@ -97,4 +150,3 @@ private final class ProgramActivationPortSpy: ProgramActivationPort {
         onExecute?(id, plan, context)
     }
 }
-

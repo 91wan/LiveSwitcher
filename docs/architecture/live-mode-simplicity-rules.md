@@ -106,6 +106,9 @@ product boundary.
   change switching behavior. It only moves activation request/completion
   lifecycle and effect dispatch to Runtime; source availability checks, invalid
   deck validation, and concrete activation side effects remain ViewModel-owned.
+- Program activation runtime hardening does not add live controls or change
+  switching behavior. Runtime request ID gates activation side effects, and
+  Runtime selection acceptance gates post-selection side effects.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;
@@ -190,21 +193,24 @@ product boundary.
 - Current authoritative runtime domains: Audio, Media playback, BGM playback,
   Projection output, PPT EventTap lifecycle, Automation notice lifecycle,
   Support ingress/storage, Automation command execution, Presentation query
-  lifecycle, and Program queue storage/mutation.
+  lifecycle, Program queue storage/mutation, current program selection, and
+  Program activation request/completion lifecycle.
 - Mirror-only live domains and ViewModel-owned live domains are Panic, broader
-  Automation flows, and Program activation/switching. PPT key forwarding,
-  WPS fallback branching, scans, Support event production, source validation,
-  invalid-deck alerts, live activation side effects, and telemetry remain
-  ViewModel-owned implementation details.
-- Runtime-backed actions must respect the production `.programSelectionOwned`
+  Automation flows, Program activation source validation/planning, and concrete
+  activation side effects. PPT key forwarding, WPS fallback branching, scans,
+  Support event production, source validation, invalid-deck alerts, live
+  activation side effects, and telemetry remain ViewModel-owned implementation
+  details.
+- Runtime-backed actions must respect the production `.programActivationOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
   lifecycle, automation notices, Support ingress, audio routing, image assets,
   persistence, fire-and-forget automation command execution, presentation
   queries, Program queue storage/mutation, and current program selection may
-  execute; scans, WPS fallback branching, Program activation/switching, source
-  validation, and PPT/WPS key
-  forwarding must not.
+  execute; Program activation request/completion lifecycle may execute through
+  Runtime while source validation, plan construction, concrete activation side
+  effects, scans, WPS fallback branching, and PPT/WPS key forwarding remain
+  ViewModel-owned.
 - Program activation facade extraction does not add live controls or change
   switching behavior. Code simplicity is part of product simplicity: the live
   action stays "select a program" while planning is pure and execution remains

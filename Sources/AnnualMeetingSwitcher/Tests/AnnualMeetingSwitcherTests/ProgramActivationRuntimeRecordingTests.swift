@@ -66,6 +66,14 @@ final class ProgramActivationRuntimeRecordingTests: XCTestCase {
         XCTAssertEqual(runner.recordedEffects, [.runAppleScript(script: "<redacted>", action: "keynote.open")])
     }
 
+    func testExecuteProgramActivationRecordedEffectStillRedactsPlanAfterHardening() {
+        let recorded = String(describing: recordedActivationEffect() as Any)
+
+        XCTAssertFalse(recorded.contains("Private Title"))
+        XCTAssertFalse(recorded.contains("Secret Subtitle"))
+        XCTAssertFalse(recorded.contains("/Users/operator/private.key"))
+    }
+
     private func recordedActivationPlan() throws -> ProgramActivationPlan? {
         let effect = try XCTUnwrap(recordedActivationEffect())
         if case .executeProgramActivation(_, let plan) = effect {
