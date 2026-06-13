@@ -15,7 +15,7 @@ extension SwitcherViewModel {
             return
         }
 
-        executeProgramActivationPlan(plan)
+        dispatchRuntimeFacadeAction(.operatorRequestedProgramActivation(id: UUID(), plan: plan))
     }
 
     func switchToProgramAfterReadinessConfirmation(_ item: ProgramItem) {
@@ -45,55 +45,6 @@ extension SwitcherViewModel {
         agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
         guard let item = programItems.first(where: { $0.id == prompt.itemID }) else { return }
         switchToProgramAfterReadinessConfirmation(item)
-    }
-
-    private func executeProgramActivationPlan(_ plan: ProgramActivationPlan) {
-        for effect in plan.preSelectionEffects {
-            switch effect {
-            case .stopDeck:
-                programActivationSideEffects.stopDeck()
-            case .presentInvalidDeckAlert(let url):
-                programActivationSideEffects.presentInvalidDeckAlert(url)
-                return
-            }
-        }
-
-        guard let runtimeSelection = plan.runtimeSelection else { return }
-
-        dispatchRuntimeProgramSelection(runtimeSelection)
-        syncCurrentProgramFacadeFromRuntime()
-
-        for effect in plan.postSelectionEffects {
-            executePostSelectionProgramActivationEffect(effect)
-        }
-    }
-
-    private func executePostSelectionProgramActivationEffect(
-        _ effect: ProgramActivationPlan.PostSelectionEffect
-    ) {
-        switch effect {
-        case .clearHTML:
-            currentHTMLURL = nil
-        case .resetMutedMediaStartupFlag:
-            needsMutedMediaStartupAfterClearedProgram = false
-        case .presentKeynote(let url):
-            programActivationSideEffects.presentKeynote(url)
-        case .openPPTX(let url):
-            programActivationSideEffects.openPPTX(url)
-        case .openHTML(let url):
-            openHTMLInOutputWindow(url: url)
-        case .presentActiveDeck:
-            programActivationSideEffects.presentActiveDeck()
-        }
-    }
-
-    private func dispatchRuntimeProgramSelection(_ selection: ProgramActivationPlan.RuntimeSelection) {
-        switch selection {
-        case .queued(let id):
-            dispatchRuntimeFacadeAction(.operatorSelectedProgram(id))
-        case .detached(let item):
-            dispatchRuntimeFacadeAction(.operatorSelectedDetachedProgram(item))
-        }
     }
 
     private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {

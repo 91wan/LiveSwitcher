@@ -47,13 +47,13 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         setCurrentProgram(current, in: viewModel)
         var events: [String] = []
         viewModel.programActivationSideEffects.stopDeck = {
-            events.append("deckStop:\(viewModel.runtime.actionLog.isEmpty)")
+            events.append("deckStop:\(self.actionCount("operatorSelectedProgram", in: viewModel) == 0)")
         }
 
         viewModel.switchToProgram(next)
 
         XCTAssertEqual(events, ["deckStop:true"])
-        XCTAssertEqual(viewModel.runtime.actionLog.first?.actionName, "operatorSelectedProgram")
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedProgram" })
     }
 
     func testRuntimeSelectionRunsBeforeCurrentProgramProjection() throws {
@@ -64,7 +64,7 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
 
         viewModel.switchToProgram(next)
 
-        let firstEntry = try XCTUnwrap(viewModel.runtime.actionLog.first)
+        let firstEntry = try XCTUnwrap(viewModel.runtime.actionLog.first { $0.actionName == "operatorSelectedProgram" })
         XCTAssertEqual(firstEntry.actionName, "operatorSelectedProgram")
         XCTAssertTrue(firstEntry.oldStateSummary.contains(current.id.uuidString))
         XCTAssertFalse(firstEntry.oldStateSummary.contains(next.id.uuidString))
@@ -172,22 +172,17 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
     }
 
     private func makeViewModel(initialItems: [ProgramItem]) -> SwitcherViewModel {
-        var state = LiveRuntimeState()
-        state.program.items = initialItems
-        let runtime = LiveRuntimeStore(
-            initialState: state,
-            effectRunner: .recording(),
-            environment: .productionProgramSelectionOwning()
-        )
         let suiteName = "ViewModelProgramActivationOrderTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: defaults,
-            runtime: runtime
+            userDefaults: defaults
         )
+        var state = viewModel.runtime.state
+        state.program.items = initialItems
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         viewModel.syncProgramQueueFacadeFromRuntime()
         viewModel.programActivationSideEffects.stopDeck = {}
         viewModel.programActivationSideEffects.presentKeynote = { _ in }
@@ -205,6 +200,10 @@ final class ViewModelProgramActivationOrderTests: XCTestCase {
         state.program.currentSwitchedAt = Date()
         viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         viewModel.syncCurrentProgramFacadeFromRuntime()
+    }
+
+    private func actionCount(_ name: String, in viewModel: SwitcherViewModel) -> Int {
+        viewModel.runtime.actionLog.filter { $0.actionName == name }.count
     }
 
     private func mediaProgram() throws -> ProgramItem {

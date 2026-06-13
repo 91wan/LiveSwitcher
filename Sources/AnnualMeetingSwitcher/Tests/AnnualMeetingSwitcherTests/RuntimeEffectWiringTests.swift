@@ -3,24 +3,24 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsIncludePresentationQuerySet() {
+    func testProductionConnectedPortsIncludeProgramActivationSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
     }
 
     func testNoProductionPortLostDuringBridgeSlimming() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        let expected: Set<LiveRuntimeEffectPortKind> = [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+        let expected: Set<LiveRuntimeEffectPortKind> = [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
 
         XCTAssertEqual(Set(viewModel.runtimeConnectedPortKinds), expected)
         XCTAssertEqual(viewModel.runtimeConnectedPortKinds.count, expected.count)
@@ -86,6 +86,7 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(connected.contains(.support))
         XCTAssertTrue(connected.contains(.automation))
         XCTAssertTrue(connected.contains(.presentationQuery))
+        XCTAssertTrue(connected.contains(.programActivation))
     }
 
     func testProductionRuntimeStillWiresImageAssetsPort() {

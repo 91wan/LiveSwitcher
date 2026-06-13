@@ -222,15 +222,24 @@ final class MediaRuntimeProgramActivationTests: XCTestCase {
         media: MediaRuntimeProgramActivationPortSpy,
         audioRouting: MediaRuntimeProgramActivationAudioRoutingSpy
     ) -> SwitcherViewModel {
+        let programActivation = ClosureProgramActivationPort()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, media: media, audioRouting: audioRouting),
-            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                media: media,
+                programActivation: programActivation,
+                audioRouting: audioRouting
+            ),
+            environment: LiveRuntimeEnvironment(bridgeMode: .programActivationOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
         viewModel.programActivationSideEffects.presentKeynote = { _ in }
         return viewModel
     }

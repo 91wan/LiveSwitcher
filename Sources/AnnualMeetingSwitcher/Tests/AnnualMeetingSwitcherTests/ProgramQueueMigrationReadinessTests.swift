@@ -54,16 +54,19 @@ final class ProgramQueueMigrationReadinessTests: XCTestCase {
     }
 
     func testProgramActivationMethodsRemainViewModelOwned() throws {
-        let source = try repositorySource(
+        let entrySource = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
         )
+        let bridgeSource = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift"
+        )
 
-        XCTAssertTrue(source.contains("programSourceIsAvailable"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.openPPTX"))
-        XCTAssertTrue(source.contains("openHTMLInOutputWindow"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentActiveDeck"))
+        XCTAssertTrue(entrySource.contains("programSourceIsAvailable"))
+        XCTAssertTrue(bridgeSource.contains("programActivationSideEffects.presentInvalidDeckAlert"))
+        XCTAssertTrue(bridgeSource.contains("programActivationSideEffects.presentKeynote"))
+        XCTAssertTrue(bridgeSource.contains("programActivationSideEffects.openPPTX"))
+        XCTAssertTrue(bridgeSource.contains("openHTMLInOutputWindow"))
+        XCTAssertTrue(bridgeSource.contains("programActivationSideEffects.presentActiveDeck"))
     }
 
     private func makeViewModel() -> SwitcherViewModel {

@@ -29,6 +29,7 @@ enum LiveRuntimeEffect: Equatable {
     case startPPTEventTap
     case stopPPTEventTap(reason: PPTStopReason)
 
+    case executeProgramActivation(id: UUID, plan: ProgramActivationPlan)
     case runAppleScript(script: String, action: String)
     case showAutomationNotice(AutomationRuntimeNotice)
     case expireAutomationNotice(UUID, at: Date)

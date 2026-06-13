@@ -9,6 +9,7 @@ final class LiveRuntimeEffectRunner {
     private let bgmTimer: BGMTimerPort?
     private let automationNotice: AutomationNoticePort?
     private let presentationQuery: PresentationQueryPort?
+    private let programActivation: ProgramActivationPort?
     private let audioRouting: AudioRoutingPort?
     private let imageAssets: ImageAssetPort?
     private let persistence: PersistencePort?
@@ -24,6 +25,7 @@ final class LiveRuntimeEffectRunner {
         bgmTimer: BGMTimerPort? = nil,
         automationNotice: AutomationNoticePort? = nil,
         presentationQuery: PresentationQueryPort? = nil,
+        programActivation: ProgramActivationPort? = nil,
         audioRouting: AudioRoutingPort? = nil,
         imageAssets: ImageAssetPort? = nil,
         persistence: PersistencePort? = nil,
@@ -38,6 +40,7 @@ final class LiveRuntimeEffectRunner {
         self.bgmTimer = bgmTimer
         self.automationNotice = automationNotice
         self.presentationQuery = presentationQuery
+        self.programActivation = programActivation
         self.audioRouting = audioRouting
         self.imageAssets = imageAssets
         self.persistence = persistence
@@ -58,6 +61,7 @@ final class LiveRuntimeEffectRunner {
         if bgmTimer != nil { kinds.insert(.bgmTimer) }
         if automationNotice != nil { kinds.insert(.automationNotice) }
         if presentationQuery != nil { kinds.insert(.presentationQuery) }
+        if programActivation != nil { kinds.insert(.programActivation) }
         if audioRouting != nil { kinds.insert(.audioRouting) }
         if imageAssets != nil { kinds.insert(.imageAssets) }
         if persistence != nil { kinds.insert(.persistence) }
@@ -163,6 +167,8 @@ final class LiveRuntimeEffectRunner {
             automationNotice?.expire(id: id, at: date)
         case .scanPresentationQuery(let id):
             presentationQuery?.scan(id: id, context: context)
+        case .executeProgramActivation(let id, let plan):
+            programActivation?.execute(id: id, plan: plan, context: context)
 
         case .applyAudioRouting(let reason):
             audioRouting?.apply(reason: reason, state: context.currentState())

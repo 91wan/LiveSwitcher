@@ -107,7 +107,7 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
 
     func testInvalidDeckStillUsesActivationSideEffect() throws {
         let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
+            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
         )
 
         XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert(url)"))

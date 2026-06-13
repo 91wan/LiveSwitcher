@@ -19,7 +19,6 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
             "func switchToProgramAfterReadinessConfirmation(",
             "func switchToProgram(at index: Int)",
             "func confirmAgendaAutoAdvance(",
-            "executeProgramActivationPlan",
             "programSourceIsAvailable"
         ] {
             XCTAssertTrue(source.contains(required), required)
@@ -75,16 +74,16 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
         }
     }
 
-    func testSwitchToProgramExecutesActivationPlan() throws {
+    func testSwitchToProgramRequestsRuntimeActivationAfterPlanning() throws {
         let body = try XCTUnwrap(try activationSource().extractedRuntimeFunctionBody(named: "switchToProgram"))
 
         XCTAssertTrue(body.contains("programSourceIsAvailable(item)"))
         XCTAssertTrue(body.contains("ProgramActivationPlanner.plan("))
-        XCTAssertTrue(body.contains("executeProgramActivationPlan(plan)"))
+        XCTAssertTrue(body.contains(".operatorRequestedProgramActivation"))
     }
 
-    func testProgramActivationExecutorLivesInViewModelExtension() throws {
-        XCTAssertTrue(try activationSource().contains("executeProgramActivationPlan"))
+    func testProgramActivationExecutorLivesInRuntimeBridgeExtension() throws {
+        XCTAssertTrue(try activationRuntimeBridgeSource().contains("executeProgramActivationPlanFromRuntime"))
     }
 
     func testConfirmAgendaAutoAdvanceLivesWithActivationOrchestration() throws {
@@ -112,5 +111,9 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
 
     private func activationSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
+    }
+
+    private func activationRuntimeBridgeSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
     }
 }

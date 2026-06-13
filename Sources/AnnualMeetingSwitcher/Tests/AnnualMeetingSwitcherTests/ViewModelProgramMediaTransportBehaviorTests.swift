@@ -97,9 +97,13 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
     }
 
     private func makeViewModel() -> SwitcherViewModel {
+        let programActivation = ClosureProgramActivationPort()
         let runtime = LiveRuntimeStore(
-            effectRunner: .recording(),
-            environment: .productionProgramSelectionOwning()
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                programActivation: programActivation
+            ),
+            environment: .productionProgramActivationOwning()
         )
         let suiteName = "ViewModelProgramMediaTransportBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -110,6 +114,9 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
             userDefaults: defaults,
             runtime: runtime
         )
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
         viewModel.programActivationSideEffects.stopDeck = {}
         return viewModel
     }

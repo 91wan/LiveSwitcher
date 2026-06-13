@@ -19,6 +19,7 @@ final class ProgramSelectionRuntimeOwnershipTests: XCTestCase {
                 .presentationQueryOwned,
                 .programQueueOwned,
                 .programSelectionOwned,
+                .programActivationOwned,
                 .fullRuntime
             ]
         )
@@ -55,11 +56,7 @@ final class ProgramSelectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testProgramSelectionOwnedStillDoesNotOwnActivationOrBroadAutomation() throws {
-        let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift"
-        )
-
-        XCTAssertFalse(source.contains(".programActivation"))
+        XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programActivation))
         XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.automation))
         XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.panic))
     }
@@ -71,10 +68,10 @@ final class ProgramSelectionRuntimeOwnershipTests: XCTestCase {
         )
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
     }
 
     func testProductionConnectedPortsRemainProgramQueueOwnedSet() {
@@ -82,7 +79,7 @@ final class ProgramSelectionRuntimeOwnershipTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 }

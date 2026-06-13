@@ -21,7 +21,7 @@ final class SupportRuntimeOwnershipTests: XCTestCase {
     func testProductionViewModelUsesProgramSelectionOwnedRuntime() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.support))
         XCTAssertTrue(viewModel.runtimeBridgeMode.owns(.automationCommand))
         XCTAssertFalse(viewModel.runtimeBridgeMode.owns(.automation))

@@ -49,6 +49,8 @@ enum LiveRuntimeFacadeSyncPolicy {
              .presentationQueryCompleted,
              .presentationQueryFailed,
              .presentationQueryResultConsumed,
+             .operatorRequestedProgramActivation,
+             .programActivationCompleted,
              .operatorAddedProgramItems,
              .operatorRemovedProgramItem,
              .operatorMovedProgramItems,

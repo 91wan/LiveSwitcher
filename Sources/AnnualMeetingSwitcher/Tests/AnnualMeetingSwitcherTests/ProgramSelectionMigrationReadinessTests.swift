@@ -63,7 +63,7 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
         XCTAssertFalse(runtimeFacadeSync.contains("operatorClearedCurrentProgram"))
     }
 
-    func testProgramActivationStillHasNoRuntimeActivationDomainOrEffects() throws {
+    func testProgramActivationRuntimeLifecycleDomainAndEffectsExist() throws {
         let runtimeState = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift"
         )
@@ -74,16 +74,16 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
         )
 
-        XCTAssertFalse(runtimeState.contains("programActivationOwned"))
-        XCTAssertFalse(runtimeState.contains("case programActivation"))
-        XCTAssertFalse(effect.contains("activateProgram"))
-        XCTAssertFalse(action.contains("programActivationCompleted"))
+        XCTAssertTrue(runtimeState.contains("programActivationOwned"))
+        XCTAssertTrue(runtimeState.contains("case programActivation"))
+        XCTAssertTrue(effect.contains("executeProgramActivation"))
+        XCTAssertTrue(action.contains("programActivationCompleted"))
         XCTAssertFalse(action.contains("programActivationFailed"))
     }
 
     func testActivationExecutorStillOwnsSideEffectDispatch() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift"
         )
 
         XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))

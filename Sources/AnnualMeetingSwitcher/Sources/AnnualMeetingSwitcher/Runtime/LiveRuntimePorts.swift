@@ -43,6 +43,10 @@ protocol PresentationQueryPort {
     func scan(id: UUID, context: LiveRuntimeEffectExecutionContext)
 }
 
+protocol ProgramActivationPort {
+    func execute(id: UUID, plan: ProgramActivationPlan, context: LiveRuntimeEffectExecutionContext)
+}
+
 protocol BGMTimerPort {
     func start(generation: Int)
     func stop(generation: Int)
