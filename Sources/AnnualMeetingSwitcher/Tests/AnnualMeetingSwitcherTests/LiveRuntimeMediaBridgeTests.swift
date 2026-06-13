@@ -135,15 +135,23 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
 
     func testViewModelProgramSelectionRoutesProgramRoutingThroughRuntime() {
         let audioRouting = MediaBridgeAudioRoutingPortSpy()
+        let programActivation = ClosureProgramActivationPort()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, audioRouting: audioRouting),
-            environment: LiveRuntimeEnvironment(bridgeMode: .programSelectionOwned)
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                programActivation: programActivation,
+                audioRouting: audioRouting
+            ),
+            environment: LiveRuntimeEnvironment(bridgeMode: .programActivationOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
         let item = mediaProgram()
         viewModel.addProgramItem(item)
 

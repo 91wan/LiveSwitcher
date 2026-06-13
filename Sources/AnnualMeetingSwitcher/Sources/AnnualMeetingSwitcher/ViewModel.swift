@@ -282,7 +282,7 @@ final class SwitcherViewModel {
         self.userDefaults = userDefaults
         self.runtime = runtime ?? LiveRuntimeStore(
             effectRunner: runtimePorts.makeEffectRunner(),
-            environment: .productionProgramSelectionOwning()
+            environment: .productionProgramActivationOwning()
         )
         configureRuntimePortHandlers(runtimePorts)
         configureDefaultProgramActivationSideEffects()

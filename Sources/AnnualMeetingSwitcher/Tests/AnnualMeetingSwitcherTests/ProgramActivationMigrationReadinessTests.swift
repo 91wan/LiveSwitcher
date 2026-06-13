@@ -3,25 +3,24 @@ import XCTest
 
 @MainActor
 final class ProgramActivationMigrationReadinessTests: XCTestCase {
-    func testNoProgramActivationOwnedBridgeModeYet() throws {
+    func testProgramActivationOwnedBridgeModeExists() throws {
         let source = try runtimeStateSource()
 
-        XCTAssertFalse(source.contains("programActivationOwned"))
+        XCTAssertTrue(source.contains("programActivationOwned"))
     }
 
-    func testNoProgramActivationDomainYet() throws {
+    func testProgramActivationDomainExists() throws {
         let source = try runtimeStateSource()
 
-        XCTAssertFalse(source.contains("case programActivation"))
+        XCTAssertTrue(source.contains("case programActivation"))
     }
 
-    func testNoProgramActivationPortYet() throws {
+    func testProgramActivationPortExists() throws {
         let ports = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift"
         )
 
-        XCTAssertFalse(ports.contains("ProgramActivationPort"))
-        XCTAssertFalse(ports.contains("programActivationPort"))
+        XCTAssertTrue(ports.contains("ProgramActivationPort"))
     }
 
     func testNoActivateProgramEffectYet() throws {
@@ -30,7 +29,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         )
 
         XCTAssertFalse(effect.contains("activateProgram"))
-        XCTAssertFalse(effect.contains("programActivation"))
+        XCTAssertTrue(effect.contains("executeProgramActivation"))
     }
 
     func testNoProgramActivationCallbackActionsYet() throws {
@@ -38,7 +37,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
         )
 
-        XCTAssertFalse(action.contains("programActivationCompleted"))
+        XCTAssertTrue(action.contains("programActivationCompleted"))
         XCTAssertFalse(action.contains("programActivationFailed"))
     }
 
@@ -50,7 +49,8 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
             options: .regularExpression
         )
 
-        XCTAssertTrue(normalizedDocs.localizedStandardContains("Program activation/switching side effects are still ViewModel-owned"))
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("Program activation request/completion lifecycle is Runtime-owned"))
+        XCTAssertTrue(normalizedDocs.localizedStandardContains("Program activation concrete switching side effects are still ViewModel-owned"))
     }
 
     func testProgramActivationSideEffectsRemainViewModelOwned() throws {
@@ -58,7 +58,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"
         )
         let activation = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift"
         )
 
         XCTAssertTrue(viewModel.contains("programActivationSideEffects = ProgramActivationSideEffectHandlers()"))
@@ -78,7 +78,6 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         )
 
         XCTAssertFalse(ports.contains("ProgramActivationSideEffectHandlers"))
-        XCTAssertFalse(ports.contains("ProgramActivationPort"))
         XCTAssertFalse(effects.contains("ProgramActivationSideEffectHandlers"))
         XCTAssertFalse(effects.contains("activateProgram"))
     }
@@ -102,7 +101,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
 
     func testProgramActivationExecutorLivesInViewModelExtension() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift"
         )
 
         XCTAssertTrue(source.contains("executeProgramActivationPlan"))
@@ -128,15 +127,16 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
     func testProgramSelectionOwnedModeDoesNotOwnProgramActivation() throws {
         let source = try runtimeStateSource()
 
-        XCTAssertFalse(source.contains(".programActivation"))
+        XCTAssertTrue(source.contains(".programActivation"))
         XCTAssertTrue(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programSelection))
+        XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.programActivation))
         XCTAssertFalse(LiveRuntimeBridgeMode.programSelectionOwned.owns(.automation))
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
     }
 
     func testProductionConnectedPortsRemainExplicitRuntimeSet() {
@@ -144,7 +144,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 

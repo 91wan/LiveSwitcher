@@ -15,6 +15,7 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
         XCTAssertNotNil(ports.supportPort)
         XCTAssertNotNil(ports.automationPort)
         XCTAssertNotNil(ports.presentationQueryPort)
+        XCTAssertNotNil(ports.programActivationPort)
         XCTAssertNotNil(ports.audioRoutingPort)
         XCTAssertNotNil(ports.imageAssetPort)
         XCTAssertNotNil(ports.persistencePort)
@@ -25,23 +26,23 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
 
         XCTAssertEqual(
             runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionConnectedPortsIncludePresentationQuerySet() {
+    func testProductionConnectedPortsIncludeProgramActivationSet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 
-    func testProductionBridgeModeIsProgramSelectionOwned() {
+    func testProductionBridgeModeIsProgramActivationOwned() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
     }
 
     func testViewModelInitDoesNotContainRuntimePortHandlerAssignments() throws {
@@ -92,6 +93,7 @@ final class ViewModelRuntimeWiringExtractionTests: XCTestCase {
         XCTAssertTrue(source.contains("ports.mediaPlaybackPort.loadHandler ="))
         XCTAssertTrue(source.contains("ports.bgmPlaybackPort.prepareHandler ="))
         XCTAssertTrue(source.contains("ports.automationPort.runHandler ="))
+        XCTAssertTrue(source.contains("ports.programActivationPort.executeHandler ="))
         XCTAssertTrue(source.contains("ports.persistencePort.saveHandler ="))
     }
 

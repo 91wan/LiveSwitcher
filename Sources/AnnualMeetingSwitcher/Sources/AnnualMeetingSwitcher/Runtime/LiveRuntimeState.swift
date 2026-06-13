@@ -13,6 +13,7 @@ enum LiveRuntimeBridgeMode: String, CaseIterable, Equatable {
     case presentationQueryOwned
     case programQueueOwned
     case programSelectionOwned
+    case programActivationOwned
     case fullRuntime
 }
 
@@ -29,6 +30,7 @@ enum LiveRuntimeDomain: String, CaseIterable, Equatable {
     case presentationQuery
     case programQueue
     case programSelection
+    case programActivation
     case support
     case imageAssets
     case persistence
@@ -61,6 +63,8 @@ extension LiveRuntimeBridgeMode {
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .imageAssets, .persistence]
         case .programSelectionOwned:
             return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .imageAssets, .persistence]
+        case .programActivationOwned:
+            return [.audio, .media, .bgm, .projection, .ppt, .automationNotice, .support, .automationCommand, .presentationQuery, .programQueue, .programSelection, .programActivation, .imageAssets, .persistence]
         case .fullRuntime:
             return Set(LiveRuntimeDomain.allCases)
         }
@@ -74,6 +78,7 @@ extension LiveRuntimeBridgeMode {
 struct LiveRuntimeState: Equatable {
     var mode: ConsoleMode = .setup
     var program = ProgramRuntimeState()
+    var programActivation = ProgramActivationRuntimeState()
     var media = MediaRuntimeState()
     var bgm = BGMRuntimeState()
     var audio = AudioRuntimeState()
@@ -476,6 +481,19 @@ struct LiveRuntimeEnvironment: Equatable {
             speakerModeDuckedRatio: speakerModeDuckedRatio,
             liveAudioFadeDuration: liveAudioFadeDuration,
             bridgeMode: .programSelectionOwned
+        )
+    }
+
+    static func productionProgramActivationOwning(
+        now: Date = Date(),
+        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
+    ) -> LiveRuntimeEnvironment {
+        LiveRuntimeEnvironment(
+            now: now,
+            speakerModeDuckedRatio: speakerModeDuckedRatio,
+            liveAudioFadeDuration: liveAudioFadeDuration,
+            bridgeMode: .programActivationOwned
         )
     }
 

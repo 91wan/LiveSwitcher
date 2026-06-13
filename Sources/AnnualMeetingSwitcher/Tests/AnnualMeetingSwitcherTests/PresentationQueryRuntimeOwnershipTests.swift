@@ -28,10 +28,10 @@ final class PresentationQueryRuntimeOwnershipTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeBridgeMode.presentationQueryOwned.owns(.automation))
     }
 
-    func testProductionViewModelRuntimeBridgeModeIsProgramSelectionOwned() {
+    func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
         let viewModel = makeViewModel()
 
-        XCTAssertEqual(viewModel.runtimeBridgeMode, .programSelectionOwned)
+        XCTAssertEqual(viewModel.runtimeBridgeMode, .programActivationOwned)
     }
 
     func testProductionConnectedPortsExactlyMatchExplicitRuntimeSet() {
@@ -39,7 +39,7 @@ final class PresentationQueryRuntimeOwnershipTests: XCTestCase {
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .audioRouting, .imageAssets, .persistence]
+            [.media, .bgm, .bgmTimer, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
         )
     }
 

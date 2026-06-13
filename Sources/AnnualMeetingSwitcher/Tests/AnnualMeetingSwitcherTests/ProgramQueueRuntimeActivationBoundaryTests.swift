@@ -61,7 +61,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
     }
 
     func testSwitchToHTMLStillOpensHTMLThroughViewModel() throws {
-        let source = try programActivationSource()
+        let source = try programActivationRuntimeBridgeSource()
 
         XCTAssertTrue(source.contains("openHTMLInOutputWindow(url: url)"))
     }
@@ -117,18 +117,29 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
     }
 
+    private func programActivationRuntimeBridgeSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
+    }
+
     private func makeViewModel(initialItems: [ProgramItem]) -> SwitcherViewModel {
         var state = LiveRuntimeState()
         state.program.items = initialItems
+        let programActivation = ClosureProgramActivationPort()
         let runtime = LiveRuntimeStore(
             initialState: state,
-            effectRunner: .recording(),
-            environment: .productionProgramSelectionOwning()
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                programActivation: programActivation
+            ),
+            environment: .productionProgramActivationOwning()
         )
         let suiteName = "ProgramQueueRuntimeActivationBoundaryTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults, runtime: runtime)
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
         viewModel.syncProgramQueueFacadeFromRuntime()
         return viewModel
     }

@@ -1,6 +1,8 @@
 extension LiveRuntimeEffect {
     var redactedForRecording: LiveRuntimeEffect {
         switch self {
+        case .executeProgramActivation(let id, let plan):
+            return .executeProgramActivation(id: id, plan: plan.redactedForRecording)
         case .runAppleScript(_, let action):
             return .runAppleScript(script: "<redacted>", action: action)
         default:
@@ -60,6 +62,9 @@ extension LiveRuntimeEffect {
         case .startPPTEventTap,
              .stopPPTEventTap:
             return .ppt
+
+        case .executeProgramActivation:
+            return .programActivation
 
         case .runAppleScript:
             return .automationCommand

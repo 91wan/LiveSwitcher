@@ -31,7 +31,7 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
 
     func testSwitchToMediaProgramUsesRuntimeLoadAndPlayEffects() {
         let media = MediaRuntimeOwnershipPortSpy()
-        let viewModel = viewModel(media: media, bridgeMode: .programSelectionOwned)
+        let viewModel = viewModel(media: media, bridgeMode: .programActivationOwned)
         let item = mediaProgram()
         viewModel.addProgramItem(item)
 
@@ -108,15 +108,24 @@ final class MediaRuntimeOwnershipTests: XCTestCase {
         media: MediaRuntimeOwnershipPortSpy,
         bridgeMode: LiveRuntimeBridgeMode = .mediaOwned
     ) -> SwitcherViewModel {
+        let programActivation = ClosureProgramActivationPort()
         let runtime = LiveRuntimeStore(
-            effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, media: media),
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                media: media,
+                programActivation: programActivation
+            ),
             environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
-        return SwitcherViewModel(
+        let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
+        return viewModel
     }
 
     private func runtimeState(for item: ProgramItem, isPlaying: Bool) -> LiveRuntimeState {

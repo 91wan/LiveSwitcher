@@ -144,6 +144,14 @@ final class ClosurePresentationQueryPort: PresentationQueryPort {
     }
 }
 
+final class ClosureProgramActivationPort: ProgramActivationPort {
+    var executeHandler: ((UUID, ProgramActivationPlan, LiveRuntimeEffectExecutionContext) -> Void)?
+
+    func execute(id: UUID, plan: ProgramActivationPlan, context: LiveRuntimeEffectExecutionContext) {
+        executeHandler?(id, plan, context)
+    }
+}
+
 final class ClosureProjectionPort: ProjectionPort {
     var hasExternalDisplayHandler: (() -> Bool)?
     var startHandler: (() -> Void)?

@@ -118,6 +118,7 @@ enum LiveRuntimeActionLogPolicy {
              .supportEventRecorded,
              .presentationQueryCompleted,
              .presentationQueryResultConsumed,
+             .programActivationCompleted,
              .facadeLoadedProgramQueue,
              .bgmProgressUpdated,
              .mediaSeekCompleted:

@@ -32,9 +32,13 @@ mechanics live in `Runtime/ProgramSelectionRuntimeReducer.swift`. Queued and
 detached selection use distinct payload-safe action names:
 `operatorSelectedProgram` and `operatorSelectedDetachedProgram`.
 `facadeCurrentProgramChanged` is compatibility-only and is not used by
-production selection paths. Program activation/switching side effects are still
+production selection paths. Program activation request/completion lifecycle is
+Runtime-owned in `.programActivationOwned`; Runtime records the active request
+ID, emits `.executeProgramActivation(id:plan:)`, and accepts matching completion
+callbacks. Program activation concrete switching side effects are still
 ViewModel-owned. Program activation planning lives in pure model types,
-`ProgramActivationPlan` and `ProgramActivationPlanner`. `ProgramActivationPlan`
+`ProgramActivationPlan` and `ProgramActivationPlanner`, and the planner call
+site remains in `ViewModel+ProgramActivation.swift`. `ProgramActivationPlan`
 explicitly models pre-selection and post-selection phases: invalid decks are
 pre-selection aborts, deck stop is a pre-selection side effect, Runtime current
 program selection runs before post-selection effects, and post-selection effects
@@ -43,11 +47,11 @@ availability classification lives in the pure
 `ProgramSourceAvailabilityPolicy`, while missing-source support/notice
 generation remains ViewModel-owned.
 Activation execution, invalid-deck alerts, and activation side-effect
-orchestration live in `ViewModel+ProgramActivation.swift`. Current-program media
+orchestration live in `ViewModel+ProgramActivationRuntimeBridge.swift` behind
+`ProgramActivationPort`. Current-program media
 transport controls live in `ViewModel+ProgramMediaTransport.swift`.
 Activation ordering is guarded by real ViewModel behavior tests, not source-only
-assertions. Program activation Runtime migration remains blocked until a future
-dedicated PR explicitly approves that ownership slice.
+assertions.
 `ViewModel+ProgramQueue.swift` is the queue mutation facade only.
 Audio routing facade code that bridges Runtime-owned audio decisions to concrete
 players, faders, and system volume observation lives in
@@ -210,8 +214,9 @@ explicit owner.
 
 | Domain | Current owner | Runtime role | Migration state | Notes |
 | --- | --- | --- | --- | --- |
-| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned` or later. `ViewModel+ProgramQueue.swift` is the queue mutation facade only. ViewModel still owns Program activation, invalid-deck alerts, support event generation decisions, and live activation side effects through `ViewModel+ProgramActivation.swift`; pure source availability classification lives in `ProgramSourceAvailabilityPolicy`, and current-program media transport controls live in `ViewModel+ProgramMediaTransport.swift`. |
-| Current program selection | Runtime owner | Authoritative selected queued/detached item, switched-at timestamp, and facade projection | authoritative | Runtime owns `state.program.currentID`, `state.program.currentDetachedItem`, `state.program.currentSwitchedAt`, selected queued/detached program actions, clearing current selection when the current queue item is removed, and `currentProgramItem` / `currentProgramSwitchedAt` facade projection in `.programSelectionOwned`. Selection mechanics live in `Runtime/ProgramSelectionRuntimeReducer.swift`: `operatorSelectedProgram` means queued item selection, `operatorSelectedDetachedProgram` means detached item selection, and those redacted action names remain distinct while omitting titles and paths. `clearCurrentProgramSelection(reason:)` lives in `ViewModel+ProgramSelection.swift`; `ViewModel+RuntimeFacadeSync.swift` is Runtime-to-facade sync-only. Runtime reducer audio helpers are internal for Runtime domain reducers only and must not be called from ViewModel. `facadeCurrentProgramChanged` is compatibility-only, is suppressed from the action log, and must not be used by production selection paths. ViewModel still owns activation plan execution, invalid-deck alerts, source availability checks, Keynote/WPS/HTML/media activation side effects, media transport controls, and support event generation decisions. Activation execution now runs explicit `ProgramActivationPlan` phases: pre-selection side effects first, Runtime selection second, current-program facade projection third, and post-selection side effects last. Program activation migration remains a future dedicated PR. |
+| Program queue | Runtime owner | Authoritative queue items and queue mutation actions | authoritative | Runtime owns `state.program.items`, add/remove/move/schedule/agenda mutations, and `facadeLoadedProgramQueue` persistence hydration. Queue mechanics are pure `ProgramRuntimeState` mutations in `Runtime/ProgramQueueRuntimeMutations.swift`; the action log reports `queueCount` without item titles or paths. `programItems` is a private-set Runtime-backed facade projection when `.programQueueOwned` or later. `ViewModel+ProgramQueue.swift` is the queue mutation facade only. ViewModel still owns Program activation invalid-deck alerts, support event generation decisions, and live activation side effects through `ViewModel+ProgramActivationRuntimeBridge.swift`; pure source availability classification lives in `ProgramSourceAvailabilityPolicy`, and current-program media transport controls live in `ViewModel+ProgramMediaTransport.swift`. |
+| Current program selection | Runtime owner | Authoritative selected queued/detached item, switched-at timestamp, and facade projection | authoritative | Runtime owns `state.program.currentID`, `state.program.currentDetachedItem`, `state.program.currentSwitchedAt`, selected queued/detached program actions, clearing current selection when the current queue item is removed, and `currentProgramItem` / `currentProgramSwitchedAt` facade projection in `.programSelectionOwned`. Selection mechanics live in `Runtime/ProgramSelectionRuntimeReducer.swift`: `operatorSelectedProgram` means queued item selection, `operatorSelectedDetachedProgram` means detached item selection, and those redacted action names remain distinct while omitting titles and paths. `clearCurrentProgramSelection(reason:)` lives in `ViewModel+ProgramSelection.swift`; `ViewModel+RuntimeFacadeSync.swift` is Runtime-to-facade sync-only. Runtime reducer audio helpers are internal for Runtime domain reducers only and must not be called from ViewModel. `facadeCurrentProgramChanged` is compatibility-only, is suppressed from the action log, and must not be used by production selection paths. ViewModel still owns invalid-deck alerts, source availability checks, Keynote/WPS/HTML/media activation side effects, media transport controls, and support event generation decisions. Activation execution now runs explicit `ProgramActivationPlan` phases through `ProgramActivationPort`: pre-selection side effects first, Runtime selection second, current-program facade projection third, and post-selection effects last. |
+| Program activation | Runtime lifecycle owner, ViewModel side-effect owner | Active request ID, completion lifecycle, and activation effect dispatch | lifecycle authoritative | Runtime owns `state.programActivation`, `operatorRequestedProgramActivation(id:plan:)`, `programActivationCompleted(id:)`, and `.executeProgramActivation(id:plan:)`. It does not store full plans in state and redacts recorded activation effects. `ProgramActivationPort` calls back into `ViewModel+ProgramActivationRuntimeBridge.swift`, where ViewModel-owned side effects execute through `ProgramActivationSideEffectHandlers`; source availability checks and `ProgramActivationPlanner` remain outside Runtime reducers. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
@@ -323,8 +328,8 @@ key forwarding, WPS key forwarding, and automation permission modal alerts live
 in `ViewModel+PPTEventTap.swift`. PPT mode intent methods live in
 `ViewModel+PPTMode.swift`. Default production Program activation side-effect
 wiring lives in `ViewModel+ProgramActivationSideEffectWiring.swift`; Program
-activation side effects remain ViewModel-owned, and Program activation Runtime
-migration remains a future dedicated PR. The Support ingress facade lives in
+activation side effects remain ViewModel-owned behind `ProgramActivationPort`.
+The Support ingress facade lives in
 `ViewModel+SupportFacade.swift`.
 
 `ViewModel.swift` must not own Runtime bridge mechanics. It may keep

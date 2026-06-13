@@ -7,6 +7,7 @@ enum LiveRuntimeEffectPortKind: String, CaseIterable {
     case bgmTimer
     case automationNotice
     case presentationQuery
+    case programActivation
     case audioRouting
     case imageAssets
     case persistence

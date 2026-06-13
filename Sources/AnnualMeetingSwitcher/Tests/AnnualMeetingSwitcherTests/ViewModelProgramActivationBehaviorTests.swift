@@ -222,22 +222,17 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
     }
 
     private func makeViewModel(initialItems: [ProgramItem]) -> SwitcherViewModel {
-        var state = LiveRuntimeState()
-        state.program.items = initialItems
-        let runtime = LiveRuntimeStore(
-            initialState: state,
-            effectRunner: .recording(),
-            environment: .productionProgramSelectionOwning()
-        )
         let suiteName = "ViewModelProgramActivationBehaviorTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: defaults,
-            runtime: runtime
+            userDefaults: defaults
         )
+        var state = viewModel.runtime.state
+        state.program.items = initialItems
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         viewModel.syncProgramQueueFacadeFromRuntime()
         viewModel.programActivationSideEffects.stopDeck = {}
         viewModel.programActivationSideEffects.presentKeynote = { _ in }

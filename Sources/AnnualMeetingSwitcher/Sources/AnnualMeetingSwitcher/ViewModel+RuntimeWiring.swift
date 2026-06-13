@@ -35,6 +35,9 @@ extension SwitcherViewModel {
                 ))
             }
         }
+        ports.programActivationPort.executeHandler = { [weak self] id, plan, context in
+            self?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
         ports.automationNoticePort.showHandler = { [weak self] notice in
             self?.cancelAutomationNoticeExpiryTask()
             self?.automationRuntimeNotice = notice

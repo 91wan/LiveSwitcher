@@ -102,6 +102,10 @@ product boundary.
   effects, Runtime current-program selection, current-program facade projection,
   then post-selection effects. Runtime remains the selected-program source of
   truth.
+- Program activation runtime lifecycle migration does not add live controls or
+  change switching behavior. It only moves activation request/completion
+  lifecycle and effect dispatch to Runtime; source availability checks, invalid
+  deck validation, and concrete activation side effects remain ViewModel-owned.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;

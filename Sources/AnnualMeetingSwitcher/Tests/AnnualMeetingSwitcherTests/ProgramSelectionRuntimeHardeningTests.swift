@@ -19,12 +19,15 @@ final class ProgramSelectionRuntimeHardeningTests: XCTestCase {
         XCTAssertFalse(body?.contains(".facadeCurrentProgramChanged(") == true)
     }
 
-    func testExecuteProgramActivationPlanDoesNotDispatchFacadeCurrentProgramChanged() throws {
-        let body = try programActivationSource().extractedRuntimeFunctionBody(named: "executeProgramActivationPlan")
+    func testExecuteProgramActivationPlanFromRuntimeDoesNotDispatchFacadeCurrentProgramChanged() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift"
+        )
+        let body = source.extractedRuntimeFunctionBody(named: "executeProgramActivationPlanFromRuntime")
 
         XCTAssertNotNil(body)
-        XCTAssertFalse(body?.contains(".facadeCurrentProgramChanged(") == true)
-        XCTAssertTrue(body?.contains("dispatchRuntimeProgramSelection") == true)
+        XCTAssertFalse(source.contains(".facadeCurrentProgramChanged("))
+        XCTAssertTrue(source.contains("context.dispatch(.operatorSelectedProgram"))
     }
 
     func testClearCurrentProgramSelectionDoesNotDispatchFacadeCurrentProgramChanged() throws {
