@@ -52,6 +52,11 @@ protocol BGMTimerPort {
     func stop(generation: Int)
 }
 
+protocol PanicDelayPort {
+    func scheduleBGMPause(generation: Int, snapshot: PanicPlaybackSnapshot, delay: TimeInterval, context: LiveRuntimeEffectExecutionContext)
+    func cancelBGMPause(generation: Int)
+}
+
 protocol AutomationNoticePort {
     func show(_ notice: AutomationRuntimeNotice)
     func expire(id: UUID, at date: Date)

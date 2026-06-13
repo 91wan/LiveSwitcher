@@ -83,6 +83,7 @@ enum LiveRuntimeAction: Equatable {
     case bgmProgressUpdated(time: Double, duration: Double?, generation: Int)
 
     case panicFadeCompleted(generation: Int)
+    case panicBGMPauseDelayElapsed(generation: Int, snapshot: PanicPlaybackSnapshot)
     case projectionStartFailed(reason: ProjectionStartFailureReason)
     case projectionExternalDisplayLost
     case projectionExternalDisplayAvailable
@@ -169,6 +170,7 @@ extension LiveRuntimeAction {
         case .bgmFailed: return "bgmFailed"
         case .bgmProgressUpdated: return "bgmProgressUpdated"
         case .panicFadeCompleted: return "panicFadeCompleted"
+        case .panicBGMPauseDelayElapsed: return "panicBGMPauseDelayElapsed"
         case .projectionStartFailed: return "projectionStartFailed"
         case .projectionExternalDisplayLost: return "projectionExternalDisplayLost"
         case .projectionExternalDisplayAvailable: return "projectionExternalDisplayAvailable"

@@ -199,22 +199,21 @@ enum LiveRuntimeReducer {
 
         case .operatorToggledPanic:
             guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
-            reducePanicToggle(
+            PanicRuntimeReducer.setPanic(
+                !state.panic.isActive,
                 state: &state,
                 effects: &effects,
-                now: environment.now,
-                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
+                liveAudioFadeDuration: environment.liveAudioFadeDuration,
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
         case .operatorSetPanic(let isActive):
             guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
-            guard state.panic.isActive != isActive else { break }
-            reducePanicToggle(
+            PanicRuntimeReducer.setPanic(
+                isActive,
                 state: &state,
                 effects: &effects,
-                now: environment.now,
-                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
+                liveAudioFadeDuration: environment.liveAudioFadeDuration,
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
@@ -513,6 +512,16 @@ enum LiveRuntimeReducer {
         case .panicFadeCompleted:
             break
 
+        case .panicBGMPauseDelayElapsed(let generation, let snapshot):
+            guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
+            PanicRuntimeReducer.bgmPauseDelayElapsed(
+                generation: generation,
+                snapshot: snapshot,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
         case .projectionStartFailed(let reason):
             guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
             state.projection.isBroadcasting = false
@@ -660,57 +669,6 @@ enum LiveRuntimeReducer {
         state.ppt.isRequested = false
         state.ppt.isEventTapActive = false
         effects.append(.stopPPTEventTap(reason: .operatorDisabled))
-    }
-
-    private static func reducePanicToggle(
-        state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect],
-        now: Date,
-        canWriteSupport: Bool,
-        speakerModeDuckedRatio: Float
-    ) {
-        if state.panic.isActive {
-            let snapshot = state.panic.snapshot
-            state.panic.generation += 1
-            state.panic.isActive = false
-            state.panic.snapshot = nil
-
-            if snapshot?.wasMediaPlaying == true,
-               snapshot?.currentProgramID == state.program.currentID,
-               state.program.effectiveCurrentItem?.sourceKind == .media {
-                state.media.isPlaying = true
-                effects.append(.playMedia(generation: state.media.generation))
-            }
-
-            if snapshot?.wasBGMPlaying == true,
-               snapshot?.currentBGMID == state.bgm.currentID {
-                state.bgm.isPlaying = true
-                effects.append(.playBGM(generation: state.bgm.generation))
-            }
-        } else {
-            state.panic.generation += 1
-            state.panic.snapshot = PanicPlaybackSnapshot(
-                currentProgramID: state.program.currentID,
-                wasMediaPlaying: state.media.isPlaying && state.program.effectiveCurrentItem?.sourceKind == .media,
-                currentBGMID: state.bgm.currentID,
-                wasBGMPlaying: state.bgm.isPlaying
-            )
-            state.panic.isActive = true
-            if state.panic.snapshot?.wasMediaPlaying == true {
-                state.media.isPlaying = false
-                effects.append(.pauseMedia(generation: state.media.generation))
-            }
-            if state.panic.snapshot?.wasBGMPlaying == true {
-                state.bgm.isPlaying = false
-                effects.append(.pauseBGM(generation: state.bgm.generation))
-            }
-            if canWriteSupport {
-                state.support.record(kind: .panicModeChanged, detail: "isOn=true", at: now)
-            }
-        }
-        syncAudioRoutingContextFromMirrorState(&state)
-        recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
-        effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
     private static func selectAdjacentBGM(
