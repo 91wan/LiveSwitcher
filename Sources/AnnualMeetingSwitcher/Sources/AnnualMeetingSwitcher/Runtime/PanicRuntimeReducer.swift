@@ -1,6 +1,26 @@
 import Foundation
 
 enum PanicRuntimeReducer {
+    static func markMediaStoppedIfCurrentProgramMatchesSnapshot(
+        state: inout LiveRuntimeState
+    ) {
+        guard state.panic.isActive,
+              state.panic.snapshot?.currentProgramID == state.program.effectiveCurrentItem?.id
+        else { return }
+
+        state.panic.snapshot?.wasMediaPlaying = false
+    }
+
+    static func markBGMStoppedIfCurrentBGMMatchesSnapshot(
+        state: inout LiveRuntimeState
+    ) {
+        guard state.panic.isActive,
+              state.panic.snapshot?.currentBGMID == state.bgm.currentID
+        else { return }
+
+        state.panic.snapshot?.wasBGMPlaying = false
+    }
+
     static func setPanic(
         _ isActive: Bool,
         state: inout LiveRuntimeState,

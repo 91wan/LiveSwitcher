@@ -594,11 +594,13 @@ extension SwitcherViewModel {
     }
 
     func markPanicSnapshotMediaStoppedIfCurrentProgram(_ currentProgramID: UUID?) {
+        guard !runtime.bridgeMode.owns(.panic) else { return }
         guard panicPlaybackSnapshot?.currentProgramID == currentProgramID else { return }
         panicPlaybackSnapshot?.wasMediaPlaying = false
     }
 
     func markPanicSnapshotBGMStoppedIfCurrentBGM(_ currentBGMID: UUID?) {
+        guard !runtime.bridgeMode.owns(.panic) else { return }
         guard panicPlaybackSnapshot?.currentBGMID == currentBGMID else { return }
         panicPlaybackSnapshot?.wasBGMPlaying = false
     }
