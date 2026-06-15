@@ -5,8 +5,8 @@ final class BGMRuntimeReducerHardeningTests: XCTestCase {
     func testBGMRuntimeReducerMayCallRuntimeAudioHelpers() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift")
 
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState"))
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.recalculateAudio"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.recalculateAudio"))
     }
 
     func testViewModelFilesDoNotCallLiveRuntimeReducerRecalculateAudio() throws {
@@ -25,11 +25,11 @@ final class BGMRuntimeReducerHardeningTests: XCTestCase {
         }
     }
 
-    func testAudioReducerExtractionIsStillFutureWork() throws {
+    func testAudioReducerExtractionIsDocumentedAsComplete() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
         XCTAssertTrue(docs.localizedStandardContains("AudioRuntimeReducer"))
-        XCTAssertTrue(docs.localizedStandardContains("future"))
+        XCTAssertFalse(docs.contains("AudioRuntimeReducer extraction remains future work"))
     }
 
     private func viewModelSourcePaths() throws -> [String] {

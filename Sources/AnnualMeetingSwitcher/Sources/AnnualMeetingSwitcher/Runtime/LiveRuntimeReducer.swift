@@ -14,13 +14,6 @@ enum LiveRuntimeReducer {
         var state = state
         var effects: [LiveRuntimeEffect] = []
         let bridgeMode = environment.bridgeMode
-        func recalculateAudio(_ state: inout LiveRuntimeState) {
-            Self.recalculateAudio(
-                &state,
-                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
-            )
-        }
-
         switch action {
         case .operatorSelectedProgram(let id):
             guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
@@ -117,63 +110,93 @@ enum LiveRuntimeReducer {
             )
 
         case .operatorSelectedAudioStrategy(let strategy):
-            state.audio.strategy = strategy
-            recalculateAudio(&state)
-            effects += [
-                .applyAudioRouting(reason: .strategyChanged),
-                .saveAudioStrategy(strategy)
-            ]
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.selectStrategy(
+                strategy,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedMasterVolume(let volume):
-            state.audio.masterVolume = min(max(volume, 0), 1)
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeMasterVolume(
+                volume,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedMediaVolume(let volume):
-            state.audio.mediaVolume = min(max(volume, 0), 1)
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeMediaVolume(
+                volume,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedBGMVolume(let volume):
-            state.audio.bgmVolume = min(max(volume, 0), 1)
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeBGMVolume(
+                volume,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedMasterMute(let isMuted):
-            state.audio.isMasterMuted = isMuted
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeMasterMute(
+                isMuted,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedMediaMute(let isMuted):
-            state.audio.isMediaMuted = isMuted
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeMediaMute(
+                isMuted,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedBGMMute(let isMuted):
-            state.audio.isBGMMuted = isMuted
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .operatorFaderChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeBGMMute(
+                isMuted,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorChangedBGMTakeover(let isActive):
-            state.audio.isBGMTakeoverActive = isActive
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .limiterChanged))
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.changeBGMTakeover(
+                isActive,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorToggledSpeakerMode:
-            state.audio.isSpeakerMode.toggle()
-            recalculateAudio(&state)
-            effects += [
-                .applyAudioRouting(reason: .speakerChanged),
-                .saveSpeakerMode(state.audio.isSpeakerMode)
-            ]
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.toggleSpeakerMode(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSetSpeakerMode(let isEnabled):
-            state.audio.isSpeakerMode = isEnabled
-            recalculateAudio(&state)
-            effects += [
-                .applyAudioRouting(reason: .speakerChanged),
-                .saveSpeakerMode(isEnabled)
-            ]
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.setSpeakerMode(
+                isEnabled,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorToggledPanic:
             guard isRuntimeOwned(.panic, in: bridgeMode) else { break }
@@ -404,11 +427,12 @@ enum LiveRuntimeReducer {
             }
             state.program.currentSwitchedAt = id == nil ? nil : environment.now
             state.audio.routingContext.isCurrentProgramMediaSource = state.program.effectiveCurrentItem?.sourceKind == .media
-            recalculateAudio(&state)
+            AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: environment.speakerModeDuckedRatio)
             effects.append(.applyAudioRouting(reason: .programChanged))
 
         case .facadeAudioInputsChanged(let snapshot):
-            applyAudioFacadeSnapshot(
+            guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
+            AudioRuntimeReducer.applyFacadeSnapshot(
                 snapshot,
                 to: &state,
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
@@ -634,97 +658,6 @@ enum LiveRuntimeReducer {
         if let expiresAt = notice.expiresAt {
             effects.append(.expireAutomationNotice(notice.id, at: expiresAt))
         }
-    }
-
-    // Internal for domain reducers; do not call from ViewModel.
-    internal static func recalculateAudio(
-        _ state: inout LiveRuntimeState,
-        speakerModeDuckedRatio: Float = AudioRoutingDefaults.speakerModeDuckedRatio
-    ) {
-        initializeAudioRoutingContextIfNeeded(&state)
-        let context = state.audio.routingContext
-        let output = AudioRoutingEngine.output(
-            for: AudioRoutingInput(
-                masterVolume: state.audio.masterVolume,
-                mediaVolume: state.audio.mediaVolume,
-                bgmVolume: state.audio.bgmVolume,
-                audioStrategy: state.audio.strategy,
-                isCurrentProgramMediaSource: context.isCurrentProgramMediaSource,
-                isMediaPlaying: context.isMediaPlaying,
-                isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
-                isSpeakerMode: state.audio.isSpeakerMode,
-                isPanicMode: context.isPanicMode,
-                isMasterMuted: state.audio.isMasterMuted,
-                isMediaMuted: state.audio.isMediaMuted,
-                isBGMMuted: state.audio.isBGMMuted,
-                speakerModeDuckedRatio: speakerModeDuckedRatio
-            )
-        )
-        state.audio.effectiveMedia = output.media
-        state.audio.effectiveBGM = output.bgm
-    }
-
-    private static func initializeAudioRoutingContextIfNeeded(_ state: inout LiveRuntimeState) {
-        guard state.audio.routingContext == AudioRoutingContext(),
-              state.program.effectiveCurrentItem?.sourceKind == .media
-                || state.media.isPlaying
-                || state.bgm.isPlaying
-                || state.panic.isActive
-        else { return }
-        syncAudioRoutingContextFromMirrorState(&state)
-    }
-
-    // Internal for domain reducers; do not call from ViewModel.
-    internal static func syncAudioRoutingContextFromMirrorState(_ state: inout LiveRuntimeState) {
-        state.audio.routingContext = AudioRoutingContext(
-            isCurrentProgramMediaSource: state.program.effectiveCurrentItem?.sourceKind == .media,
-            isMediaPlaying: state.media.isPlaying,
-            isBGMPlaying: state.bgm.isPlaying,
-            isPanicMode: state.panic.isActive
-        )
-    }
-
-    private static func applyAudioFacadeSnapshot(
-        _ snapshot: AudioFacadeSnapshot,
-        to state: inout LiveRuntimeState,
-        speakerModeDuckedRatio: Float
-    ) {
-        state.audio.masterVolume = min(max(snapshot.masterVolume, 0), 1)
-        state.audio.mediaVolume = min(max(snapshot.mediaVolume, 0), 1)
-        state.audio.bgmVolume = min(max(snapshot.bgmVolume, 0), 1)
-        state.audio.strategy = snapshot.strategy
-        state.audio.isMasterMuted = snapshot.isMasterMuted
-        state.audio.isMediaMuted = snapshot.isMediaMuted
-        state.audio.isBGMMuted = snapshot.isBGMMuted
-        state.audio.isSpeakerMode = snapshot.isSpeakerMode
-        state.audio.isBGMTakeoverActive = snapshot.isBGMTakeoverActive
-        state.audio.routingContext = AudioRoutingContext(
-            isCurrentProgramMediaSource: snapshot.isCurrentProgramMediaSource,
-            isMediaPlaying: snapshot.isMediaPlaying,
-            isBGMPlaying: snapshot.isBGMPlaying,
-            isPanicMode: snapshot.isPanicMode
-        )
-
-        let context = state.audio.routingContext
-        let output = AudioRoutingEngine.output(
-            for: AudioRoutingInput(
-                masterVolume: state.audio.masterVolume,
-                mediaVolume: state.audio.mediaVolume,
-                bgmVolume: state.audio.bgmVolume,
-                audioStrategy: state.audio.strategy,
-                isCurrentProgramMediaSource: context.isCurrentProgramMediaSource,
-                isMediaPlaying: context.isMediaPlaying,
-                isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
-                isSpeakerMode: state.audio.isSpeakerMode,
-                isPanicMode: context.isPanicMode,
-                isMasterMuted: state.audio.isMasterMuted,
-                isMediaMuted: state.audio.isMediaMuted,
-                isBGMMuted: state.audio.isBGMMuted,
-                speakerModeDuckedRatio: speakerModeDuckedRatio
-            )
-        )
-        state.audio.effectiveMedia = output.media
-        state.audio.effectiveBGM = output.bgm
     }
 
     private static func isEffectAllowed(_ effect: LiveRuntimeEffect, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {

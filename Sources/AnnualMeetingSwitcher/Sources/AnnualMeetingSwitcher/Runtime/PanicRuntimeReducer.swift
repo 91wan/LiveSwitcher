@@ -134,8 +134,8 @@ enum PanicRuntimeReducer {
         effects: inout [LiveRuntimeEffect],
         speakerModeDuckedRatio: Float
     ) {
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 }

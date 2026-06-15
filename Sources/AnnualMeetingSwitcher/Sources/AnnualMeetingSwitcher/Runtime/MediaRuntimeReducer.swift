@@ -10,16 +10,16 @@ enum MediaRuntimeReducer {
         if state.panic.isActive {
             guard state.media.isPlaying else { return }
             state.media.isPlaying = false
-            LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+            AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
             effects.append(.pauseMedia(generation: state.media.generation))
-            LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+            AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
             effects.append(.applyAudioRouting(reason: .panicChanged))
             return
         }
         state.media.isPlaying.toggle()
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 
@@ -33,16 +33,16 @@ enum MediaRuntimeReducer {
         state.media.currentTime = 0
         if state.panic.isActive {
             state.media.isPlaying = false
-            LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+            AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
             effects.append(.seekMediaToStart(generation: state.media.generation))
-            LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+            AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
             effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
             return
         }
         state.media.isPlaying = true
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects.append(.restartMedia(generation: state.media.generation))
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 
@@ -84,9 +84,9 @@ enum MediaRuntimeReducer {
         state.media.didPlayToEnd = false
         state.media.currentTime = 0
         state.media.duration = nil
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects.append(.stopMedia(generation: state.media.generation))
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 
@@ -100,9 +100,9 @@ enum MediaRuntimeReducer {
         guard targetGeneration == state.media.generation else { return }
         guard state.media.isPlaying else { return }
         state.media.isPlaying = false
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects.append(.pauseMedia(generation: targetGeneration))
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
@@ -117,12 +117,12 @@ enum MediaRuntimeReducer {
         guard targetGeneration == state.media.generation else { return }
         state.media.isPlaying = true
         state.media.didPlayToEnd = false
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects += [
             .setMediaVolume(0, fade: 0, generation: targetGeneration),
             .playMedia(generation: targetGeneration)
         ]
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
@@ -148,20 +148,20 @@ enum MediaRuntimeReducer {
             guard isPlaying else {
                 state.media.isPlaying = false
                 state.audio.routingContext.isMediaPlaying = false
-                LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+                AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
                 effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
                 return
             }
             state.media.isPlaying = false
-            LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+            AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
             effects.append(.pauseMedia(generation: generation))
-            LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+            AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
             effects.append(.applyAudioRouting(reason: .panicChanged))
             return
         }
         state.media.isPlaying = isPlaying
         state.audio.routingContext.isMediaPlaying = isPlaying
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 
@@ -176,7 +176,7 @@ enum MediaRuntimeReducer {
         state.media.isPlaying = false
         state.media.didPlayToEnd = true
         state.audio.routingContext.isMediaPlaying = false
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 

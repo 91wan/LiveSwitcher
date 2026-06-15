@@ -67,12 +67,12 @@ final class PanicRuntimeFacadeHardeningTests: XCTestCase {
         }
     }
 
-    func testPanicRuntimeReducerMayCallRuntimeAudioHelpers() throws {
+    func testPanicRuntimeReducerMayCallAudioRuntimeHelpers() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PanicRuntimeReducer.swift")
 
         XCTAssertTrue(
-            source.contains("LiveRuntimeReducer.recalculateAudio")
-                || source.contains("LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState")
+            source.contains("AudioRuntimeReducer.recalculateAudio")
+                || source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState")
         )
     }
 

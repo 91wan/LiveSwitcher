@@ -33,8 +33,8 @@ enum ProgramSelectionRuntimeReducer {
             state.media.loadedURL = nil
         }
 
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
 
@@ -47,7 +47,7 @@ enum ProgramSelectionRuntimeReducer {
         state.program.currentDetachedItem = nil
         state.program.currentSwitchedAt = nil
         state.audio.routingContext.isCurrentProgramMediaSource = false
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
 

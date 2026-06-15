@@ -93,8 +93,12 @@ and live in `ViewModel+BGMControls.swift`.
 BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; the main
 `LiveRuntimeReducer.swift` should route BGM actions and keep ownership guards,
 not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
-mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
-a dedicated `AudioRuntimeReducer` extraction is planned as future work.
+mutation bodies. `BGMRuntimeReducer` may call audio helper methods through
+`AudioRuntimeReducer`.
+Audio runtime mutation logic lives in `AudioRuntimeReducer.swift`; the main
+`LiveRuntimeReducer.swift` should route audio actions and keep `.audio`
+ownership guards, not own audio fader, mute, speaker-mode, BGM takeover, facade
+snapshot, routing context, or effective-output mutation bodies.
 Media playback remains Runtime-owned. Media Runtime mutation logic lives in `MediaRuntimeReducer.swift`;
 the main `LiveRuntimeReducer.swift` routes media
 actions and keeps ownership guards instead of owning media toggle, restart,
@@ -104,8 +108,8 @@ behavior remains in `ProgramSelectionRuntimeReducer.swift` until a dedicated
 follow-up explicitly approves moving that boundary. Panic media safety gates
 remain Runtime-owned: operator toggle cannot start media while Panic is active,
 restart during Panic cues with `.seekMediaToStart` without playing, and
-resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` may call
-Runtime audio helper methods for now. AudioRuntimeReducer extraction remains future work.
+resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` calls
+audio helper methods through `AudioRuntimeReducer`.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`; that callback
 wiring stays simple and does not special-case Panic. Panic is a hard Runtime
@@ -117,8 +121,7 @@ rejected and converted into a `.pauseMedia` effect with Panic audio routing.
 `operatorResumedMediaAfterPanic` is ignored while Panic is still active.
 Restart/seek/toggle pause and playbackChanged callbacks during Panic do not
 clear the Panic snapshot media playback flag; if the snapshot captured media as
-playing, Panic OFF may still resume that media from the cued position. Future
-work: extract `AudioRuntimeReducer.swift` after callback safety is locked.
+playing, Panic OFF may still resume that media from the cued position.
 The wallpaper and corner-logo asset library facade lives in
 `ViewModel+Assets.swift`.
 Program activation side effects are grouped under
@@ -488,8 +491,7 @@ callbacks are also runtime-owned: during Panic, `mediaPlaybackChanged(true)` is
 treated as unsafe, keeps Runtime media stopped, emits `.pauseMedia`, and applies
 Panic audio routing; `mediaPlaybackChanged(false)` remains accepted as stopped.
 PlaybackChanged callbacks do not clear Panic snapshot media resume eligibility.
-Future work: extract `AudioRuntimeReducer.swift` after callback safety is
-locked.
+Audio routing helper calls from media playback go through `AudioRuntimeReducer`.
 
 Media startup sets media volume to zero before loading so the Runtime audio
 routing fade can bring the channel to the target level without a one-frame
@@ -517,8 +519,8 @@ play-mode, progress, adjacent selection, reached-end, failure, and Panic
 pause/resume mutation/effect logic. BGM play-mode changes require explicit
 `.bgm` ownership before they mutate Runtime state or emit persistence effects.
 It may call Runtime audio helpers
-`syncAudioRoutingContextFromMirrorState` and `recalculateAudio` until a
-dedicated `AudioRuntimeReducer` extraction is planned as future work.
+`syncRoutingContextFromMirrorState` and `recalculateAudio` through
+`AudioRuntimeReducer`.
 
 Production uses `BGMPlaybackPort` and `BGMTimerPort` effects for concrete
 playback and timer operations. ViewModel bridges those effects to

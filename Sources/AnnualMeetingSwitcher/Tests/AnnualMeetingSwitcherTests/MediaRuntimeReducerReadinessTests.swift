@@ -16,7 +16,8 @@ final class MediaRuntimeReducerReadinessTests: XCTestCase {
 
         XCTAssertTrue(docs.contains("MediaRuntimeReducer"))
         XCTAssertTrue(docs.contains("Media Runtime mutation logic lives in `MediaRuntimeReducer.swift`"))
-        XCTAssertTrue(docs.contains("AudioRuntimeReducer extraction remains future work"))
+        XCTAssertTrue(docs.contains("Audio runtime mutation logic lives in `AudioRuntimeReducer.swift`"))
+        XCTAssertFalse(docs.contains("AudioRuntimeReducer extraction remains future work"))
     }
 
     func testLiveRuntimeReducerRoutesMediaMutationAfterExtraction() throws {
