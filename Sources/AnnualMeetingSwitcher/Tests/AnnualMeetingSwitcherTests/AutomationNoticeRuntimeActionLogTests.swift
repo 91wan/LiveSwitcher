@@ -43,6 +43,30 @@ final class AutomationNoticeRuntimeActionLogTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "automationNoticeDismissed" })
     }
 
+    func testAutomationNoticeActionLogDoesNotContainNoticeText() {
+        let runtime = makeRuntime()
+
+        runtime.dispatch(.automationNoticeDismissed)
+
+        XCTAssertFalse(runtime.actionLog.contains { entry in
+            entry.oldStateSummary.localizedStandardContains("翻页未发送")
+                || entry.newStateSummary.localizedStandardContains("翻页未发送")
+        })
+    }
+
+    func testAutomationFailedActionLogDoesNotContainSanitizedMessage() {
+        let runtime = makeRuntime()
+
+        runtime.dispatch(.automationFailed(action: "keynote.next-slide", sanitizedMessage: "raw script /Users/operator/private.key"))
+
+        XCTAssertFalse(runtime.actionLog.contains { entry in
+            entry.oldStateSummary.localizedStandardContains("raw script")
+                || entry.newStateSummary.localizedStandardContains("raw script")
+                || entry.oldStateSummary.localizedStandardContains("/Users/operator")
+                || entry.newStateSummary.localizedStandardContains("/Users/operator")
+        })
+    }
+
     func testRepeatedSuppressedAutomationNoticeDoesNotGrowActionLog() {
         let runtime = makeRuntime()
 
