@@ -43,7 +43,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testProjectionStartSuccessRecordsProjectionToggleTelemetry() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -51,7 +51,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testProjectionStopRecordsProjectionToggleTelemetry() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -97,7 +97,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testHandleBroadcastToggleRecordsStartSupportOnce() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -105,7 +105,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
     }
 
     func testHandleBroadcastToggleRecordsStopSupportOnce() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -240,7 +240,8 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
 
     private func makeProjectionOwnedViewModel(
         isBroadcasting: Bool,
-        hasExternalDisplay: Bool
+        hasExternalDisplay: Bool,
+        bridgeMode: LiveRuntimeBridgeMode = .projectionOwned
     ) throws -> SwitcherViewModel {
         let screen = NSScreen.main ?? NSScreen.screens.first
         if hasExternalDisplay, screen == nil {
@@ -252,7 +253,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: LiveRuntimeEnvironment(bridgeMode: .projectionOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

@@ -39,14 +39,14 @@ final class RuntimeSupportOwnershipGateTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.contains { $0.kind == .projectionStartFailed })
     }
 
-    func testSupportEventRecordedStillWritesSupportStorage() throws {
+    func testSupportEventRecordedStillWritesSupportStorageWhenSupportOwned() throws {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 10),
             kind: .preflightAction,
             detail: "action=manualReview"
         )
 
-        let mutation = reduce(.supportEventRecorded(event), bridgeMode: .mediaOwned)
+        let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
         let recorded = try XCTUnwrap(mutation.state.support.events.first)
         XCTAssertEqual(recorded.kind, .preflightAction)

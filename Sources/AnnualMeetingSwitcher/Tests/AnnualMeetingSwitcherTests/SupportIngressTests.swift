@@ -57,7 +57,7 @@ final class SupportIngressTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
-    func testSupportEventRecordedWritesRuntimeSupportEvent() throws {
+    func testSupportEventRecordedNoopsBeforeSupportOwnership() {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 10),
             kind: .appleScriptFailed,
@@ -65,6 +65,19 @@ final class SupportIngressTests: XCTestCase {
         )
 
         let mutation = reduce(.supportEventRecorded(event), bridgeMode: .audioOwned)
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testSupportEventRecordedWritesRuntimeSupportEventWhenSupportOwned() throws {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 10),
+            kind: .appleScriptFailed,
+            detail: "action=open,error=failed"
+        )
+
+        let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
         let recorded = try XCTUnwrap(mutation.state.support.events.first)
         XCTAssertEqual(recorded.kind, .appleScriptFailed)

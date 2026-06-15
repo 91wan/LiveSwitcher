@@ -21,14 +21,14 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
-    func testSupportEventRecordedStillWritesRuntimeSupportStorage() throws {
+    func testSupportEventRecordedStillWritesRuntimeSupportStorageWhenSupportOwned() throws {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 200),
             kind: .appleScriptFailed,
             detail: "action=keynote.next-slide,error=failed"
         )
 
-        let mutation = reduce(.supportEventRecorded(event))
+        let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
         let recorded = try XCTUnwrap(mutation.state.support.events.first)
         XCTAssertEqual(recorded.kind, .appleScriptFailed)
@@ -131,11 +131,14 @@ final class AutomationNoticeRuntimeSupportBoundaryTests: XCTestCase {
         testRepeatedAppleScriptFailuresDoNotEvictCriticalSupportEvents()
     }
 
-    private func reduce(_ action: LiveRuntimeAction) -> LiveRuntimeMutation {
+    private func reduce(
+        _ action: LiveRuntimeAction,
+        bridgeMode: LiveRuntimeBridgeMode = .automationNoticeOwned
+    ) -> LiveRuntimeMutation {
         LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: action,
-            environment: .productionAutomationNoticeOwning(now: Date(timeIntervalSince1970: 100))
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: bridgeMode)
         )
     }
 

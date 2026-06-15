@@ -30,7 +30,7 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
     }
 
     func testExternalDisplayLostRecordsSupportOnce() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleExternalDisplayLost()
         viewModel.handleExternalDisplayLost()
@@ -88,7 +88,8 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
 
     private func makeProjectionOwnedViewModel(
         isBroadcasting: Bool,
-        hasExternalDisplay: Bool
+        hasExternalDisplay: Bool,
+        bridgeMode: LiveRuntimeBridgeMode = .projectionOwned
     ) throws -> SwitcherViewModel {
         let screen = NSScreen.main ?? NSScreen.screens.first
         if hasExternalDisplay, screen == nil {
@@ -100,7 +101,7 @@ final class ProjectionRuntimeCallbackTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: LiveRuntimeEnvironment(bridgeMode: .projectionOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

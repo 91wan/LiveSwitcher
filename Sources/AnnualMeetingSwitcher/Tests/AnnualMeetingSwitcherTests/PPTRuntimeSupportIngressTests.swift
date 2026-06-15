@@ -87,23 +87,26 @@ final class PPTRuntimeSupportIngressTests: XCTestCase {
         }
     }
 
-    func testSupportEventRecordedStillWritesRuntimeSupportStorage() {
+    func testSupportEventRecordedStillWritesRuntimeSupportStorageWhenSupportOwned() {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 100),
             kind: .pageInterceptEnabled,
             detail: "state=enabled"
         )
 
-        let mutation = reduce(.supportEventRecorded(event))
+        let mutation = reduce(.supportEventRecorded(event), bridgeMode: .supportOwned)
 
         XCTAssertEqual(mutation.state.support.events, [event])
     }
 
-    private func reduce(_ action: LiveRuntimeAction) -> LiveRuntimeMutation {
+    private func reduce(
+        _ action: LiveRuntimeAction,
+        bridgeMode: LiveRuntimeBridgeMode = .pptOwned
+    ) -> LiveRuntimeMutation {
         LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
             action: action,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: .pptOwned)
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: bridgeMode)
         )
     }
 

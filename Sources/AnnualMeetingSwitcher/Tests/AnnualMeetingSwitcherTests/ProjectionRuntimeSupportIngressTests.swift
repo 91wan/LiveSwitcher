@@ -40,7 +40,7 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
     }
 
     func testViewModelRecordsStartSuccessSupportAfterRuntimeTransition() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: false, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -49,7 +49,7 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
     }
 
     func testViewModelRecordsStopSupportAfterRuntimeTransition() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleBroadcastToggle()
 
@@ -70,7 +70,7 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
     }
 
     func testViewModelRecordsDisplayLostSupportAfterRuntimeTransition() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleExternalDisplayLost()
 
@@ -79,7 +79,7 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
     }
 
     func testProjectionSupportEventsAreNotDuplicatedAcrossRepeatedCallbacks() throws {
-        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true)
+        let viewModel = try makeProjectionOwnedViewModel(isBroadcasting: true, hasExternalDisplay: true, bridgeMode: .panicOwned)
 
         viewModel.handleExternalDisplayLost()
         viewModel.handleExternalDisplayLost()
@@ -95,25 +95,27 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
             detail: "source=viewModel"
         )
 
-        let mutation = reduce(LiveRuntimeState(), .supportEventRecorded(event))
+        let mutation = reduce(LiveRuntimeState(), .supportEventRecorded(event), bridgeMode: .supportOwned)
 
         XCTAssertEqual(mutation.state.support.events.map(\.kind), [.projectionStarted])
     }
 
     private func reduce(
         _ state: LiveRuntimeState,
-        _ action: LiveRuntimeAction
+        _ action: LiveRuntimeAction,
+        bridgeMode: LiveRuntimeBridgeMode = .projectionOwned
     ) -> LiveRuntimeMutation {
         LiveRuntimeReducer.reduce(
             state: state,
             action: action,
-            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: .projectionOwned)
+            environment: LiveRuntimeEnvironment(now: Date(timeIntervalSince1970: 100), bridgeMode: bridgeMode)
         )
     }
 
     private func makeProjectionOwnedViewModel(
         isBroadcasting: Bool,
-        hasExternalDisplay: Bool
+        hasExternalDisplay: Bool,
+        bridgeMode: LiveRuntimeBridgeMode = .projectionOwned
     ) throws -> SwitcherViewModel {
         let screen = NSScreen.main ?? NSScreen.screens.first
         if hasExternalDisplay, screen == nil {
@@ -125,7 +127,7 @@ final class ProjectionRuntimeSupportIngressTests: XCTestCase {
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
-            environment: LiveRuntimeEnvironment(bridgeMode: .projectionOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
