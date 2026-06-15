@@ -107,6 +107,11 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.persistence))
     }
 
+    func testNoPreferencesPortAdded() {
+        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "preferences" })
+        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "preferencesOwned" })
+    }
+
     func testProductionRuntimeStillWiresAutomationCommandPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 

@@ -164,6 +164,11 @@ product boundary.
   next/previous controls remain allowed, but during Panic their Runtime behavior
   is safety-critical: they cue/stop the selected track instead of starting
   playback, and reducer files stay domain-scoped.
+- Preferences Runtime reducer extraction does not add live controls or change
+  preference behavior. It only keeps Runtime reducer files domain-scoped by
+  moving persisted setting mutation mechanics to `PreferencesRuntimeReducer`,
+  while wallpaper and corner-logo URL updates remain behind the existing Setup
+  flow and infrastructure guards.
 - Media restart Panic hardening does not add live controls. Existing restart
   remains available, but emergency safety overrides playback: during Panic,
   Runtime seeks/cues media to start without emitting a restart/play effect, and
