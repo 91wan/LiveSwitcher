@@ -74,7 +74,15 @@ enum LiveRuntimeReducer {
             guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
             state.media.didPlayToEnd = false
             state.media.currentTime = 0
-            state.media.isPlaying = !state.panic.isActive
+            if state.panic.isActive {
+                state.media.isPlaying = false
+                syncAudioRoutingContextFromMirrorState(&state)
+                effects.append(.seekMediaToStart(generation: state.media.generation))
+                recalculateAudio(&state)
+                effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+                break
+            }
+            state.media.isPlaying = true
             syncAudioRoutingContextFromMirrorState(&state)
             effects.append(.restartMedia(generation: state.media.generation))
             recalculateAudio(&state)

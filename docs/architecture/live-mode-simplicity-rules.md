@@ -164,6 +164,10 @@ product boundary.
   next/previous controls remain allowed, but during Panic their Runtime behavior
   is safety-critical: they cue/stop the selected track instead of starting
   playback, and reducer files stay domain-scoped.
+- Media restart Panic hardening does not add live controls. Existing restart
+  remains available, but emergency safety overrides playback: during Panic,
+  Runtime seeks/cues media to start without emitting a restart/play effect, and
+  Runtime state must match the real player behavior.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates

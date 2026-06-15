@@ -96,7 +96,12 @@ not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
 mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
 a dedicated `AudioRuntimeReducer` extraction is planned as future work.
 Media playback callback setup, playback-ended handling, and the HTML
-presentation facade live in `ViewModel+MediaPlayback.swift`.
+presentation facade live in `ViewModel+MediaPlayback.swift`. Media restart
+during Panic is a cue-to-start operation: Runtime keeps media not playing, does
+not emit `.restartMedia`, and emits `.seekMediaToStart` so the concrete player
+seeks without starting playback. Restart/seek during Panic does not clear the
+Panic snapshot media playback flag; if the snapshot captured media as playing,
+Panic OFF may still resume that media from the cued position.
 The wallpaper and corner-logo asset library facade lives in
 `ViewModel+Assets.swift`.
 Program activation side effects are grouped under
@@ -454,8 +459,12 @@ timer-generation, and audio-routing transition storage behind accessors.
 Media playback is runtime-owned. ViewModel validates sources, owns the program
 queue, and sets UI-facing current program state, but media load/play/pause/
 restart/stop/seek effects execute through `MediaPlaybackPort`. Seek-to-start and
-seek-to-end are distinct runtime actions; restart remains the only migrated
-operator action that seeks to the beginning and starts playback.
+seek-to-end are distinct runtime actions; restart outside Panic remains the
+migrated operator action that seeks to the beginning and starts playback.
+Restart during Panic is safety-gated: Runtime emits `.seekMediaToStart` instead
+of `.restartMedia`, keeping Runtime state and the real media port aligned with
+emergency blackout. Future work: extract `MediaRuntimeReducer.swift` after this
+Panic restart safety behavior is locked.
 
 Media startup sets media volume to zero before loading so the Runtime audio
 routing fade can bring the channel to the target level without a one-frame

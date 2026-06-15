@@ -82,6 +82,19 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
     }
 
+    func testViewModelRestartCurrentMediaDoesNotContainPanicSpecialCase() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "restartCurrentMediaFromBeginning"))
+
+        XCTAssertFalse(body.contains("isPanicMode"))
+        XCTAssertFalse(body.localizedStandardContains("panic"))
+        XCTAssertFalse(body.contains("seekMediaToStart"))
+        XCTAssertFalse(body.contains("restartMedia"))
+        XCTAssertTrue(body.contains("operatorRestartedCurrentMedia"))
+    }
+
     func testTransportNoopsForUnsupportedSources() {
         let viewModel = makeViewModel()
         let item = ProgramItem(title: "Unsupported", subtitle: "TXT")
