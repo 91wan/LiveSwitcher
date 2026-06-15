@@ -30,6 +30,14 @@ enum LiveRuntimeFacadeSyncPolicy {
     private static func shouldDispatchAudioInputsBeforeRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .operatorClearedCurrentProgram,
+             .operatorSetConsoleMode,
+             .operatorSetThemeOverride,
+             .operatorSetActiveWallpaperURL,
+             .operatorSetCornerLogoURL,
+             .operatorSetAutoPlayNextVideoOnEnd,
+             .operatorSetAutoAdvanceAtScheduledTime,
+             .operatorSetShowAgendaTimeline,
+             .operatorSetCornerLogoPosition,
              .operatorSelectedAudioStrategy,
              .operatorChangedMasterVolume,
              .operatorChangedMediaVolume,

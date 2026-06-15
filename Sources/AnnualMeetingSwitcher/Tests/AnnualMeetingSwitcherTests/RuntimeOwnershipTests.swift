@@ -17,6 +17,7 @@ final class RuntimeOwnershipTests: XCTestCase {
             "Support",
             "Automation command execution",
             "Presentation query lifecycle",
+            "Preferences / persisted settings",
             "Persistence"
         ].forEach { domain in
             XCTAssertTrue(document.contains("| \(domain) |"), "Missing ownership row for \(domain)")
@@ -64,6 +65,9 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(normalizedDocument.localizedStandardContains("projection start/stop output plus Panic transition orchestration plus PPT EventTap lifecycle plus automation notice lifecycle"))
         XCTAssertTrue(document.localizedStandardContains("Audio routing context is stored inside `AudioRuntimeState`"))
         XCTAssertTrue(document.localizedStandardContains("`facadeAudioInputsChanged` updates audio routing context, not BGM/Panic mirror state"))
+        XCTAssertTrue(document.localizedStandardContains("Preference mutation logic lives in `Runtime/PreferencesRuntimeReducer.swift`"))
+        XCTAssertTrue(document.localizedStandardContains("Main `LiveRuntimeReducer.swift` routes preference actions only"))
+        XCTAssertTrue(document.localizedStandardContains("No `.preferences` Runtime domain or port exists"))
         XCTAssertTrue(document.localizedStandardContains("Effective audio output getters are pure Runtime state reads"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Result-returning automation queries and key-forwarding migration remain blocked"))
         XCTAssertTrue(document.localizedStandardContains("Bridge modes are cumulative migration stages"))

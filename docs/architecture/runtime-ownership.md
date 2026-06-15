@@ -18,6 +18,15 @@ Current authoritative runtime domains:
 - Program queue storage/mutation
 - Current program selection state/projection
 
+Preference mutation logic lives in `Runtime/PreferencesRuntimeReducer.swift`.
+Main `LiveRuntimeReducer.swift` routes preference actions only. Persistence-backed
+settings require `.persistence` ownership before state mutation. Wallpaper and
+corner-logo URL updates require both `.persistence` and `.imageAssets` ownership
+because the state preference is persisted and the URL update emits an image-load
+effect. Preference actions do not dispatch audio-input sync and do not sync
+unrelated facades. No `.preferences` Runtime domain or port exists, and
+production bridge mode remains `.panicOwned`.
+
 Program activation/switching side effects, source validation,
 invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
 Automation query/result flows, BGM library metadata, and asset-library mutation
@@ -297,6 +306,7 @@ explicit owner.
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. Support mutation mechanics live in `Runtime/SupportRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes support actions and keeps the explicit `.support` ownership guard before mutating state. `supportEventRecorded` does not dispatch audio-input sync. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
 | Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch through `ViewModel+PresentationAutomation.swift` and `ViewModel+AutomationFailure.swift`. WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Presentation query lifecycle | Runtime owner | Operator query request, active query ID, callback result/failure state, and `scanPresentationQuery` effect | authoritative lifecycle, ViewModel-owned consumption | Runtime owns `.operatorRequestedPresentationQuery`, `.presentationQueryCompleted`, `.presentationQueryFailed`, `.presentationQueryResultConsumed`, `state.presentationQuery`, and `PresentationQueryPort`. `PresentationQueryPort` executes the existing `PresentationQueryService` through ViewModel wiring and dispatches callback actions through `LiveRuntimeEffectExecutionContext`. ViewModel owns result consumption: building program queue items, adding them, support event generation, and automation failure notice dispatch. |
+| Preferences / persisted settings | Runtime state guarded by Persistence/Image Assets infrastructure ownership | Console mode, theme, wallpaper/logo URL, auto-play, auto-advance, agenda timeline, and corner-logo position mutation | reducer extracted, no standalone domain | Preference mutation logic lives in `Runtime/PreferencesRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes preference actions only. Persistence-backed settings require `.persistence`; wallpaper/corner-logo URL updates require both `.persistence` and `.imageAssets`. Preference actions do not dispatch audio-input sync. No `.preferences` domain, bridge mode, or port exists. |
 | Persistence | `SwitcherPersistenceStore` + `ViewModel+Persistence.swift` facade | Wired preference persistence effects | hardened bridge domain and store | `SwitcherPersistenceStore` owns UserDefaults keys plus encode/decode and returns loaded state, missing-file support events, and explicit repair operations. `SwitcherViewModel.saveData()` / `loadData()` live in `ViewModel+Persistence.swift`: ViewModel snapshots state, applies loaded state idempotently, applies returned repairs explicitly, and records returned support events through Runtime support ingress. Runtime may persist selected preferences through the existing `PersistencePort` and `.persistence` domain, but general save/load mechanics are not runtime-owned. |
 
 ## Persistence Boundary

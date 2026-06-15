@@ -311,36 +311,40 @@ enum LiveRuntimeReducer {
             )
 
         case .operatorSetConsoleMode(let mode):
-            state.mode = mode
-            effects.append(.saveConsoleMode(mode))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setConsoleMode(mode, state: &state, effects: &effects)
 
         case .operatorSetThemeOverride(let theme):
-            state.preferences.themeOverride = theme
-            effects.append(.saveThemeOverride(theme))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setThemeOverride(theme, state: &state, effects: &effects)
 
         case .operatorSetActiveWallpaperURL(let url):
-            state.preferences.activeWallpaperURL = url
-            effects.append(.loadBackgroundImage(url))
+            guard isRuntimeOwned(.persistence, in: bridgeMode),
+                  isRuntimeOwned(.imageAssets, in: bridgeMode)
+            else { break }
+            PreferencesRuntimeReducer.setActiveWallpaperURL(url, state: &state, effects: &effects)
 
         case .operatorSetCornerLogoURL(let url):
-            state.preferences.cornerLogoURL = url
-            effects.append(.loadCornerLogoImage(url))
+            guard isRuntimeOwned(.persistence, in: bridgeMode),
+                  isRuntimeOwned(.imageAssets, in: bridgeMode)
+            else { break }
+            PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
 
         case .operatorSetAutoPlayNextVideoOnEnd(let isEnabled):
-            state.preferences.autoPlayNextVideoOnEnd = isEnabled
-            effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setAutoPlayNextVideoOnEnd(isEnabled, state: &state, effects: &effects)
 
         case .operatorSetAutoAdvanceAtScheduledTime(let isEnabled):
-            state.preferences.autoAdvanceAtScheduledTime = isEnabled
-            effects.append(.saveAutoAdvanceAtScheduledTime(isEnabled))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setAutoAdvanceAtScheduledTime(isEnabled, state: &state, effects: &effects)
 
         case .operatorSetShowAgendaTimeline(let isEnabled):
-            state.preferences.showAgendaTimeline = isEnabled
-            effects.append(.saveShowAgendaTimeline(isEnabled))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setShowAgendaTimeline(isEnabled, state: &state, effects: &effects)
 
         case .operatorSetCornerLogoPosition(let position):
-            state.preferences.cornerLogoPosition = position
-            effects.append(.saveCornerLogoPosition(position))
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setCornerLogoPosition(position, state: &state, effects: &effects)
 
         case .operatorAddedProgramItems(let items):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
