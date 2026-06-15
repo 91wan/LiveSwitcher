@@ -38,6 +38,54 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         XCTAssertEqual(actionCount("operatorPausedMediaForPanic", in: viewModel), 1)
     }
 
+    func testViewModelToggleMediaDuringPanicDoesNotDispatchOperatorToggledMediaPlayback() throws {
+        let viewModel = makeViewModel()
+        let item = try mediaProgram()
+        setCurrentProgram(item, in: viewModel, mediaIsPlaying: true)
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
+        viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, mediaIsPlaying: true), clearActionLog: true)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(actionCount("operatorToggledMediaPlayback", in: viewModel), 0)
+    }
+
+    func testViewModelToggleMediaDuringPanicDispatchesPausedMediaForPanicWhenRuntimeOrPlayerIsPlaying() throws {
+        let viewModel = makeViewModel()
+        let item = try mediaProgram()
+        setCurrentProgram(item, in: viewModel, mediaIsPlaying: false)
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
+        viewModel.avCoordinator.isPlaying = true
+        viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, mediaIsPlaying: false), clearActionLog: true)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertEqual(actionCount("operatorPausedMediaForPanic", in: viewModel), 1)
+    }
+
+    func testViewModelToggleMediaDuringPanicNoopsWhenAlreadyStopped() throws {
+        let viewModel = makeViewModel()
+        let item = try mediaProgram()
+        setCurrentProgram(item, in: viewModel, mediaIsPlaying: false)
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
+        viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, mediaIsPlaying: false), clearActionLog: true)
+
+        viewModel.toggleMainVideoPlayback()
+
+        XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
+    }
+
+    func testViewModelMediaTransportDoesNotDirectlyCallMediaPort() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift"
+        )
+
+        XCTAssertFalse(source.contains(".playMedia"))
+        XCTAssertFalse(source.contains(".restartMedia"))
+        XCTAssertFalse(source.contains("media?.play"))
+        XCTAssertFalse(source.contains("media?.restart"))
+    }
+
     func testTogglePauseSwitchesToDifferentProgram() throws {
         let viewModel = makeViewModel()
         let current = try mediaProgram(title: "Current")

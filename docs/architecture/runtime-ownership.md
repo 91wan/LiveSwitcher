@@ -96,10 +96,12 @@ not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
 mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
 a dedicated `AudioRuntimeReducer` extraction is planned as future work.
 Media playback callback setup, playback-ended handling, and the HTML
-presentation facade live in `ViewModel+MediaPlayback.swift`. Media restart
-during Panic is a cue-to-start operation: Runtime keeps media not playing, does
-not emit `.restartMedia`, and emits `.seekMediaToStart` so the concrete player
-seeks without starting playback. Restart/seek during Panic does not clear the
+presentation facade live in `ViewModel+MediaPlayback.swift`. Panic is a hard
+Runtime media playback gate: operator media toggle must not start playback,
+media restart is a cue-to-start operation that emits `.seekMediaToStart`
+instead of `.restartMedia`, and selecting a media program during Panic loads the
+program without playing it. `operatorResumedMediaAfterPanic` is ignored while
+Panic is still active. Restart/seek/toggle pause during Panic does not clear the
 Panic snapshot media playback flag; if the snapshot captured media as playing,
 Panic OFF may still resume that media from the cued position.
 The wallpaper and corner-logo asset library facade lives in
@@ -463,8 +465,12 @@ seek-to-end are distinct runtime actions; restart outside Panic remains the
 migrated operator action that seeks to the beginning and starts playback.
 Restart during Panic is safety-gated: Runtime emits `.seekMediaToStart` instead
 of `.restartMedia`, keeping Runtime state and the real media port aligned with
-emergency blackout. Future work: extract `MediaRuntimeReducer.swift` after this
-Panic restart safety behavior is locked.
+emergency blackout. Operator media toggle during Panic can only pause
+already-playing media; if media is stopped, it is a no-op and must not emit
+`.playMedia`. Media program selection during Panic loads without playing, and
+`operatorResumedMediaAfterPanic` no-ops until Panic is inactive. Future work:
+extract `MediaRuntimeReducer.swift` after these Panic media safety gates are
+locked.
 
 Media startup sets media volume to zero before loading so the Runtime audio
 routing fade can bring the channel to the target level without a one-frame

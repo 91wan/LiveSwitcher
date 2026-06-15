@@ -42,4 +42,19 @@ final class MediaRuntimeReducerReadinessTests: XCTestCase {
         XCTAssertTrue(restartBody.contains("state.panic.isActive"))
         XCTAssertTrue(restartBody.contains(".seekMediaToStart"))
     }
+
+    func testMediaTogglePanicSafetyIsFixedBeforeExtraction() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+        )
+        let toggleBody = try XCTUnwrap(
+            source.slice(
+                from: "case .operatorToggledMediaPlayback:",
+                to: "case .operatorRestartedCurrentMedia:"
+            )
+        )
+
+        XCTAssertTrue(toggleBody.contains("state.panic.isActive"))
+        XCTAssertTrue(toggleBody.contains(".panicChanged"))
+    }
 }

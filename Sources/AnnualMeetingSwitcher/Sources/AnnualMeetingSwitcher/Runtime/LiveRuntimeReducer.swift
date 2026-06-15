@@ -63,6 +63,15 @@ enum LiveRuntimeReducer {
         case .operatorToggledMediaPlayback:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             guard !state.media.didPlayToEnd else { break }
+            if state.panic.isActive {
+                guard state.media.isPlaying else { break }
+                state.media.isPlaying = false
+                syncAudioRoutingContextFromMirrorState(&state)
+                effects.append(.pauseMedia(generation: state.media.generation))
+                recalculateAudio(&state)
+                effects.append(.applyAudioRouting(reason: .panicChanged))
+                break
+            }
             state.media.isPlaying.toggle()
             syncAudioRoutingContextFromMirrorState(&state)
             effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
@@ -135,6 +144,7 @@ enum LiveRuntimeReducer {
 
         case .operatorResumedMediaAfterPanic(let generation):
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            guard !state.panic.isActive else { break }
             let targetGeneration = generation ?? state.media.generation
             guard targetGeneration == state.media.generation else { break }
             state.media.isPlaying = true
