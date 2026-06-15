@@ -54,6 +54,12 @@ final class PanicRuntimeMediaSnapshotMutationTests: XCTestCase {
         XCTAssertTrue(mutation.state.panic.snapshot?.wasMediaPlaying == true)
     }
 
+    func testRestartCurrentMediaDuringPanicDoesNotClearRuntimeSnapshotWasMediaPlaying() {
+        let mutation = reduce(panicState(), .operatorRestartedCurrentMedia)
+
+        XCTAssertTrue(mutation.state.panic.snapshot?.wasMediaPlaying == true)
+    }
+
     func testPanicOffDoesNotResumeMediaAfterMediaReachedEndDuringPanic() {
         let ended = reduce(panicState(), .mediaReachedEnd(generation: 3))
 
@@ -70,6 +76,15 @@ final class PanicRuntimeMediaSnapshotMutationTests: XCTestCase {
 
         XCTAssertFalse(off.state.media.isPlaying)
         XCTAssertFalse(off.effects.contains { if case .playMedia = $0 { return true }; return false })
+    }
+
+    func testPanicOffStillResumesMediaAfterRestartCurrentMediaDuringPanic() {
+        let restarted = reduce(panicState(), .operatorRestartedCurrentMedia)
+
+        let off = reduce(restarted.state, .operatorSetPanic(false))
+
+        XCTAssertTrue(off.state.media.isPlaying)
+        XCTAssertTrue(off.effects.contains(.playMedia(generation: 3)))
     }
 
     func testPanicOffStillResumesMediaAfterPanicPauseOnly() {

@@ -63,6 +63,76 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         XCTAssertFalse(media.events.contains { $0.hasPrefix("play:") })
     }
 
+    func testViewModelRestartCurrentMediaDuringPanicDoesNotCallMediaRestartPort() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel)
+        viewModel.runtime.replaceStateForFacadeSync(panicRestartState(for: item))
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertFalse(media.events.contains { $0.hasPrefix("restart:") })
+    }
+
+    func testViewModelRestartCurrentMediaDuringPanicCallsMediaSeekStartPort() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel)
+        viewModel.runtime.replaceStateForFacadeSync(panicRestartState(for: item))
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertTrue(media.events.contains { $0.hasPrefix("seekToStart:") })
+    }
+
+    func testViewModelRestartCurrentMediaOutsidePanicStillCallsMediaRestartPort() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media)
+        let item = mediaProgram()
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel, isPlaying: true)
+        viewModel.runtime.replaceStateForFacadeSync(mediaState(for: item, panicActive: false))
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertTrue(media.events.contains { $0.hasPrefix("restart:") })
+    }
+
+    func testViewModelRestartCurrentMediaDuringPanicDoesNotPlayAVPlayer() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel)
+        viewModel.runtime.replaceStateForFacadeSync(panicRestartState(for: item))
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertFalse(media.events.contains { $0.hasPrefix("play:") })
+    }
+
+    func testViewModelRestartCurrentMediaDuringPanicStillRecordsSupportEvent() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel)
+        viewModel.runtime.replaceStateForFacadeSync(panicRestartState(for: item))
+
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
+    }
+
     func testPanicDoesNotDirectlyCallAVPlayerForMedia() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Panic.swift")
 
@@ -80,10 +150,13 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         XCTAssertTrue(source.contains(".operatorResumedBGMAfterPanic"))
     }
 
-    private func viewModel(media: MediaRuntimePanicPortSpy) -> SwitcherViewModel {
+    private func viewModel(
+        media: MediaRuntimePanicPortSpy,
+        environment: LiveRuntimeEnvironment = LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+    ) -> SwitcherViewModel {
         let runtime = LiveRuntimeStore(
             effectRunner: LiveRuntimeEffectRunner(recordsOnly: false, media: media),
-            environment: LiveRuntimeEnvironment(bridgeMode: .mediaOwned)
+            environment: environment
         )
         return SwitcherViewModel(
             loadPersistedData: false,
@@ -98,6 +171,42 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
             .appendingPathExtension("mp4")
         try? Data("fixture".utf8).write(to: url)
         return ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: url)
+    }
+
+    private func mirrorMediaFacade(
+        for item: ProgramItem,
+        in viewModel: SwitcherViewModel,
+        isPlaying: Bool = false
+    ) {
+        viewModel.avCoordinator.currentURL = item.sourceURL
+        viewModel.avCoordinator.isPlaying = isPlaying
+        viewModel.avCoordinator.currentTime = 10
+        viewModel.avCoordinator.duration = 30
+    }
+
+    private func panicRestartState(for item: ProgramItem) -> LiveRuntimeState {
+        mediaState(for: item, panicActive: true)
+    }
+
+    private func mediaState(for item: ProgramItem, panicActive: Bool) -> LiveRuntimeState {
+        var state = LiveRuntimeState()
+        state.program.items = [item]
+        state.program.currentID = item.id
+        state.media.loadedURL = item.sourceURL
+        state.media.generation = 5
+        state.media.isPlaying = !panicActive
+        state.media.duration = 30
+        state.media.currentTime = 10
+        state.panic.isActive = panicActive
+        if panicActive {
+            state.panic.snapshot = PanicPlaybackSnapshot(
+                currentProgramID: item.id,
+                wasMediaPlaying: true,
+                currentBGMID: nil,
+                wasBGMPlaying: false
+            )
+        }
+        return state
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
