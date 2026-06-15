@@ -130,10 +130,14 @@ final class RuntimeBridgeStateMutationTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAudioOwnedCallbackMayUpdateProjectionMirror() {
-        let mutation = reduce(LiveRuntimeState(), .projectionExternalDisplayAvailable, bridgeMode: .audioOwned)
+    func testAudioOwnedCallbackDoesNotUpdateProjectionMirror() {
+        var state = LiveRuntimeState()
+        state.projection.hasExternalDisplay = false
+        let originalProjection = state.projection
 
-        XCTAssertTrue(mutation.state.projection.hasExternalDisplay)
+        let mutation = reduce(state, .projectionExternalDisplayAvailable, bridgeMode: .audioOwned)
+
+        XCTAssertEqual(mutation.state.projection, originalProjection)
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 

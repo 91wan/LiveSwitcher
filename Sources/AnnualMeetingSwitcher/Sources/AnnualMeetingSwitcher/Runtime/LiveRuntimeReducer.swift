@@ -304,28 +304,12 @@ enum LiveRuntimeReducer {
 
         case .operatorToggledProjection:
             guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
-            if state.projection.isBroadcasting {
-                state.projection.isBroadcasting = false
-                state.projection.safetyNotice = nil
-                effects.append(.stopProjection)
-                if canGenerateReducerSupport(in: bridgeMode) {
-                    state.support.record(kind: .projectionStopped, detail: "source=runtime", at: environment.now)
-                }
-            } else if state.projection.hasExternalDisplay {
-                state.projection.isBroadcasting = true
-                state.projection.safetyNotice = nil
-                effects.append(.startProjection)
-                if canGenerateReducerSupport(in: bridgeMode) {
-                    state.support.record(kind: .projectionStarted, detail: "source=runtime", at: environment.now)
-                }
-            } else {
-                state.projection.isBroadcasting = false
-                state.projection.hasExternalDisplay = false
-                state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
-                if canGenerateReducerSupport(in: bridgeMode) {
-                    state.support.record(kind: .projectionStartFailed, detail: "reason=noExternalDisplay", at: environment.now)
-                }
-            }
+            ProjectionRuntimeReducer.toggleProjection(
+                state: &state,
+                effects: &effects,
+                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
+                now: environment.now
+            )
 
         case .operatorSetConsoleMode(let mode):
             state.mode = mode
@@ -492,47 +476,28 @@ enum LiveRuntimeReducer {
 
         case .projectionStartFailed(let reason):
             guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
-            state.projection.isBroadcasting = false
-            switch reason {
-            case .noTargetScreen, .externalDisplayUnavailable:
-                state.projection.hasExternalDisplay = false
-                state.projection.safetyNotice = "未检测到外接屏幕，未开始投射"
-            }
+            ProjectionRuntimeReducer.startFailed(reason: reason, state: &state)
 
         case .projectionExternalDisplayLost:
-            let wasBroadcasting = state.projection.isBroadcasting
-            state.projection.isBroadcasting = false
-            state.projection.hasExternalDisplay = false
-            if wasBroadcasting {
-                state.projection.safetyNotice = "副屏已断开，投射已停止"
-            }
-            guard wasBroadcasting else { break }
-            if state.projection.lastDisplayLostAt == nil {
-                state.projection.lastDisplayLostAt = environment.now
-                if canGenerateReducerSupport(in: bridgeMode) {
-                    state.support.record(kind: .projectionLost, detail: "state=displayLost", at: environment.now)
-                }
-            }
-            effects.append(.stopProjection)
+            guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
+            ProjectionRuntimeReducer.externalDisplayLost(
+                state: &state,
+                effects: &effects,
+                canWriteSupport: canGenerateReducerSupport(in: bridgeMode),
+                now: environment.now
+            )
 
         case .projectionExternalDisplayAvailable:
-            state.projection.hasExternalDisplay = true
-            state.projection.safetyNotice = nil
-            state.projection.lastDisplayLostAt = nil
+            guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
+            ProjectionRuntimeReducer.externalDisplayAvailable(state: &state)
 
         case .projectionExternalDisplayUnavailable:
-            let wasBroadcasting = state.projection.isBroadcasting
-            state.projection.isBroadcasting = false
-            state.projection.hasExternalDisplay = false
-            if wasBroadcasting {
-                state.projection.safetyNotice = "副屏已断开，投射已停止"
-                if state.projection.lastDisplayLostAt == nil {
-                    state.projection.lastDisplayLostAt = environment.now
-                }
-                effects.append(.stopProjection)
-            } else {
-                state.projection.lastDisplayLostAt = nil
-            }
+            guard isRuntimeOwned(.projection, in: bridgeMode) else { break }
+            ProjectionRuntimeReducer.externalDisplayUnavailable(
+                state: &state,
+                effects: &effects,
+                now: environment.now
+            )
 
         case .pptEventTapStarted:
             state.ppt.isRequested = true

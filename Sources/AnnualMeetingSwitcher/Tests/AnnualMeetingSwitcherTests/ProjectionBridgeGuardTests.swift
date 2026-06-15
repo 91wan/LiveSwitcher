@@ -20,10 +20,11 @@ final class ProjectionBridgeGuardTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAudioOwnedDisplayLossUpdatesMirrorButBlocksStopProjectionEffect() {
+    func testAudioOwnedDisplayLossDoesNotMutateProjectionStateOrWriteSupport() {
         var state = LiveRuntimeState()
         state.projection.isBroadcasting = true
         state.projection.hasExternalDisplay = true
+        let originalProjection = state.projection
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
@@ -33,8 +34,8 @@ final class ProjectionBridgeGuardTests: XCTestCase {
             )
         )
 
-        XCTAssertFalse(mutation.state.projection.isBroadcasting)
-        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertEqual(mutation.state.projection, originalProjection)
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
