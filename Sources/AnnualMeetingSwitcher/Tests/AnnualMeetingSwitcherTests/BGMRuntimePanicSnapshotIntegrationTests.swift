@@ -13,6 +13,37 @@ final class BGMRuntimePanicSnapshotIntegrationTests: XCTestCase {
         XCTAssertFalse(state.panic.snapshot?.wasBGMPlaying == true)
     }
 
+    func testSelectedNextBGMDuringPanicMarksSnapshotBGMStopped() {
+        var state = panicState()
+        state.bgm.items.append(bgmItem(title: "Next"))
+        var effects: [LiveRuntimeEffect] = []
+
+        BGMRuntimeReducer.selectAdjacent(
+            offset: 1,
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertFalse(state.panic.snapshot?.wasBGMPlaying == true)
+    }
+
+    func testSelectedPreviousBGMDuringPanicMarksSnapshotBGMStopped() {
+        let previous = bgmItem(title: "Previous")
+        var state = panicState()
+        state.bgm.items.insert(previous, at: 0)
+        var effects: [LiveRuntimeEffect] = []
+
+        BGMRuntimeReducer.selectAdjacent(
+            offset: -1,
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertFalse(state.panic.snapshot?.wasBGMPlaying == true)
+    }
+
     func testStoppedBGMDuringPanicMarksSnapshotBGMStopped() {
         var state = panicState()
         var effects: [LiveRuntimeEffect] = []
@@ -130,7 +161,8 @@ final class BGMRuntimePanicSnapshotIntegrationTests: XCTestCase {
         BGMItem(
             id: UUID(),
             title: title,
-            url: URL(fileURLWithPath: "/tmp/\(title).mp3")
+            url: URL(fileURLWithPath: "/tmp/\(title).mp3"),
+            category: .warmUp
         )
     }
 }

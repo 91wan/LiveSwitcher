@@ -94,7 +94,7 @@ BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; the main
 `LiveRuntimeReducer.swift` should route BGM actions and keep ownership guards,
 not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
 mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
-a dedicated audio reducer extraction is planned.
+a dedicated `AudioRuntimeReducer` extraction is planned as future work.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`.
 The wallpaper and corner-logo asset library facade lives in
@@ -480,19 +480,23 @@ BGM Runtime reducer mechanics live in `Runtime/BGMRuntimeReducer.swift`.
 `LiveRuntimeReducer.swift` keeps BGM ownership guards and delegates BGM actions
 to that domain reducer. The BGM reducer owns selection, stop/fade, seek,
 play-mode, progress, adjacent selection, reached-end, failure, and Panic
-pause/resume mutation/effect logic. It may call Runtime audio helpers
+pause/resume mutation/effect logic. BGM play-mode changes require explicit
+`.bgm` ownership before they mutate Runtime state or emit persistence effects.
+It may call Runtime audio helpers
 `syncAudioRoutingContextFromMirrorState` and `recalculateAudio` until a
-dedicated audio reducer extraction is planned.
+dedicated `AudioRuntimeReducer` extraction is planned as future work.
 
 Production uses `BGMPlaybackPort` and `BGMTimerPort` effects for concrete
 playback and timer operations. ViewModel bridges those effects to
 `AVAudioPlayer`, the `AVPlayer` fallback, and the existing timer implementation.
 Runtime BGM effects are generation-guarded so stale play, stop, timer, progress,
-finish, and failure callbacks cannot mutate the current track. Panic selection
-can cue a BGM item without starting audible playback; Panic orchestration itself
-and BGM Panic snapshot mutation remain Runtime-owned. BGM terminal/changing
-paths mark matching Panic snapshots stopped through `PanicRuntimeReducer`, while
-normal Panic BGM pause preserves resume eligibility.
+finish, and failure callbacks cannot mutate the current track. During Panic,
+direct BGM selection and adjacent BGM selection through next/previous cue and
+stop the selected track instead of starting audible playback; Panic
+orchestration itself and BGM Panic snapshot mutation remain Runtime-owned. BGM
+terminal/changing paths mark matching Panic snapshots stopped through
+`PanicRuntimeReducer`, while normal Panic BGM pause preserves resume
+eligibility.
 remains ViewModel-owned.
 
 BGM callbacks require an active runtime BGM generation plus active item identity:

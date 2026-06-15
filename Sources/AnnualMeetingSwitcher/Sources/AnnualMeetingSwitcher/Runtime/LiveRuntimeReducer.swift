@@ -228,6 +228,7 @@ enum LiveRuntimeReducer {
             )
 
         case .operatorSelectedBGMPlayMode(let playMode):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.setPlayMode(playMode, state: &state, effects: &effects)
 
         case .operatorSeekedBGMToBeginning:
