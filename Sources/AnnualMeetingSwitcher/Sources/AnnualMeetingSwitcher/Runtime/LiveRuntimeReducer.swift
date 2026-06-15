@@ -62,100 +62,59 @@ enum LiveRuntimeReducer {
 
         case .operatorToggledMediaPlayback:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard !state.media.didPlayToEnd else { break }
-            if state.panic.isActive {
-                guard state.media.isPlaying else { break }
-                state.media.isPlaying = false
-                syncAudioRoutingContextFromMirrorState(&state)
-                effects.append(.pauseMedia(generation: state.media.generation))
-                recalculateAudio(&state)
-                effects.append(.applyAudioRouting(reason: .panicChanged))
-                break
-            }
-            state.media.isPlaying.toggle()
-            syncAudioRoutingContextFromMirrorState(&state)
-            effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+            MediaRuntimeReducer.togglePlayback(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorRestartedCurrentMedia:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
-            state.media.didPlayToEnd = false
-            state.media.currentTime = 0
-            if state.panic.isActive {
-                state.media.isPlaying = false
-                syncAudioRoutingContextFromMirrorState(&state)
-                effects.append(.seekMediaToStart(generation: state.media.generation))
-                recalculateAudio(&state)
-                effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
-                break
-            }
-            state.media.isPlaying = true
-            syncAudioRoutingContextFromMirrorState(&state)
-            effects.append(.restartMedia(generation: state.media.generation))
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+            MediaRuntimeReducer.restartCurrent(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSeekedCurrentMediaToStart:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
-            state.media.didPlayToEnd = false
-            state.media.currentTime = 0
-            effects.append(.seekMediaToStart(generation: state.media.generation))
+            MediaRuntimeReducer.seekCurrentToStart(
+                state: &state,
+                effects: &effects
+            )
 
         case .operatorSeekedCurrentMediaToEnd:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard state.program.effectiveCurrentItem?.supportsSeeking == true else { break }
-            state.media.didPlayToEnd = false
-            if let duration = state.media.duration, duration.isFinite, duration > 0 {
-                state.media.currentTime = duration
-            }
-            effects.append(.seekMediaToEnd(generation: state.media.generation))
+            MediaRuntimeReducer.seekCurrentToEnd(
+                state: &state,
+                effects: &effects
+            )
 
         case .operatorStoppedCurrentMedia:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard state.media.loadedURL != nil
-                    || state.media.isPlaying
-                    || state.program.effectiveCurrentItem?.sourceKind == .media
-            else { break }
-            PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot(state: &state)
-            state.media.generation += 1
-            state.media.loadedURL = nil
-            state.media.isPlaying = false
-            state.media.didPlayToEnd = false
-            state.media.currentTime = 0
-            state.media.duration = nil
-            syncAudioRoutingContextFromMirrorState(&state)
-            effects.append(.stopMedia(generation: state.media.generation))
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+            MediaRuntimeReducer.stopCurrent(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorPausedMediaForPanic(let generation):
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            let targetGeneration = generation ?? state.media.generation
-            guard targetGeneration == state.media.generation else { break }
-            guard state.media.isPlaying else { break }
-            state.media.isPlaying = false
-            syncAudioRoutingContextFromMirrorState(&state)
-            effects.append(.pauseMedia(generation: targetGeneration))
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .panicChanged))
+            MediaRuntimeReducer.pauseForPanic(
+                generation: generation,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorResumedMediaAfterPanic(let generation):
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
-            guard !state.panic.isActive else { break }
-            let targetGeneration = generation ?? state.media.generation
-            guard targetGeneration == state.media.generation else { break }
-            state.media.isPlaying = true
-            state.media.didPlayToEnd = false
-            syncAudioRoutingContextFromMirrorState(&state)
-            effects += [
-                .setMediaVolume(0, fade: 0, generation: targetGeneration),
-                .playMedia(generation: targetGeneration)
-            ]
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .panicChanged))
+            MediaRuntimeReducer.resumeAfterPanic(
+                generation: generation,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .operatorSelectedAudioStrategy(let strategy):
             state.audio.strategy = strategy
@@ -406,29 +365,35 @@ enum LiveRuntimeReducer {
             state.program.replaceProgramQueueFromFacade(items)
 
         case .mediaLoaded(let url, let generation):
-            guard generation == state.media.generation else { break }
-            state.media.loadedURL = url
-            state.media.didPlayToEnd = false
+            MediaRuntimeReducer.loaded(
+                url: url,
+                generation: generation,
+                state: &state
+            )
 
         case .mediaPlaybackChanged(let isPlaying, let generation):
-            guard generation == state.media.generation else { break }
-            state.media.isPlaying = isPlaying
-            state.audio.routingContext.isMediaPlaying = isPlaying
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+            MediaRuntimeReducer.playbackChanged(
+                isPlaying: isPlaying,
+                generation: generation,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .mediaReachedEnd(let generation):
-            guard generation == state.media.generation else { break }
-            PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot(state: &state)
-            state.media.isPlaying = false
-            state.media.didPlayToEnd = true
-            state.audio.routingContext.isMediaPlaying = false
-            recalculateAudio(&state)
-            effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+            MediaRuntimeReducer.reachedEnd(
+                generation: generation,
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .mediaSeekCompleted(let time, let generation):
-            guard generation == state.media.generation else { break }
-            state.media.currentTime = max(0, time)
+            MediaRuntimeReducer.seekCompleted(
+                time: time,
+                generation: generation,
+                state: &state
+            )
 
         case .facadeCurrentProgramChanged(let id):
             state.program.currentID = id
