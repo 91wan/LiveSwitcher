@@ -90,6 +90,11 @@ BGM runtime playback facade code that bridges Runtime-owned BGM state to
 realtime metering lives in `ViewModel+BGMRuntimePlayback.swift`.
 BGM library editing and operator selection facade methods remain ViewModel-owned
 and live in `ViewModel+BGMControls.swift`.
+BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; the main
+`LiveRuntimeReducer.swift` should route BGM actions and keep ownership guards,
+not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
+mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
+a dedicated audio reducer extraction is planned.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`.
 The wallpaper and corner-logo asset library facade lives in
@@ -257,7 +262,7 @@ explicit owner.
 | Current program selection | Runtime owner | Authoritative selected queued/detached item, switched-at timestamp, and facade projection | authoritative | Runtime owns `state.program.currentID`, `state.program.currentDetachedItem`, `state.program.currentSwitchedAt`, selected queued/detached program actions, clearing current selection when the current queue item is removed, and `currentProgramItem` / `currentProgramSwitchedAt` facade projection in `.programSelectionOwned`. Selection mechanics live in `Runtime/ProgramSelectionRuntimeReducer.swift`: `operatorSelectedProgram` means queued item selection, `operatorSelectedDetachedProgram` means detached item selection, and those redacted action names remain distinct while omitting titles and paths. `clearCurrentProgramSelection(reason:)` lives in `ViewModel+ProgramSelection.swift`; `ViewModel+RuntimeFacadeSync.swift` is Runtime-to-facade sync-only. Runtime reducer audio helpers are internal for Runtime domain reducers only and must not be called from ViewModel. `facadeCurrentProgramChanged` is compatibility-only, is suppressed from the action log, and must not be used by production selection paths. ViewModel still owns invalid-deck alerts, source availability checks, Keynote/WPS/HTML/media activation side effects, media transport controls, and support event generation decisions. Activation execution now runs explicit `ProgramActivationPlan` phases through `ProgramActivationPort`: pre-selection side effects first, Runtime selection second, current-program facade projection third, and post-selection effects last. |
 | Program activation | Runtime lifecycle owner, ViewModel side-effect owner | Active request ID, completion lifecycle, and activation effect dispatch | lifecycle authoritative | Runtime owns `state.programActivation`, `operatorRequestedProgramActivation(id:plan:)`, `programActivationCompleted(id:)`, and `.executeProgramActivation(id:plan:)`. It does not store full plans in state and redacts recorded activation effects. `ProgramActivationPort` calls back into `ViewModel+ProgramActivationRuntimeBridge.swift`; it runs only for the active request, completes only that active request, and verifies Runtime accepted selection before post-selection effects run. Stale activation effects must not run side effects, and rejected selection must not run post-selection side effects. ViewModel-owned side effects execute through `ProgramActivationSideEffectHandlers`; source validation, source availability checks, invalid-deck validation, and `ProgramActivationPlanner` remain outside Runtime reducers. |
 | Media playback | Runtime owner | Authoritative loaded URL, play/pause, restart, stop, seek, ended state, generation, and media effects | authoritative | Runtime emits `MediaPlaybackPort` effects; ViewModel bridges those effects to `AVPlayerCoordinator`. |
-| BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
+| BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes BGM actions only. Panic snapshot mutation for BGM terminal/changing paths remains Runtime-owned through `PanicRuntimeReducer`. BGM library editing and metadata remain ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Image assets | Runtime bridge infrastructure | Wallpaper and corner-logo loading side effects | hardened bridge domain | Runtime-owned bridge modes except `.recordingOnly` own `.imageAssets`, so repaired or selected image URLs can reach `ImageAssetPort` without being mislabeled as Audio. Image library mutation, file repair decisions, and setup UI remain ViewModel/Persistence-owned. |
 | Panic | Runtime owner, ViewModel support/telemetry owner | Authoritative active state, transition snapshot, snapshot stopped-state mutation, media/BGM pause/resume actions, delayed BGM pause scheduling, and facade projection | authoritative | Panic transition orchestration is runtime-owned in `.panicOwned`; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer orchestration lives in `PanicRuntimeReducer`. Production wires `PanicDelayPort`; the concrete delayed pause task lives in `ViewModel+PanicDelayRuntimeWiring.swift` and dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. `togglePanicMode()` uses `runtime.state.panic.isActive` as source of truth when `.panic` is owned. `isPanicMode` and `panicPlaybackSnapshot` are Runtime-backed facade projections, and Runtime-backed audio snapshots use Runtime Panic state rather than stale facade state. Runtime marks matching snapshot media stopped for reached-end/operator-stop during Panic and matching snapshot BGM stopped for end/fail/stop/new-selection during Panic; normal Panic pause keeps resume eligibility. ViewModel snapshot mutation helpers are legacy fallback only before `.panicOwned`. Panic OFF resumes only from Runtime snapshot truth. `PanicDelayPort` clears task bookkeeping after matching fire/cancel paths. Fade-to-black remains visual-only and ViewModel-owned. The Panic reducer must not write support. |
@@ -471,6 +476,13 @@ category metadata, and ordering, but current track, play/stop/next/previous,
 seek-to-beginning, seek-to-progress, loop-mode player side effects,
 end/failure callbacks, progress, duration, generation, and timer start/stop are
 owned by `LiveRuntimeState.bgm`.
+BGM Runtime reducer mechanics live in `Runtime/BGMRuntimeReducer.swift`.
+`LiveRuntimeReducer.swift` keeps BGM ownership guards and delegates BGM actions
+to that domain reducer. The BGM reducer owns selection, stop/fade, seek,
+play-mode, progress, adjacent selection, reached-end, failure, and Panic
+pause/resume mutation/effect logic. It may call Runtime audio helpers
+`syncAudioRoutingContextFromMirrorState` and `recalculateAudio` until a
+dedicated audio reducer extraction is planned.
 
 Production uses `BGMPlaybackPort` and `BGMTimerPort` effects for concrete
 playback and timer operations. ViewModel bridges those effects to
@@ -478,6 +490,9 @@ playback and timer operations. ViewModel bridges those effects to
 Runtime BGM effects are generation-guarded so stale play, stop, timer, progress,
 finish, and failure callbacks cannot mutate the current track. Panic selection
 can cue a BGM item without starting audible playback; Panic orchestration itself
+and BGM Panic snapshot mutation remain Runtime-owned. BGM terminal/changing
+paths mark matching Panic snapshots stopped through `PanicRuntimeReducer`, while
+normal Panic BGM pause preserves resume eligibility.
 remains ViewModel-owned.
 
 BGM callbacks require an active runtime BGM generation plus active item identity:
