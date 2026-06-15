@@ -55,6 +55,18 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
         XCTAssertTrue(source.contains("BGMRuntimeReducer.reachedEnd"))
     }
 
+    func testLiveRuntimeReducerDelegatesBGMAdjacentSelection() throws {
+        let source = try liveReducerSource()
+
+        XCTAssertTrue(source.contains("BGMRuntimeReducer.selectAdjacent"))
+    }
+
+    func testLiveRuntimeReducerDelegatesBGMPlayMode() throws {
+        let source = try liveReducerSource()
+
+        XCTAssertTrue(source.contains("BGMRuntimeReducer.setPlayMode"))
+    }
+
     func testLiveRuntimeReducerDoesNotDeclareSelectAdjacentBGM() throws {
         let source = try liveReducerSource()
 

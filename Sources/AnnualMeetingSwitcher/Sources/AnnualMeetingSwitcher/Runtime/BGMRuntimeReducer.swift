@@ -101,18 +101,28 @@ enum BGMRuntimeReducer {
         else { return }
         let nextIndex = (index + offset + categoryItems.count) % categoryItems.count
         let nextItem = categoryItems[nextIndex]
+        PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
         state.bgm.generation += 1
         state.bgm.currentID = nextItem.id
-        state.bgm.isPlaying = true
         state.bgm.progress = 0
         state.bgm.currentTime = 0
         state.bgm.duration = nil
-        effects += [
-            .prepareBGM(nextItem, generation: state.bgm.generation),
-            .playBGM(generation: state.bgm.generation),
-            .startBGMTimer(generation: state.bgm.generation),
-            .applyAudioRouting(reason: .bgmPlaybackChanged)
-        ]
+        if state.panic.isActive {
+            state.bgm.isPlaying = false
+            effects += [
+                .stopBGM(fade: 0, generation: state.bgm.generation),
+                .stopBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
+            ]
+        } else {
+            state.bgm.isPlaying = true
+            effects += [
+                .prepareBGM(nextItem, generation: state.bgm.generation),
+                .playBGM(generation: state.bgm.generation),
+                .startBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
+            ]
+        }
         LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
         LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }

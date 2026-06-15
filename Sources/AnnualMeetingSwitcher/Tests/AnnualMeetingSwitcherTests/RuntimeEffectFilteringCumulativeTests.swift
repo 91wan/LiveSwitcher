@@ -79,16 +79,16 @@ final class RuntimeEffectFilteringCumulativeTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeBridgeMode.supportOwned.owns(effect.requiredBridgeDomain))
     }
 
-    func testAudioOwnedAllowsSaveBGMPlayModeThroughPersistenceDomain() {
+    func testAudioOwnedBlocksSaveBGMPlayModeBeforeBGMOwnership() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .audioOwned)
 
-        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
-    func testMediaOwnedAllowsSaveBGMPlayModeThroughPersistenceDomain() {
+    func testMediaOwnedBlocksSaveBGMPlayModeBeforeBGMOwnership() {
         let mutation = reduce(.operatorSelectedBGMPlayMode(.loopOne), bridgeMode: .mediaOwned)
 
-        XCTAssertTrue(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
+        XCTAssertFalse(mutation.effects.contains(.saveBGMPlayMode(.loopOne)))
     }
 
     func testBGMOwningModeAllowsSaveBGMPlayMode() {

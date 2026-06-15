@@ -160,6 +160,10 @@ product boundary.
 - BGM Runtime reducer extraction does not add live controls or change BGM
   behavior. It only keeps Runtime reducer files domain-scoped by moving BGM
   mutation mechanics to `BGMRuntimeReducer`.
+- BGM Runtime reducer hardening does not add live controls. Existing BGM
+  next/previous controls remain allowed, but during Panic their Runtime behavior
+  is safety-critical: they cue/stop the selected track instead of starting
+  playback, and reducer files stay domain-scoped.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates
