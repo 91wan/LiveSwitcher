@@ -143,8 +143,8 @@ final class MediaRuntimeReducerExtractionTests: XCTestCase {
     func testMediaRuntimeReducerMayCallRuntimeAudioHelpers() throws {
         let source = try mediaReducerSource()
 
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState"))
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.recalculateAudio"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.recalculateAudio"))
     }
 
     func testViewModelFilesDoNotCallLiveRuntimeReducerRecalculateAudio() throws {
@@ -163,11 +163,12 @@ final class MediaRuntimeReducerExtractionTests: XCTestCase {
         }
     }
 
-    func testAudioReducerExtractionIsStillFutureWork() throws {
+    func testAudioReducerExtractionIsComplete() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
-        XCTAssertTrue(docs.contains("AudioRuntimeReducer extraction remains future work"))
-        XCTAssertNil(try optionalRepositorySource(
+        XCTAssertTrue(docs.localizedStandardContains("AudioRuntimeReducer"))
+        XCTAssertFalse(docs.contains("AudioRuntimeReducer extraction remains future work"))
+        XCTAssertNotNil(try optionalRepositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/AudioRuntimeReducer.swift"
         ))
     }

@@ -41,14 +41,14 @@ final class ProgramSelectionFacadeBoundaryTests: XCTestCase {
         XCTAssertTrue(source.contains("applyCurrentProgramProjectionFromRuntime(nil, switchedAt: nil)"))
     }
 
-    func testRuntimeReducerAudioHelpersRemainMarkedForDomainReducersOnly() throws {
+    func testAudioRuntimeReducerHelpersRemainMarkedForDomainReducersOnly() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/AudioRuntimeReducer.swift"
         )
 
         XCTAssertTrue(source.contains("// Internal for domain reducers; do not call from ViewModel."))
         XCTAssertTrue(source.contains("internal static func recalculateAudio"))
-        XCTAssertTrue(source.contains("internal static func syncAudioRoutingContextFromMirrorState"))
+        XCTAssertTrue(source.contains("internal static func syncRoutingContextFromMirrorState"))
     }
 
     func testViewModelFilesDoNotCallLiveRuntimeReducerRecalculateAudio() throws {
@@ -64,8 +64,8 @@ final class ProgramSelectionFacadeBoundaryTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramSelectionRuntimeReducer.swift"
         )
 
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState"))
-        XCTAssertTrue(source.contains("LiveRuntimeReducer.recalculateAudio"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState"))
+        XCTAssertTrue(source.contains("AudioRuntimeReducer.recalculateAudio"))
     }
 
     private var runtimeFacadeSyncPath: String {

@@ -30,8 +30,8 @@ enum BGMRuntimeReducer {
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
         }
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     static func setPlayMode(
@@ -84,8 +84,8 @@ enum BGMRuntimeReducer {
             .stopBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     static func selectAdjacent(
@@ -123,8 +123,8 @@ enum BGMRuntimeReducer {
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
         }
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     static func pauseForPanic(
@@ -137,9 +137,9 @@ enum BGMRuntimeReducer {
         guard targetGeneration == state.bgm.generation else { return }
         guard state.bgm.isPlaying else { return }
         state.bgm.isPlaying = false
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects.append(.pauseBGM(generation: targetGeneration))
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
@@ -152,12 +152,12 @@ enum BGMRuntimeReducer {
         let targetGeneration = generation ?? state.bgm.generation
         guard targetGeneration == state.bgm.generation else { return }
         state.bgm.isPlaying = true
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects += [
             .setBGMVolume(0, fade: 0, generation: targetGeneration),
             .playBGM(generation: targetGeneration)
         ]
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
 
@@ -171,7 +171,7 @@ enum BGMRuntimeReducer {
         guard generation == state.bgm.generation else { return }
         state.bgm.isPlaying = isPlaying
         state.audio.routingContext.isBGMPlaying = isPlaying
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
 
@@ -211,7 +211,7 @@ enum BGMRuntimeReducer {
             .stopBGM(fade: 0, generation: state.bgm.generation),
             .stopBGMTimer(generation: state.bgm.generation)
         ]
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
 
@@ -314,8 +314,8 @@ enum BGMRuntimeReducer {
             .startBGMTimer(generation: state.bgm.generation),
             .applyAudioRouting(reason: .bgmPlaybackChanged)
         ]
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
     private static func stopFinished(
@@ -332,8 +332,8 @@ enum BGMRuntimeReducer {
             .stopBGM(fade: 0, generation: state.bgm.generation),
             .stopBGMTimer(generation: state.bgm.generation)
         ]
-        LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
-        LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
     }
 }
