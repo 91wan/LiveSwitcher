@@ -168,6 +168,10 @@ product boundary.
   remains available, but emergency safety overrides playback: during Panic,
   Runtime seeks/cues media to start without emitting a restart/play effect, and
   Runtime state must match the real player behavior.
+- Media playback Panic gate hardening does not add live controls. Panic safety
+  overrides all media start actions: operator toggle cannot start media during
+  Panic, resume-after-Panic is ignored until Panic is inactive, and Runtime state
+  must match the real player behavior.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates
