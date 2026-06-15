@@ -66,14 +66,6 @@ extension SwitcherViewModel {
         )
     }
 
-    func applyPanicProjectionFromRuntime(
-        isActive: Bool,
-        snapshot: PanicPlaybackSnapshot?
-    ) {
-        isPanicMode = isActive
-        panicPlaybackSnapshot = snapshot
-    }
-
     private func reconcileCurrentProgramAfterProgramQueueProjection() {
         guard !runtime.bridgeMode.owns(.programSelection) else { return }
         guard let currentProgramItem,

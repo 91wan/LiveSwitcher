@@ -152,7 +152,7 @@ final class LivePreflightTests: XCTestCase {
 
     func testPanicModeActiveIsClearlyReportedAsEmergencyState() {
         let viewModel = makeViewModel()
-        viewModel.isPanicMode = true
+        viewModel.dispatchRuntimeFacadeAction(.operatorSetPanic(true))
 
         let checks = LivePreflightCheck.build(from: viewModel.livePreflightSnapshot)
         let panic = check("controls.panic", in: checks)
@@ -443,7 +443,7 @@ final class LivePreflightTests: XCTestCase {
     func testViewModelDiagnosticsReportReflectsCurrentStateWithoutMutatingPlayback() {
         let viewModel = makeViewModel()
         viewModel.externalScreenProvider = { nil }
-        viewModel.isPanicMode = true
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
         viewModel.isSpeakerMode = true
         viewModel.startTicker(text: "Welcome")
         let beforeSnapshot = viewModel.livePreflightSnapshot
@@ -609,7 +609,7 @@ final class LivePreflightTests: XCTestCase {
     func testViewModelSupportReportReflectsCurrentStateWithoutMutatingPlayback() {
         let viewModel = makeViewModel()
         viewModel.externalScreenProvider = { nil }
-        viewModel.isPanicMode = true
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
         viewModel.isSpeakerMode = true
         viewModel.startTicker(text: "Customer ticker text")
         let beforeSnapshot = viewModel.livePreflightSnapshot

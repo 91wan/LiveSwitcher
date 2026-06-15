@@ -59,8 +59,14 @@ decisions. Panic transition orchestration is runtime-owned in `.panicOwned`:
 delayed pause, and resume decisions, and production wires `PanicDelayPort` for
 the concrete delayed BGM pause task. BGM pause after Panic activation preserves
 `liveAudioFadeDuration`. The Panic reducer must not write support; Panic support
-events and telemetry remain ViewModel-owned. Fade-to-black remains visual-only
-and ViewModel-owned.
+events and telemetry remain ViewModel-owned. In `.panicOwned`,
+`runtime.state.panic` is the source of truth: `togglePanicMode()` derives its
+target from Runtime state, `isPanicMode` and `panicPlaybackSnapshot` are
+Runtime-backed facade projections, and Runtime-backed audio snapshots use
+Runtime Panic state rather than stale facade state. `PanicDelayPort` clears its
+ViewModel-owned task and generation bookkeeping after a matching delayed
+callback fires or cancelation matches. Fade-to-black remains visual-only and
+ViewModel-owned.
 Activation execution, invalid-deck alerts, and activation side-effect
 orchestration live in `ViewModel+ProgramActivationRuntimeBridge.swift` behind
 `ProgramActivationPort`. Current-program media
@@ -183,6 +189,8 @@ adds Program activation request/completion lifecycle and effect dispatch while
 keeping source validation, plan construction, and concrete activation side
 effects ViewModel-owned. `.panicOwned` adds Panic transition orchestration while
 keeping fade-to-black, support event generation, and telemetry ViewModel-owned.
+In `.panicOwned`, `isPanicMode` and `panicPlaybackSnapshot` are private-set
+Runtime-backed projections; they are not independent source-of-truth fields.
 
 In this mode the runtime reducer owns `state.audio`, `state.media`,
 `state.bgm`, `state.projection`, PPT requested/active/failure state, and
@@ -244,7 +252,7 @@ explicit owner.
 | BGM | Runtime owner | Authoritative current track, playback state, seek, loop-mode player side effects, progress, duration, generation, and timer effects | authoritative | Runtime emits `BGMPlaybackPort` and `BGMTimerPort` effects; ViewModel bridges those effects to `AVAudioPlayer`/`AVPlayer` and the progress timer. Runtime BGM playback effects remain BGM-domain effects; persisted play-mode preference writes use the Persistence domain. BGM library editing remains ViewModel-owned. |
 | Audio routing | Runtime owner | Authoritative audio state and routing decisions | authoritative | Audio faders, mutes, strategy, speaker mode, takeover, routing context, and effective output are runtime-owned. |
 | Image assets | Runtime bridge infrastructure | Wallpaper and corner-logo loading side effects | hardened bridge domain | Runtime-owned bridge modes except `.recordingOnly` own `.imageAssets`, so repaired or selected image URLs can reach `ImageAssetPort` without being mislabeled as Audio. Image library mutation, file repair decisions, and setup UI remain ViewModel/Persistence-owned. |
-| Panic | Runtime owner, ViewModel support/telemetry owner | Authoritative active state, transition snapshot, media/BGM pause/resume actions, delayed BGM pause scheduling, and facade projection | authoritative | Panic transition orchestration is runtime-owned in `.panicOwned`; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer orchestration lives in `PanicRuntimeReducer`. Production wires `PanicDelayPort`; the concrete delayed pause task lives in `ViewModel+PanicDelayRuntimeWiring.swift` and dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. Fade-to-black remains visual-only and ViewModel-owned. The Panic reducer must not write support. |
+| Panic | Runtime owner, ViewModel support/telemetry owner | Authoritative active state, transition snapshot, media/BGM pause/resume actions, delayed BGM pause scheduling, and facade projection | authoritative | Panic transition orchestration is runtime-owned in `.panicOwned`; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer orchestration lives in `PanicRuntimeReducer`. Production wires `PanicDelayPort`; the concrete delayed pause task lives in `ViewModel+PanicDelayRuntimeWiring.swift` and dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. `togglePanicMode()` uses `runtime.state.panic.isActive` as source of truth when `.panic` is owned. `isPanicMode` and `panicPlaybackSnapshot` are Runtime-backed facade projections, and Runtime-backed audio snapshots use Runtime Panic state rather than stale facade state. `PanicDelayPort` clears task bookkeeping after matching fire/cancel paths. Fade-to-black remains visual-only and ViewModel-owned. The Panic reducer must not write support. |
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
 | Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
@@ -418,7 +426,7 @@ timer-generation, and audio-routing transition storage behind accessors.
 | `media` | wired | Runtime media playback effects execute through the ViewModel bridge to `AVPlayerCoordinator`. |
 | `bgm` | wired | Runtime BGM playback effects execute through the ViewModel bridge to `AVAudioPlayer` with an `AVPlayer` fallback. |
 | `bgmTimer` | wired | Runtime BGM timer effects start and stop the ViewModel-owned timer implementation by generation. |
-| `panicDelay` | wired | Runtime schedules delayed Panic BGM pause through `PanicDelayPort`; the ViewModel-owned task implementation dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. |
+| `panicDelay` | wired | Runtime schedules delayed Panic BGM pause through `PanicDelayPort`; the ViewModel-owned task implementation dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext` and clears task/generation bookkeeping after matching completion or cancelation. |
 | `audioRouting` | wired | Runtime audio routing decisions execute through the ViewModel bridge using runtime state. |
 | `imageAssets` | wired | Runtime can request background and corner-logo image reloads. |
 | `persistence` | wired | Runtime can persist selected preference updates. |

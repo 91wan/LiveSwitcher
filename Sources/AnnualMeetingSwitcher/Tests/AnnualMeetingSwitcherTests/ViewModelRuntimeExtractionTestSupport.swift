@@ -35,6 +35,18 @@ extension String {
         return nil
     }
 
+    func slice(from start: String, to end: String) -> String? {
+        guard let startRange = range(of: start) else { return nil }
+        guard let endRange = range(of: end, range: startRange.upperBound..<endIndex) else { return nil }
+        return String(self[startRange.lowerBound..<endRange.upperBound])
+    }
+
+    func balancedBlock(after marker: String) -> String? {
+        guard let markerRange = range(of: marker) else { return nil }
+        guard let braceRange = range(of: "{", range: markerRange.upperBound..<endIndex) else { return nil }
+        return balancedBody(startingAt: braceRange.lowerBound)
+    }
+
     private func balancedBody(startingAt openingBrace: String.Index) -> String? {
         var depth = 0
         var index = openingBrace

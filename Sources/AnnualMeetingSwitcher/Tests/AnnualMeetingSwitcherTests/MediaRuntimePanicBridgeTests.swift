@@ -24,12 +24,14 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 0
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
-        viewModel.isPanicMode = true
-        viewModel.panicPlaybackSnapshot = PanicPlaybackSnapshot(
-            currentProgramID: item.id,
-            wasMediaPlaying: true,
-            currentBGMID: nil,
-            wasBGMPlaying: false
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: item.id,
+                wasMediaPlaying: true,
+                currentBGMID: nil,
+                wasBGMPlaying: false
+            )
         )
 
         viewModel.togglePanicMode()
@@ -46,12 +48,14 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 0
         viewModel.applyProgramQueueProjectionFromRuntime([oldItem, newItem])
         viewModel.applyCurrentProgramProjectionFromRuntime(newItem, switchedAt: Date())
-        viewModel.isPanicMode = true
-        viewModel.panicPlaybackSnapshot = PanicPlaybackSnapshot(
-            currentProgramID: oldItem.id,
-            wasMediaPlaying: true,
-            currentBGMID: nil,
-            wasBGMPlaying: false
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: oldItem.id,
+                wasMediaPlaying: true,
+                currentBGMID: nil,
+                wasBGMPlaying: false
+            )
         )
 
         viewModel.togglePanicMode()

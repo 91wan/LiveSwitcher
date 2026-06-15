@@ -210,7 +210,7 @@ final class SwitcherViewModel {
     /// BGM 播放器
     var bgmAudioPlayer: AVAudioPlayer?
     var bgmFallbackPlayer: AVPlayer = AVPlayer()
-    var panicPlaybackSnapshot: PanicPlaybackSnapshot?
+    private(set) var panicPlaybackSnapshot: PanicPlaybackSnapshot?
     var panicAudioTransitionGeneration: Int = 0
     private(set) var lastAudioRoutingTransition: AudioRoutingTransition?
 
@@ -552,7 +552,7 @@ final class SwitcherViewModel {
     }
 
     // MARK: - Tier1: 紧急切黑 State
-    var isPanicMode: Bool       = false
+    private(set) var isPanicMode: Bool       = false
     var isFadeToBlackActive: Bool = false
 
     // MARK: - Tier1: Overlay State（叠层状态变量）
@@ -573,4 +573,33 @@ final class SwitcherViewModel {
     var lowerThirdName: String    = ""
     var lowerThirdTitle: String   = ""
     var lowerThirdPresets: [LowerThirdPreset] = []
+}
+
+@MainActor
+extension SwitcherViewModel {
+    func applyPanicProjectionFromRuntime(
+        isActive: Bool,
+        snapshot: PanicPlaybackSnapshot?
+    ) {
+        isPanicMode = isActive
+        panicPlaybackSnapshot = snapshot
+    }
+
+    func setLegacyPanicMode(_ isActive: Bool) {
+        isPanicMode = isActive
+    }
+
+    func setLegacyPanicPlaybackSnapshot(_ snapshot: PanicPlaybackSnapshot?) {
+        panicPlaybackSnapshot = snapshot
+    }
+
+    func markPanicSnapshotMediaStoppedIfCurrentProgram(_ currentProgramID: UUID?) {
+        guard panicPlaybackSnapshot?.currentProgramID == currentProgramID else { return }
+        panicPlaybackSnapshot?.wasMediaPlaying = false
+    }
+
+    func markPanicSnapshotBGMStoppedIfCurrentBGM(_ currentBGMID: UUID?) {
+        guard panicPlaybackSnapshot?.currentBGMID == currentBGMID else { return }
+        panicPlaybackSnapshot?.wasBGMPlaying = false
+    }
 }

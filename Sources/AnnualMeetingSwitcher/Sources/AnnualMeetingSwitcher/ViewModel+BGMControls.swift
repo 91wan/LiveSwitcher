@@ -130,8 +130,8 @@ extension SwitcherViewModel {
     func bgmDidFinish() {
         guard dispatchRuntimeBGMCallback({ .bgmReachedEnd(generation: $0) }) else { return }
         removeBGMFallbackEndObserver()
-        if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
-            panicPlaybackSnapshot?.wasBGMPlaying = false
+        if isPanicMode {
+            markPanicSnapshotBGMStoppedIfCurrentBGM(currentBGMItem?.id)
         }
         recordBGMPlaybackState(isPlaying: isBGMPlaying, reason: isBGMPlaying ? "advanced" : "finished")
     }
@@ -143,8 +143,8 @@ extension SwitcherViewModel {
 
     func bgmDidFail() {
         guard dispatchRuntimeBGMCallback({ .bgmFailed(reason: "playbackFailed", generation: $0) }) else { return }
-        if isPanicMode, panicPlaybackSnapshot?.currentBGMID == currentBGMItem?.id {
-            panicPlaybackSnapshot?.wasBGMPlaying = false
+        if isPanicMode {
+            markPanicSnapshotBGMStoppedIfCurrentBGM(currentBGMItem?.id)
         }
         clearBGMTakeoverIfNeeded()
         LiveSwitcherTelemetry.bgmTakeoverChanged(isActive: false)
@@ -176,9 +176,7 @@ extension SwitcherViewModel {
 
     private func cueBGMDuringPanic(_ item: BGMItem) {
         dispatchRuntimeBGMItemAction(.operatorSelectedBGM(item.id), item: item)
-        if panicPlaybackSnapshot?.currentBGMID == item.id {
-            panicPlaybackSnapshot?.wasBGMPlaying = false
-        }
+        markPanicSnapshotBGMStoppedIfCurrentBGM(item.id)
         recordBGMPlaybackState(isPlaying: false, reason: "cuedDuringPanic")
     }
 
