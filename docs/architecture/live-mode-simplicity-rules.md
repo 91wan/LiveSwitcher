@@ -157,6 +157,9 @@ product boundary.
 - BGM fade-out runtime fixes do not add live controls; they only restore
   configured fade-out behavior behind existing BGM stop/toggle actions. BGM
   library editing remains setup-only.
+- BGM Runtime reducer extraction does not add live controls or change BGM
+  behavior. It only keeps Runtime reducer files domain-scoped by moving BGM
+  mutation mechanics to `BGMRuntimeReducer`.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates
