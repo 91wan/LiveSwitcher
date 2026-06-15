@@ -111,14 +111,16 @@ product boundary.
   Runtime selection acceptance gates post-selection side effects.
 - Panic transition policy hardening does not add live controls or change
   emergency behavior. It only moves snapshot, media pause, delayed BGM pause,
-  and resume decisions into `PanicTransitionPolicy`; Panic remains
-  ViewModel-owned, the BGM fade delay is unchanged, and emergency behavior must
-  stay deterministic and tested.
+  and resume decisions into `PanicTransitionPolicy`; the BGM fade delay is
+  unchanged, and emergency behavior must stay deterministic and tested.
 - Runtime Panic delay readiness does not add live controls or change emergency
   behavior. It only lets Runtime represent delayed Panic BGM pause through
-  `PanicDelayPort` and `PanicRuntimeReducer`; production Panic remains
-  ViewModel-owned, `panicDelay` is not wired in production, and delayed BGM
-  pause remains a behavior invariant.
+  `PanicDelayPort` and `PanicRuntimeReducer`; production now wires
+  `panicDelay`, and delayed BGM pause remains a behavior invariant.
+- Panic runtime facade hardening does not add live controls or change emergency
+  behavior. Runtime-owned emergency state is the single source of truth;
+  `isPanicMode` and `panicPlaybackSnapshot` are facade projections, and audio
+  routing snapshots must not use stale facade Panic state.
 - Presentation query service extraction does not add live controls. It only
   moves concrete presentation query execution into `PresentationQueryService`
   and query-result normalization/dedupe into `PresentationQueryResultBuilder`;
@@ -204,14 +206,15 @@ product boundary.
   Projection output, PPT EventTap lifecycle, Automation notice lifecycle,
   Support ingress/storage, Automation command execution, Presentation query
   lifecycle, Program queue storage/mutation, current program selection, and
-  Program activation request/completion lifecycle.
-- Mirror-only live domains and ViewModel-owned live domains are Panic, broader
-  Automation flows, Program activation source validation/planning, and concrete
-  activation side effects. PPT key forwarding, WPS fallback branching, scans,
-  Support event production, source validation, invalid-deck alerts, live
-  activation side effects, and telemetry remain ViewModel-owned implementation
-  details.
-- Runtime-backed actions must respect the production `.programActivationOwned`
+  Program activation request/completion lifecycle, and Panic transition
+  orchestration.
+- Mirror-only live domains and ViewModel-owned live domains are broader
+  Automation flows, Program activation source validation/planning, concrete
+  activation side effects, fade-to-black visual state, and Panic support-event
+  generation. PPT key forwarding, WPS fallback branching, scans, Support event
+  production, source validation, invalid-deck alerts, live activation side
+  effects, and telemetry remain ViewModel-owned implementation details.
+- Runtime-backed actions must respect the production `.panicOwned`
   bridge mode:
   media playback, BGM playback/timer, projection start/stop, PPT EventTap
   lifecycle, automation notices, Support ingress, audio routing, image assets,

@@ -43,11 +43,17 @@ extension SwitcherViewModel {
             isBGMMuted: isBGMAudioMuted,
             isSpeakerMode: isSpeakerMode,
             isBGMTakeoverActive: isBGMAudioTakeoverActive,
-            isPanicMode: isPanicMode,
+            isPanicMode: runtimeBackedPanicIsActiveForSnapshot,
             isCurrentProgramMediaSource: currentProgramIsMediaSource,
             isMediaPlaying: avCoordinator.isPlaying,
             isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying
         )
+    }
+
+    private var runtimeBackedPanicIsActiveForSnapshot: Bool {
+        runtime.bridgeMode.owns(.panic)
+            ? runtime.state.panic.isActive
+            : isPanicMode
     }
 
     private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
@@ -76,7 +82,7 @@ extension SwitcherViewModel {
             isCurrentProgramMediaSource: currentProgramIsMediaSource,
             isMediaPlaying: avCoordinator.isPlaying,
             isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying,
-            isPanicMode: isPanicMode
+            isPanicMode: runtimeBackedPanicIsActiveForSnapshot
         )
 
         syncPanicIntoRuntimeSnapshot(&state)

@@ -10,11 +10,12 @@ extension SwitcherViewModel {
     /// Toggle emergency blackout mode.
     func togglePanicMode() {
         if runtime.bridgeMode.owns(.panic) {
-            let oldValue = isPanicMode
-            dispatchRuntimeFacadeAction(.operatorSetPanic(!isPanicMode))
-            guard isPanicMode != oldValue else { return }
-            LiveSwitcherTelemetry.panicModeChanged(isOn: isPanicMode)
-            recordSupportEvent(kind: .panicModeChanged, detail: "isOn=\(isPanicMode)")
+            let oldValue = runtime.state.panic.isActive
+            dispatchRuntimeFacadeAction(.operatorSetPanic(!oldValue))
+            let newValue = runtime.state.panic.isActive
+            guard newValue != oldValue else { return }
+            LiveSwitcherTelemetry.panicModeChanged(isOn: newValue)
+            recordSupportEvent(kind: .panicModeChanged, detail: "isOn=\(newValue)")
             return
         }
 
@@ -38,7 +39,7 @@ extension SwitcherViewModel {
     private func activatePanic() {
         panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
-        isPanicMode = true
+        setLegacyPanicMode(true)
         if shouldPauseMediaForActivePanic(panicPlaybackSnapshot) {
             dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
         } else {
@@ -53,8 +54,8 @@ extension SwitcherViewModel {
         panicAudioTransitionGeneration += 1
         cleanupBag.panicAudioPauseTask?.cancel()
         let snapshot = panicPlaybackSnapshot
-        panicPlaybackSnapshot = nil
-        isPanicMode = false
+        setLegacyPanicPlaybackSnapshot(nil)
+        setLegacyPanicMode(false)
         if shouldResumeMediaAfterPanic(snapshot) {
             dispatchRuntimeFacadeAction(.operatorResumedMediaAfterPanic(generation: nil))
         }
@@ -65,12 +66,12 @@ extension SwitcherViewModel {
     }
 
     private func capturePanicPlaybackSnapshot() {
-        panicPlaybackSnapshot = PanicTransitionPolicy.snapshot(
+        setLegacyPanicPlaybackSnapshot(PanicTransitionPolicy.snapshot(
             currentProgram: currentProgramItem,
             isMediaPlaying: avCoordinator.isPlaying,
             currentBGM: currentBGMItem,
             isBGMPlaying: isBGMPlaying
-        )
+        ))
     }
 
     private func shouldResumeMediaAfterPanic(_ snapshot: PanicPlaybackSnapshot?) -> Bool {

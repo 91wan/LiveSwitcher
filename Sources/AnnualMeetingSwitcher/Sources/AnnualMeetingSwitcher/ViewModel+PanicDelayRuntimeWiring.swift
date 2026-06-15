@@ -12,10 +12,15 @@ extension SwitcherViewModel {
                     try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                 }
                 guard !Task.isCancelled else { return }
-                guard self?.cleanupBag.panicAudioPauseTaskGeneration == generation else { return }
+                guard let self else { return }
+                guard cleanupBag.panicAudioPauseTaskGeneration == generation else { return }
                 context.dispatch(.panicBGMPauseDelayElapsed(generation: generation, snapshot: snapshot))
-                self?.syncBGMFacadeFromRuntime()
-                self?.syncPanicFacadeFromRuntime()
+                syncBGMFacadeFromRuntime()
+                syncPanicFacadeFromRuntime()
+                if cleanupBag.panicAudioPauseTaskGeneration == generation {
+                    cleanupBag.panicAudioPauseTask = nil
+                    cleanupBag.panicAudioPauseTaskGeneration = nil
+                }
             }
         }
 

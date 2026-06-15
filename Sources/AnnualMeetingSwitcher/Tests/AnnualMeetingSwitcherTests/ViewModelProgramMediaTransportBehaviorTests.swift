@@ -30,7 +30,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         let viewModel = makeViewModel()
         let item = try mediaProgram()
         setCurrentProgram(item, in: viewModel, mediaIsPlaying: true)
-        viewModel.isPanicMode = true
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: nil)
         viewModel.runtime.replaceStateForFacadeSync(runtimeState(for: item, mediaIsPlaying: true), clearActionLog: true)
 
         viewModel.toggleMainVideoPlayback()

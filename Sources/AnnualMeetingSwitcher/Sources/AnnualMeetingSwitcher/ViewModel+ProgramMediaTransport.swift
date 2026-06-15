@@ -19,9 +19,7 @@ extension SwitcherViewModel {
         guard !isPanicMode else {
             if runtime.state.media.isPlaying || avCoordinator.isPlaying {
                 dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
-                if panicPlaybackSnapshot?.currentProgramID == item.id {
-                    panicPlaybackSnapshot?.wasMediaPlaying = false
-                }
+                markPanicSnapshotMediaStoppedIfCurrentProgram(item.id)
             }
             return
         }

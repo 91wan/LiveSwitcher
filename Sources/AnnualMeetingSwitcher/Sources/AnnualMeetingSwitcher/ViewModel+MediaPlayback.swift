@@ -41,9 +41,7 @@ extension SwitcherViewModel {
         recordSupportEvent(kind: .playbackReachedEnd, detail: "state=ended")
 
         guard !isPanicMode else {
-            if panicPlaybackSnapshot?.currentProgramID == currentProgramItem?.id {
-                panicPlaybackSnapshot?.wasMediaPlaying = false
-            }
+            markPanicSnapshotMediaStoppedIfCurrentProgram(currentProgramItem?.id)
             return
         }
 

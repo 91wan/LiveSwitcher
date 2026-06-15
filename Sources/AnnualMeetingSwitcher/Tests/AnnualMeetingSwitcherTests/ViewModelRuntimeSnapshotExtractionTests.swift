@@ -118,8 +118,7 @@ final class ViewModelRuntimeSnapshotExtractionTests: XCTestCase {
             wasBGMPlaying: false
         )
         let viewModel = makeViewModel(runtimeState: LiveRuntimeState(), bridgeMode: .recordingOnly)
-        viewModel.isPanicMode = true
-        viewModel.panicPlaybackSnapshot = snapshot
+        viewModel.applyPanicProjectionFromRuntime(isActive: true, snapshot: snapshot)
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
 
