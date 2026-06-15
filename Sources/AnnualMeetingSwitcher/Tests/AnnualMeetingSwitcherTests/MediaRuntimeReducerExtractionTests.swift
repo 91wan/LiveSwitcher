@@ -78,6 +78,12 @@ final class MediaRuntimeReducerExtractionTests: XCTestCase {
         XCTAssertTrue(source.contains("MediaRuntimeReducer.reachedEnd"))
     }
 
+    func testLiveRuntimeReducerDelegatesMediaPlaybackChanged() throws {
+        let source = try liveReducerSource()
+
+        XCTAssertTrue(source.contains("MediaRuntimeReducer.playbackChanged"))
+    }
+
     func testLiveRuntimeReducerDoesNotContainMediaToggleMutationBody() throws {
         let source = try liveReducerSource()
         let body = try XCTUnwrap(source.slice(
@@ -119,6 +125,19 @@ final class MediaRuntimeReducerExtractionTests: XCTestCase {
         let source = try liveReducerSource()
 
         XCTAssertFalse(source.contains("PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot"))
+    }
+
+    func testLiveRuntimeReducerDoesNotContainMediaPlaybackChangedMutationBody() throws {
+        let source = try liveReducerSource()
+        let body = try XCTUnwrap(source.slice(
+            from: "case .mediaPlaybackChanged",
+            to: "case .mediaReachedEnd"
+        ))
+
+        XCTAssertFalse(body.contains("state.media.isPlaying"))
+        XCTAssertFalse(body.contains("state.audio.routingContext.isMediaPlaying"))
+        XCTAssertFalse(body.contains(".pauseMedia"))
+        XCTAssertFalse(body.contains(".playMedia"))
     }
 
     func testMediaRuntimeReducerMayCallRuntimeAudioHelpers() throws {
