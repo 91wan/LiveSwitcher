@@ -102,6 +102,7 @@ enum LiveRuntimeReducer {
                     || state.media.isPlaying
                     || state.program.effectiveCurrentItem?.sourceKind == .media
             else { break }
+            PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot(state: &state)
             state.media.generation += 1
             state.media.loadedURL = nil
             state.media.isPlaying = false
@@ -220,7 +221,7 @@ enum LiveRuntimeReducer {
         case .operatorSelectedBGM(let id):
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             guard let item = state.bgm.items.first(where: { $0.id == id }) else { break }
-            markPanicSnapshotBGMStoppedIfNeeded(&state)
+            PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
             state.bgm.generation += 1
             state.bgm.currentID = id
             state.bgm.progress = 0
@@ -271,7 +272,7 @@ enum LiveRuntimeReducer {
 
         case .operatorStoppedBGM:
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
-            markPanicSnapshotBGMStoppedIfNeeded(&state)
+            PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
             state.bgm.generation += 1
             state.bgm.isPlaying = false
             effects += [
@@ -441,6 +442,7 @@ enum LiveRuntimeReducer {
 
         case .mediaReachedEnd(let generation):
             guard generation == state.media.generation else { break }
+            PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot(state: &state)
             state.media.isPlaying = false
             state.media.didPlayToEnd = true
             state.audio.routingContext.isMediaPlaying = false
@@ -482,7 +484,7 @@ enum LiveRuntimeReducer {
 
         case .bgmReachedEnd(let generation):
             guard generation == state.bgm.generation else { break }
-            markPanicSnapshotBGMStoppedIfNeeded(&state)
+            PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
             reduceBGMReachedEnd(
                 state: &state,
                 effects: &effects,
@@ -491,7 +493,7 @@ enum LiveRuntimeReducer {
 
         case .bgmFailed(let reason, let generation):
             guard generation == state.bgm.generation else { break }
-            markPanicSnapshotBGMStoppedIfNeeded(&state)
+            PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
             state.bgm.generation += 1
             state.bgm.isPlaying = false
             state.audio.routingContext.isBGMPlaying = false
@@ -769,14 +771,6 @@ enum LiveRuntimeReducer {
               let currentItem = state.bgm.items.first(where: { $0.id == currentID })
         else { return nil }
         return state.bgm.items.filter { $0.category == currentItem.category }
-    }
-
-    private static func markPanicSnapshotBGMStoppedIfNeeded(_ state: inout LiveRuntimeState) {
-        guard state.panic.isActive,
-              state.panic.snapshot?.currentBGMID == state.bgm.currentID
-        else { return }
-
-        state.panic.snapshot?.wasBGMPlaying = false
     }
 
     private static func restartBGM(

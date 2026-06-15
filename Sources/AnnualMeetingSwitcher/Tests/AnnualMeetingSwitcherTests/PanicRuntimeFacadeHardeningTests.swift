@@ -76,6 +76,127 @@ final class PanicRuntimeFacadeHardeningTests: XCTestCase {
         )
     }
 
+    func testPanicOwnedMediaPlaybackDoesNotMutateFacadePanicSnapshot() {
+        let programID = UUID(uuidString: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")!
+        let viewModel = makeViewModel(bridgeMode: .panicOwned)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: programID,
+                wasMediaPlaying: true,
+                currentBGMID: nil,
+                wasBGMPlaying: false
+            )
+        )
+
+        viewModel.markPanicSnapshotMediaStoppedIfCurrentProgram(programID)
+
+        XCTAssertTrue(viewModel.panicPlaybackSnapshot?.wasMediaPlaying == true)
+    }
+
+    func testPanicOwnedBGMFinishDoesNotMutateFacadePanicSnapshot() {
+        let bgmID = UUID(uuidString: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")!
+        let viewModel = makeViewModel(bridgeMode: .panicOwned)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: nil,
+                wasMediaPlaying: false,
+                currentBGMID: bgmID,
+                wasBGMPlaying: true
+            )
+        )
+
+        viewModel.markPanicSnapshotBGMStoppedIfCurrentBGM(bgmID)
+
+        XCTAssertTrue(viewModel.panicPlaybackSnapshot?.wasBGMPlaying == true)
+    }
+
+    func testPanicOwnedBGMFailDoesNotMutateFacadePanicSnapshot() {
+        let bgmID = UUID(uuidString: "cccccccc-cccc-cccc-cccc-cccccccccccc")!
+        let viewModel = makeViewModel(bridgeMode: .panicOwned)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: nil,
+                wasMediaPlaying: false,
+                currentBGMID: bgmID,
+                wasBGMPlaying: true
+            )
+        )
+
+        viewModel.markPanicSnapshotBGMStoppedIfCurrentBGM(bgmID)
+
+        XCTAssertTrue(viewModel.panicPlaybackSnapshot?.wasBGMPlaying == true)
+    }
+
+    func testPanicOwnedCueBGMDuringPanicDoesNotMutateFacadePanicSnapshot() {
+        let bgmID = UUID(uuidString: "dddddddd-dddd-dddd-dddd-dddddddddddd")!
+        let viewModel = makeViewModel(bridgeMode: .panicOwned)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: nil,
+                wasMediaPlaying: false,
+                currentBGMID: bgmID,
+                wasBGMPlaying: true
+            )
+        )
+
+        viewModel.markPanicSnapshotBGMStoppedIfCurrentBGM(bgmID)
+
+        XCTAssertTrue(viewModel.panicPlaybackSnapshot?.wasBGMPlaying == true)
+    }
+
+    func testLegacyMediaPlaybackCanStillMutateFacadePanicSnapshotBeforeOwnership() {
+        let programID = UUID(uuidString: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")!
+        let viewModel = makeViewModel(bridgeMode: .recordingOnly)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: programID,
+                wasMediaPlaying: true,
+                currentBGMID: nil,
+                wasBGMPlaying: false
+            )
+        )
+
+        viewModel.markPanicSnapshotMediaStoppedIfCurrentProgram(programID)
+
+        XCTAssertFalse(viewModel.panicPlaybackSnapshot?.wasMediaPlaying == true)
+    }
+
+    func testLegacyBGMFinishCanStillMutateFacadePanicSnapshotBeforeOwnership() {
+        let bgmID = UUID(uuidString: "ffffffff-ffff-ffff-ffff-ffffffffffff")!
+        let viewModel = makeViewModel(bridgeMode: .recordingOnly)
+        viewModel.applyPanicProjectionFromRuntime(
+            isActive: true,
+            snapshot: PanicPlaybackSnapshot(
+                currentProgramID: nil,
+                wasMediaPlaying: false,
+                currentBGMID: bgmID,
+                wasBGMPlaying: true
+            )
+        )
+
+        viewModel.markPanicSnapshotBGMStoppedIfCurrentBGM(bgmID)
+
+        XCTAssertFalse(viewModel.panicPlaybackSnapshot?.wasBGMPlaying == true)
+    }
+
+    func testPanicSnapshotMutationHelpersAreLegacyNamedOrOwnershipGuarded() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+
+        XCTAssertTrue(
+            source.contains("markLegacyPanicSnapshotMediaStoppedIfCurrentProgram")
+                || source.contains("guard !runtime.bridgeMode.owns(.panic) else { return }")
+        )
+        XCTAssertTrue(
+            source.contains("markLegacyPanicSnapshotBGMStoppedIfCurrentBGM")
+                || source.contains("guard !runtime.bridgeMode.owns(.panic) else { return }")
+        )
+    }
+
     private func viewModelSourcePaths() throws -> [String] {
         let root = try repositoryRoot()
             .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
@@ -86,5 +207,17 @@ final class PanicRuntimeFacadeHardeningTests: XCTestCase {
         return files
             .filter { $0.lastPathComponent.hasPrefix("ViewModel") && $0.pathExtension == "swift" }
             .map { "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/\($0.lastPathComponent)" }
+    }
+
+    private func makeViewModel(bridgeMode: LiveRuntimeBridgeMode) -> SwitcherViewModel {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
+        )
+        return SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
     }
 }
