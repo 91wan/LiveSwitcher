@@ -15,6 +15,31 @@ final class SupportRuntimeActionLogTests: XCTestCase {
         XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
     }
 
+    func testSupportEventRecordedActionLogPolicyUnchanged() {
+        let event = supportEvent()
+
+        XCTAssertFalse(LiveRuntimeActionLogPolicy.shouldLog(.supportEventRecorded(event)))
+    }
+
+    func testSupportEventDetailDoesNotLeakIntoActionLog() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .supportOwned)
+        )
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.open,error=/Users/operator/private-show.key failed"
+        )
+
+        runtime.dispatch(.supportEventRecorded(event))
+
+        XCTAssertFalse(runtime.actionLog.contains { entry in
+            entry.actionName.localizedStandardContains("private-show.key")
+                || entry.actionName.localizedStandardContains("/Users/")
+        })
+    }
+
     func testSupportEventRecordedStillWritesSupportState() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),

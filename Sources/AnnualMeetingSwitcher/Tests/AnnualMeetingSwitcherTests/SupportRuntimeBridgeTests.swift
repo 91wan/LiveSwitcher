@@ -27,7 +27,7 @@ final class SupportRuntimeBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.state.support.events.isEmpty)
     }
 
-    func testAudioOwnedSupportEventRecordedWritesSupportEvent() throws {
+    func testAudioOwnedSupportEventRecordedNoopsBeforeSupportOwnership() {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 100),
             kind: .projectionStartFailed,
@@ -38,6 +38,23 @@ final class SupportRuntimeBridgeTests: XCTestCase {
             state: LiveRuntimeState(),
             action: .supportEventRecorded(event),
             environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+
+        XCTAssertTrue(mutation.state.support.events.isEmpty)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testSupportOwnedSupportEventRecordedWritesSupportEvent() throws {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .projectionStartFailed,
+            detail: "reason=noExternalDisplay"
+        )
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .supportEventRecorded(event),
+            environment: LiveRuntimeEnvironment(bridgeMode: .supportOwned)
         )
 
         let recorded = try XCTUnwrap(mutation.state.support.events.first)

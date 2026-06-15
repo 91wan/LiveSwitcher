@@ -523,10 +523,11 @@ enum LiveRuntimeReducer {
                 now: environment.now
             )
             if canGenerateReducerSupport(in: bridgeMode) {
-                state.support.record(
+                SupportRuntimeReducer.record(
                     kind: .appleScriptFailed,
                     detail: "action=\(action),error=\(sanitizedMessage)",
-                    at: environment.now
+                    at: environment.now,
+                    state: &state
                 )
             }
 
@@ -580,9 +581,8 @@ enum LiveRuntimeReducer {
             state.presentationQuery.markConsumed(id)
 
         case .supportEventRecorded(let event):
-            if let accepted = state.support.record(event: event) {
-                effects.append(.recordSupportEvent(accepted))
-            }
+            guard isRuntimeOwned(.support, in: bridgeMode) else { break }
+            SupportRuntimeReducer.record(event: event, state: &state, effects: &effects)
         }
 
         return LiveRuntimeMutation(

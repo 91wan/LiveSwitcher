@@ -58,6 +58,7 @@ enum LiveRuntimeFacadeSyncPolicy {
              .automationNoticeRequested,
              .automationNoticeExpired,
              .automationNoticeDismissed,
+             .supportEventRecorded,
              .operatorRequestedProgramActivation,
              .programActivationCompleted,
              .operatorAddedProgramItems,

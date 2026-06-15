@@ -25,15 +25,18 @@ final class SupportMigrationReadinessTests: XCTestCase {
         XCTAssertFalse(makeViewModel().runtimeBridgeMode.owns(.automation))
     }
 
-    func testSupportEventRecordedIsOnlyCurrentReducerSupportWriteInProductionModes() throws {
+    func testSupportEventRecordedIsOnlyCurrentReducerSupportWriteWhenSupportOwned() throws {
         let supportEvent = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 100),
             kind: .appleScriptFailed,
             detail: "action=keynote.next-slide,error=failed"
         )
 
-        let recorded = reduce(.supportEventRecorded(supportEvent), bridgeMode: .automationNoticeOwned)
+        let recorded = reduce(.supportEventRecorded(supportEvent), bridgeMode: .supportOwned)
         XCTAssertEqual(try XCTUnwrap(recorded.state.support.events.first).kind, .appleScriptFailed)
+
+        let beforeSupportOwnership = reduce(.supportEventRecorded(supportEvent), bridgeMode: .automationNoticeOwned)
+        XCTAssertTrue(beforeSupportOwnership.state.support.events.isEmpty)
 
         let automationFailure = reduce(
             .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed"),
