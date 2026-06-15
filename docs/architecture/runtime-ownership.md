@@ -293,7 +293,7 @@ explicit owner.
 | Panic | Runtime owner, ViewModel support/telemetry owner | Authoritative active state, transition snapshot, snapshot stopped-state mutation, media/BGM pause/resume actions, delayed BGM pause scheduling, and facade projection | authoritative | Panic transition orchestration is runtime-owned in `.panicOwned`; media and BGM pause/resume go through Runtime actions. Pure transition decisions live in `PanicTransitionPolicy`, and Runtime reducer orchestration lives in `PanicRuntimeReducer`. Production wires `PanicDelayPort`; the concrete delayed pause task lives in `ViewModel+PanicDelayRuntimeWiring.swift` and dispatches elapsed callbacks through `LiveRuntimeEffectExecutionContext`. `togglePanicMode()` uses `runtime.state.panic.isActive` as source of truth when `.panic` is owned. `isPanicMode` and `panicPlaybackSnapshot` are Runtime-backed facade projections, and Runtime-backed audio snapshots use Runtime Panic state rather than stale facade state. Runtime marks matching snapshot media stopped for reached-end/operator-stop during Panic and matching snapshot BGM stopped for end/fail/stop/new-selection during Panic; normal Panic pause keeps resume eligibility. ViewModel snapshot mutation helpers are legacy fallback only before `.panicOwned`. Panic OFF resumes only from Runtime snapshot truth. `PanicDelayPort` clears task bookkeeping after matching fire/cancel paths. Fade-to-black remains visual-only and ViewModel-owned. The Panic reducer must not write support. |
 | PPT mode | Runtime owner | Authoritative requested/active/failure state and EventTap lifecycle effects | authoritative | Runtime owns PPT mode request, active callback state, failure rollback, and `PPTEventTapPort` start/stop effects. PPT mutation mechanics live in `Runtime/PPTRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes PPT actions and keeps `.ppt` ownership guards for operator actions and EventTap callbacks. ViewModel owns concrete CGEventTap fields, key forwarding, WPS automation implementation, permission alert UI, support event generation call sites, telemetry, and the `isPageInterceptEnabled` facade projection. |
 | Projection | Runtime owner | Authoritative broadcast state, external-display availability, safety notice, display-loss timestamp, and start/stop effects | authoritative | Runtime owns projection start/stop decisions and emits canonical `ProjectionPort` effects. Projection mutation mechanics live in `Runtime/ProjectionRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes projection actions and keeps `.projection` ownership guards for operator actions and callbacks. ViewModel owns the concrete `OutputWindowController`, target screen lookup, output view mounting, UI facade fields, support event generation call sites, and telemetry. |
-| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
+| Automation notice | Runtime owner | Authoritative current notice, suppression window, show effect, expiry effect, dismiss, and expiry matching | authoritative | Runtime owns `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice creation/throttling/expiry/dismissal, and `.showAutomationNotice` / `.expireAutomationNotice` effects through `AutomationNoticePort`. Automation notice mutation mechanics live in `Runtime/AutomationNoticeRuntimeReducer.swift`; `LiveRuntimeReducer.swift` routes automation notice actions and keeps `.automationNotice` ownership guards. Automation notice actions do not dispatch audio-input sync. ViewModel owns the concrete `automationRuntimeNotice` facade field and syncs it from Runtime. |
 | Support | Runtime owner | Authoritative support event list, redaction, coalescing, priority retention, event limit, accepted ingress action, facade projection sync, and notification port effect | authoritative | Runtime owns `state.support` and `.supportEventRecorded`. `SupportEventPort` receives only the accepted Runtime event after redaction, coalescing, and priority retention. It is notification-only; it syncs the ViewModel facade from Runtime and must not append duplicate events, redo redaction/coalescing, write UserDefaults, run telemetry, or execute automation. |
 | Automation command execution | Runtime owner | Fire-and-forget AppleScript command request action and `runAppleScript` effect | authoritative | Runtime owns `.automationScriptRequested` and emits `.runAppleScript` only in `.automationCommandOwned`, `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`, or `.fullRuntime`. The `automation` port means fire-and-forget command execution only. ViewModel owns AppleScript source construction, concrete `AppleScriptRunner.run`, failure-to-support generation, and failure notice dispatch through `ViewModel+PresentationAutomation.swift` and `ViewModel+AutomationFailure.swift`. WPS fallback branching, PPT/WPS key forwarding, permission modal alerts, telemetry, and Support event generation decisions remain ViewModel-owned. |
 | Presentation query lifecycle | Runtime owner | Operator query request, active query ID, callback result/failure state, and `scanPresentationQuery` effect | authoritative lifecycle, ViewModel-owned consumption | Runtime owns `.operatorRequestedPresentationQuery`, `.presentationQueryCompleted`, `.presentationQueryFailed`, `.presentationQueryResultConsumed`, `state.presentationQuery`, and `PresentationQueryPort`. `PresentationQueryPort` executes the existing `PresentationQueryService` through ViewModel wiring and dispatches callback actions through `LiveRuntimeEffectExecutionContext`. ViewModel owns result consumption: building program queue items, adding them, support event generation, and automation failure notice dispatch. |
@@ -631,10 +631,19 @@ the only reducer action that writes support storage in production.
 Automation notice lifecycle is runtime-owned. Runtime owns
 `state.automation.notice`, `state.automation.suppressionUntilByAction`, notice
 creation, throttling, expiry, dismissal, and `showAutomationNotice` /
-`expireAutomationNotice` effects. Production uses `AutomationNoticePort` effects
-for notice surface side effects. ViewModel bridges those effects to the existing
-`automationRuntimeNotice` facade field and dispatches expiry callbacks back into
-Runtime.
+`expireAutomationNotice` effects. The notice state transitions live in
+`AutomationNoticeRuntimeReducer`, while `LiveRuntimeReducer` only routes
+automation notice lifecycle actions after `.automationNotice` ownership is
+active. Production uses `.panicOwned`, which includes Automation notice
+ownership. Production uses `AutomationNoticePort` effects for notice surface side
+effects. ViewModel bridges those effects to the existing `automationRuntimeNotice`
+facade field and dispatches expiry callbacks back into Runtime.
+
+Automation notice lifecycle actions do not require audio input snapshots, so
+`LiveRuntimeFacadeSyncPolicy` suppresses audio-input dispatch for
+`.automationFailed`, `.automationNoticeRequested`, `.automationNoticeExpired`,
+and `.automationNoticeDismissed`. Those actions still sync the Automation notice
+facade after Runtime accepts the mutation.
 
 Automation notice expiry tasks are ID-bound. Showing a replacement notice,
 dismissing the current notice, manually expiring it, clearing Runtime notice
@@ -668,6 +677,7 @@ presentation query result consumption: program queue item building, queue
 mutation, failure support generation, and failure notice dispatch. WPS fallback
 branching, PPT key forwarding, WPS key forwarding, automation permission modal
 alerts, telemetry, and non-command automation flows remain ViewModel-owned.
+Keynote/WPS result-returning AppleScript queries remain ViewModel-owned.
 Presentation automation command/query boundary code lives in
 `ViewModel+PresentationAutomation.swift`; automation failure and notice facade
 code lives in `ViewModel+AutomationFailure.swift`.
@@ -676,7 +686,8 @@ Runtime-generated automation notice failures must not write Support storage in
 `.presentationQueryOwned`, `.programQueueOwned`, `.programSelectionOwned`,
 `.programActivationOwned`, or `.panicOwned`; support entries for automation failures are still
 generated by ViewModel and enter runtime storage only through
-`.supportEventRecorded`.
+`.supportEventRecorded`. Reducer-side automation failure support generation
+remains gated to `.fullRuntime` test mode only.
 
 ## Support Boundary
 

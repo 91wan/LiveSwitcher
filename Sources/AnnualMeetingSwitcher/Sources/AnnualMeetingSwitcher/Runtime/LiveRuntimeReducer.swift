@@ -515,7 +515,13 @@ enum LiveRuntimeReducer {
             effects.append(.runAppleScript(script: script, action: action))
 
         case .automationFailed(let action, let sanitizedMessage):
-            requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
+            guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }
+            AutomationNoticeRuntimeReducer.request(
+                action: action,
+                state: &state,
+                effects: &effects,
+                now: environment.now
+            )
             if canGenerateReducerSupport(in: bridgeMode) {
                 state.support.record(
                     kind: .appleScriptFailed,
@@ -525,15 +531,21 @@ enum LiveRuntimeReducer {
             }
 
         case .automationNoticeRequested(let action):
-            requestAutomationNotice(action: action, state: &state, effects: &effects, now: environment.now)
+            guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }
+            AutomationNoticeRuntimeReducer.request(
+                action: action,
+                state: &state,
+                effects: &effects,
+                now: environment.now
+            )
 
         case .automationNoticeExpired(let id):
-            if state.automation.notice?.id == id {
-                state.automation.notice = nil
-            }
+            guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }
+            AutomationNoticeRuntimeReducer.expire(id: id, state: &state)
 
         case .automationNoticeDismissed:
-            state.automation.notice = nil
+            guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }
+            AutomationNoticeRuntimeReducer.dismiss(state: &state)
 
         case .operatorRequestedPresentationQuery(let id):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
@@ -577,27 +589,6 @@ enum LiveRuntimeReducer {
             state: state,
             effects: effects.filter { isEffectAllowed($0, in: environment.bridgeMode) }
         )
-    }
-
-    private static func requestAutomationNotice(
-        action: String,
-        state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect],
-        now: Date
-    ) {
-        state.automation.suppressionUntilByAction = state.automation.suppressionUntilByAction.filter { _, expiry in
-            expiry > now
-        }
-        let notice = AutomationRuntimeNoticePolicy.make(action: action, createdAt: now)
-        let suppressionUntil = state.automation.suppressionUntilByAction[action] ?? .distantPast
-        guard suppressionUntil <= now else { return }
-
-        state.automation.notice = notice
-        state.automation.suppressionUntilByAction[action] = now.addingTimeInterval(15)
-        effects.append(.showAutomationNotice(notice))
-        if let expiresAt = notice.expiresAt {
-            effects.append(.expireAutomationNotice(notice.id, at: expiresAt))
-        }
     }
 
     private static func isEffectAllowed(_ effect: LiveRuntimeEffect, in bridgeMode: LiveRuntimeBridgeMode) -> Bool {
