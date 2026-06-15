@@ -286,8 +286,7 @@ enum LiveRuntimeReducer {
 
         case .operatorToggledPPTMode(let source):
             guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
-            reducePPTModeSet(
-                !(state.ppt.isRequested || state.ppt.isEventTapActive),
+            PPTRuntimeReducer.toggleMode(
                 source: source,
                 state: &state,
                 effects: &effects
@@ -295,7 +294,7 @@ enum LiveRuntimeReducer {
 
         case .operatorSetPPTMode(let isEnabled, let source):
             guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
-            reducePPTModeSet(
+            PPTRuntimeReducer.setMode(
                 isEnabled,
                 source: source,
                 state: &state,
@@ -500,18 +499,16 @@ enum LiveRuntimeReducer {
             )
 
         case .pptEventTapStarted:
-            state.ppt.isRequested = true
-            state.ppt.isEventTapActive = true
-            state.ppt.lastFailureReason = nil
+            guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
+            PPTRuntimeReducer.eventTapStarted(state: &state)
 
         case .pptEventTapFailed(let reason):
-            state.ppt.isRequested = false
-            state.ppt.isEventTapActive = false
-            state.ppt.lastFailureReason = reason
+            guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
+            PPTRuntimeReducer.eventTapFailed(reason: reason, state: &state)
 
-        case .pptEventTapStopped:
-            state.ppt.isRequested = false
-            state.ppt.isEventTapActive = false
+        case .pptEventTapStopped(let reason):
+            guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
+            PPTRuntimeReducer.eventTapStopped(reason: reason, state: &state)
 
         case .automationScriptRequested(let script, let action):
             guard isRuntimeOwned(.automationCommand, in: bridgeMode) else { break }
@@ -580,28 +577,6 @@ enum LiveRuntimeReducer {
             state: state,
             effects: effects.filter { isEffectAllowed($0, in: environment.bridgeMode) }
         )
-    }
-
-    private static func reducePPTModeSet(
-        _ isEnabled: Bool,
-        source: PPTModeToggleSource,
-        state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect]
-    ) {
-        _ = source
-        if isEnabled {
-            guard !state.ppt.isRequested, !state.ppt.isEventTapActive else { return }
-            state.ppt.isRequested = true
-            state.ppt.isEventTapActive = false
-            state.ppt.lastFailureReason = nil
-            effects.append(.startPPTEventTap)
-            return
-        }
-
-        guard state.ppt.isRequested || state.ppt.isEventTapActive else { return }
-        state.ppt.isRequested = false
-        state.ppt.isEventTapActive = false
-        effects.append(.stopPPTEventTap(reason: .operatorDisabled))
     }
 
     private static func requestAutomationNotice(

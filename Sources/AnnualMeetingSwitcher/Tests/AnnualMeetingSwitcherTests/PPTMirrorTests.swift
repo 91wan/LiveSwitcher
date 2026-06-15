@@ -16,31 +16,47 @@ final class PPTMirrorTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testPPTEventTapStartedUpdatesMirror() {
+    func testPPTEventTapStartedDoesNotUpdateMirrorBeforePPTOwnership() {
         let mutation = reduce(LiveRuntimeState(), .pptEventTapStarted, bridgeMode: .audioOwned)
 
-        XCTAssertTrue(mutation.state.ppt.isRequested)
-        XCTAssertTrue(mutation.state.ppt.isEventTapActive)
+        XCTAssertFalse(mutation.state.ppt.isRequested)
+        XCTAssertFalse(mutation.state.ppt.isEventTapActive)
         XCTAssertNil(mutation.state.ppt.lastFailureReason)
     }
 
-    func testPPTEventTapFailedUpdatesMirror() {
+    func testPPTEventTapFailedDoesNotUpdateMirrorBeforePPTOwnership() {
         let mutation = reduce(LiveRuntimeState(), .pptEventTapFailed(reason: "permissionDenied"), bridgeMode: .audioOwned)
 
         XCTAssertFalse(mutation.state.ppt.isRequested)
         XCTAssertFalse(mutation.state.ppt.isEventTapActive)
-        XCTAssertEqual(mutation.state.ppt.lastFailureReason, "permissionDenied")
+        XCTAssertNil(mutation.state.ppt.lastFailureReason)
     }
 
-    func testPPTEventTapStoppedUpdatesMirror() {
+    func testPPTEventTapStoppedDoesNotUpdateMirrorBeforePPTOwnership() {
         var state = LiveRuntimeState()
         state.ppt.isRequested = true
         state.ppt.isEventTapActive = true
+        let originalPPT = state.ppt
 
         let mutation = reduce(state, .pptEventTapStopped(reason: .operatorDisabled), bridgeMode: .audioOwned)
 
-        XCTAssertFalse(mutation.state.ppt.isRequested)
-        XCTAssertFalse(mutation.state.ppt.isEventTapActive)
+        XCTAssertEqual(mutation.state.ppt, originalPPT)
+    }
+
+    func testPPTEventTapCallbacksUpdateMirrorWhenPPTOwned() {
+        let started = reduce(LiveRuntimeState(), .pptEventTapStarted, bridgeMode: .pptOwned)
+        XCTAssertTrue(started.state.ppt.isRequested)
+        XCTAssertTrue(started.state.ppt.isEventTapActive)
+        XCTAssertNil(started.state.ppt.lastFailureReason)
+
+        let failed = reduce(started.state, .pptEventTapFailed(reason: "permissionDenied"), bridgeMode: .pptOwned)
+        XCTAssertFalse(failed.state.ppt.isRequested)
+        XCTAssertFalse(failed.state.ppt.isEventTapActive)
+        XCTAssertEqual(failed.state.ppt.lastFailureReason, "permissionDenied")
+
+        let stopped = reduce(started.state, .pptEventTapStopped(reason: .operatorDisabled), bridgeMode: .pptOwned)
+        XCTAssertFalse(stopped.state.ppt.isRequested)
+        XCTAssertFalse(stopped.state.ppt.isEventTapActive)
     }
 
     func testPPTCallbacksDoNotChangeAudioRoutingContext() {
