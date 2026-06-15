@@ -122,11 +122,11 @@ final class RuntimeBridgeStateMutationTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .bgmPlaybackChanged)))
     }
 
-    func testAudioOwnedCallbackMayUpdatePPTMirror() {
+    func testAudioOwnedCallbackDoesNotUpdatePPTMirror() {
         let mutation = reduce(LiveRuntimeState(), .pptEventTapStarted, bridgeMode: .audioOwned)
 
-        XCTAssertTrue(mutation.state.ppt.isRequested)
-        XCTAssertTrue(mutation.state.ppt.isEventTapActive)
+        XCTAssertFalse(mutation.state.ppt.isRequested)
+        XCTAssertFalse(mutation.state.ppt.isEventTapActive)
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
