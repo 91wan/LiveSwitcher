@@ -144,6 +144,21 @@ enum MediaRuntimeReducer {
         speakerModeDuckedRatio: Float
     ) {
         guard generation == state.media.generation else { return }
+        if state.panic.isActive {
+            guard isPlaying else {
+                state.media.isPlaying = false
+                state.audio.routingContext.isMediaPlaying = false
+                LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+                effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+                return
+            }
+            state.media.isPlaying = false
+            LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState(&state)
+            effects.append(.pauseMedia(generation: generation))
+            LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+            effects.append(.applyAudioRouting(reason: .panicChanged))
+            return
+        }
         state.media.isPlaying = isPlaying
         state.audio.routingContext.isMediaPlaying = isPlaying
         LiveRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)

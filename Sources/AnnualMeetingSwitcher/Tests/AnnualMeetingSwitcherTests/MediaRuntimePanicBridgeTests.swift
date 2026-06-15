@@ -133,6 +133,58 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
     }
 
+    func testViewModelIsPlayingCallbackDuringPanicDoesNotLeaveRuntimeMediaPlaying() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        preparePanicMediaCallback(for: item, in: viewModel)
+
+        viewModel.dispatchRuntimeMediaCallback {
+            .mediaPlaybackChanged(isPlaying: true, generation: $0)
+        }
+
+        XCTAssertFalse(viewModel.runtime.state.media.isPlaying)
+        XCTAssertFalse(viewModel.runtime.state.audio.routingContext.isMediaPlaying)
+    }
+
+    func testViewModelIsPlayingCallbackDuringPanicDispatchesRuntimePauseEffect() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        preparePanicMediaCallback(for: item, in: viewModel)
+
+        viewModel.dispatchRuntimeMediaCallback {
+            .mediaPlaybackChanged(isPlaying: true, generation: $0)
+        }
+
+        XCTAssertTrue(media.events.contains { $0.hasPrefix("pause:") })
+    }
+
+    func testViewModelIsPlayingCallbackOutsidePanicStillUpdatesRuntimeMediaPlaying() {
+        let media = MediaRuntimePanicPortSpy()
+        let viewModel = viewModel(media: media, environment: .productionPanicOwning(liveAudioFadeDuration: 0))
+        let item = mediaProgram()
+        prepareMediaCallback(for: item, in: viewModel, panicActive: false)
+
+        viewModel.dispatchRuntimeMediaCallback {
+            .mediaPlaybackChanged(isPlaying: true, generation: $0)
+        }
+
+        XCTAssertTrue(viewModel.runtime.state.media.isPlaying)
+        XCTAssertTrue(viewModel.runtime.state.audio.routingContext.isMediaPlaying)
+    }
+
+    func testViewModelMediaPlaybackCallbackDoesNotContainPanicSpecialCase() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+MediaPlayback.swift")
+        let body = try XCTUnwrap(source.slice(from: "func setupPlayerCoordinator()", to: "func openHTMLInOutputWindow"))
+
+        XCTAssertTrue(body.contains(".mediaPlaybackChanged"))
+        XCTAssertFalse(body.contains("isPanicMode"))
+        XCTAssertFalse(body.contains("panic"))
+        XCTAssertFalse(body.contains("pauseMedia"))
+        XCTAssertFalse(body.contains("operatorPausedMediaForPanic"))
+    }
+
     func testPanicDoesNotDirectlyCallAVPlayerForMedia() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Panic.swift")
 
@@ -186,6 +238,24 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
 
     private func panicRestartState(for item: ProgramItem) -> LiveRuntimeState {
         mediaState(for: item, panicActive: true)
+    }
+
+    private func preparePanicMediaCallback(for item: ProgramItem, in viewModel: SwitcherViewModel) {
+        prepareMediaCallback(for: item, in: viewModel, panicActive: true)
+    }
+
+    private func prepareMediaCallback(
+        for item: ProgramItem,
+        in viewModel: SwitcherViewModel,
+        panicActive: Bool
+    ) {
+        viewModel.applyProgramQueueProjectionFromRuntime([item])
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        mirrorMediaFacade(for: item, in: viewModel, isPlaying: panicActive)
+        let state = mediaState(for: item, panicActive: panicActive)
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
+        viewModel.setActiveRuntimeMediaCallbackIdentity(generation: state.media.generation, url: item.sourceURL!)
+        viewModel.applyPanicProjectionFromRuntime(isActive: panicActive, snapshot: state.panic.snapshot)
     }
 
     private func mediaState(for item: ProgramItem, panicActive: Bool) -> LiveRuntimeState {

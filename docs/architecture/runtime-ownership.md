@@ -107,14 +107,18 @@ restart during Panic cues with `.seekMediaToStart` without playing, and
 resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` may call
 Runtime audio helper methods for now. AudioRuntimeReducer extraction remains future work.
 Media playback callback setup, playback-ended handling, and the HTML
-presentation facade live in `ViewModel+MediaPlayback.swift`. Panic is a hard
-Runtime media playback gate: operator media toggle must not start playback,
-media restart is a cue-to-start operation that emits `.seekMediaToStart`
-instead of `.restartMedia`, and selecting a media program during Panic loads the
-program without playing it. `operatorResumedMediaAfterPanic` is ignored while
-Panic is still active. Restart/seek/toggle pause during Panic does not clear the
-Panic snapshot media playback flag; if the snapshot captured media as playing,
-Panic OFF may still resume that media from the cued position.
+presentation facade live in `ViewModel+MediaPlayback.swift`; that callback
+wiring stays simple and does not special-case Panic. Panic is a hard Runtime
+media playback gate: operator media toggle must not start playback, media
+restart is a cue-to-start operation that emits `.seekMediaToStart` instead of
+`.restartMedia`, selecting a media program during Panic loads the program
+without playing it, and `mediaPlaybackChanged(true)` callbacks during Panic are
+rejected and converted into a `.pauseMedia` effect with Panic audio routing.
+`operatorResumedMediaAfterPanic` is ignored while Panic is still active.
+Restart/seek/toggle pause and playbackChanged callbacks during Panic do not
+clear the Panic snapshot media playback flag; if the snapshot captured media as
+playing, Panic OFF may still resume that media from the cued position. Future
+work: extract `AudioRuntimeReducer.swift` after callback safety is locked.
 The wallpaper and corner-logo asset library facade lives in
 `ViewModel+Assets.swift`.
 Program activation side effects are grouped under
@@ -479,8 +483,12 @@ of `.restartMedia`, keeping Runtime state and the real media port aligned with
 emergency blackout. Operator media toggle during Panic can only pause
 already-playing media; if media is stopped, it is a no-op and must not emit
 `.playMedia`. Media program selection during Panic loads without playing, and
-`operatorResumedMediaAfterPanic` no-ops until Panic is inactive. Future work:
-extract `MediaRuntimeReducer.swift` after these Panic media safety gates are
+`operatorResumedMediaAfterPanic` no-ops until Panic is inactive. Media playback
+callbacks are also runtime-owned: during Panic, `mediaPlaybackChanged(true)` is
+treated as unsafe, keeps Runtime media stopped, emits `.pauseMedia`, and applies
+Panic audio routing; `mediaPlaybackChanged(false)` remains accepted as stopped.
+PlaybackChanged callbacks do not clear Panic snapshot media resume eligibility.
+Future work: extract `AudioRuntimeReducer.swift` after callback safety is
 locked.
 
 Media startup sets media volume to zero before loading so the Runtime audio
