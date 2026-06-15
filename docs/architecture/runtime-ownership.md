@@ -95,6 +95,17 @@ BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; the main
 not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
 mutation bodies. `BGMRuntimeReducer` may call Runtime audio helper methods until
 a dedicated `AudioRuntimeReducer` extraction is planned as future work.
+Media playback remains Runtime-owned. Media Runtime mutation logic lives in `MediaRuntimeReducer.swift`;
+the main `LiveRuntimeReducer.swift` routes media
+actions and keeps ownership guards instead of owning media toggle, restart,
+seek, stop, Panic pause/resume, and playback callback mutation bodies. Program
+selection still owns current-program selection flow, and media-load-on-selection
+behavior remains in `ProgramSelectionRuntimeReducer.swift` until a dedicated
+follow-up explicitly approves moving that boundary. Panic media safety gates
+remain Runtime-owned: operator toggle cannot start media while Panic is active,
+restart during Panic cues with `.seekMediaToStart` without playing, and
+resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` may call
+Runtime audio helper methods for now. AudioRuntimeReducer extraction remains future work.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`. Panic is a hard
 Runtime media playback gate: operator media toggle must not start playback,

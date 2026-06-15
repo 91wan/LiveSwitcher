@@ -2,57 +2,48 @@ import XCTest
 @testable import LiveSwitcher
 
 final class MediaRuntimeReducerReadinessTests: XCTestCase {
-    func testNoMediaRuntimeReducerYet() throws {
+    func testMediaRuntimeReducerExistsAfterExtraction() throws {
         let root = try repositoryRoot()
         let path = root.appendingPathComponent(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/MediaRuntimeReducer.swift"
         )
 
-        XCTAssertFalse(FileManager.default.fileExists(atPath: path.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: path.path))
     }
 
-    func testMediaReducerExtractionRemainsFutureWork() throws {
+    func testMediaReducerExtractionIsDocumentedAsCurrentRuntimeOwnership() throws {
         let docs = try repositorySource("docs/architecture/runtime-ownership.md")
 
         XCTAssertTrue(docs.contains("MediaRuntimeReducer"))
-        XCTAssertTrue(docs.localizedStandardContains("future work"))
+        XCTAssertTrue(docs.contains("Media Runtime mutation logic lives in `MediaRuntimeReducer.swift`"))
+        XCTAssertTrue(docs.contains("AudioRuntimeReducer extraction remains future work"))
     }
 
-    func testLiveRuntimeReducerStillOwnsMediaMutationForNow() throws {
+    func testLiveRuntimeReducerRoutesMediaMutationAfterExtraction() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
         )
 
         XCTAssertTrue(source.contains("case .operatorRestartedCurrentMedia"))
         XCTAssertTrue(source.contains("guard isRuntimeOwned(.media"))
-        XCTAssertFalse(source.contains("MediaRuntimeReducer."))
+        XCTAssertTrue(source.contains("MediaRuntimeReducer."))
     }
 
-    func testMediaRestartPanicSafetyIsFixedBeforeExtraction() throws {
+    func testMediaRestartPanicSafetyMovedIntoMediaReducer() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/MediaRuntimeReducer.swift"
         )
-        let restartBody = try XCTUnwrap(
-            source.slice(
-                from: "case .operatorRestartedCurrentMedia:",
-                to: "case .operatorSeekedCurrentMediaToStart:"
-            )
-        )
+        let restartBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "restartCurrent"))
 
         XCTAssertTrue(restartBody.contains("state.panic.isActive"))
         XCTAssertTrue(restartBody.contains(".seekMediaToStart"))
     }
 
-    func testMediaTogglePanicSafetyIsFixedBeforeExtraction() throws {
+    func testMediaTogglePanicSafetyMovedIntoMediaReducer() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/MediaRuntimeReducer.swift"
         )
-        let toggleBody = try XCTUnwrap(
-            source.slice(
-                from: "case .operatorToggledMediaPlayback:",
-                to: "case .operatorRestartedCurrentMedia:"
-            )
-        )
+        let toggleBody = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "togglePlayback"))
 
         XCTAssertTrue(toggleBody.contains("state.panic.isActive"))
         XCTAssertTrue(toggleBody.contains(".panicChanged"))
