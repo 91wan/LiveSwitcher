@@ -3,20 +3,22 @@ import XCTest
 
 @MainActor
 final class ProgramSelectionRuntimeHardeningTests: XCTestCase {
+    private let removedCompatibilityCall = "." + "facadeCurrentProgramChanged("
+
     func testCurrentProgramItemHasNoDidSetRuntimeDispatch() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let currentProgramItemDeclaration = source.components(separatedBy: "\n")
             .first { $0.contains("currentProgramItem") && $0.contains("var") } ?? ""
 
         XCTAssertFalse(currentProgramItemDeclaration.contains("didSet"))
-        XCTAssertFalse(source.contains("currentProgramItem") && source.contains(".facadeCurrentProgramChanged("))
+        XCTAssertFalse(source.contains("currentProgramItem") && source.contains(removedCompatibilityCall))
     }
 
     func testSwitchToProgramDoesNotDispatchFacadeCurrentProgramChanged() throws {
         let body = try programActivationSource().extractedRuntimeFunctionBody(named: "switchToProgram")
 
         XCTAssertNotNil(body)
-        XCTAssertFalse(body?.contains(".facadeCurrentProgramChanged(") == true)
+        XCTAssertFalse(body?.contains(removedCompatibilityCall) == true)
     }
 
     func testExecuteProgramActivationPlanFromRuntimeDoesNotDispatchFacadeCurrentProgramChanged() throws {
@@ -26,7 +28,7 @@ final class ProgramSelectionRuntimeHardeningTests: XCTestCase {
         let body = source.extractedRuntimeFunctionBody(named: "executeProgramActivationPlanFromRuntime")
 
         XCTAssertNotNil(body)
-        XCTAssertFalse(source.contains(".facadeCurrentProgramChanged("))
+        XCTAssertFalse(source.contains(removedCompatibilityCall))
         XCTAssertTrue(source.contains("context.dispatch(.operatorSelectedProgram"))
     }
 
@@ -36,7 +38,7 @@ final class ProgramSelectionRuntimeHardeningTests: XCTestCase {
         ).extractedRuntimeFunctionBody(named: "clearCurrentProgramSelection")
 
         XCTAssertNotNil(body)
-        XCTAssertFalse(body?.contains(".facadeCurrentProgramChanged(") == true)
+        XCTAssertFalse(body?.contains(removedCompatibilityCall) == true)
         XCTAssertTrue(body?.contains(".operatorClearedCurrentProgram(reason: reason)") == true)
     }
 
@@ -45,31 +47,19 @@ final class ProgramSelectionRuntimeHardeningTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+MediaPlayback.swift"
         )
 
-        XCTAssertFalse(source.contains(".facadeCurrentProgramChanged("))
+        XCTAssertFalse(source.contains(removedCompatibilityCall))
         XCTAssertTrue(source.contains("clearCurrentProgramSelection(reason: .htmlPresentationEnded)"))
         XCTAssertTrue(source.contains("clearCurrentProgramSelection(reason: .mediaPlaybackEnded)"))
     }
 
-    func testFacadeCurrentProgramChangedIsCompatibilityOnly() throws {
+    func testNoViewModelSourceDispatchesFacadeCurrentProgramChanged() throws {
         let productionSources = try productionViewModelSources()
         let offenders = productionSources.filter { path, source in
-            source.contains(".facadeCurrentProgramChanged(")
+            source.contains(removedCompatibilityCall)
                 && !path.contains("ViewModel+RuntimeFacade")
         }
 
         XCTAssertTrue(offenders.isEmpty, offenders.keys.sorted().joined(separator: "\n"))
-    }
-
-    func testFacadeCurrentProgramChangedIsNotLogged() {
-        let item = programItem("Current")
-        let store = LiveRuntimeStore(
-            effectRunner: .recording(),
-            environment: .productionProgramSelectionOwning()
-        )
-
-        store.dispatch(.facadeCurrentProgramChanged(item.id))
-
-        XCTAssertFalse(store.actionLog.contains { $0.actionName == "facadeCurrentProgramChanged" })
     }
 
     private func programActivationSource() throws -> String {

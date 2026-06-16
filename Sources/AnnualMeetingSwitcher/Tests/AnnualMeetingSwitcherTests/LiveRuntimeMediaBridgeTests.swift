@@ -116,7 +116,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
     }
 
-    func testFacadeCurrentProgramChangeProducesProgramRoutingEffect() {
+    func testOperatorSelectedProgramProducesProgramRoutingEffect() {
         let item = mediaProgram()
         var state = LiveRuntimeState()
         state.program.items = [item]
@@ -124,7 +124,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
-            action: .facadeCurrentProgramChanged(item.id),
+            action: .operatorSelectedProgram(item.id),
             environment: .fullRuntimeForTests(now: now)
         )
 

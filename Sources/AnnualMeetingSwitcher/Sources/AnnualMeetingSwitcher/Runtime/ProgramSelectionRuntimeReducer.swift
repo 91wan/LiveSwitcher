@@ -51,25 +51,6 @@ enum ProgramSelectionRuntimeReducer {
         effects.append(.applyAudioRouting(reason: .programChanged))
     }
 
-    static func applyFacadeCurrentProgramChanged(
-        _ id: UUID?,
-        state: inout LiveRuntimeState,
-        effects: inout [LiveRuntimeEffect],
-        now: Date,
-        speakerModeDuckedRatio: Float
-    ) {
-        state.program.currentID = id
-        if let id, state.program.items.contains(where: { $0.id == id }) {
-            state.program.currentDetachedItem = nil
-        } else if state.program.currentDetachedItem?.id != id {
-            state.program.currentDetachedItem = nil
-        }
-        state.program.currentSwitchedAt = id == nil ? nil : now
-        state.audio.routingContext.isCurrentProgramMediaSource = state.program.effectiveCurrentItem?.sourceKind == .media
-        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
-        effects.append(.applyAudioRouting(reason: .programChanged))
-    }
-
     static func selectedProgramItem(_ id: UUID, in state: LiveRuntimeState) -> ProgramItem? {
         if let item = state.program.items.first(where: { $0.id == id }) {
             return item

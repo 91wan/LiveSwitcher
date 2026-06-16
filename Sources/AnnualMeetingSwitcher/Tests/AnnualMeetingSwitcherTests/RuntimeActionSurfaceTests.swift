@@ -25,12 +25,32 @@ final class RuntimeActionSurfaceTests: XCTestCase {
         XCTAssertFalse(source.localizedStandardContains("panicFadeDidComplete"))
     }
 
+    func testNoCurrentProgramCompatibilityReplacementActionAdded() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift")
+
+        XCTAssertFalse(source.localizedStandardContains("currentProgramMirror"))
+        XCTAssertFalse(source.localizedStandardContains("facadeSelectionChanged"))
+        XCTAssertFalse(source.localizedStandardContains("facadeCurrentProgramChanged2"))
+    }
+
     func testNoNewBridgeModeDomainOrPortAddedForDeadActionPruning() {
         let bridgeModes = Set(LiveRuntimeBridgeMode.allCases.map(\.rawValue))
         let domains = Set(LiveRuntimeDomain.allCases.map(\.rawValue))
         let ports = Set(LiveRuntimeEffectPortKind.allCases.map(\.rawValue))
 
         for rawValue in ["bgmPrepared", "panicFadeCompleted", "bgmPreparedReplacement", "panicFadeCompletedReplacement"] {
+            XCTAssertFalse(bridgeModes.contains(rawValue), rawValue)
+            XCTAssertFalse(domains.contains(rawValue), rawValue)
+            XCTAssertFalse(ports.contains(rawValue), rawValue)
+        }
+    }
+
+    func testNoNewBridgeModeDomainOrPortAddedForCurrentProgramCompatibilityPruning() {
+        let bridgeModes = Set(LiveRuntimeBridgeMode.allCases.map(\.rawValue))
+        let domains = Set(LiveRuntimeDomain.allCases.map(\.rawValue))
+        let ports = Set(LiveRuntimeEffectPortKind.allCases.map(\.rawValue))
+
+        for rawValue in ["currentProgramMirror", "facadeSelectionChanged", "facadeCurrentProgramChanged2"] {
             XCTAssertFalse(bridgeModes.contains(rawValue), rawValue)
             XCTAssertFalse(domains.contains(rawValue), rawValue)
             XCTAssertFalse(ports.contains(rawValue), rawValue)

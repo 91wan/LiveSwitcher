@@ -188,14 +188,16 @@ product boundary.
   BGM preparation remains behind existing BGM effects/callbacks, Panic delayed
   BGM pause remains behind `panicBGMPauseDelayElapsed`, and Live mode remains an
   execution surface with the same operator controls.
+- Facade current-program compatibility action pruning does not add live
+  controls or change user behavior. Current Program selection remains behind
+  real Runtime selection/clear actions, Runtime action surface stays small, and
+  Live mode keeps the same operator controls.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
-  and compatibility current-program callbacks obey existing Runtime ownership
-  before mutating state.
+  obey existing Runtime ownership before mutating state.
 - Program Queue Runtime reducer extraction does not add live controls or change
   Program Queue behavior. It only keeps Runtime reducer files domain-scoped by
-  moving Program Queue mutation routing to `ProgramQueueRuntimeReducer` and
-  current-program compatibility mirroring to `ProgramSelectionRuntimeReducer`.
+  moving Program Queue mutation routing to `ProgramQueueRuntimeReducer`.
 - Media restart Panic hardening does not add live controls. Existing restart
   remains available, but emergency safety overrides playback: during Panic,
   Runtime seeks/cues media to start without emitting a restart/play effect, and

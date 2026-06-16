@@ -15,14 +15,6 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
         }
     }
 
-    func testFacadeCurrentProgramChangedDoesNotDispatchAudioInputs() {
-        XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: .facadeCurrentProgramChanged(UUID())).dispatchAudioInputsChanged)
-    }
-
-    func testFacadeCurrentProgramChangedStillSyncsCurrentProgramFacade() {
-        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .facadeCurrentProgramChanged(UUID())).syncCurrentProgram)
-    }
-
     func testBGMCallbacksStillSyncBGMFacade() {
         for action in bgmCallbackActions {
             XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncBGM, action.redactedName)

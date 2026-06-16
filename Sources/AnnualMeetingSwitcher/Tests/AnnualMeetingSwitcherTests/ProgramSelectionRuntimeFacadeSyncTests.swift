@@ -114,6 +114,22 @@ final class ProgramSelectionRuntimeFacadeSyncTests: XCTestCase {
         XCTAssertFalse(options.syncProgramQueue)
     }
 
+    func testProgramActivationRequestAndCompletedDoNotSyncCurrentProgramFacade() {
+        let id = UUID()
+        let plan = ProgramActivationPlan(
+            item: programItem("Activation"),
+            preSelectionEffects: [],
+            postSelectionEffects: []
+        )
+
+        for action in [
+            LiveRuntimeAction.operatorRequestedProgramActivation(id: id, plan: plan),
+            .programActivationCompleted(id: id)
+        ] {
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).syncCurrentProgram, action.redactedName)
+        }
+    }
+
     func testPresentationQueryRequestCompletedAndFailedDoNotSyncCurrentProgram() {
         let id = UUID()
         for action in [
@@ -131,7 +147,6 @@ final class ProgramSelectionRuntimeFacadeSyncTests: XCTestCase {
             .operatorSelectedProgram(item.id),
             .operatorSelectedDetachedProgram(item),
             .operatorClearedCurrentProgram(reason: .operatorCleared),
-            .facadeCurrentProgramChanged(item.id),
             .operatorRemovedProgramItem(item.id),
             .facadeLoadedProgramQueue([item]),
             .operatorUpdatedProgramItemSchedule(id: item.id, scheduledStartAt: nil, scheduledDuration: nil),
