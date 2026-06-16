@@ -10,7 +10,8 @@ final class MediaRuntimePanicBridgeTests: XCTestCase {
         viewModel.liveAudioFadeDuration = 0
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
-        viewModel.avCoordinator.isPlaying = true
+        mirrorMediaFacade(for: item, in: viewModel, isPlaying: true)
+        viewModel.runtime.replaceStateForFacadeSync(mediaState(for: item, panicActive: false), clearActionLog: true)
 
         viewModel.togglePanicMode()
 

@@ -44,10 +44,34 @@ extension SwitcherViewModel {
             isSpeakerMode: isSpeakerMode,
             isBGMTakeoverActive: isBGMAudioTakeoverActive,
             isPanicMode: runtimeBackedPanicIsActiveForSnapshot,
-            isCurrentProgramMediaSource: currentProgramIsMediaSource,
-            isMediaPlaying: avCoordinator.isPlaying,
+            isCurrentProgramMediaSource: runtimeBackedCurrentProgramIsMediaSourceForSnapshot,
+            isMediaPlaying: runtimeBackedMediaIsPlayingForSnapshot,
             isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying
         )
+    }
+
+    private var runtimeBackedMediaIsPlayingForSnapshot: Bool {
+        runtime.bridgeMode.owns(.media)
+            ? runtime.state.media.isPlaying
+            : avCoordinator.isPlaying
+    }
+
+    private func runtimeBackedMediaIsPlayingForSnapshot(_ state: LiveRuntimeState) -> Bool {
+        runtime.bridgeMode.owns(.media)
+            ? state.media.isPlaying
+            : avCoordinator.isPlaying
+    }
+
+    private var runtimeBackedCurrentProgramIsMediaSourceForSnapshot: Bool {
+        runtime.bridgeMode.owns(.programSelection)
+            ? runtime.state.program.effectiveCurrentItem?.sourceKind == .media
+            : currentProgramIsMediaSource
+    }
+
+    private func runtimeBackedCurrentProgramIsMediaSourceForSnapshot(_ state: LiveRuntimeState) -> Bool {
+        runtime.bridgeMode.owns(.programSelection)
+            ? state.program.effectiveCurrentItem?.sourceKind == .media
+            : currentProgramIsMediaSource
     }
 
     private var runtimeBackedPanicIsActiveForSnapshot: Bool {
@@ -61,11 +85,7 @@ extension SwitcherViewModel {
         state.mode = consoleMode
         syncProgramQueueIntoRuntimeSnapshot(&state)
         syncCurrentProgramIntoRuntimeSnapshot(&state)
-
-        state.media.loadedURL = avCoordinator.currentURL
-        state.media.isPlaying = avCoordinator.isPlaying
-        state.media.currentTime = avCoordinator.currentTime
-        state.media.duration = avCoordinator.duration
+        syncMediaIntoRuntimeSnapshot(&state)
 
         syncBGMLibraryIntoRuntimeSnapshot(&state)
 
@@ -79,8 +99,8 @@ extension SwitcherViewModel {
         state.audio.isSpeakerMode = isSpeakerMode
         state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
         state.audio.routingContext = AudioRoutingContext(
-            isCurrentProgramMediaSource: currentProgramIsMediaSource,
-            isMediaPlaying: avCoordinator.isPlaying,
+            isCurrentProgramMediaSource: runtimeBackedCurrentProgramIsMediaSourceForSnapshot(state),
+            isMediaPlaying: runtimeBackedMediaIsPlayingForSnapshot(state),
             isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying,
             isPanicMode: runtimeBackedPanicIsActiveForSnapshot
         )
@@ -131,6 +151,18 @@ extension SwitcherViewModel {
         }
         state.program.currentID = currentProgramItem?.id
         state.program.currentSwitchedAt = currentProgramSwitchedAt
+    }
+
+    private func syncMediaIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.media) else {
+            state.media = runtime.state.media
+            return
+        }
+
+        state.media.loadedURL = avCoordinator.currentURL
+        state.media.isPlaying = avCoordinator.isPlaying
+        state.media.currentTime = avCoordinator.currentTime
+        state.media.duration = avCoordinator.duration
     }
 
     private func syncSupportIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
