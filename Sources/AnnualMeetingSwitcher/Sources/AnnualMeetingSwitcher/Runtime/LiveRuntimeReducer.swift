@@ -348,31 +348,32 @@ enum LiveRuntimeReducer {
 
         case .operatorAddedProgramItems(let items):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.appendProgramItems(items)
+            ProgramQueueRuntimeReducer.addProgramItems(items, state: &state)
 
         case .operatorRemovedProgramItem(let id):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.removeProgramItem(id: id)
+            ProgramQueueRuntimeReducer.removeProgramItem(id: id, state: &state)
 
         case .operatorMovedProgramItems(let fromOffsets, let toOffset):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.moveProgramItems(fromOffsets: fromOffsets, toOffset: toOffset)
+            ProgramQueueRuntimeReducer.moveProgramItems(fromOffsets: fromOffsets, toOffset: toOffset, state: &state)
 
         case .operatorUpdatedProgramItemSchedule(let id, let scheduledStartAt, let scheduledDuration):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.updateProgramItemSchedule(
+            ProgramQueueRuntimeReducer.updateProgramItemSchedule(
                 id: id,
                 scheduledStartAt: scheduledStartAt,
-                scheduledDuration: scheduledDuration
+                scheduledDuration: scheduledDuration,
+                state: &state
             )
 
         case .operatorAddedAgendaMarker(let title):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.appendAgendaMarker(title: title)
+            ProgramQueueRuntimeReducer.addAgendaMarker(title: title, state: &state)
 
         case .facadeLoadedProgramQueue(let items):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            state.program.replaceProgramQueueFromFacade(items)
+            ProgramQueueRuntimeReducer.loadProgramQueueFromFacade(items, state: &state)
 
         case .mediaLoaded(let url, let generation):
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
@@ -411,16 +412,13 @@ enum LiveRuntimeReducer {
 
         case .facadeCurrentProgramChanged(let id):
             guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
-            state.program.currentID = id
-            if let id, state.program.items.contains(where: { $0.id == id }) {
-                state.program.currentDetachedItem = nil
-            } else if state.program.currentDetachedItem?.id != id {
-                state.program.currentDetachedItem = nil
-            }
-            state.program.currentSwitchedAt = id == nil ? nil : environment.now
-            state.audio.routingContext.isCurrentProgramMediaSource = state.program.effectiveCurrentItem?.sourceKind == .media
-            AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: environment.speakerModeDuckedRatio)
-            effects.append(.applyAudioRouting(reason: .programChanged))
+            ProgramSelectionRuntimeReducer.applyFacadeCurrentProgramChanged(
+                id,
+                state: &state,
+                effects: &effects,
+                now: environment.now,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
 
         case .facadeAudioInputsChanged(let snapshot):
             guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
