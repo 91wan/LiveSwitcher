@@ -2,6 +2,47 @@ import XCTest
 @testable import LiveSwitcher
 
 final class ProjectionRuntimeReducerBehaviorTests: XCTestCase {
+    func testToggleProjectionStartsWhenExternalDisplayExists() {
+        var state = LiveRuntimeState()
+        state.projection.hasExternalDisplay = true
+
+        let mutation = reduce(state, .operatorToggledProjection)
+
+        XCTAssertTrue(mutation.state.projection.isBroadcasting)
+        XCTAssertNil(mutation.state.projection.safetyNotice)
+        XCTAssertEqual(mutation.effects, [.startProjection])
+    }
+
+    func testToggleProjectionWithoutExternalDisplaySetsSafetyNotice() {
+        let mutation = reduce(LiveRuntimeState(), .operatorToggledProjection)
+
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertEqual(mutation.state.projection.safetyNotice, "未检测到外接屏幕，未开始投射")
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testExternalDisplayLostStopsBroadcasting() {
+        var state = LiveRuntimeState()
+        state.projection.isBroadcasting = true
+        state.projection.hasExternalDisplay = true
+
+        let mutation = reduce(state, .projectionExternalDisplayLost)
+
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertFalse(mutation.state.projection.hasExternalDisplay)
+        XCTAssertEqual(mutation.state.projection.safetyNotice, "副屏已断开，投射已停止")
+        XCTAssertEqual(mutation.effects, [.stopProjection])
+    }
+
+    func testExternalDisplayAvailableSetsHasExternalDisplay() {
+        let mutation = reduce(LiveRuntimeState(), .projectionExternalDisplayAvailable)
+
+        XCTAssertTrue(mutation.state.projection.hasExternalDisplay)
+        XCTAssertFalse(mutation.state.projection.isBroadcasting)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
     func testReducerPreservesStartStopAndFailureBehavior() {
         var state = LiveRuntimeState()
         state.projection.hasExternalDisplay = true
@@ -74,5 +115,17 @@ final class ProjectionRuntimeReducerBehaviorTests: XCTestCase {
 
         XCTAssertTrue(effects.isEmpty)
         XCTAssertEqual(state.projection.lastDisplayLostAt, Date(timeIntervalSince1970: 100))
+    }
+
+    private func reduce(
+        _ state: LiveRuntimeState,
+        _ action: LiveRuntimeAction,
+        now: Date = Date(timeIntervalSince1970: 100)
+    ) -> LiveRuntimeMutation {
+        LiveRuntimeReducer.reduce(
+            state: state,
+            action: action,
+            environment: LiveRuntimeEnvironment(now: now, bridgeMode: .projectionOwned)
+        )
     }
 }

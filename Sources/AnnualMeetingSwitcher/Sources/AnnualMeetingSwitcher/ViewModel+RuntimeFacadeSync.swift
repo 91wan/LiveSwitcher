@@ -41,6 +41,7 @@ extension SwitcherViewModel {
     func syncProjectionFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.projection) else { return }
 
+        updateExternalDisplayAvailabilityForProjection(runtime.state.projection.hasExternalDisplay)
         isBroadcasting = runtime.state.projection.isBroadcasting
         broadcastSafetyNotice = runtime.state.projection.safetyNotice
     }
