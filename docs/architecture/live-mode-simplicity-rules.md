@@ -178,6 +178,11 @@ product boundary.
   moving persisted setting mutation mechanics to `PreferencesRuntimeReducer`,
   while wallpaper and corner-logo URL updates remain behind the existing Setup
   flow and infrastructure guards.
+- Automation Command Runtime reducer extraction does not add live controls. It
+  only moves command effect emission into `AutomationCommandRuntimeReducer` and
+  suppresses unnecessary audio-input sync for `automationScriptRequested`;
+  AppleScript source construction, WPS fallback branching, and key forwarding
+  remain outside the live surface.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   and compatibility current-program callbacks obey existing Runtime ownership

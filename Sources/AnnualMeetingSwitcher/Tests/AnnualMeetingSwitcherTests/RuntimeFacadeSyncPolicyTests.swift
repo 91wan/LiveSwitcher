@@ -141,6 +141,25 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
+    func testAutomationScriptRequestedDoesNotDispatchAudioInputs() {
+        XCTAssertFalse(
+            LiveRuntimeFacadeSyncPolicy.options(for: automationScriptRequested).dispatchAudioInputsChanged
+        )
+    }
+
+    func testAutomationScriptRequestedDoesNotSyncUnrelatedFacades() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: automationScriptRequested)
+
+        XCTAssertFalse(options.syncBGM)
+        XCTAssertFalse(options.syncProjection)
+        XCTAssertFalse(options.syncPPT)
+        XCTAssertFalse(options.syncAutomationNotice)
+        XCTAssertFalse(options.syncSupport)
+        XCTAssertFalse(options.syncProgramQueue)
+        XCTAssertFalse(options.syncCurrentProgram)
+        XCTAssertFalse(options.syncPanic)
+    }
+
     func testAutomationFailedStillSyncsAutomationNoticeFacade() {
         let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
             action: "keynote.scan.windows",
@@ -257,5 +276,12 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
             )),
             .programActivationCompleted(id: id)
         ]
+    }
+
+    private var automationScriptRequested: LiveRuntimeAction {
+        .automationScriptRequested(
+            script: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\"",
+            action: "keynote.open.present"
+        )
     }
 }
