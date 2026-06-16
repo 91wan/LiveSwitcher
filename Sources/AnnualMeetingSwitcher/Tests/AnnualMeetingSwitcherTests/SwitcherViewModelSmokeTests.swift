@@ -56,6 +56,21 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         return url
     }
 
+    private func mirrorRuntimeMediaState(
+        _ viewModel: SwitcherViewModel,
+        item: ProgramItem,
+        isPlaying: Bool
+    ) {
+        var state = viewModel.runtime.state
+        state.program.items = [item]
+        state.program.currentID = item.id
+        state.program.currentDetachedItem = nil
+        state.program.currentSwitchedAt = Date()
+        state.media.loadedURL = item.sourceURL
+        state.media.isPlaying = isPlaying
+        viewModel.runtime.replaceStateForFacadeSync(state)
+    }
+
     private func makeEmptyTempFileURL(ext: String) throws -> URL {
         let url = URL(fileURLWithPath: NSTemporaryDirectory())
             .appendingPathComponent(UUID().uuidString)
@@ -272,21 +287,21 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.mediaVolume = 0.5
         viewModel.bgmVolume = 0.25
         viewModel.audioStrategy = .followProgram
-        viewModel.applyCurrentProgramProjectionFromRuntime(
-            ProgramItem(
-                title: "片头",
-                subtitle: "MP4",
-                sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
-            ),
-            switchedAt: Date()
+        let item = ProgramItem(
+            title: "片头",
+            subtitle: "MP4",
+            sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4")
         )
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
 
         viewModel.avCoordinator.isPlaying = false
+        mirrorRuntimeMediaState(viewModel, item: item, isPlaying: false)
         viewModel.syncRuntimeAudioInputsFromFacade(reason: nil)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0.2, accuracy: 0.0001)
 
         viewModel.avCoordinator.isPlaying = true
+        mirrorRuntimeMediaState(viewModel, item: item, isPlaying: true)
         viewModel.syncRuntimeAudioInputsFromFacade(reason: nil)
         XCTAssertEqual(viewModel.effectiveMediaOutputVolume(), 0.4, accuracy: 0.0001)
         XCTAssertEqual(viewModel.effectiveBGMOutputVolume(), 0, accuracy: 0.0001)
@@ -684,6 +699,8 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         viewModel.switchToProgram(ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: videoURL))
         viewModel.avCoordinator.pause()
+        let currentItem = try XCTUnwrap(viewModel.currentProgramItem)
+        mirrorRuntimeMediaState(viewModel, item: currentItem, isPlaying: false)
 
         viewModel.togglePanicMode()
         viewModel.togglePanicMode()

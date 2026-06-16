@@ -192,6 +192,9 @@ product boundary.
   controls or change user behavior. Current Program selection remains behind
   real Runtime selection/clear actions, Runtime action surface stays small, and
   Live mode keeps the same operator controls.
+- Runtime-owned snapshot source hardening does not add live controls or change
+  user behavior. It only prevents stale facade state from overwriting
+  Runtime-owned media, current-program, and audio-routing truth.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   obey existing Runtime ownership before mutating state.
