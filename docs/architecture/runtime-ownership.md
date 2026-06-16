@@ -27,6 +27,15 @@ effect. Preference actions do not dispatch audio-input sync and do not sync
 unrelated facades. No `.preferences` Runtime domain or port exists, and
 production bridge mode remains `.panicOwned`.
 
+Program Queue mutation logic is routed through
+`Runtime/ProgramQueueRuntimeReducer.swift`. Pure Program queue mechanics remain
+in `Runtime/ProgramQueueRuntimeMutations.swift`. Main `LiveRuntimeReducer.swift`
+routes Program Queue actions only and keeps the `.programQueue` ownership
+guard. `facadeCurrentProgramChanged` is compatibility-only and handled by
+`ProgramSelectionRuntimeReducer`; Production ViewModel selection paths must not
+call `facadeCurrentProgramChanged`. Production bridge mode remains
+`.panicOwned`.
+
 Runtime callback actions must not mutate domains before ownership. Media
 callbacks require `.media` ownership, BGM callbacks require `.bgm` ownership,
 and `facadeCurrentProgramChanged` is compatibility-only and requires

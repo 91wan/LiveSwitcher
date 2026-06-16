@@ -173,6 +173,10 @@ product boundary.
   change production callback behavior. It only makes async Media/BGM callbacks
   and compatibility current-program callbacks obey existing Runtime ownership
   before mutating state.
+- Program Queue Runtime reducer extraction does not add live controls or change
+  Program Queue behavior. It only keeps Runtime reducer files domain-scoped by
+  moving Program Queue mutation routing to `ProgramQueueRuntimeReducer` and
+  current-program compatibility mirroring to `ProgramSelectionRuntimeReducer`.
 - Media restart Panic hardening does not add live controls. Existing restart
   remains available, but emergency safety overrides playback: during Panic,
   Runtime seeks/cues media to start without emitting a restart/play effect, and
