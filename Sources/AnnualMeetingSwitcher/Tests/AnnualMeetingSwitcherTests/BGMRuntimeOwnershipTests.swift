@@ -94,7 +94,7 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
         let ports = BGMRuntimeOwnershipPorts()
         let viewModel = makeViewModel(ports: ports)
         viewModel.bgmItems = [item]
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
         viewModel.toggleBGM(item)
         viewModel.seedActiveRuntimeBGMCallbackForTesting(item: item, generation: 1)
         ports.reset()

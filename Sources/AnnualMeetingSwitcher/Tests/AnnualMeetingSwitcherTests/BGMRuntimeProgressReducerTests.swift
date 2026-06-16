@@ -27,6 +27,15 @@ final class BGMRuntimeProgressReducerTests: XCTestCase {
         XCTAssertEqual(state.bgm.progress, 0.5, accuracy: 0.0001)
     }
 
+    func testBGMProgressUpdatedUpdatesProgressAndTime() {
+        var state = currentBGMState(generation: 4)
+
+        BGMRuntimeReducer.progressUpdated(time: 15, duration: 30, generation: 4, state: &state)
+
+        XCTAssertEqual(state.bgm.currentTime, 15)
+        XCTAssertEqual(state.bgm.progress, 0.5, accuracy: 0.0001)
+    }
+
     func testProgressUpdatedClampsProgressAtOne() {
         var state = currentBGMState(generation: 4)
 

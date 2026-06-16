@@ -87,7 +87,7 @@ extension SwitcherViewModel {
         syncCurrentProgramIntoRuntimeSnapshot(&state)
         syncMediaIntoRuntimeSnapshot(&state)
 
-        syncBGMLibraryIntoRuntimeSnapshot(&state)
+        syncBGMIntoRuntimeSnapshot(&state)
 
         state.audio.masterVolume = masterVolume
         state.audio.mediaVolume = mediaVolume
@@ -214,12 +214,18 @@ extension SwitcherViewModel {
         state.ppt.isEventTapActive = isPageInterceptEventTapActiveForRuntimeSnapshot
     }
 
-    private func syncBGMLibraryIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        state.bgm.items = runtimeBGMItemsForSnapshot()
+    private func syncBGMIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        let items = runtimeBGMItemsForSnapshot()
+
+        guard !runtime.bridgeMode.owns(.bgm) else {
+            let runtimeBGM = runtime.state.bgm
+            state.bgm = runtimeBGM
+            state.bgm.items = items
+            return
+        }
+
+        state.bgm.items = items
         state.bgm.playMode = bgmPlayMode
-
-        guard !runtime.bridgeMode.owns(.bgm) else { return }
-
         state.bgm.currentID = currentBGMItem?.id
         state.bgm.isPlaying = isBGMPlaying
         state.bgm.progress = bgmProgress

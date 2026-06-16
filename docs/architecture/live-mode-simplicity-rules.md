@@ -195,6 +195,10 @@ product boundary.
 - Runtime-owned snapshot source hardening does not add live controls or change
   user behavior. It only prevents stale facade state from overwriting
   Runtime-owned media, current-program, and audio-routing truth.
+- Runtime-owned BGM snapshot source hardening does not add live controls or
+  change user behavior. It only prevents stale facade BGM playback/play-mode
+  state from overwriting Runtime-owned BGM truth while keeping BGM library
+  items ViewModel-owned.
 - Runtime-owned projection snapshot source hardening does not add live controls
   or change user behavior. It only prevents stale ViewModel external-display
   facade values from overwriting Runtime-owned projection truth.
