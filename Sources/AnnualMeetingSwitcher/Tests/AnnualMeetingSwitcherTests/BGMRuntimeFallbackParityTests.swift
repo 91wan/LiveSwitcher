@@ -30,7 +30,7 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
         let first = BGMItem(title: "A", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "B", url: secondURL, category: .warmUp)
         viewModel.bgmItems = [first, second]
-        viewModel.bgmPlayMode = .loopAll
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.loopAll))
         viewModel.toggleBGM(first)
         let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
 
@@ -149,7 +149,7 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
         let first = BGMItem(title: "A", url: firstURL, category: .warmUp)
         let second = BGMItem(title: "B", url: secondURL, category: .warmUp)
         viewModel.bgmItems = [first, second]
-        viewModel.bgmPlayMode = playMode
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(playMode))
         viewModel.toggleBGM(startsAtLast ? second : first)
         let fallbackItem = try XCTUnwrap(viewModel.bgmFallbackPlayer.currentItem)
 

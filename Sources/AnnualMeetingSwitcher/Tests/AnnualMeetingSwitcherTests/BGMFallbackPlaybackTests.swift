@@ -30,7 +30,7 @@ final class BGMFallbackPlaybackTests: XCTestCase {
     func testFallbackLoopOneRepeatsSameTrackOnEndNotification() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.bgmPlayMode = .loopOne
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.loopOne))
         let url = try makeTempFileURL(ext: "mp3")
         defer { try? FileManager.default.removeItem(at: url) }
         let item = BGMItem(title: "Fallback Loop", url: url, category: .warmUp)
@@ -51,7 +51,7 @@ final class BGMFallbackPlaybackTests: XCTestCase {
     func testFallbackSequentialStopsAtLastTrackOnEndNotification() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
         let firstURL = try makeTempFileURL(ext: "mp3")
         let secondURL = try makeTempFileURL(ext: "mp3")
         defer {
@@ -77,7 +77,7 @@ final class BGMFallbackPlaybackTests: XCTestCase {
     func testFallbackLoopAllWrapsLastTrackToFirstOnEndNotification() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
-        viewModel.bgmPlayMode = .loopAll
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.loopAll))
         let firstURL = try makeTempFileURL(ext: "mp3")
         let secondURL = try makeTempFileURL(ext: "mp3")
         defer {

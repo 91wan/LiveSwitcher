@@ -10,7 +10,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let item = BGMItem(title: "Solo", url: audioURL, category: .warmUp)
         let viewModel = makeViewModel()
         viewModel.bgmItems = [item]
-        viewModel.bgmPlayMode = .loopAll
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.loopAll))
         viewModel.toggleBGM(item)
 
         viewModel.bgmDidFinish()
@@ -29,7 +29,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
         XCTAssertTrue(viewModel.isBGMPlaying)
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
 
         viewModel.bgmDidFinish()
         XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
@@ -50,7 +50,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let viewModel = makeViewModel()
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
         let generationBeforeFinish = viewModel.bgmTransitionGenerationForTesting
 
         viewModel.bgmDidFinish()
@@ -115,7 +115,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertTrue(viewModel.isBGMPlaying)
         XCTAssertNil(viewModel.bgmAudioPlayer)
         XCTAssertNotNil(viewModel.bgmFallbackPlayer.currentItem)
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
 
         viewModel.bgmDidFinish()
 
@@ -223,7 +223,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
         let viewModel = makeViewModel()
         viewModel.bgmItems = [first, second]
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
         viewModel.liveAudioFadeDuration = 1.0
 
         viewModel.toggleBGM(first)
@@ -249,7 +249,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
         let viewModel = makeViewModel()
         viewModel.bgmItems = [first, second]
-        viewModel.bgmPlayMode = .sequential
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.sequential))
         viewModel.liveAudioFadeDuration = 1.0
 
         viewModel.toggleBGM(first)
@@ -327,7 +327,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         let second = BGMItem(title: "Second", url: secondURL, category: .warmUp)
         let viewModel = makeViewModel()
         viewModel.bgmItems = [first, second]
-        viewModel.bgmPlayMode = .loopAll
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedBGMPlayMode(.loopAll))
         viewModel.liveAudioFadeDuration = 1.0
 
         viewModel.toggleBGM(first)

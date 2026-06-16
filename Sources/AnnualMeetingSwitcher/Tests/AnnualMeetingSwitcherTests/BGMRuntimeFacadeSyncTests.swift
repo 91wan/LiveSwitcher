@@ -53,16 +53,29 @@ final class BGMRuntimeFacadeSyncTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.bgm.generation, 9)
     }
 
-    func testBGMOwnedFacadeSyncStillUpdatesLibraryItemsAndPlayMode() {
+    func testBGMOwnedFacadeSyncStillUpdatesLibraryItems() {
         let item = bgmItem(title: "Library")
+        let runtimeItem = bgmItem(title: "Runtime")
         let viewModel = makeViewModel()
         viewModel.bgmItems = [item]
         viewModel.bgmPlayMode = .sequential
+        seedRuntimeBGM(viewModel, item: runtimeItem, playMode: .loopAll)
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
 
-        XCTAssertEqual(viewModel.runtime.state.bgm.items, [item])
-        XCTAssertEqual(viewModel.runtime.state.bgm.playMode, .sequential)
+        XCTAssertEqual(viewModel.runtime.state.bgm.items.map(\.id), [item.id, runtimeItem.id])
+        XCTAssertEqual(viewModel.runtime.state.bgm.playMode, .loopAll)
+    }
+
+    func testBGMFacadeSyncProjectsPlayMode() {
+        let item = bgmItem(title: "Runtime")
+        let viewModel = makeViewModel()
+        viewModel.bgmPlayMode = .loopAll
+        seedRuntimeBGM(viewModel, item: item, playMode: .sequential)
+
+        viewModel.syncBGMFacadeFromRuntime()
+
+        XCTAssertEqual(viewModel.bgmPlayMode, .sequential)
     }
 
     func testOperatorSelectedBGMSyncsFacadeCurrentItemFromRuntime() {
@@ -107,12 +120,14 @@ final class BGMRuntimeFacadeSyncTests: XCTestCase {
         progress: Double = 0,
         currentTime: Double = 0,
         duration: Double? = nil,
+        playMode: BGMPlayMode = .loopAll,
         generation: Int = 3
     ) {
         var state = viewModel.runtime.state
         state.bgm.items = [item]
         state.bgm.currentID = item.id
         state.bgm.isPlaying = isPlaying
+        state.bgm.playMode = playMode
         state.bgm.progress = progress
         state.bgm.currentTime = currentTime
         state.bgm.duration = duration
