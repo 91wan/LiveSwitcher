@@ -562,35 +562,28 @@ enum LiveRuntimeReducer {
 
         case .operatorRequestedPresentationQuery(let id):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
-            state.presentationQuery.activeRequestID = id
-            state.presentationQuery.latestCompletedRequestID = nil
-            state.presentationQuery.latestResult = nil
-            state.presentationQuery.latestFailure = nil
-            effects.append(.scanPresentationQuery(id: id))
+            PresentationQueryRuntimeReducer.request(
+                id: id,
+                state: &state,
+                effects: &effects
+            )
 
         case .presentationQueryCompleted(let id, let result):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
-            guard state.presentationQuery.activeRequestID == id else { break }
-            state.presentationQuery.activeRequestID = nil
-            state.presentationQuery.latestCompletedRequestID = id
-            state.presentationQuery.latestResult = result
-            state.presentationQuery.latestFailure = nil
+            PresentationQueryRuntimeReducer.complete(id: id, result: result, state: &state)
 
         case .presentationQueryFailed(let id, let action, let sanitizedMessage):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
-            guard state.presentationQuery.activeRequestID == id else { break }
-            state.presentationQuery.activeRequestID = nil
-            state.presentationQuery.latestCompletedRequestID = nil
-            state.presentationQuery.latestResult = nil
-            state.presentationQuery.latestFailure = PresentationQueryFailure(
+            PresentationQueryRuntimeReducer.fail(
                 id: id,
                 action: action,
-                sanitizedMessage: sanitizedMessage
+                sanitizedMessage: sanitizedMessage,
+                state: &state
             )
 
         case .presentationQueryResultConsumed(let id):
             guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }
-            state.presentationQuery.markConsumed(id)
+            PresentationQueryRuntimeReducer.consumeResult(id: id, state: &state)
 
         case .supportEventRecorded(let event):
             guard isRuntimeOwned(.support, in: bridgeMode) else { break }

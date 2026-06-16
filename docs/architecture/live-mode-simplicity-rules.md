@@ -131,6 +131,11 @@ product boundary.
   `PresentationQueryResult` as the query payload, and isolates title cleanup in
   `PresentationWindowTitlePolicy`; Live mode remains execution-only and code
   simplicity remains part of product simplicity.
+- Presentation Query Runtime reducer extraction does not add live controls or
+  change query behavior. It keeps Runtime reducer files domain-scoped by moving
+  request/completion/failure/consume lifecycle routing into
+  `PresentationQueryRuntimeReducer`; query result normalization and consumption
+  side effects remain ViewModel-owned.
 - Runtime infrastructure domain hardening does not add live controls. It only
   gives image asset loading and preference persistence their own Runtime bridge
   domains, keeps production connected ports unchanged, and keeps
