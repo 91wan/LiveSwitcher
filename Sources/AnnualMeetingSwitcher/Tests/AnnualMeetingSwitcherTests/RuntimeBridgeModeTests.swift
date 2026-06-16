@@ -57,6 +57,18 @@ final class RuntimeBridgeModeTests: XCTestCase {
         }
     }
 
+    func testNoPresentationQueryReducerBridgeModeAdded() {
+        for rawValue in ["presentationQueryReducerOwned", "presentationResultOwned"] {
+            XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
+    func testNoPresentationQueryReducerDomainAdded() {
+        for rawValue in ["presentationQueryReducer", "presentationResult"] {
+            XCTAssertFalse(LiveRuntimeDomain.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testBridgeModeDomainOwnershipIsCumulative() {
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.audio))
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))

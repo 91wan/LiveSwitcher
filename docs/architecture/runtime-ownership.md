@@ -36,6 +36,15 @@ guard. `facadeCurrentProgramChanged` is compatibility-only and handled by
 call `facadeCurrentProgramChanged`. Production bridge mode remains
 `.panicOwned`.
 
+Presentation Query lifecycle mutation is routed through
+`PresentationQueryRuntimeReducer.swift`. Main `LiveRuntimeReducer.swift` routes
+Presentation Query actions only and keeps the `.presentationQuery` ownership
+guard. `PresentationQueryRuntimeState` retains consumed-ID mechanics and limit.
+Query callbacks are accepted only for the active request ID, and stale query
+callbacks must not mutate result/failure state. ViewModel owns query result
+normalization and consumption side effects. Production bridge mode remains
+`.panicOwned`.
+
 Runtime callback actions must not mutate domains before ownership. Media
 callbacks require `.media` ownership, BGM callbacks require `.bgm` ownership,
 and `facadeCurrentProgramChanged` is compatibility-only and requires
