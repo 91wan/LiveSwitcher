@@ -432,10 +432,6 @@ enum LiveRuntimeReducer {
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
-        case .bgmPrepared(let id, let generation):
-            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
-            guard generation == state.bgm.generation, id == state.bgm.currentID else { break }
-
         case .bgmPlaybackChanged(let isPlaying, let generation):
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.playbackChanged(
@@ -475,9 +471,6 @@ enum LiveRuntimeReducer {
                 generation: generation,
                 state: &state
             )
-
-        case .panicFadeCompleted:
-            break
 
         case .panicBGMPauseDelayElapsed(let generation, let snapshot):
             guard isRuntimeOwned(.panic, in: bridgeMode) else { break }

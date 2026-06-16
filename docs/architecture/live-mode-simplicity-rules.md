@@ -183,6 +183,11 @@ product boundary.
   suppresses unnecessary audio-input sync for `automationScriptRequested`;
   AppleScript source construction, WPS fallback branching, and key forwarding
   remain outside the live surface.
+- Dead Runtime action pruning does not add live controls or change user
+  behavior. It only removes no-op Runtime actions from the action surface;
+  BGM preparation remains behind existing BGM effects/callbacks, Panic delayed
+  BGM pause remains behind `panicBGMPauseDelayElapsed`, and Live mode remains an
+  execution surface with the same operator controls.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   and compatibility current-program callbacks obey existing Runtime ownership
