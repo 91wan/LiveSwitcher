@@ -24,6 +24,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Projection configuration must not move into Live mode"))
         XCTAssertTrue(document.contains("PPT runtime migration does not add live controls"))
         XCTAssertTrue(document.contains("PPT setup/configuration and key-forwarding implementation details must not"))
+        XCTAssertTrue(document.contains("Program Activation Runtime reducer extraction does not add live controls"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {

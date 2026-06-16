@@ -109,6 +109,10 @@ product boundary.
 - Program activation runtime hardening does not add live controls or change
   switching behavior. Runtime request ID gates activation side effects, and
   Runtime selection acceptance gates post-selection side effects.
+- Program Activation Runtime reducer extraction does not add live controls or
+  change switching behavior. It only keeps Runtime reducer files domain-scoped
+  by moving activation request/completion lifecycle mutation into
+  `ProgramActivationRuntimeReducer`.
 - Panic transition policy hardening does not add live controls or change
   emergency behavior. It only moves snapshot, media pause, delayed BGM pause,
   and resume decisions into `PanicTransitionPolicy`; the BGM fade delay is

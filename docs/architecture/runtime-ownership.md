@@ -45,6 +45,16 @@ callbacks must not mutate result/failure state. ViewModel owns query result
 normalization and consumption side effects. Production bridge mode remains
 `.panicOwned`.
 
+Program Activation request/completion lifecycle mutation is routed through
+`ProgramActivationRuntimeReducer.swift`. Main `LiveRuntimeReducer.swift` routes
+Program Activation actions only and keeps the `.programActivation` ownership
+guard. Runtime records only request IDs: activation plans are not stored in
+Runtime state. Completion is accepted only for the active request, and stale
+completion must not clear newer active request state. Program Activation
+concrete side effects remain ViewModel-owned through `ProgramActivationPort`
+and `ProgramActivationSideEffectHandlers`. Production bridge mode remains
+`.panicOwned`.
+
 Runtime callback actions must not mutate domains before ownership. Media
 callbacks require `.media` ownership, BGM callbacks require `.bgm` ownership,
 and `facadeCurrentProgramChanged` is compatibility-only and requires
@@ -129,6 +139,10 @@ BGM Runtime mutation logic lives in `Runtime/BGMRuntimeReducer.swift`; the main
 not own BGM selection, stop, seek, progress, adjacent-selection, or reached-end
 mutation bodies. `BGMRuntimeReducer` may call audio helper methods through
 `AudioRuntimeReducer`.
+Program Activation Runtime mutation logic lives in
+`Runtime/ProgramActivationRuntimeReducer.swift`; the main
+`LiveRuntimeReducer.swift` should route activation request/completion actions
+and keep ownership guards, not own activation lifecycle mutation bodies.
 Audio runtime mutation logic lives in `AudioRuntimeReducer.swift`; the main
 `LiveRuntimeReducer.swift` should route audio actions and keep `.audio`
 ownership guards, not own audio fader, mute, speaker-mode, BGM takeover, facade
