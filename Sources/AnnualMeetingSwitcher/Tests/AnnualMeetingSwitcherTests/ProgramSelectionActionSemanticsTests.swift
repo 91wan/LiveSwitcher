@@ -44,13 +44,6 @@ final class ProgramSelectionActionSemanticsTests: XCTestCase {
         )
     }
 
-    func testFacadeCurrentProgramChangedRedactedNameRemainsCompatibilityName() {
-        XCTAssertEqual(
-            LiveRuntimeAction.facadeCurrentProgramChanged(UUID()).redactedName,
-            "facadeCurrentProgramChanged"
-        )
-    }
-
     private func programItem(_ title: String) -> ProgramItem {
         ProgramItem(title: title, subtitle: "MEDIA", sourceURL: URL(fileURLWithPath: "/tmp/\(title).mp4"))
     }

@@ -414,16 +414,6 @@ enum LiveRuntimeReducer {
                 state: &state
             )
 
-        case .facadeCurrentProgramChanged(let id):
-            guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
-            ProgramSelectionRuntimeReducer.applyFacadeCurrentProgramChanged(
-                id,
-                state: &state,
-                effects: &effects,
-                now: environment.now,
-                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
-            )
-
         case .facadeAudioInputsChanged(let snapshot):
             guard isRuntimeOwned(.audio, in: bridgeMode) else { break }
             AudioRuntimeReducer.applyFacadeSnapshot(

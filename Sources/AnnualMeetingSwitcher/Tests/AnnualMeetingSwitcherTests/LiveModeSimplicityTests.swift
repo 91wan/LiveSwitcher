@@ -4,6 +4,10 @@ import XCTest
 final class LiveModeSimplicityTests: XCTestCase {
     func testLiveModeSimplicityRulesDocumentDefinesAllowedForbiddenAndReviewChecklist() throws {
         let document = try repositoryText("docs/architecture/live-mode-simplicity-rules.md")
+        let normalizedDocument = document
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+            .joined(separator: " ")
 
         XCTAssertTrue(document.contains("Allowed live actions"))
         XCTAssertTrue(document.contains("Forbidden configuration surfaces"))
@@ -27,6 +31,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Program Activation Runtime reducer extraction does not add live controls"))
         XCTAssertTrue(document.contains("Automation Command Runtime reducer extraction does not add live controls"))
         XCTAssertTrue(document.contains("Dead Runtime action pruning does not add live controls"))
+        XCTAssertTrue(normalizedDocument.contains("Facade current-program compatibility action pruning does not add live controls"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {
