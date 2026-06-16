@@ -76,13 +76,11 @@ enum LiveRuntimeAction: Equatable {
     case facadeCurrentProgramChanged(UUID?)
     case facadeAudioInputsChanged(AudioFacadeSnapshot)
 
-    case bgmPrepared(id: UUID, generation: Int)
     case bgmPlaybackChanged(isPlaying: Bool, generation: Int)
     case bgmReachedEnd(generation: Int)
     case bgmFailed(reason: String, generation: Int)
     case bgmProgressUpdated(time: Double, duration: Double?, generation: Int)
 
-    case panicFadeCompleted(generation: Int)
     case panicBGMPauseDelayElapsed(generation: Int, snapshot: PanicPlaybackSnapshot)
     case projectionStartFailed(reason: ProjectionStartFailureReason)
     case projectionExternalDisplayLost
@@ -164,12 +162,10 @@ extension LiveRuntimeAction {
         case .mediaSeekCompleted: return "mediaSeekCompleted"
         case .facadeCurrentProgramChanged: return "facadeCurrentProgramChanged"
         case .facadeAudioInputsChanged: return "facadeAudioInputsChanged"
-        case .bgmPrepared: return "bgmPrepared"
         case .bgmPlaybackChanged: return "bgmPlaybackChanged"
         case .bgmReachedEnd: return "bgmReachedEnd"
         case .bgmFailed: return "bgmFailed"
         case .bgmProgressUpdated: return "bgmProgressUpdated"
-        case .panicFadeCompleted: return "panicFadeCompleted"
         case .panicBGMPauseDelayElapsed: return "panicBGMPauseDelayElapsed"
         case .projectionStartFailed: return "projectionStartFailed"
         case .projectionExternalDisplayLost: return "projectionExternalDisplayLost"

@@ -38,7 +38,6 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
             .operatorSelectedNextBGM,
             .operatorSelectedPreviousBGM,
             .operatorSelectedBGMPlayMode(.loopAll),
-            .bgmPrepared(id: UUID(), generation: 1),
             .bgmPlaybackChanged(isPlaying: true, generation: 1),
             .bgmReachedEnd(generation: 1),
             .bgmFailed(reason: "decode", generation: 1),

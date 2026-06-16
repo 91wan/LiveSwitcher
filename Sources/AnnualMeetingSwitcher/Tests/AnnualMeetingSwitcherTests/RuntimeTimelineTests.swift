@@ -44,7 +44,7 @@ final class RuntimeTimelineTests: XCTestCase {
         XCTAssertTrue(store.recordedEffects.contains(.playBGM(generation: store.state.bgm.generation)))
     }
 
-    func testBGMRapidSwitchTimelineIgnoresStalePreparedAndPlaybackCallbacks() {
+    func testBGMRapidSwitchTimelineIgnoresStalePlaybackCallbacks() {
         let a = bgm("A")
         let b = bgm("B")
         let c = bgm("C")
@@ -61,9 +61,7 @@ final class RuntimeTimelineTests: XCTestCase {
         store.dispatch(.operatorSelectedBGM(c.id))
         let generationC = store.state.bgm.generation
 
-        store.dispatch(.bgmPrepared(id: a.id, generation: generationA))
         store.dispatch(.bgmPlaybackChanged(isPlaying: true, generation: generationA))
-        store.dispatch(.bgmPrepared(id: b.id, generation: generationB))
         store.dispatch(.bgmPlaybackChanged(isPlaying: true, generation: generationB))
 
         XCTAssertEqual(store.state.bgm.currentID, c.id)

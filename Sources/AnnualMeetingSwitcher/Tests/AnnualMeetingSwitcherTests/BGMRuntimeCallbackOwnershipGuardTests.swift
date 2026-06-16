@@ -2,14 +2,6 @@ import XCTest
 @testable import LiveSwitcher
 
 final class BGMRuntimeCallbackOwnershipGuardTests: XCTestCase {
-    func testBGMPreparedNoopsBeforeBGMOwnership() {
-        let state = bgmState()
-        let mutation = reduce(state, .bgmPrepared(id: state.bgm.currentID!, generation: 7), bridgeMode: .mediaOwned)
-
-        XCTAssertEqual(mutation.state.bgm, state.bgm)
-        XCTAssertTrue(mutation.effects.isEmpty)
-    }
-
     func testBGMPlaybackChangedNoopsBeforeBGMOwnership() {
         let state = bgmState(isPlaying: false)
         let mutation = reduce(state, .bgmPlaybackChanged(isPlaying: true, generation: 7), bridgeMode: .mediaOwned)
@@ -82,7 +74,6 @@ final class BGMRuntimeCallbackOwnershipGuardTests: XCTestCase {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
 
         [
-            ".bgmPrepared(let id, let generation)",
             ".bgmPlaybackChanged(let isPlaying, let generation)",
             ".bgmReachedEnd(let generation)",
             ".bgmFailed(let reason, let generation)",

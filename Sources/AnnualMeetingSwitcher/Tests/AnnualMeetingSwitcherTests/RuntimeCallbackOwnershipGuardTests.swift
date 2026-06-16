@@ -107,9 +107,7 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
     }
 
     private var bgmCallbackActions: [LiveRuntimeAction] {
-        let id = UUID()
-        return [
-            .bgmPrepared(id: id, generation: 1),
+        [
             .bgmPlaybackChanged(isPlaying: true, generation: 1),
             .bgmReachedEnd(generation: 1),
             .bgmFailed(reason: "decode", generation: 1),
