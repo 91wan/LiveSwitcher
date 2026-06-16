@@ -23,6 +23,20 @@ final class AutomationCommandRuntimeActionLogTests: XCTestCase {
         XCTAssertFalse(entry?.newStateSummary.localizedStandardContains("tell application") == true)
     }
 
+    func testAutomationScriptRequestedActionLogDoesNotContainAppleScriptBody() {
+        let runtime = automationCommandRuntime()
+
+        runtime.dispatch(.automationScriptRequested(
+            script: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\"",
+            action: "keynote.open.present"
+        ))
+
+        let renderedLog = runtime.actionLog.map {
+            "\($0.actionName)|\($0.oldStateSummary)|\($0.newStateSummary)"
+        }.joined(separator: "\n")
+        XCTAssertFalse(renderedLog.localizedStandardContains("open POSIX file"))
+    }
+
     func testAutomationScriptRequestedActionLogDoesNotContainFilePath() {
         let runtime = automationCommandRuntime()
 

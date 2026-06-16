@@ -11,12 +11,20 @@ final class AutomationCommandRuntimeRecordedEffectTests: XCTestCase {
         XCTAssertEqual(runtime.recordedEffects, [.runAppleScript(script: "<redacted>", action: "keynote.open.present")])
     }
 
+    func testRunAppleScriptRecordedEffectRedactsScript() {
+        testRecordedRunAppleScriptEffectRedactsScriptSource()
+    }
+
     func testRecordedRunAppleScriptEffectKeepsActionName() {
         let runtime = automationCommandRuntime()
 
         runtime.dispatch(.automationScriptRequested(script: privateScript, action: "keynote.open.present"))
 
         XCTAssertTrue(runtime.recordedEffects.contains(.runAppleScript(script: "<redacted>", action: "keynote.open.present")))
+    }
+
+    func testRunAppleScriptRecordedEffectPreservesActionName() {
+        testRecordedRunAppleScriptEffectKeepsActionName()
     }
 
     func testRecordedRunAppleScriptEffectDoesNotContainFilePath() {
@@ -57,6 +65,22 @@ final class AutomationCommandRuntimeRecordedEffectTests: XCTestCase {
         runtime.dispatch(.automationScriptRequested(script: privateScript, action: "keynote.open.present"))
 
         XCTAssertFalse(renderedRecordedEffects(runtime).localizedStandardContains("tell application"))
+    }
+
+    func testAutomationScriptRequestedRecordedEffectDoesNotContainScriptSource() {
+        let runtime = automationCommandRuntime()
+
+        runtime.dispatch(.automationScriptRequested(script: privateScript, action: "keynote.open.present"))
+
+        XCTAssertFalse(renderedRecordedEffects(runtime).localizedStandardContains(privateScript))
+    }
+
+    func testAutomationScriptRequestedRecordedEffectDoesNotContainFilePathFromScript() {
+        let runtime = automationCommandRuntime()
+
+        runtime.dispatch(.automationScriptRequested(script: privateScript, action: "keynote.open.present"))
+
+        XCTAssertFalse(renderedRecordedEffects(runtime).localizedStandardContains("/Users/operator/private-show.key"))
     }
 
     private var privateScript: String {

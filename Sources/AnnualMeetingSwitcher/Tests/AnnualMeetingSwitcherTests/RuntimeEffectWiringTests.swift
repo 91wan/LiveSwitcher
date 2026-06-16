@@ -136,6 +136,12 @@ final class RuntimeEffectWiringTests: XCTestCase {
         }
     }
 
+    func testNoAutomationCommandReducerPortAdded() {
+        for rawValue in ["automationCommandReducer", "appleScript"] {
+            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testProductionRuntimeStillWiresAutomationCommandPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 

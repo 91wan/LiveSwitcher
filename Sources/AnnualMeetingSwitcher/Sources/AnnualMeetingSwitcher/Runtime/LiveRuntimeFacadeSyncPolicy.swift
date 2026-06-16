@@ -67,6 +67,7 @@ enum LiveRuntimeFacadeSyncPolicy {
              .presentationQueryCompleted,
              .presentationQueryFailed,
              .presentationQueryResultConsumed,
+             .automationScriptRequested,
              .automationFailed,
              .automationNoticeRequested,
              .automationNoticeExpired,

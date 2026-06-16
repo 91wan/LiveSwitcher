@@ -528,7 +528,11 @@ enum LiveRuntimeReducer {
 
         case .automationScriptRequested(let script, let action):
             guard isRuntimeOwned(.automationCommand, in: bridgeMode) else { break }
-            effects.append(.runAppleScript(script: script, action: action))
+            AutomationCommandRuntimeReducer.requestScript(
+                script: script,
+                action: action,
+                effects: &effects
+            )
 
         case .automationFailed(let action, let sanitizedMessage):
             guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }
