@@ -14,6 +14,34 @@ final class ProgramActivationRuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
+    func testProgramActivationActionsNoopBeforeProgramActivationOwnership() {
+        let id = UUID()
+        let mutation = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorRequestedProgramActivation(id: id, plan: activationPlan()),
+            environment: .productionProgramSelectionOwning()
+        )
+
+        XCTAssertNil(mutation.state.programActivation.activeRequestID)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testProgramActivationCompletionNoopsBeforeProgramActivationOwnership() {
+        let id = UUID()
+        var state = LiveRuntimeState()
+        state.programActivation.activeRequestID = id
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .programActivationCompleted(id: id),
+            environment: .productionProgramSelectionOwning()
+        )
+
+        XCTAssertEqual(mutation.state.programActivation.activeRequestID, id)
+        XCTAssertNil(mutation.state.programActivation.latestCompletedRequestID)
+        XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
     func testProgramActivationOwnedRecordsRequestAndEmitsActivationEffect() {
         let id = UUID()
         let plan = activationPlan()
@@ -26,6 +54,39 @@ final class ProgramActivationRuntimeOwnershipTests: XCTestCase {
 
         XCTAssertEqual(mutation.state.programActivation.activeRequestID, id)
         XCTAssertEqual(mutation.effects, [.executeProgramActivation(id: id, plan: plan)])
+    }
+
+    func testProgramActivationActionsMutateWhenProgramActivationOwned() {
+        let id = UUID()
+        let plan = activationPlan()
+
+        let requested = LiveRuntimeReducer.reduce(
+            state: LiveRuntimeState(),
+            action: .operatorRequestedProgramActivation(id: id, plan: plan),
+            environment: .productionProgramActivationOwning()
+        )
+        let completed = LiveRuntimeReducer.reduce(
+            state: requested.state,
+            action: .programActivationCompleted(id: id),
+            environment: .productionProgramActivationOwning()
+        )
+
+        XCTAssertEqual(requested.state.programActivation.activeRequestID, id)
+        XCTAssertEqual(requested.effects, [.executeProgramActivation(id: id, plan: plan)])
+        XCTAssertNil(completed.state.programActivation.activeRequestID)
+        XCTAssertEqual(completed.state.programActivation.latestCompletedRequestID, id)
+    }
+
+    func testAllProgramActivationCasesHaveExplicitProgramActivationOwnershipGuard() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+
+        for casePattern in [
+            ".operatorRequestedProgramActivation(let id, let plan)",
+            ".programActivationCompleted(let id)"
+        ] {
+            let body = try caseBody(casePattern, in: source)
+            XCTAssertTrue(body.contains("guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }"), casePattern)
+        }
     }
 
     func testActivationRequestDoesNotMutateSelectionOrQueue() {
@@ -70,5 +131,13 @@ final class ProgramActivationRuntimeOwnershipTests: XCTestCase {
             postSelectionEffects: []
         )
     }
-}
 
+    private func caseBody(_ casePattern: String, in source: String) throws -> String {
+        guard let range = source.range(of: "case \(casePattern):") else {
+            throw NSError(domain: "Missing case \(casePattern)", code: 1)
+        }
+        let nextCase = source[range.upperBound...].range(of: "\n        case ")
+        let end = nextCase?.lowerBound ?? source.endIndex
+        return String(source[range.lowerBound..<end])
+    }
+}

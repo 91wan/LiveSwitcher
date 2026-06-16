@@ -111,6 +111,36 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
+    func testProgramActivationActionsDoNotDispatchAudioInputs() {
+        for action in programActivationActions {
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
+        }
+    }
+
+    func testProgramActivationActionsDoNotSyncCurrentProgramFacade() {
+        for action in programActivationActions {
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).syncCurrentProgram, action.redactedName)
+        }
+    }
+
+    func testProgramActivationActionsDoNotSyncProgramQueueFacade() {
+        for action in programActivationActions {
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).syncProgramQueue, action.redactedName)
+        }
+    }
+
+    func testProgramActivationActionsDoNotSyncUnrelatedFacades() {
+        for action in programActivationActions {
+            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
+
+            XCTAssertFalse(options.syncBGM, action.redactedName)
+            XCTAssertFalse(options.syncProjection, action.redactedName)
+            XCTAssertFalse(options.syncPPT, action.redactedName)
+            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
+            XCTAssertFalse(options.syncSupport, action.redactedName)
+        }
+    }
+
     func testAutomationFailedStillSyncsAutomationNoticeFacade() {
         let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
             action: "keynote.scan.windows",
@@ -213,6 +243,19 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
             .presentationQueryCompleted(id: id, result: .empty),
             .presentationQueryFailed(id: id, action: "keynote.scan.windows", sanitizedMessage: "permissionDenied"),
             .presentationQueryResultConsumed(id: id)
+        ]
+    }
+
+    private var programActivationActions: [LiveRuntimeAction] {
+        let id = UUID()
+        return [
+            .operatorRequestedProgramActivation(id: id, plan: ProgramActivationPlan(
+                item: ProgramItem(title: "Private", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/private.mp4")),
+                runtimeSelection: .queued(UUID()),
+                preSelectionEffects: [],
+                postSelectionEffects: []
+            )),
+            .programActivationCompleted(id: id)
         ]
     }
 }

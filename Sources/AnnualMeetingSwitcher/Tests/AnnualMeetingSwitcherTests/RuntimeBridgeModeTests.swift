@@ -69,6 +69,18 @@ final class RuntimeBridgeModeTests: XCTestCase {
         }
     }
 
+    func testNoProgramActivationReducerBridgeModeAdded() {
+        for rawValue in ["programActivationReducerOwned", "programActivationSideEffectsOwned"] {
+            XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
+    func testNoProgramActivationReducerDomainAdded() {
+        for rawValue in ["programActivationReducer", "programActivationSideEffects"] {
+            XCTAssertFalse(LiveRuntimeDomain.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testBridgeModeDomainOwnershipIsCumulative() {
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.audio))
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))

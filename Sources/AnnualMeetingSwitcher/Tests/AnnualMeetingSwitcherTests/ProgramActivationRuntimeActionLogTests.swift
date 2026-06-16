@@ -42,6 +42,18 @@ final class ProgramActivationRuntimeActionLogTests: XCTestCase {
         XCTAssertFalse(log.contains("/tmp/Private Title.mp4"))
     }
 
+    func testProgramActivationRequestActionLogDoesNotContainProgramSubtitle() {
+        let store = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: .productionProgramActivationOwning()
+        )
+
+        store.dispatch(.operatorRequestedProgramActivation(id: UUID(), plan: activationPlan()))
+
+        let log = store.actionLog.map { "\($0.actionName)|\($0.oldStateSummary)|\($0.newStateSummary)" }.joined(separator: "\n")
+        XCTAssertFalse(log.contains("Secret Subtitle"))
+    }
+
     func testStaleActivationEffectDoesNotAppendCompletionActionLog() {
         let staleID = UUID()
         let activeID = UUID()
@@ -83,7 +95,7 @@ final class ProgramActivationRuntimeActionLogTests: XCTestCase {
 
     private func activationPlan() -> ProgramActivationPlan {
         ProgramActivationPlan(
-            item: ProgramItem(title: "Private Title", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/Private Title.mp4")),
+            item: ProgramItem(title: "Private Title", subtitle: "Secret Subtitle", sourceURL: URL(fileURLWithPath: "/tmp/Private Title.mp4")),
             runtimeSelection: .queued(UUID()),
             preSelectionEffects: [],
             postSelectionEffects: []
