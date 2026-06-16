@@ -102,24 +102,24 @@ final class RuntimeBridgeStateMutationTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAudioOwnedCallbackMayUpdateMediaMirror() {
+    func testAudioOwnedCallbackDoesNotUpdateMediaMirror() {
         var state = LiveRuntimeState()
         state.media.generation = 2
 
         let mutation = reduce(state, .mediaPlaybackChanged(isPlaying: true, generation: 2), bridgeMode: .audioOwned)
 
-        XCTAssertTrue(mutation.state.media.isPlaying)
-        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+        XCTAssertEqual(mutation.state.media, state.media)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAudioOwnedCallbackMayUpdateBGMMirror() {
+    func testAudioOwnedCallbackDoesNotUpdateBGMMirror() {
         var state = LiveRuntimeState()
         state.bgm.generation = 3
 
         let mutation = reduce(state, .bgmPlaybackChanged(isPlaying: true, generation: 3), bridgeMode: .audioOwned)
 
-        XCTAssertTrue(mutation.state.bgm.isPlaying)
-        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .bgmPlaybackChanged)))
+        XCTAssertEqual(mutation.state.bgm, state.bgm)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
     func testAudioOwnedCallbackDoesNotUpdatePPTMirror() {

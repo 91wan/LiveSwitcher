@@ -27,6 +27,13 @@ effect. Preference actions do not dispatch audio-input sync and do not sync
 unrelated facades. No `.preferences` Runtime domain or port exists, and
 production bridge mode remains `.panicOwned`.
 
+Runtime callback actions must not mutate domains before ownership. Media
+callbacks require `.media` ownership, BGM callbacks require `.bgm` ownership,
+and `facadeCurrentProgramChanged` is compatibility-only and requires
+`.programSelection` ownership. ViewModel callback wiring remains simple and
+does not check ownership; the reducer owns callback acceptance. Production
+bridge mode remains `.panicOwned`.
+
 Program activation/switching side effects, source validation,
 invalid-deck alerts, WPS fallback branching, PPT/WPS key forwarding,
 Automation query/result flows, BGM library metadata, and asset-library mutation
@@ -121,12 +128,14 @@ resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` calls
 audio helper methods through `AudioRuntimeReducer`.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`; that callback
-wiring stays simple and does not special-case Panic. Panic is a hard Runtime
-media playback gate: operator media toggle must not start playback, media
-restart is a cue-to-start operation that emits `.seekMediaToStart` instead of
-`.restartMedia`, selecting a media program during Panic loads the program
-without playing it, and `mediaPlaybackChanged(true)` callbacks during Panic are
-rejected and converted into a `.pauseMedia` effect with Panic audio routing.
+wiring stays simple and does not check Runtime ownership. Reducer callback
+guards require `.media` before media callbacks may mutate Runtime state. Panic
+is a hard Runtime media playback gate: operator media toggle must not start
+playback, media restart is a cue-to-start operation that emits
+`.seekMediaToStart` instead of `.restartMedia`, selecting a media program during
+Panic loads the program without playing it, and `mediaPlaybackChanged(true)`
+callbacks during Panic are rejected and converted into a `.pauseMedia` effect
+with Panic audio routing.
 `operatorResumedMediaAfterPanic` is ignored while Panic is still active.
 Restart/seek/toggle pause and playbackChanged callbacks during Panic do not
 clear the Panic snapshot media playback flag; if the snapshot captured media as

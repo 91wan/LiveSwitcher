@@ -33,6 +33,18 @@ final class RuntimeBridgeModeTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeDomain.allCases.contains { $0.rawValue == "preferences" })
     }
 
+    func testNoCallbackBridgeModeAdded() {
+        for rawValue in ["callbackOwned", "mediaCallbackOwned", "bgmCallbackOwned"] {
+            XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
+    func testNoCallbackDomainAdded() {
+        for rawValue in ["callback", "mediaCallback", "bgmCallback"] {
+            XCTAssertFalse(LiveRuntimeDomain.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testBridgeModeDomainOwnershipIsCumulative() {
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.audio))
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))
