@@ -294,7 +294,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(audioRouting.states.last?.audio.routingContext.isBGMPlaying, true)
     }
 
-    func testMediaCallbackSyncsRuntimeAudioInputs() {
+    func testMediaCallbackUpdatesRuntimeAudioContextWhenMediaOwned() {
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false
@@ -307,7 +307,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         let item = ProgramItem(title: "Video", subtitle: "VIDEO", sourceURL: url)
         viewModel.addProgramItem(item)
         viewModel.switchToProgram(item)
-        viewModel.runtime.updateEnvironment(LiveRuntimeEnvironment(bridgeMode: .audioOwned))
+        viewModel.runtime.updateEnvironment(LiveRuntimeEnvironment(bridgeMode: .mediaOwned))
         viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
 
         viewModel.dispatchRuntimeMediaCallback {
@@ -319,10 +319,10 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.state.audio.routingContext.isCurrentProgramMediaSource)
     }
 
-    func testBGMCallbackSyncsRuntimeAudioInputs() {
+    func testBGMCallbackUpdatesRuntimeAudioContextWhenBGMOwned() {
         let runtime = LiveRuntimeStore(
             effectRunner: .recording(),
-            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+            environment: LiveRuntimeEnvironment(bridgeMode: .bgmOwned)
         )
         let viewModel = SwitcherViewModel(
             loadPersistedData: false,

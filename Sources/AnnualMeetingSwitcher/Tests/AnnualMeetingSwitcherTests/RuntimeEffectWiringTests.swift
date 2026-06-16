@@ -112,6 +112,12 @@ final class RuntimeEffectWiringTests: XCTestCase {
         XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "preferencesOwned" })
     }
 
+    func testNoCallbackPortAdded() {
+        for rawValue in ["callback", "mediaCallback", "bgmCallback"] {
+            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testProductionRuntimeStillWiresAutomationCommandPort() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 

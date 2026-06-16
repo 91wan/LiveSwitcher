@@ -375,6 +375,7 @@ enum LiveRuntimeReducer {
             state.program.replaceProgramQueueFromFacade(items)
 
         case .mediaLoaded(let url, let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.loaded(
                 url: url,
                 generation: generation,
@@ -382,6 +383,7 @@ enum LiveRuntimeReducer {
             )
 
         case .mediaPlaybackChanged(let isPlaying, let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.playbackChanged(
                 isPlaying: isPlaying,
                 generation: generation,
@@ -391,6 +393,7 @@ enum LiveRuntimeReducer {
             )
 
         case .mediaReachedEnd(let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.reachedEnd(
                 generation: generation,
                 state: &state,
@@ -399,6 +402,7 @@ enum LiveRuntimeReducer {
             )
 
         case .mediaSeekCompleted(let time, let generation):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.seekCompleted(
                 time: time,
                 generation: generation,
@@ -406,6 +410,7 @@ enum LiveRuntimeReducer {
             )
 
         case .facadeCurrentProgramChanged(let id):
+            guard isRuntimeOwned(.programSelection, in: bridgeMode) else { break }
             state.program.currentID = id
             if let id, state.program.items.contains(where: { $0.id == id }) {
                 state.program.currentDetachedItem = nil
@@ -426,9 +431,11 @@ enum LiveRuntimeReducer {
             )
 
         case .bgmPrepared(let id, let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             guard generation == state.bgm.generation, id == state.bgm.currentID else { break }
 
         case .bgmPlaybackChanged(let isPlaying, let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.playbackChanged(
                 isPlaying: isPlaying,
                 generation: generation,
@@ -438,6 +445,7 @@ enum LiveRuntimeReducer {
             )
 
         case .bgmReachedEnd(let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.reachedEnd(
                 generation: generation,
                 state: &state,
@@ -446,6 +454,7 @@ enum LiveRuntimeReducer {
             )
 
         case .bgmFailed(let reason, let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.failed(
                 reason: reason,
                 generation: generation,
@@ -457,6 +466,7 @@ enum LiveRuntimeReducer {
             )
 
         case .bgmProgressUpdated(let time, let duration, let generation):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.progressUpdated(
                 time: time,
                 duration: duration,
