@@ -116,7 +116,7 @@ extension SwitcherViewModel {
         state.preferences.showAgendaTimeline = showAgendaTimeline
         state.preferences.cornerLogoPosition = cornerLogoPosition
 
-        syncProjectionAvailabilityIntoRuntimeSnapshot(&state)
+        syncProjectionIntoRuntimeSnapshot(&state)
 
         syncAutomationNoticeIntoRuntimeSnapshot(&state)
         syncSupportIntoRuntimeSnapshot(&state)
@@ -193,18 +193,15 @@ extension SwitcherViewModel {
         state.panic.snapshot = panicPlaybackSnapshot
     }
 
-    private func syncProjectionAvailabilityIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
-        state.projection.hasExternalDisplay = isExternalDisplayAvailable
-
-        guard runtime.bridgeMode.owns(.projection) else {
-            state.projection.isBroadcasting = isBroadcasting
-            state.projection.safetyNotice = broadcastSafetyNotice
+    private func syncProjectionIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.projection) else {
+            state.projection = runtime.state.projection
             return
         }
 
-        state.projection.isBroadcasting = runtime.state.projection.isBroadcasting
-        state.projection.safetyNotice = runtime.state.projection.safetyNotice
-        state.projection.lastDisplayLostAt = runtime.state.projection.lastDisplayLostAt
+        state.projection.hasExternalDisplay = isExternalDisplayAvailable
+        state.projection.isBroadcasting = isBroadcasting
+        state.projection.safetyNotice = broadcastSafetyNotice
     }
 
     private func syncPPTFacadeIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {

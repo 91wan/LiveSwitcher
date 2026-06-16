@@ -33,6 +33,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Dead Runtime action pruning does not add live controls"))
         XCTAssertTrue(normalizedDocument.contains("Facade current-program compatibility action pruning does not add live controls"))
         XCTAssertTrue(normalizedDocument.contains("Runtime-owned snapshot source hardening does not add live controls"))
+        XCTAssertTrue(normalizedDocument.contains("Runtime-owned projection snapshot source hardening does not add live controls"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {
