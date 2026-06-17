@@ -226,14 +226,20 @@ resume-after-Panic no-ops while Panic is active. `MediaRuntimeReducer` calls
 audio helper methods through `AudioRuntimeReducer`.
 Media playback callback setup, playback-ended handling, and the HTML
 presentation facade live in `ViewModel+MediaPlayback.swift`; that callback
-wiring stays simple and does not check Runtime ownership. Reducer callback
-guards require `.media` before media callbacks may mutate Runtime state. Panic
-is a hard Runtime media playback gate: operator media toggle must not start
-playback, media restart is a cue-to-start operation that emits
-`.seekMediaToStart` instead of `.restartMedia`, selecting a media program during
-Panic loads the program without playing it, and `mediaPlaybackChanged(true)`
-callbacks during Panic are rejected and converted into a `.pauseMedia` effect
-with Panic audio routing.
+wiring stays simple and does not check Runtime ownership. Callback identity
+acceptance is still the ViewModel boundary: playback-ended post-processing must
+not record Support/telemetry, auto-play, clear the current program, or mutate
+the Panic snapshot unless `dispatchRuntimeMediaCallback(_:)` accepts the active
+Runtime media callback generation and URL. Reducer callback guards require
+`.media` before media callbacks may mutate Runtime state. Playback-ended
+post-processing reads Panic, current-program, queue, and auto-next preference
+from Runtime when those domains are owned, falling back to facade values only
+for unowned domains. Panic is a hard Runtime media playback gate: operator media
+toggle must not start playback, media restart is a cue-to-start operation that
+emits `.seekMediaToStart` instead of `.restartMedia`, selecting a media program
+during Panic loads the program without playing it, and
+`mediaPlaybackChanged(true)` callbacks during Panic are rejected and converted
+into a `.pauseMedia` effect with Panic audio routing.
 `operatorResumedMediaAfterPanic` is ignored while Panic is still active.
 Restart/seek/toggle pause and playbackChanged callbacks during Panic do not
 clear the Panic snapshot media playback flag; if the snapshot captured media as

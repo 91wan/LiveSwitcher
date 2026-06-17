@@ -36,12 +36,13 @@ extension SwitcherViewModel {
 
     /// 当前节目播毕后的最小状态回退。
     func handlePlaybackEnded() {
-        dispatchRuntimeMediaCallback { .mediaReachedEnd(generation: $0) }
+        guard dispatchRuntimeMediaCallback({ .mediaReachedEnd(generation: $0) }) else { return }
+
         LiveSwitcherTelemetry.playbackReachedEnd()
         recordSupportEvent(kind: .playbackReachedEnd, detail: "state=ended")
 
-        guard !isPanicMode else {
-            markPanicSnapshotMediaStoppedIfCurrentProgram(currentProgramItem?.id)
+        guard !runtimeBackedPanicIsActiveForPlaybackEnded else {
+            markPanicSnapshotMediaStoppedIfCurrentProgram(runtimeBackedCurrentProgramForPlaybackEnded?.id)
             return
         }
 
@@ -56,12 +57,39 @@ extension SwitcherViewModel {
     }
 
     private func autoPlayNextVideoIfPossible() -> Bool {
-        guard autoPlayNextVideoOnEnd,
+        let current = runtimeBackedCurrentProgramForPlaybackEnded
+        let queue = runtimeBackedProgramItemsForPlaybackEnded
+
+        guard runtimeBackedAutoPlayNextVideoOnEndForPlaybackEnded,
               let nextItem = ProgramQueueStore.nextVideoAfterCurrent(
-                current: currentProgramItem,
-                in: programItems
+                current: current,
+                in: queue
               ) else { return false }
         switchToProgram(nextItem)
-        return currentProgramItem?.id == nextItem.id
+        return runtimeBackedCurrentProgramForPlaybackEnded?.id == nextItem.id
+    }
+
+    private var runtimeBackedPanicIsActiveForPlaybackEnded: Bool {
+        runtime.bridgeMode.owns(.panic)
+            ? runtime.state.panic.isActive
+            : isPanicMode
+    }
+
+    private var runtimeBackedCurrentProgramForPlaybackEnded: ProgramItem? {
+        runtime.bridgeMode.owns(.programSelection)
+            ? runtime.state.program.effectiveCurrentItem
+            : currentProgramItem
+    }
+
+    private var runtimeBackedProgramItemsForPlaybackEnded: [ProgramItem] {
+        runtime.bridgeMode.owns(.programQueue)
+            ? runtime.state.program.items
+            : programItems
+    }
+
+    private var runtimeBackedAutoPlayNextVideoOnEndForPlaybackEnded: Bool {
+        runtime.bridgeMode.owns(.persistence)
+            ? runtime.state.preferences.autoPlayNextVideoOnEnd
+            : autoPlayNextVideoOnEnd
     }
 }

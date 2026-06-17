@@ -55,10 +55,12 @@ extension SwitcherViewModel {
         runtime.bridgeMode
     }
 
-    func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) {
+    @discardableResult
+    func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) -> Bool {
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
-        guard let generation = validatedRuntimeMediaCallbackGeneration() else { return }
+        guard let generation = validatedRuntimeMediaCallbackGeneration() else { return false }
         runtime.dispatch(makeAction(generation))
+        return true
     }
 
     @discardableResult
