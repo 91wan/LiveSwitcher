@@ -33,6 +33,16 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertEqual(effects, [.loadBackgroundImage(url)])
     }
 
+    func testSetActiveWallpaperURLStillEmitsLoadBackgroundImage() {
+        var state = LiveRuntimeState()
+        var effects: [LiveRuntimeEffect] = []
+        let url = URL(fileURLWithPath: "/tmp/wallpaper.png")
+
+        PreferencesRuntimeReducer.setActiveWallpaperURL(url, state: &state, effects: &effects)
+
+        XCTAssertEqual(effects, [.loadBackgroundImage(url)])
+    }
+
     func testSetActiveWallpaperNilUpdatesStateAndEmitsLoadBackgroundNil() {
         var state = LiveRuntimeState()
         state.preferences.activeWallpaperURL = URL(fileURLWithPath: "/tmp/wallpaper.png")
@@ -52,6 +62,16 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
 
         XCTAssertEqual(state.preferences.cornerLogoURL, url)
+        XCTAssertEqual(effects, [.loadCornerLogoImage(url)])
+    }
+
+    func testSetCornerLogoURLStillEmitsLoadCornerLogoImage() {
+        var state = LiveRuntimeState()
+        var effects: [LiveRuntimeEffect] = []
+        let url = URL(fileURLWithPath: "/tmp/logo.png")
+
+        PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
+
         XCTAssertEqual(effects, [.loadCornerLogoImage(url)])
     }
 

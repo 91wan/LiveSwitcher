@@ -202,6 +202,9 @@ product boundary.
 - Runtime-owned projection snapshot source hardening does not add live controls
   or change user behavior. It only prevents stale ViewModel external-display
   facade values from overwriting Runtime-owned projection truth.
+- Runtime-owned preferences snapshot source hardening does not add live controls
+  or change user workflow. It only prevents stale ViewModel preference facade
+  values from overwriting Runtime-owned persisted settings.
 - Projection facade sync hardening does not add live controls or change user
   workflow. It only makes Runtime-owned projection availability, broadcasting,
   and safety notice visible through the existing ViewModel facade.

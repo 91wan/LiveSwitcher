@@ -58,12 +58,34 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
+    func testWallpaperURLStillRequiresPersistenceAndImageAssetsOwnership() throws {
+        let state = guardedState()
+        let mutation = reduce(state, .operatorSetActiveWallpaperURL(wallpaperURL), bridgeMode: .recordingOnly)
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+
+        XCTAssertEqual(mutation.state.preferences.activeWallpaperURL, state.preferences.activeWallpaperURL)
+        XCTAssertTrue(mutation.effects.isEmpty)
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
+    }
+
     func testCornerLogoURLNoopsBeforePersistenceAndImageAssetsOwnership() {
         let state = guardedState()
         let mutation = reduce(state, .operatorSetCornerLogoURL(logoURL), bridgeMode: .recordingOnly)
 
         XCTAssertEqual(mutation.state.preferences.cornerLogoURL, state.preferences.cornerLogoURL)
         XCTAssertTrue(mutation.effects.isEmpty)
+    }
+
+    func testCornerLogoURLStillRequiresPersistenceAndImageAssetsOwnership() throws {
+        let state = guardedState()
+        let mutation = reduce(state, .operatorSetCornerLogoURL(logoURL), bridgeMode: .recordingOnly)
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+
+        XCTAssertEqual(mutation.state.preferences.cornerLogoURL, state.preferences.cornerLogoURL)
+        XCTAssertTrue(mutation.effects.isEmpty)
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
     }
 
     func testPreferenceActionsMutateWhenPersistenceOwned() {
