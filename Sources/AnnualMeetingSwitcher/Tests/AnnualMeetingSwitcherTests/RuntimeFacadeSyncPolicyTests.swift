@@ -71,6 +71,51 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
+    func testPPTSetModeStillSyncsPPTFacade() {
+        XCTAssertTrue(
+            LiveRuntimeFacadeSyncPolicy.options(for: .operatorSetPPTMode(true, source: .programmatic)).syncPPT
+        )
+    }
+
+    func testPPTToggleModeStillSyncsPPTFacade() {
+        XCTAssertTrue(
+            LiveRuntimeFacadeSyncPolicy.options(for: .operatorToggledPPTMode(source: .programmatic)).syncPPT
+        )
+    }
+
+    func testPPTCallbacksStillSyncPPTFacade() {
+        for action in [
+            LiveRuntimeAction.pptEventTapStarted,
+            .pptEventTapFailed(reason: "permission"),
+            .pptEventTapStopped(reason: .operatorDisabled)
+        ] {
+            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncPPT, action.redactedName)
+        }
+    }
+
+    func testPPTActionsDoNotDispatchAudioInputs() {
+        for action in pptActions {
+            XCTAssertFalse(
+                LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged,
+                action.redactedName
+            )
+        }
+    }
+
+    func testPPTActionsDoNotSyncUnrelatedFacades() {
+        for action in pptActions {
+            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
+
+            XCTAssertFalse(options.syncBGM, action.redactedName)
+            XCTAssertFalse(options.syncProjection, action.redactedName)
+            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
+            XCTAssertFalse(options.syncSupport, action.redactedName)
+            XCTAssertFalse(options.syncProgramQueue, action.redactedName)
+            XCTAssertFalse(options.syncCurrentProgram, action.redactedName)
+            XCTAssertFalse(options.syncPanic, action.redactedName)
+        }
+    }
+
     func testAutomationNoticeActionsSyncAutomationNoticeFacade() {
         for action in [
             LiveRuntimeAction.automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
@@ -261,6 +306,16 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
             .presentationQueryCompleted(id: id, result: .empty),
             .presentationQueryFailed(id: id, action: "keynote.scan.windows", sanitizedMessage: "permissionDenied"),
             .presentationQueryResultConsumed(id: id)
+        ]
+    }
+
+    private var pptActions: [LiveRuntimeAction] {
+        [
+            .operatorSetPPTMode(true, source: .programmatic),
+            .operatorToggledPPTMode(source: .programmatic),
+            .pptEventTapStarted,
+            .pptEventTapFailed(reason: "permission"),
+            .pptEventTapStopped(reason: .operatorDisabled)
         ]
     }
 

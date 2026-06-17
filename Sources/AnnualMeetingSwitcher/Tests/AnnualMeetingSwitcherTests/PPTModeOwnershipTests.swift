@@ -110,6 +110,37 @@ final class PPTModeOwnershipTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "operatorSetPPTMode" })
     }
 
+    func testDispatchPPTIntentStillSetsPendingSource() {
+        let viewModel = makePPTRecordingViewModel()
+
+        viewModel.setPPTMode(true, source: .liveMode)
+
+        XCTAssertEqual(viewModel.currentPendingPPTToggleSource(), .liveMode)
+        XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
+    }
+
+    func testDispatchPPTIntentStillClearsPendingSourceWhenRuntimeNoops() {
+        var state = LiveRuntimeState()
+        state.ppt.isRequested = true
+        let viewModel = makePPTRecordingViewModel(initialState: state)
+
+        viewModel.setPPTMode(true, source: .command)
+
+        XCTAssertNil(viewModel.currentPendingPPTToggleSource())
+        XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
+    }
+
+    func testPPTWPSKeyForwardingRemainsViewModelOwned() throws {
+        let pptEventTapSource = try sourceText("ViewModel+PPTEventTap.swift")
+        let effectPortSource = try runtimeSourceText("LiveRuntimeEffectPortKind.swift")
+
+        XCTAssertTrue(pptEventTapSource.contains("nonisolated private func sendPageKeyToWPS"))
+        XCTAssertTrue(pptEventTapSource.contains("currentWPSProcessIdentifierForPageForwarding()"))
+        XCTAssertTrue(pptEventTapSource.contains("postToPid(targetPID)"))
+        XCTAssertFalse(effectPortSource.contains("wps"))
+        XCTAssertFalse(effectPortSource.contains("pageForwarding"))
+    }
+
     func testAllPPTUIAndCommandPathsUseHelperAndAvoidDirectToggle() throws {
         let pptModeSource = try sourceText("ViewModel+PPTMode.swift")
         let toolbarSource = try sourceText("Views/MainToolbar.swift")
@@ -121,6 +152,14 @@ final class PPTModeOwnershipTests: XCTestCase {
         XCTAssertFalse(pptModeSource.contains("isPageInterceptEnabled.toggle()"))
         XCTAssertFalse(toolbarSource.contains("isPageInterceptEnabled.toggle()"))
         XCTAssertFalse(appSource.contains("isPageInterceptEnabled.toggle()"))
+    }
+
+    private func makePPTRecordingViewModel(initialState: LiveRuntimeState = LiveRuntimeState()) -> SwitcherViewModel {
+        makeViewModel(runtime: LiveRuntimeStore(
+            initialState: initialState,
+            effectRunner: .recording(),
+            environment: .productionPPTOwning()
+        ))
     }
 
     private func makeViewModel(runtime: LiveRuntimeStore? = nil) -> SwitcherViewModel {
@@ -139,6 +178,10 @@ final class PPTModeOwnershipTests: XCTestCase {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
+    private func runtimeSourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: runtimeSourceURL(relativePath), encoding: .utf8)
+    }
+
     private func sourceURL(_ relativePath: String) throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
@@ -151,6 +194,20 @@ final class PPTModeOwnershipTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func runtimeSourceURL(_ relativePath: String) throws -> URL {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let candidate = directory
+                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime")
+                .appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: candidate.path) {
+                return candidate
+            }
+        }
+        throw XCTSkip("Could not locate runtime \(relativePath) from test source path.")
     }
 }
 

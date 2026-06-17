@@ -231,6 +231,10 @@ product boundary.
 - Projection configuration must not move into Live mode.
 - PPT runtime migration does not add live controls; the existing PPT toggle
   remains the only allowed live PPT action.
+- PPT facade requested-state sync hardening does not add live controls or
+  change workflow. It only makes Runtime-owned requested-or-active PPT state
+  visible through the existing `isPageInterceptEnabled` facade while the
+  EventTap start callback is pending.
 - PPT setup/configuration and key-forwarding implementation details must not
   move into Live mode.
 - Automation notice runtime migration does not add live controls. Automation

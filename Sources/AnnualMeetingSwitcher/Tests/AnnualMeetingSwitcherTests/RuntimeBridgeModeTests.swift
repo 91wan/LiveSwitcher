@@ -93,6 +93,16 @@ final class RuntimeBridgeModeTests: XCTestCase {
         }
     }
 
+    func testNoPPTFacadeBridgeModeDomainOrPortAdded() {
+        for rawValue in ["pptFacadeOwned", "pptRequestedFacadeOwned", "pptRequestedOwned"] {
+            XCTAssertFalse(LiveRuntimeBridgeMode.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+        for rawValue in ["pptFacade", "pptRequestedFacade", "pptRequested"] {
+            XCTAssertFalse(LiveRuntimeDomain.allCases.contains { $0.rawValue == rawValue }, rawValue)
+            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
+        }
+    }
+
     func testBridgeModeDomainOwnershipIsCumulative() {
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.audio))
         XCTAssertTrue(LiveRuntimeBridgeMode.mediaOwned.owns(.media))

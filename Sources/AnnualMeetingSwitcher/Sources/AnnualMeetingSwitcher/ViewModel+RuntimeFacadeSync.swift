@@ -35,7 +35,7 @@ extension SwitcherViewModel {
     func syncPPTFacadeFromRuntime() {
         guard runtime.bridgeMode.owns(.ppt) else { return }
 
-        isPageInterceptEnabled = runtime.state.ppt.isEventTapActive
+        isPageInterceptEnabled = runtime.state.ppt.isRequested || runtime.state.ppt.isEventTapActive
     }
 
     func syncProjectionFacadeFromRuntime() {

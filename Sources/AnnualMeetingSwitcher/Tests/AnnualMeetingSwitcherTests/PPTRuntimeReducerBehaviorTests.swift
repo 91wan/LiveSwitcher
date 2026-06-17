@@ -15,6 +15,25 @@ final class PPTRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertEqual(effects, [.startPPTEventTap])
     }
 
+    func testSetPPTModeEnabledClearsLastFailure() {
+        var state = LiveRuntimeState()
+        state.ppt.lastFailureReason = "previousFailure"
+        var effects: [LiveRuntimeEffect] = []
+
+        PPTRuntimeReducer.setMode(true, source: .liveMode, state: &state, effects: &effects)
+
+        XCTAssertNil(state.ppt.lastFailureReason)
+    }
+
+    func testSetPPTModeEnabledEmitsStartPPTEventTap() {
+        var state = LiveRuntimeState()
+        var effects: [LiveRuntimeEffect] = []
+
+        PPTRuntimeReducer.setMode(true, source: .liveMode, state: &state, effects: &effects)
+
+        XCTAssertEqual(effects, [.startPPTEventTap])
+    }
+
     func testSetPPTModeEnabledNoopsWhenAlreadyRequested() {
         var state = LiveRuntimeState()
         state.ppt.isRequested = true
@@ -109,5 +128,34 @@ final class PPTRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertFalse(state.ppt.isRequested)
         XCTAssertFalse(state.ppt.isEventTapActive)
         XCTAssertEqual(state.ppt.lastFailureReason, "permissionDenied")
+    }
+
+    func testPPTEventTapStartedSetsRequestedAndActive() {
+        var state = LiveRuntimeState()
+
+        PPTRuntimeReducer.eventTapStarted(state: &state)
+
+        XCTAssertTrue(state.ppt.isRequested)
+        XCTAssertTrue(state.ppt.isEventTapActive)
+    }
+
+    func testPPTEventTapFailedStoresFailureReason() {
+        var state = LiveRuntimeState()
+        state.ppt.isRequested = true
+
+        PPTRuntimeReducer.eventTapFailed(reason: "permissionDenied", state: &state)
+
+        XCTAssertEqual(state.ppt.lastFailureReason, "permissionDenied")
+    }
+
+    func testPPTEventTapStoppedClearsRequestedAndActive() {
+        var state = LiveRuntimeState()
+        state.ppt.isRequested = true
+        state.ppt.isEventTapActive = true
+
+        PPTRuntimeReducer.eventTapStopped(reason: .operatorDisabled, state: &state)
+
+        XCTAssertFalse(state.ppt.isRequested)
+        XCTAssertFalse(state.ppt.isEventTapActive)
     }
 }
