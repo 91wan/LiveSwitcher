@@ -81,6 +81,14 @@ must use real selection/clear actions instead of compatibility mirror actions.
 ViewModel callback wiring remains simple and does not check ownership; the
 reducer owns callback acceptance. Production bridge mode remains `.panicOwned`.
 
+`dispatchRuntimeFacadeAction(_:)` is the central post-dispatch facade sync point.
+Projection and PPT call sites must not manually sync the same facade immediately
+after dispatching actions already covered by `LiveRuntimeFacadeSyncPolicy`.
+Manual facade sync remains allowed only for callback helpers that intentionally
+bypass `dispatchRuntimeFacadeAction(_:)`, such as BGM callback helpers that
+dispatch directly and then project BGM facade state. Production bridge mode
+remains `.panicOwned`.
+
 `ViewModel+RuntimeSnapshot.swift` is a boundary adapter, not a second source of
 truth. When `.media` is owned, media snapshot state is preserved from Runtime,
 not the AVPlayer facade, and AVPlayer state enters Runtime only through guarded

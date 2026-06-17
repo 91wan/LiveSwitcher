@@ -140,7 +140,7 @@ final class ProjectionRuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(body.contains("let oldProjection = runtime.state.projection"))
         XCTAssertTrue(body.contains("refreshExternalDisplayAvailability()"))
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.operatorToggledProjection)"))
-        XCTAssertTrue(body.contains("syncProjectionFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncProjectionFacadeFromRuntime()"))
         XCTAssertTrue(body.contains("recordProjectionSupportAfterRuntimeToggle"))
     }
 
