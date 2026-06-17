@@ -244,7 +244,11 @@ final class ViewModelProgramActivationBehaviorTests: XCTestCase {
 
     private func setCurrentProgram(_ item: ProgramItem, in viewModel: SwitcherViewModel) {
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
-        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+        var state = viewModel.runtime.state
+        state.program.currentID = item.id
+        state.program.currentDetachedItem = nil
+        state.program.currentSwitchedAt = Date()
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
     }
 
     private func actionCount(_ name: String, in viewModel: SwitcherViewModel) -> Int {

@@ -113,6 +113,13 @@ product boundary.
   change switching behavior. It only keeps Runtime reducer files domain-scoped
   by moving activation request/completion lifecycle mutation into
   `ProgramActivationRuntimeReducer`.
+- Program activation planner source hardening does not add live controls or
+  change switching behavior. Program Activation planning remains a
+  ViewModel-owned call site, but planner inputs must follow Runtime ownership:
+  Runtime-owned current program supplies the planner current item,
+  Runtime-owned queue supplies queued items and index/agenda prompt resolution,
+  and stale ViewModel facade state must not replace Runtime-owned queue/current
+  state while building activation plans.
 - Panic transition policy hardening does not add live controls or change
   emergency behavior. It only moves snapshot, media pause, delayed BGM pause,
   and resume decisions into `PanicTransitionPolicy`; the BGM fade delay is

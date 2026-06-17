@@ -6,7 +6,7 @@ final class ProgramQueueRuntimeActivationBoundaryTests: XCTestCase {
     func testSwitchToProgramStillPerformsSourceAvailabilityCheckInViewModel() throws {
         let source = try programActivationSource()
 
-        XCTAssertTrue(source.contains("programSourceIsAvailable(item)"))
+        XCTAssertTrue(source.contains("programSourceIsAvailable(activationItem)"))
         XCTAssertTrue(source.contains("handleUnavailableProgramSource"))
     }
 

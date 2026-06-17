@@ -77,7 +77,7 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
     func testSwitchToProgramRequestsRuntimeActivationAfterPlanning() throws {
         let body = try XCTUnwrap(try activationSource().extractedRuntimeFunctionBody(named: "switchToProgram"))
 
-        XCTAssertTrue(body.contains("programSourceIsAvailable(item)"))
+        XCTAssertTrue(body.contains("programSourceIsAvailable(activationItem)"))
         XCTAssertTrue(body.contains("ProgramActivationPlanner.plan("))
         XCTAssertTrue(body.contains(".operatorRequestedProgramActivation"))
     }

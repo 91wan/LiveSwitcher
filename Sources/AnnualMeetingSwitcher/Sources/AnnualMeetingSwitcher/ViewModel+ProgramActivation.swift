@@ -3,11 +3,12 @@ import AppKit
 @MainActor
 extension SwitcherViewModel {
     func switchToProgram(_ item: ProgramItem) {
-        guard programSourceIsAvailable(item) else { return }
+        let activationItem = runtimeBackedProgramItemForActivationPlanning(item)
+        guard programSourceIsAvailable(activationItem) else { return }
         guard let plan = ProgramActivationPlanner.plan(
-            item: item,
-            currentItem: currentProgramItem,
-            queuedItems: programItems,
+            item: activationItem,
+            currentItem: runtimeBackedCurrentProgramForActivationPlanning,
+            queuedItems: runtimeBackedProgramItemsForActivationPlanning,
             isValidDeckDocument: { [weak self] url, kind in
                 self?.isLikelyValidDeckDocument(url: url, sourceKind: kind) ?? false
             }
@@ -19,9 +20,10 @@ extension SwitcherViewModel {
     }
 
     func switchToProgramAfterReadinessConfirmation(_ item: ProgramItem) {
-        let readiness = PresentationReadinessProbe.probe(item: item)
+        let activationItem = runtimeBackedProgramItemForActivationPlanning(item)
+        let readiness = PresentationReadinessProbe.probe(item: activationItem)
         guard readiness.severity == .blocked else {
-            switchToProgram(item)
+            switchToProgram(activationItem)
             return
         }
 
@@ -33,18 +35,40 @@ extension SwitcherViewModel {
         alert.addButton(withTitle: "Cancel")
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
-        switchToProgram(item)
+        switchToProgram(activationItem)
     }
 
     func switchToProgram(at index: Int) {
-        guard index >= 0 && index < programItems.count else { return }
-        switchToProgram(programItems[index])
+        let items = runtimeBackedProgramItemsForActivationPlanning
+        guard index >= 0 && index < items.count else { return }
+        switchToProgram(items[index])
     }
 
     func confirmAgendaAutoAdvance(_ prompt: AgendaAutoAdvancePrompt) {
         agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
-        guard let item = programItems.first(where: { $0.id == prompt.itemID }) else { return }
+        guard let item = runtimeBackedProgramItemsForActivationPlanning.first(where: { $0.id == prompt.itemID }) else { return }
         switchToProgramAfterReadinessConfirmation(item)
+    }
+
+    private var runtimeBackedCurrentProgramForActivationPlanning: ProgramItem? {
+        runtime.bridgeMode.owns(.programSelection)
+            ? runtime.state.program.effectiveCurrentItem
+            : currentProgramItem
+    }
+
+    private var runtimeBackedProgramItemsForActivationPlanning: [ProgramItem] {
+        runtime.bridgeMode.owns(.programQueue)
+            ? runtime.state.program.items
+            : programItems
+    }
+
+    private func runtimeBackedProgramItemForActivationPlanning(_ item: ProgramItem) -> ProgramItem {
+        guard runtime.bridgeMode.owns(.programQueue),
+              let runtimeItem = runtime.state.program.items.first(where: { $0.id == item.id })
+        else {
+            return item
+        }
+        return runtimeItem
     }
 
     private func programSourceIsAvailable(_ item: ProgramItem) -> Bool {

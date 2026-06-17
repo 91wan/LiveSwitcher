@@ -152,7 +152,7 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
         )
-        let availabilityRange = try XCTUnwrap(source.range(of: "programSourceIsAvailable(item)"))
+        let availabilityRange = try XCTUnwrap(source.range(of: "programSourceIsAvailable(activationItem)"))
         let requestRange = try XCTUnwrap(source.range(of: "operatorRequestedProgramActivation"))
 
         XCTAssertLessThan(availabilityRange.lowerBound, requestRange.lowerBound)
