@@ -6,6 +6,7 @@ enum MediaRuntimeReducer {
         effects: inout [LiveRuntimeEffect],
         speakerModeDuckedRatio: Float
     ) {
+        guard hasMediaPlaybackContext(state) else { return }
         guard !state.media.didPlayToEnd else { return }
         if state.panic.isActive {
             guard state.media.isPlaying else { return }
@@ -21,6 +22,11 @@ enum MediaRuntimeReducer {
         effects.append(state.media.isPlaying ? .playMedia(generation: state.media.generation) : .pauseMedia(generation: state.media.generation))
         AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+    }
+
+    private static func hasMediaPlaybackContext(_ state: LiveRuntimeState) -> Bool {
+        state.media.loadedURL != nil
+            || state.program.effectiveCurrentItem?.sourceKind == .media
     }
 
     static func restartCurrent(

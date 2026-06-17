@@ -230,6 +230,11 @@ product boundary.
   read Runtime-owned current program, media generation, BGM current item, and
   BGM generation when those domains are owned, so stale facade mirrors cannot
   accept or reject Runtime-owned callbacks.
+- Media transport operator source hardening does not add live controls or
+  change the operator workflow. Existing media toggle, pause, seek, and restart
+  controls follow Runtime-owned current program and Panic state when those
+  domains are owned, and Runtime reducers remain the final safety gates for
+  invalid media transport actions.
 - Program Queue Runtime reducer extraction does not add live controls or change
   Program Queue behavior. It only keeps Runtime reducer files domain-scoped by
   moving Program Queue mutation routing to `ProgramQueueRuntimeReducer`.

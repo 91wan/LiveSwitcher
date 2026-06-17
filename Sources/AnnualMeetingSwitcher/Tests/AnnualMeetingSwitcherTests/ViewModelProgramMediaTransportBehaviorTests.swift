@@ -50,7 +50,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         XCTAssertEqual(actionCount("operatorToggledMediaPlayback", in: viewModel), 0)
     }
 
-    func testViewModelToggleMediaDuringPanicDispatchesPausedMediaForPanicWhenRuntimeOrPlayerIsPlaying() throws {
+    func testViewModelToggleMediaDuringPanicUsesRuntimeMediaPlaybackWhenMediaIsOwned() throws {
         let viewModel = makeViewModel()
         let item = try mediaProgram()
         setCurrentProgram(item, in: viewModel, mediaIsPlaying: false)
@@ -60,7 +60,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
 
         viewModel.toggleMainVideoPlayback()
 
-        XCTAssertEqual(actionCount("operatorPausedMediaForPanic", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorPausedMediaForPanic", in: viewModel), 0)
     }
 
     func testViewModelToggleMediaDuringPanicNoopsWhenAlreadyStopped() throws {
