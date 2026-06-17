@@ -2,15 +2,16 @@ import XCTest
 @testable import LiveSwitcher
 
 final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
-    func testRecordSupportEventDoesNotCallLegacyFacadeSyncInProductionPath() throws {
+    func testRecordSupportEventDoesNotManuallySyncFacadeInProductionPath() throws {
         let body = try viewModelFunctionBody(named: "func recordSupportEvent")
 
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.supportEventRecorded(event))"))
-        XCTAssertTrue(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(supportEvent())).syncSupport)
         XCTAssertFalse(body.contains("syncLegacySupportFacadeFromRuntime()"))
     }
 
-    func testHandleAppleScriptFailureDoesNotCallLegacyFacadeSyncInProductionPath() throws {
+    func testHandleAppleScriptFailureDoesNotManuallySyncFacadeInProductionPath() throws {
         let body = try functionBody(
             named: "func handleAppleScriptFailure",
             in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AutomationFailure.swift"
@@ -18,7 +19,10 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
 
         XCTAssertTrue(body.contains("recordSupportEvent(kind: .appleScriptFailed"))
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationFailed"))
-        XCTAssertTrue(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(
+            for: .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed")
+        ).syncSupport)
         XCTAssertFalse(body.contains("syncLegacySupportFacadeFromRuntime()"))
     }
 
@@ -46,6 +50,14 @@ final class SupportRuntimeLegacyBoundaryTests: XCTestCase {
         try functionBody(
             named: marker,
             in: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+SupportFacade.swift"
+        )
+    }
+
+    private func supportEvent() -> LiveSupportEvent {
+        LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 100),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide,error=failed"
         )
     }
 

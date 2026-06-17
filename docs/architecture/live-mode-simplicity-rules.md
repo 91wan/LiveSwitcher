@@ -216,6 +216,12 @@ product boundary.
   change user workflow. It only removes duplicate manual sync calls after
   `dispatchRuntimeFacadeAction(_:)`; `LiveRuntimeFacadeSyncPolicy` remains the
   single source of post-dispatch facade sync behavior for those actions.
+- Redundant Support/Automation Notice facade sync pruning does not add live
+  controls or change user workflow. It only removes duplicate manual Support
+  and Automation Notice sync calls after `dispatchRuntimeFacadeAction(_:)`;
+  `LiveRuntimeFacadeSyncPolicy` remains the single source of post-dispatch
+  facade sync behavior, with `automationFailed` syncing both Automation Notice
+  and Support and notice lifecycle actions syncing only Automation Notice.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   obey existing Runtime ownership before mutating state.

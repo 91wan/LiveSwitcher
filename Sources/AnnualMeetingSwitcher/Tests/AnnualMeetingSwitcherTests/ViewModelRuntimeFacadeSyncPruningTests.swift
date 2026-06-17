@@ -147,6 +147,142 @@ final class ViewModelRuntimeFacadeSyncPruningTests: XCTestCase {
         }
     }
 
+    func testSupportFacadeDoesNotManuallySyncSupportAfterSupportEventDispatch() throws {
+        let body = try functionBody(named: "recordSupportEvent", in: supportFacadeSource())
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.supportEventRecorded(event))"))
+        XCTAssertFalse(body.contains("syncSupportFacadeFromRuntime()"))
+    }
+
+    func testSupportFacadeReliesOnRuntimeFacadeSyncPolicyForSupportEventRecorded() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide,error=executionFailed"
+        )
+
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncSupport)
+    }
+
+    func testAutomationFailureDoesNotManuallySyncAutomationNoticeAfterAutomationFailedDispatch() throws {
+        let body = try functionBody(named: "handleAppleScriptFailure", in: automationFailureSource())
+        let failureBlock = try XCTUnwrap(body.slice(
+            from: "dispatchRuntimeFacadeAction(.automationFailed",
+            to: "}"
+        ))
+
+        XCTAssertFalse(failureBlock.contains("syncAutomationNoticeFacadeFromRuntime()"))
+        XCTAssertFalse(failureBlock.contains("syncSupportFacadeFromRuntime()"))
+    }
+
+    func testAutomationDismissDoesNotManuallySyncAutomationNoticeAfterDispatch() throws {
+        let body = try functionBody(named: "dismissAutomationRuntimeNotice", in: automationFailureSource())
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeDismissed)"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+    }
+
+    func testAutomationExpireDoesNotManuallySyncAutomationNoticeAfterDispatch() throws {
+        let body = try functionBody(named: "expireAutomationRuntimeNotice", in: automationFailureSource())
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeExpired(id))"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+    }
+
+    func testAutomationRequestDoesNotManuallySyncAutomationNoticeAfterDispatch() throws {
+        let body = try functionBody(named: "showAutomationRuntimeNotice", in: automationFailureSource())
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+    }
+
+    func testAutomationScheduledExpireDoesNotManuallySyncAutomationNoticeAfterDispatch() throws {
+        let body = try functionBody(named: "expireAutomationNoticeFromScheduledTask", in: automationFailureSource())
+
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeExpired(id))"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+    }
+
+    func testAutomationNoticeActionsRelyOnRuntimeFacadeSyncPolicy() {
+        let actions: [LiveRuntimeAction] = [
+            .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
+            .automationNoticeRequested(action: "keynote.next-slide"),
+            .automationNoticeExpired(UUID()),
+            .automationNoticeDismissed
+        ]
+
+        actions.forEach { action in
+            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncAutomationNotice, action.redactedName)
+        }
+    }
+
+    func testRecordSupportEventStillProjectsSupportWhenSupportOwned() {
+        let viewModel = makeViewModel(runtimeState: LiveRuntimeState(), bridgeMode: .supportOwned)
+
+        viewModel.recordSupportEvent(kind: .appleScriptFailed, detail: "action=keynote.next-slide,error=executionFailed")
+
+        XCTAssertEqual(viewModel.supportEvents.map(\.kind), [.appleScriptFailed])
+    }
+
+    func testRecordSupportEventDoesNotProjectRuntimeSupportBeforeSupportOwnership() {
+        let viewModel = makeViewModel(runtimeState: LiveRuntimeState(), bridgeMode: .automationNoticeOwned)
+        let existing = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .projectionStarted,
+            detail: "source=facade"
+        )
+        viewModel.applySupportEventsProjectionFromRuntime([existing])
+
+        viewModel.recordSupportEvent(kind: .appleScriptFailed, detail: "action=keynote.next-slide,error=executionFailed")
+
+        XCTAssertEqual(viewModel.supportEvents, [existing])
+    }
+
+    func testAutomationFailedStillProjectsNoticeThroughPolicy() throws {
+        let viewModel = makeProductionViewModel()
+
+        viewModel.handleAppleScriptFailure(TestAutomationError(), action: "keynote.next-slide")
+
+        XCTAssertEqual(try XCTUnwrap(viewModel.automationRuntimeNotice).action, "keynote.next-slide")
+    }
+
+    func testAutomationNoticeDismissedStillClearsNoticeThroughPolicy() {
+        let viewModel = makeProductionViewModel()
+        viewModel.showAutomationRuntimeNotice(action: "keynote.next-slide")
+
+        viewModel.dismissAutomationRuntimeNotice()
+
+        XCTAssertNil(viewModel.automationRuntimeNotice)
+    }
+
+    func testAutomationNoticeExpiredStillClearsNoticeThroughPolicy() throws {
+        let viewModel = makeProductionViewModel()
+        viewModel.showAutomationRuntimeNotice(action: "keynote.next-slide")
+        let notice = try XCTUnwrap(viewModel.automationRuntimeNotice)
+
+        viewModel.expireAutomationRuntimeNotice(id: notice.id, now: try XCTUnwrap(notice.expiresAt))
+
+        XCTAssertNil(viewModel.automationRuntimeNotice)
+    }
+
+    func testAutomationNoticeRequestedStillProjectsNoticeThroughPolicy() throws {
+        let viewModel = makeProductionViewModel()
+
+        viewModel.showAutomationRuntimeNotice(action: "keynote.next-slide")
+
+        XCTAssertEqual(try XCTUnwrap(viewModel.automationRuntimeNotice).action, "keynote.next-slide")
+    }
+
+    func testAutomationNoticeDuplicateSuppressionStillWorks() throws {
+        let viewModel = makeProductionViewModel()
+        viewModel.showAutomationRuntimeNotice(action: "keynote.next-slide")
+        let firstID = try XCTUnwrap(viewModel.automationRuntimeNotice).id
+
+        viewModel.showAutomationRuntimeNotice(action: "keynote.next-slide")
+
+        XCTAssertEqual(viewModel.automationRuntimeNotice?.id, firstID)
+    }
+
     func testHandleBroadcastToggleStillSyncsProjectionFacade() throws {
         guard let screen = NSScreen.main ?? NSScreen.screens.first else {
             throw XCTSkip("No NSScreen is available in this test environment.")
@@ -414,11 +550,25 @@ final class ViewModelRuntimeFacadeSyncPruningTests: XCTestCase {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PPTEventTap.swift")
     }
 
+    private func supportFacadeSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+SupportFacade.swift")
+    }
+
+    private func automationFailureSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AutomationFailure.swift")
+    }
+
     private func functionBody(named name: String, in source: String) throws -> String {
         guard let body = source.extractedRuntimeFunctionBody(named: name) else {
             XCTFail("Missing function \(name)")
             return ""
         }
         return body
+    }
+}
+
+private struct TestAutomationError: LocalizedError {
+    var errorDescription: String? {
+        "Automation failed"
     }
 }

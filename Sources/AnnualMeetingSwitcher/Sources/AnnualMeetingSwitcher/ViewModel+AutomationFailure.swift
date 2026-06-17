@@ -7,14 +7,11 @@ extension SwitcherViewModel {
         let supportMessage = AutomationFailureSanitizer.sanitizedSupportMessage(from: error)
         recordSupportEvent(kind: .appleScriptFailed, detail: "action=\(action),error=\(supportMessage)")
         dispatchRuntimeFacadeAction(.automationFailed(action: action, sanitizedMessage: sanitizedMessage))
-        syncSupportFacadeFromRuntime()
-        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func dismissAutomationRuntimeNotice() {
         cancelAutomationNoticeExpiryTask()
         dispatchRuntimeFacadeAction(.automationNoticeDismissed)
-        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func expireAutomationRuntimeNotice(id: UUID, now: Date = Date()) {
@@ -25,12 +22,10 @@ extension SwitcherViewModel {
         else { return }
         cancelAutomationNoticeExpiryTask()
         dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
-        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func showAutomationRuntimeNotice(action: String) {
         dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))
-        syncAutomationNoticeFacadeFromRuntime()
     }
 
     func cancelAutomationNoticeExpiryTask() {
@@ -42,7 +37,6 @@ extension SwitcherViewModel {
     func expireAutomationNoticeFromScheduledTask(id: UUID) {
         guard runtime.state.automation.notice?.id == id else { return }
         dispatchRuntimeFacadeAction(.automationNoticeExpired(id))
-        syncAutomationNoticeFacadeFromRuntime()
     }
 
     var automationNoticeExpiryTaskIsActiveForTesting: Bool {

@@ -3,6 +3,66 @@ import XCTest
 
 @MainActor
 final class AutomationNoticeRuntimeSupportPolicyTests: XCTestCase {
+    func testAutomationFailedStillSyncsAutomationNoticeFacadeThroughPolicy() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
+            action: "keynote.next-slide",
+            sanitizedMessage: "failed"
+        ))
+
+        XCTAssertTrue(options.syncAutomationNotice)
+    }
+
+    func testAutomationFailedAlsoSyncsSupportFacadeThroughPolicy() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
+            action: "keynote.next-slide",
+            sanitizedMessage: "failed"
+        ))
+
+        XCTAssertTrue(options.syncSupport)
+    }
+
+    func testAutomationNoticeRequestedDoesNotSyncSupportFacade() {
+        XCTAssertFalse(
+            LiveRuntimeFacadeSyncPolicy.options(for: .automationNoticeRequested(action: "keynote.next-slide")).syncSupport
+        )
+    }
+
+    func testAutomationNoticeExpiredDoesNotSyncSupportFacade() {
+        XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: .automationNoticeExpired(UUID())).syncSupport)
+    }
+
+    func testAutomationNoticeDismissedDoesNotSyncSupportFacade() {
+        XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: .automationNoticeDismissed).syncSupport)
+    }
+
+    func testAutomationFailedSupportSyncNoopsBeforeSupportOwnership() {
+        let viewModel = makeViewModel(bridgeMode: .automationNoticeOwned)
+        let existing = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .projectionStarted,
+            detail: "source=facade"
+        )
+        viewModel.applySupportEventsProjectionFromRuntime([existing])
+
+        viewModel.dispatchRuntimeFacadeAction(.automationFailed(
+            action: "keynote.next-slide",
+            sanitizedMessage: "failed"
+        ))
+
+        XCTAssertEqual(viewModel.supportEvents, [existing])
+    }
+
+    func testAutomationFailedSupportSyncProjectsReducerSupportWhenFullRuntime() {
+        let viewModel = makeViewModel(bridgeMode: .fullRuntime)
+
+        viewModel.dispatchRuntimeFacadeAction(.automationFailed(
+            action: "keynote.next-slide",
+            sanitizedMessage: "failed"
+        ))
+
+        XCTAssertEqual(viewModel.supportEvents.map(\.kind), [.appleScriptFailed])
+    }
+
     func testAutomationFailedWritesSupportOnlyWhenReducerSupportAllowed() {
         let mutation = reduce(
             .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed"),
@@ -71,4 +131,20 @@ final class AutomationNoticeRuntimeSupportPolicyTests: XCTestCase {
     }
 
     private let now = Date(timeIntervalSince1970: 100)
+
+    private func makeViewModel(bridgeMode: LiveRuntimeBridgeMode) -> SwitcherViewModel {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(now: now, bridgeMode: bridgeMode)
+        )
+        let suiteName = "AutomationNoticeRuntimeSupportPolicyTests.\(UUID().uuidString)"
+        let userDefaults = UserDefaults(suiteName: suiteName)!
+        userDefaults.removePersistentDomain(forName: suiteName)
+        return SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: userDefaults,
+            runtime: runtime
+        )
+    }
 }

@@ -24,8 +24,8 @@ final class AutomationNoticeRuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
-    func testAutomationNoticeActionsDoNotSyncUnrelatedFacades() {
-        automationNoticeActions.forEach { action in
+    func testAutomationNoticeLifecycleActionsDoNotSyncUnrelatedFacades() {
+        automationNoticeLifecycleActions.forEach { action in
             let options = options(for: action)
             XCTAssertFalse(options.syncBGM)
             XCTAssertFalse(options.syncProjection)
@@ -37,9 +37,23 @@ final class AutomationNoticeRuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
+    func testAutomationFailedAlsoSyncsSupportFacade() {
+        XCTAssertTrue(
+            options(for: .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed")).syncSupport
+        )
+    }
+
     private var automationNoticeActions: [LiveRuntimeAction] {
         [
             .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed"),
+            .automationNoticeRequested(action: "keynote.next-slide"),
+            .automationNoticeExpired(UUID()),
+            .automationNoticeDismissed
+        ]
+    }
+
+    private var automationNoticeLifecycleActions: [LiveRuntimeAction] {
+        [
             .automationNoticeRequested(action: "keynote.next-slide"),
             .automationNoticeExpired(UUID()),
             .automationNoticeDismissed

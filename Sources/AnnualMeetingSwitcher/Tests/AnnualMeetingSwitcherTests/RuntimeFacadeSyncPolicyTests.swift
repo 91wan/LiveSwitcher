@@ -127,6 +127,87 @@ final class RuntimeFacadeSyncPolicyTests: XCTestCase {
         }
     }
 
+    func testSupportEventRecordedStillSyncsSupportFacadeThroughPolicy() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide,error=executionFailed"
+        )
+
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncSupport)
+    }
+
+    func testAutomationNoticeActionsStillSyncAutomationNoticeFacadeThroughPolicy() {
+        let actions: [LiveRuntimeAction] = [
+            .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
+            .automationNoticeRequested(action: "keynote.next-slide"),
+            .automationNoticeExpired(UUID()),
+            .automationNoticeDismissed
+        ]
+
+        actions.forEach { action in
+            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncAutomationNotice, action.redactedName)
+        }
+    }
+
+    func testAutomationFailedAlsoSyncsSupportFacadeThroughPolicy() {
+        XCTAssertTrue(
+            LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
+                action: "keynote.next-slide",
+                sanitizedMessage: "executionFailed"
+            )).syncSupport
+        )
+    }
+
+    func testSupportAndAutomationNoticeActionsDoNotDispatchAudioInputs() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide,error=executionFailed"
+        )
+        let actions: [LiveRuntimeAction] = [
+            .supportEventRecorded(event),
+            .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
+            .automationNoticeRequested(action: "keynote.next-slide"),
+            .automationNoticeExpired(UUID()),
+            .automationNoticeDismissed
+        ]
+
+        actions.forEach { action in
+            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
+        }
+    }
+
+    func testSupportEventRecordedDoesNotSyncAutomationNoticeFacade() {
+        let event = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .appleScriptFailed,
+            detail: "action=keynote.next-slide,error=executionFailed"
+        )
+
+        XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncAutomationNotice)
+    }
+
+    func testAutomationNoticeRequestedDoesNotSyncSupportFacade() {
+        XCTAssertFalse(
+            LiveRuntimeFacadeSyncPolicy.options(for: .automationNoticeRequested(action: "keynote.next-slide")).syncSupport
+        )
+    }
+
+    func testAutomationFailedDoesNotSyncBGMProjectionPPTProgramOrPanicFacades() {
+        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
+            action: "keynote.next-slide",
+            sanitizedMessage: "executionFailed"
+        ))
+
+        XCTAssertFalse(options.syncBGM)
+        XCTAssertFalse(options.syncProjection)
+        XCTAssertFalse(options.syncPPT)
+        XCTAssertFalse(options.syncProgramQueue)
+        XCTAssertFalse(options.syncCurrentProgram)
+        XCTAssertFalse(options.syncPanic)
+    }
+
     func testSupportEventRecordedSyncsSupportFacade() {
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 1),

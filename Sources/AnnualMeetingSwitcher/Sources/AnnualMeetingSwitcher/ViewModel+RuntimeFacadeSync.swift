@@ -13,6 +13,8 @@ extension SwitcherViewModel {
     }
 
     func syncSupportFacadeFromRuntime() {
+        guard runtime.bridgeMode.owns(.support) else { return }
+
         applySupportEventsProjectionFromRuntime(runtime.state.support.events)
     }
 

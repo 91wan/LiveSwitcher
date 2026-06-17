@@ -82,12 +82,15 @@ ViewModel callback wiring remains simple and does not check ownership; the
 reducer owns callback acceptance. Production bridge mode remains `.panicOwned`.
 
 `dispatchRuntimeFacadeAction(_:)` is the central post-dispatch facade sync point.
-Projection and PPT call sites must not manually sync the same facade immediately
-after dispatching actions already covered by `LiveRuntimeFacadeSyncPolicy`.
-Manual facade sync remains allowed only for callback helpers that intentionally
-bypass `dispatchRuntimeFacadeAction(_:)`, such as BGM callback helpers that
-dispatch directly and then project BGM facade state. Production bridge mode
-remains `.panicOwned`.
+Projection, PPT, Support, and Automation Notice call sites must not manually
+sync the same facade immediately after dispatching actions already covered by
+`LiveRuntimeFacadeSyncPolicy`. `supportEventRecorded` syncs Support through the
+policy, Automation notice lifecycle actions sync Automation Notice through the
+policy, and `automationFailed` syncs both Automation Notice and Support through
+the policy. Manual facade sync remains allowed only for callback helpers that
+intentionally bypass `dispatchRuntimeFacadeAction(_:)`, such as BGM callback
+helpers that dispatch directly and then project BGM facade state. Production
+bridge mode remains `.panicOwned`.
 
 `ViewModel+RuntimeSnapshot.swift` is a boundary adapter, not a second source of
 truth. When `.media` is owned, media snapshot state is preserved from Runtime,
@@ -765,7 +768,10 @@ Automation notice lifecycle actions do not require audio input snapshots, so
 `LiveRuntimeFacadeSyncPolicy` suppresses audio-input dispatch for
 `.automationFailed`, `.automationNoticeRequested`, `.automationNoticeExpired`,
 and `.automationNoticeDismissed`. Those actions still sync the Automation notice
-facade after Runtime accepts the mutation.
+facade after Runtime accepts the mutation. `automationFailed` also syncs the
+Support facade through the central policy because the ViewModel records the
+corresponding support event immediately before dispatching the failure action.
+Notice request, expiry, and dismissal actions do not sync Support.
 
 Automation notice expiry tasks are ID-bound. Showing a replacement notice,
 dismissing the current notice, manually expiring it, clearing Runtime notice
@@ -836,9 +842,12 @@ receives a raw, rejected, or uncoalesced ingress payload.
 the canonical facade call site for
 existing UI, projection, PPT, BGM, automation failure, preflight, and overlay
 event generation. It must only build the `LiveSupportEvent`, dispatch
-`.supportEventRecorded`, and sync `supportEvents` from Runtime. It must not
-append support events directly, perform local redaction/coalescing/trimming,
-write UserDefaults, run telemetry, or execute automation. The production
+`.supportEventRecorded`, and rely on `LiveRuntimeFacadeSyncPolicy` to sync
+`supportEvents` from Runtime. It must not manually call Support facade sync
+after dispatch, append support events directly, perform local
+redaction/coalescing/trimming, write UserDefaults, run telemetry, or execute
+automation. `syncSupportFacadeFromRuntime()` requires `.support` ownership
+before projecting `runtime.state.support.events`. The production
 `SupportEventPort` is notification-only and exists to sync the concrete
 `supportEvents` facade after Runtime state changes.
 

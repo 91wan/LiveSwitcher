@@ -153,7 +153,8 @@ enum LiveRuntimeFacadeSyncPolicy {
 
     private static func shouldSyncSupportFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
-        case .supportEventRecorded:
+        case .automationFailed,
+             .supportEventRecorded:
             return true
         default:
             return false

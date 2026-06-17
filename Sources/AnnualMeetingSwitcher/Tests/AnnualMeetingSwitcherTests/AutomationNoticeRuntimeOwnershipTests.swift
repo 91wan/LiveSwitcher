@@ -8,7 +8,10 @@ final class AutomationNoticeRuntimeOwnershipTests: XCTestCase {
         let body = try XCTUnwrap(source.functionBody(named: "showAutomationRuntimeNotice"))
 
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationNoticeRequested(action: action))"))
-        XCTAssertTrue(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncAutomationNoticeFacadeFromRuntime()"))
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(
+            for: .automationNoticeRequested(action: "keynote.next-slide")
+        ).syncAutomationNotice)
     }
 
     func testAppleScriptFailureRecordsSupportThroughViewModel() {
