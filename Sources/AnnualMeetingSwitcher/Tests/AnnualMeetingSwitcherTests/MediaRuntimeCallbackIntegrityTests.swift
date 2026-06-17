@@ -10,7 +10,11 @@ final class MediaRuntimeCallbackIntegrityTests: XCTestCase {
         viewModel.addProgramItems([item, html])
         viewModel.switchToProgram(item)
         viewModel.applyCurrentProgramProjectionFromRuntime(html, switchedAt: Date())
-        viewModel.runtime.replaceStateForFacadeSync(viewModel.runtime.state, clearActionLog: true)
+        var state = viewModel.runtime.state
+        state.program.items = [item, html]
+        state.program.currentID = html.id
+        state.program.currentDetachedItem = nil
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
 
         viewModel.dispatchRuntimeMediaCallback {
             .mediaPlaybackChanged(isPlaying: true, generation: $0)

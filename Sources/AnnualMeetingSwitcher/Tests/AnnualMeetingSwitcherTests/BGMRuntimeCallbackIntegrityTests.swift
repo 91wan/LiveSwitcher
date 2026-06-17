@@ -18,7 +18,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         let second = bgmItem(title: "Second")
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
+        let activeGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.currentBGMItem = second
+        replaceRuntimeBGMState(in: viewModel, current: second, generation: activeGeneration)
 
         let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
@@ -33,7 +35,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         let replacement = BGMItem(title: "First", url: URL(fileURLWithPath: "/tmp/replacement.mp3"), category: first.category)
         viewModel.bgmItems = [first, replacement]
         viewModel.toggleBGM(first)
+        let activeGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.currentBGMItem = replacement
+        replaceRuntimeBGMState(in: viewModel, current: replacement, generation: activeGeneration)
 
         let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 
@@ -62,8 +66,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         viewModel.bgmItems = [first, second]
         viewModel.bgmPlayMode = .loopAll
         viewModel.toggleBGM(first)
+        let staleGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.toggleBGM(second)
-        viewModel.currentBGMItem = first
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: first, generation: staleGeneration)
 
         viewModel.bgmDidFinish()
 
@@ -76,8 +81,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         let second = bgmItem(title: "Second")
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
+        let staleGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.toggleBGM(second)
-        viewModel.currentBGMItem = first
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: first, generation: staleGeneration)
         let previousCount = viewModel.supportEvents.filter { $0.kind == .bgmPlaybackChanged }.count
 
         viewModel.bgmDidFinish()
@@ -91,8 +97,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         let second = bgmItem(title: "Second")
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
+        let staleGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.toggleBGM(second)
-        viewModel.currentBGMItem = first
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: first, generation: staleGeneration)
 
         viewModel.bgmDidFail()
 
@@ -106,8 +113,9 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         let second = bgmItem(title: "Second")
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
+        let staleGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.toggleBGM(second)
-        viewModel.currentBGMItem = first
+        viewModel.seedActiveRuntimeBGMCallbackForTesting(item: first, generation: staleGeneration)
 
         viewModel.bgmDidFail()
 
@@ -159,5 +167,13 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
 
     private func bgmItem(title: String = "Walk-in") -> BGMItem {
         BGMItem(title: title, url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"))
+    }
+
+    private func replaceRuntimeBGMState(in viewModel: SwitcherViewModel, current item: BGMItem, generation: Int) {
+        var state = viewModel.runtime.state
+        state.bgm.items = viewModel.bgmItems
+        state.bgm.currentID = item.id
+        state.bgm.generation = generation
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
     }
 }
