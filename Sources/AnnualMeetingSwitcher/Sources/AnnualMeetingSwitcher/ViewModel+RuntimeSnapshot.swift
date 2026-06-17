@@ -34,20 +34,56 @@ extension SwitcherViewModel {
 
     private func audioFacadeSnapshot() -> AudioFacadeSnapshot {
         AudioFacadeSnapshot(
-            masterVolume: masterVolume,
-            mediaVolume: mediaVolume,
-            bgmVolume: bgmVolume,
-            strategy: audioStrategy,
-            isMasterMuted: isMasterAudioMuted,
-            isMediaMuted: isMediaAudioMuted,
-            isBGMMuted: isBGMAudioMuted,
-            isSpeakerMode: isSpeakerMode,
-            isBGMTakeoverActive: isBGMAudioTakeoverActive,
+            masterVolume: runtimeBackedMasterVolumeForSnapshot,
+            mediaVolume: runtimeBackedMediaVolumeForSnapshot,
+            bgmVolume: runtimeBackedBGMVolumeForSnapshot,
+            strategy: runtimeBackedAudioStrategyForSnapshot,
+            isMasterMuted: runtimeBackedMasterMuteForSnapshot,
+            isMediaMuted: runtimeBackedMediaMuteForSnapshot,
+            isBGMMuted: runtimeBackedBGMMuteForSnapshot,
+            isSpeakerMode: runtimeBackedSpeakerModeForSnapshot,
+            isBGMTakeoverActive: runtimeBackedBGMTakeoverForSnapshot,
             isPanicMode: runtimeBackedPanicIsActiveForSnapshot,
             isCurrentProgramMediaSource: runtimeBackedCurrentProgramIsMediaSourceForSnapshot,
             isMediaPlaying: runtimeBackedMediaIsPlayingForSnapshot,
             isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying
         )
+    }
+
+    private var runtimeBackedMasterVolumeForSnapshot: Double {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.masterVolume : masterVolume
+    }
+
+    private var runtimeBackedMediaVolumeForSnapshot: Double {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.mediaVolume : mediaVolume
+    }
+
+    private var runtimeBackedBGMVolumeForSnapshot: Double {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.bgmVolume : bgmVolume
+    }
+
+    private var runtimeBackedAudioStrategyForSnapshot: AudioStrategy {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.strategy : audioStrategy
+    }
+
+    private var runtimeBackedMasterMuteForSnapshot: Bool {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.isMasterMuted : isMasterAudioMuted
+    }
+
+    private var runtimeBackedMediaMuteForSnapshot: Bool {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.isMediaMuted : isMediaAudioMuted
+    }
+
+    private var runtimeBackedBGMMuteForSnapshot: Bool {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.isBGMMuted : isBGMAudioMuted
+    }
+
+    private var runtimeBackedSpeakerModeForSnapshot: Bool {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.isSpeakerMode : isSpeakerMode
+    }
+
+    private var runtimeBackedBGMTakeoverForSnapshot: Bool {
+        runtime.bridgeMode.owns(.audio) ? runtime.state.audio.isBGMTakeoverActive : isBGMAudioTakeoverActive
     }
 
     private var runtimeBackedMediaIsPlayingForSnapshot: Bool {
@@ -89,21 +125,7 @@ extension SwitcherViewModel {
 
         syncBGMIntoRuntimeSnapshot(&state)
 
-        state.audio.masterVolume = masterVolume
-        state.audio.mediaVolume = mediaVolume
-        state.audio.bgmVolume = bgmVolume
-        state.audio.strategy = audioStrategy
-        state.audio.isMasterMuted = isMasterAudioMuted
-        state.audio.isMediaMuted = isMediaAudioMuted
-        state.audio.isBGMMuted = isBGMAudioMuted
-        state.audio.isSpeakerMode = isSpeakerMode
-        state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
-        state.audio.routingContext = AudioRoutingContext(
-            isCurrentProgramMediaSource: runtimeBackedCurrentProgramIsMediaSourceForSnapshot(state),
-            isMediaPlaying: runtimeBackedMediaIsPlayingForSnapshot(state),
-            isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying,
-            isPanicMode: runtimeBackedPanicIsActiveForSnapshot
-        )
+        syncAudioIntoRuntimeSnapshot(&state)
 
         syncPanicIntoRuntimeSnapshot(&state)
 
@@ -114,6 +136,33 @@ extension SwitcherViewModel {
         syncAutomationNoticeIntoRuntimeSnapshot(&state)
         syncSupportIntoRuntimeSnapshot(&state)
         return state
+    }
+
+    private func syncAudioIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        let routingContext = AudioRoutingContext(
+            isCurrentProgramMediaSource: runtimeBackedCurrentProgramIsMediaSourceForSnapshot(state),
+            isMediaPlaying: runtimeBackedMediaIsPlayingForSnapshot(state),
+            isBGMPlaying: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.isPlaying : isBGMPlaying,
+            isPanicMode: runtimeBackedPanicIsActiveForSnapshot
+        )
+
+        if runtime.bridgeMode.owns(.audio) {
+            let runtimeAudio = runtime.state.audio
+            state.audio = runtimeAudio
+            state.audio.routingContext = routingContext
+            return
+        }
+
+        state.audio.masterVolume = masterVolume
+        state.audio.mediaVolume = mediaVolume
+        state.audio.bgmVolume = bgmVolume
+        state.audio.strategy = audioStrategy
+        state.audio.isMasterMuted = isMasterAudioMuted
+        state.audio.isMediaMuted = isMediaAudioMuted
+        state.audio.isBGMMuted = isBGMAudioMuted
+        state.audio.isSpeakerMode = isSpeakerMode
+        state.audio.isBGMTakeoverActive = isBGMAudioTakeoverActive
+        state.audio.routingContext = routingContext
     }
 
     private func syncPreferencesIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
