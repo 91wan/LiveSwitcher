@@ -268,6 +268,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        installRuntimeCurrentProgram(item, in: viewModel, clearActionLog: true)
 
         viewModel.toggleMainVideoPlayback()
 
@@ -284,6 +285,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        installRuntimeCurrentProgram(item, in: viewModel, clearActionLog: true)
 
         viewModel.toggleMainVideoPlayback()
 
@@ -297,6 +299,7 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
         let item = mediaProgram()
         viewModel.applyProgramQueueProjectionFromRuntime([item])
         viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        installRuntimeCurrentProgram(item, in: viewModel, clearActionLog: true)
 
         viewModel.restartCurrentMediaFromBeginning()
 
@@ -325,6 +328,20 @@ final class LiveRuntimeMediaBridgeTests: XCTestCase {
             subtitle: "VIDEO",
             sourceURL: url
         )
+    }
+
+    private func installRuntimeCurrentProgram(
+        _ item: ProgramItem,
+        in viewModel: SwitcherViewModel,
+        clearActionLog: Bool
+    ) {
+        var state = viewModel.runtime.state
+        state.program.items = [item]
+        state.program.currentID = item.id
+        state.program.currentDetachedItem = nil
+        state.program.currentSwitchedAt = Date()
+        state.media.loadedURL = item.sourceURL
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: clearActionLog)
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

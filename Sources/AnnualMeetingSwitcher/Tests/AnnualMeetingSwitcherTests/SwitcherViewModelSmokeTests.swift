@@ -61,6 +61,14 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         item: ProgramItem,
         isPlaying: Bool
     ) {
+        mirrorRuntimeCurrentProgramState(viewModel, item: item, isPlaying: isPlaying)
+    }
+
+    private func mirrorRuntimeCurrentProgramState(
+        _ viewModel: SwitcherViewModel,
+        item: ProgramItem,
+        isPlaying: Bool = false
+    ) {
         var state = viewModel.runtime.state
         state.program.items = [item]
         state.program.currentID = item.id
@@ -1807,6 +1815,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         viewModel.applyCurrentProgramProjectionFromRuntime(keynoteItem, switchedAt: Date())
+        mirrorRuntimeCurrentProgramState(viewModel, item: keynoteItem)
         viewModel.toggleMainVideoPlayback()
 
         XCTAssertEqual(stopInvocationCount, 1)
@@ -1824,6 +1833,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         viewModel.applyCurrentProgramProjectionFromRuntime(activeDeckItem, switchedAt: Date())
+        mirrorRuntimeCurrentProgramState(viewModel, item: activeDeckItem)
         viewModel.toggleMainVideoPlayback()
 
         XCTAssertEqual(stopInvocationCount, 1)
@@ -1935,6 +1945,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         viewModel.applyCurrentProgramProjectionFromRuntime(activeDeckItem, switchedAt: Date())
+        mirrorRuntimeCurrentProgramState(viewModel, item: activeDeckItem)
 
         viewModel.togglePause(for: activeDeckItem)
 
@@ -1957,6 +1968,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         }
 
         viewModel.applyCurrentProgramProjectionFromRuntime(keynoteItem, switchedAt: Date())
+        mirrorRuntimeCurrentProgramState(viewModel, item: keynoteItem)
 
         viewModel.togglePause(for: keynoteItem)
 

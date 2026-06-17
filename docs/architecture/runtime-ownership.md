@@ -613,6 +613,14 @@ queue, and sets UI-facing current program state, but media load/play/pause/
 restart/stop/seek effects execute through `MediaPlaybackPort`. Seek-to-start and
 seek-to-end are distinct runtime actions; restart outside Panic remains the
 migrated operator action that seeks to the beginning and starts playback.
+Media transport ViewModel preconditions use Runtime current program state when
+`.programSelection` is owned and Runtime Panic state when `.panic` is owned;
+stale ViewModel `currentProgramItem` / `isPanicMode` facade values must not
+decide Runtime-owned toggle, pause, seek, or restart behavior. The ViewModel
+checks are convenience boundaries only: `MediaRuntimeReducer.togglePlayback`
+keeps its own media-context guard and no-ops unless Runtime has a loaded media
+URL or the Runtime current program is media. Production bridge mode remains
+`.panicOwned`.
 Restart during Panic is safety-gated: Runtime emits `.seekMediaToStart` instead
 of `.restartMedia`, keeping Runtime state and the real media port aligned with
 emergency blackout. Operator media toggle during Panic can only pause
