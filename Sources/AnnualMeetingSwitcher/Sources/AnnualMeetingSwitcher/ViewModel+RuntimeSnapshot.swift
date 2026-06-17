@@ -82,7 +82,7 @@ extension SwitcherViewModel {
 
     private func makeRuntimeStateSnapshot() -> LiveRuntimeState {
         var state = runtime.state
-        state.mode = consoleMode
+        syncPreferencesIntoRuntimeSnapshot(&state)
         syncProgramQueueIntoRuntimeSnapshot(&state)
         syncCurrentProgramIntoRuntimeSnapshot(&state)
         syncMediaIntoRuntimeSnapshot(&state)
@@ -108,6 +108,22 @@ extension SwitcherViewModel {
         syncPanicIntoRuntimeSnapshot(&state)
 
         syncPPTFacadeIntoRuntimeSnapshot(&state)
+
+        syncProjectionIntoRuntimeSnapshot(&state)
+
+        syncAutomationNoticeIntoRuntimeSnapshot(&state)
+        syncSupportIntoRuntimeSnapshot(&state)
+        return state
+    }
+
+    private func syncPreferencesIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
+        guard !runtime.bridgeMode.owns(.persistence) else {
+            state.mode = runtime.state.mode
+            state.preferences = runtime.state.preferences
+            return
+        }
+
+        state.mode = consoleMode
         state.preferences.themeOverride = themeOverride
         state.preferences.activeWallpaperURL = activeWallpaperURL
         state.preferences.cornerLogoURL = cornerLogoURL
@@ -115,12 +131,6 @@ extension SwitcherViewModel {
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
         state.preferences.showAgendaTimeline = showAgendaTimeline
         state.preferences.cornerLogoPosition = cornerLogoPosition
-
-        syncProjectionIntoRuntimeSnapshot(&state)
-
-        syncAutomationNoticeIntoRuntimeSnapshot(&state)
-        syncSupportIntoRuntimeSnapshot(&state)
-        return state
     }
 
     private func syncProgramQueueIntoRuntimeSnapshot(_ state: inout LiveRuntimeState) {
