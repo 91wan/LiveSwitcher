@@ -5,7 +5,7 @@ final class ProgramActivationRuntimeViewModelBridgeTests: XCTestCase {
     func testProgramActivationSourceGateStaysInProgramActivationEntryPoint() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift")
 
-        XCTAssertTrue(source.contains("programSourceIsAvailable(item)"))
+        XCTAssertTrue(source.contains("programSourceIsAvailable(activationItem)"))
         XCTAssertTrue(source.contains("ProgramActivationPlanner.plan("))
         XCTAssertTrue(source.contains(".operatorRequestedProgramActivation"))
     }
