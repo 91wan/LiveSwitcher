@@ -22,7 +22,7 @@ final class ViewModelRuntimeFacadeExtractionTests: XCTestCase {
     func testRuntimeMediaCallbackBridgeLivesInRuntimeFacadeExtension() throws {
         let source = try XCTUnwrap(runtimeFacadeSource())
 
-        XCTAssertTrue(source.contains("func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction)"))
+        XCTAssertTrue(source.contains("func dispatchRuntimeMediaCallback(_ makeAction: (Int) -> LiveRuntimeAction) -> Bool"))
     }
 
     func testRuntimeBGMCallbackBridgeLivesInRuntimeFacadeExtension() throws {

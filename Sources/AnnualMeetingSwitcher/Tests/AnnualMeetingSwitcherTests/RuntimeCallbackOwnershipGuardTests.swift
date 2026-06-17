@@ -62,9 +62,10 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
 
     func testViewModelCallbackWiringDoesNotCheckRuntimeOwnership() throws {
         let mediaSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+MediaPlayback.swift")
+        let mediaSetupBody = try XCTUnwrap(mediaSource.extractedRuntimeFunctionBody(named: "setupPlayerCoordinator"))
         let bgmSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
         let bgmControlsSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMControls.swift")
-        let combined = mediaSource + "\n" + bgmSource + "\n" + bgmControlsSource
+        let combined = mediaSetupBody + "\n" + bgmSource + "\n" + bgmControlsSource
 
         XCTAssertFalse(combined.contains("bridgeMode"))
         XCTAssertFalse(combined.contains("owns(.media"))

@@ -240,6 +240,12 @@ product boundary.
   safety overrides stale media playback callbacks: `mediaPlaybackChanged(true)`
   cannot mark Runtime media playing during Panic and must keep Runtime and the
   concrete player aligned through a pause effect.
+- Media playback-ended callback acceptance hardening does not add live controls
+  or change the operator workflow. It only ensures stale or invalid ended
+  callbacks stop at the Runtime callback boundary before Support recording,
+  auto-next, current-program clearing, or Panic snapshot mutation, and it reads
+  Runtime-owned Panic/current-program/queue/preference state for existing
+  playback-ended behavior.
 - Projection runtime migration does not add live controls. Existing projection
   start/stop remains the only allowed projection action in Live mode.
 - Projection runtime hardening does not add live controls; it only separates
