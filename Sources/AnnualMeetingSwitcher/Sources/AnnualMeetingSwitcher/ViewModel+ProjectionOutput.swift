@@ -34,7 +34,6 @@ extension SwitcherViewModel {
         refreshExternalDisplayAvailability()
         let oldProjection = runtime.state.projection
         dispatchRuntimeFacadeAction(.operatorToggledProjection)
-        syncProjectionFacadeFromRuntime()
         recordProjectionSupportAfterRuntimeToggle(old: oldProjection, new: runtime.state.projection)
         if oldProjection.isBroadcasting != runtime.state.projection.isBroadcasting {
             LiveSwitcherTelemetry.projectionToggle(isBroadcasting: isBroadcasting)
@@ -45,7 +44,6 @@ extension SwitcherViewModel {
         guard let targetScreen = projectionService.targetScreen() else {
             let oldProjection = runtime.state.projection
             dispatchRuntimeFacadeAction(.projectionStartFailed(reason: .noTargetScreen))
-            syncProjectionFacadeFromRuntime()
             recordProjectionSupportAfterRuntimeStartFailure(
                 old: oldProjection,
                 new: runtime.state.projection,
@@ -77,7 +75,6 @@ extension SwitcherViewModel {
         guard runtime.state.projection.isBroadcasting else { return }
         let oldProjection = runtime.state.projection
         dispatchRuntimeFacadeAction(.projectionExternalDisplayLost)
-        syncProjectionFacadeFromRuntime()
         recordProjectionSupportAfterRuntimeDisplayLost(old: oldProjection, new: runtime.state.projection)
     }
 

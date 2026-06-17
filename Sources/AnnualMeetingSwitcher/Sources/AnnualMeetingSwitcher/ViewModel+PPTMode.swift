@@ -14,7 +14,6 @@ extension SwitcherViewModel {
         let previousPPT = runtime.state.ppt
         setPendingPPTToggleSource(source)
         dispatchRuntimeFacadeAction(action)
-        syncPPTFacadeFromRuntime()
         if runtime.state.ppt == previousPPT {
             setPendingPPTToggleSource(nil)
         }

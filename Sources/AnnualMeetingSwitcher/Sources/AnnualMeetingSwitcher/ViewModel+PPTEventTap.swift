@@ -35,7 +35,6 @@ extension SwitcherViewModel {
     private func completePPTEventTapStartFromRuntime(detail: String) {
         let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapStarted)
-        syncPPTFacadeFromRuntime()
         guard !oldPPT.isEventTapActive, runtime.state.ppt.isEventTapActive else { return }
         LiveSwitcherTelemetry.pageInterceptEnabled()
         recordSupportEvent(kind: .pageInterceptEnabled, detail: detail)
@@ -50,7 +49,6 @@ extension SwitcherViewModel {
     private func completePPTEventTapStartFailureFromRuntime(reason: String, presentAlert: Bool) {
         let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapFailed(reason: reason))
-        syncPPTFacadeFromRuntime()
         guard oldPPT.isRequested || oldPPT.isEventTapActive || currentPendingPPTToggleSource() != nil else { return }
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason)
         recordSupportEvent(kind: .pageInterceptDisabled, detail: "reason=\(reason)")
@@ -76,7 +74,6 @@ extension SwitcherViewModel {
     private func completePPTEventTapStopFromRuntime(reason: PPTStopReason, detail: String? = nil) {
         let oldPPT = runtime.state.ppt
         dispatchRuntimeFacadeAction(.pptEventTapStopped(reason: reason))
-        syncPPTFacadeFromRuntime()
         guard oldPPT.isRequested || oldPPT.isEventTapActive || currentPendingPPTToggleSource() != nil else { return }
         LiveSwitcherTelemetry.pageInterceptDisabled(reason: reason.rawValue)
         recordSupportEvent(kind: .pageInterceptDisabled, detail: detail ?? "state=disabled,reason=\(reason.rawValue)")

@@ -212,6 +212,10 @@ product boundary.
 - Projection facade sync hardening does not add live controls or change user
   workflow. It only makes Runtime-owned projection availability, broadcasting,
   and safety notice visible through the existing ViewModel facade.
+- Redundant Projection/PPT facade sync pruning does not add live controls or
+  change user workflow. It only removes duplicate manual sync calls after
+  `dispatchRuntimeFacadeAction(_:)`; `LiveRuntimeFacadeSyncPolicy` remains the
+  single source of post-dispatch facade sync behavior for those actions.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   obey existing Runtime ownership before mutating state.

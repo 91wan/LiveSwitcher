@@ -7,6 +7,7 @@ final class PPTRuntimeEffectExecutionTests: XCTestCase {
         let body = try functionBody(named: "completePPTEventTapStartFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapStarted"))
+        XCTAssertFalse(body.contains("syncPPTFacadeFromRuntime()"))
         XCTAssertFalse(body.contains("isPageInterceptEnabled = true"))
     }
 
@@ -15,7 +16,7 @@ final class PPTRuntimeEffectExecutionTests: XCTestCase {
         let body = try functionBody(named: "completePPTEventTapStartFailureFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapFailed(reason: reason)"))
-        XCTAssertTrue(body.contains("syncPPTFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncPPTFacadeFromRuntime()"))
     }
 
     func testPPTPortStopDispatchesRuntimeStoppedCallback() throws {
@@ -23,7 +24,7 @@ final class PPTRuntimeEffectExecutionTests: XCTestCase {
         let body = try functionBody(named: "completePPTEventTapStopFromRuntime", in: source)
 
         XCTAssertTrue(body.contains(".pptEventTapStopped(reason: reason)"))
-        XCTAssertTrue(body.contains("syncPPTFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncPPTFacadeFromRuntime()"))
     }
 
     private func functionBody(named name: String, in source: String) throws -> String {
