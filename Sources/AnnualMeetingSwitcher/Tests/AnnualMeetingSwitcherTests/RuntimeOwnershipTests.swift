@@ -284,12 +284,14 @@ final class RuntimeOwnershipTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Production uses `.panicOwned` and wires"))
         XCTAssertTrue(document.localizedStandardContains("`ViewModel+SupportFacade.swift` owns `recordSupportEvent(...)`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("dispatch `.supportEventRecorded`"))
-        XCTAssertTrue(document.localizedStandardContains("sync `supportEvents` from Runtime"))
+        XCTAssertTrue(document.localizedStandardContains("rely on `LiveRuntimeFacadeSyncPolicy` to sync"))
+        XCTAssertTrue(document.localizedStandardContains("`syncSupportFacadeFromRuntime()` requires `.support` ownership"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("returns the exact accepted event stored in `state.support.events`"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("emits `.recordSupportEvent` only for that accepted event"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("`.supportEventRecorded` is support ingress, not operator intent"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("suppressed from the operator-facing Runtime action log"))
-        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not append support events directly, perform local redaction/coalescing/trimming"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("must not manually call Support facade sync after dispatch"))
+        XCTAssertTrue(normalizedDocument.localizedStandardContains("append support events directly, perform local redaction/coalescing/trimming"))
         XCTAssertTrue(normalizedDocument.localizedStandardContains("Support event generation call sites and telemetry remain ViewModel-owned"))
     }
 

@@ -301,8 +301,14 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
         XCTAssertTrue(automationFailureSource.contains("presentAutomationAlert("))
         XCTAssertFalse(failureBody.contains("presentAutomationAlert("))
         XCTAssertTrue(failureBody.contains("dispatchRuntimeFacadeAction(.automationFailed"))
-        XCTAssertTrue(failureBody.contains("syncSupportFacadeFromRuntime()"))
-        XCTAssertTrue(failureBody.contains("syncAutomationNoticeFacadeFromRuntime()"))
+        XCTAssertFalse(failureBody.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertFalse(failureBody.contains("syncAutomationNoticeFacadeFromRuntime()"))
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(
+            for: .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed")
+        ).syncAutomationNotice)
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(
+            for: .automationFailed(action: "keynote.next-slide", sanitizedMessage: "failed")
+        ).syncSupport)
         XCTAssertTrue(startPageInterceptBody.contains("presentAutomationAlert("))
         XCTAssertFalse(startPageInterceptBody.contains("let alert = NSAlert()"))
     }

@@ -9,6 +9,5 @@ extension SwitcherViewModel {
     ) {
         let event = LiveSupportEvent(timestamp: timestamp, kind: kind, detail: detail)
         dispatchRuntimeFacadeAction(.supportEventRecorded(event))
-        syncSupportFacadeFromRuntime()
     }
 }

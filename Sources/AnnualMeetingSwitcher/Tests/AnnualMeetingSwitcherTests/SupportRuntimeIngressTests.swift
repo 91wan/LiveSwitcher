@@ -34,10 +34,11 @@ final class SupportRuntimeIngressTests: XCTestCase {
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.supportEventRecorded(event))"))
     }
 
-    func testRecordSupportEventSyncsFacadeFromRuntime() throws {
+    func testRecordSupportEventReliesOnRuntimeFacadeSyncPolicy() throws {
         let body = try viewModelFunctionBody(named: "func recordSupportEvent")
 
-        XCTAssertTrue(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertFalse(body.contains("syncSupportFacadeFromRuntime()"))
+        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(supportEvent())).syncSupport)
     }
 
     func testRecordSupportEventDoesNotAppendSupportEventsDirectly() throws {
