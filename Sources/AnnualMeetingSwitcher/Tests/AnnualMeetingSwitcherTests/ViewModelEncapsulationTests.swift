@@ -99,7 +99,13 @@ final class ViewModelEncapsulationTests: XCTestCase {
         let second = BGMItem(title: "Second", url: URL(fileURLWithPath: "/tmp/second.mp3"))
         viewModel.bgmItems = [first, second]
         viewModel.toggleBGM(first)
+        let activeGeneration = viewModel.activeRuntimeBGMCallbackGenerationForTesting ?? 0
         viewModel.currentBGMItem = second
+        var state = viewModel.runtime.state
+        state.bgm.items = [first, second]
+        state.bgm.currentID = second.id
+        state.bgm.generation = activeGeneration
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
 
         let accepted = viewModel.dispatchRuntimeBGMCallback { .bgmReachedEnd(generation: $0) }
 

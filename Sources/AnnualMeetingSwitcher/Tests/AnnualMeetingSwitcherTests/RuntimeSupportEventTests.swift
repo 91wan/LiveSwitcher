@@ -36,14 +36,23 @@ final class RuntimeSupportEventTests: XCTestCase {
         viewModel.bgmProgress = 0.6
         viewModel.bgmCurrentTime = 42
         viewModel.bgmDuration = 100
+        var runtimeState = viewModel.runtime.state
+        runtimeState.bgm.items = [item]
+        runtimeState.bgm.currentID = item.id
+        runtimeState.bgm.isPlaying = true
+        runtimeState.bgm.progress = 0.6
+        runtimeState.bgm.currentTime = 42
+        runtimeState.bgm.duration = 100
+        runtimeState.bgm.generation = 0
+        viewModel.runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
 
         viewModel.bgmDidFail()
 
         XCTAssertFalse(viewModel.isBGMPlaying)
         XCTAssertFalse(viewModel.isBGMAudioTakeoverActive)
-        XCTAssertEqual(viewModel.bgmProgress, 0)
-        XCTAssertEqual(viewModel.bgmCurrentTime, 0)
-        XCTAssertNil(viewModel.bgmDuration)
+        XCTAssertEqual(viewModel.bgmProgress, 0.6)
+        XCTAssertEqual(viewModel.bgmCurrentTime, 42)
+        XCTAssertEqual(viewModel.bgmDuration, 100)
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .bgmPlaybackFailed })
         XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("Private Walk In") })
         XCTAssertFalse(viewModel.supportEvents.contains { $0.detail.localizedStandardContains("/tmp/private-walk-in.mp3") })

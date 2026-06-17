@@ -333,6 +333,11 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         viewModel.bgmItems = [item]
         viewModel.currentBGMItem = item
         viewModel.seedActiveRuntimeBGMCallbackForTesting(item: item, generation: 0)
+        var runtimeState = runtime.state
+        runtimeState.bgm.items = [item]
+        runtimeState.bgm.currentID = item.id
+        runtimeState.bgm.generation = 0
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         viewModel.dispatchRuntimeBGMCallback {

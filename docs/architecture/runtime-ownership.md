@@ -80,6 +80,15 @@ ownership. Current Program facade projection is sync-only; Runtime state writes
 must use real selection/clear actions instead of compatibility mirror actions.
 ViewModel callback wiring remains simple and does not check ownership; the
 reducer owns callback acceptance. Production bridge mode remains `.panicOwned`.
+Runtime-owned callback identity validation must use the same source of truth as
+the owned domain: Media callback validation reads Runtime current program when
+`.programSelection` is owned, reads Runtime media generation when `.media` is
+owned, and still requires `AVPlayerCoordinator.currentURL` to match the active
+runtime media URL. BGM callback validation reads Runtime current BGM item and
+Runtime BGM generation when `.bgm` is owned. Stale ViewModel facade mirrors
+must not accept or reject Runtime-owned Media/BGM callbacks; facade values are
+fallback inputs only before the relevant domain is owned. Production bridge
+mode remains `.panicOwned`.
 
 `dispatchRuntimeFacadeAction(_:)` is the central post-dispatch facade sync point.
 Projection, PPT, Support, and Automation Notice call sites must not manually
@@ -619,10 +628,14 @@ Audio routing helper calls from media playback go through `AudioRuntimeReducer`.
 Media startup sets media volume to zero before loading so the Runtime audio
 routing fade can bring the channel to the target level without a one-frame
 burst. Runtime media callbacks are accepted only when the ViewModel still has an
-active runtime media generation, the current program is media, and
-`AVPlayerCoordinator.currentURL` matches the active runtime media URL. Accepted
-callbacks dispatch runtime actions with the active generation. Stale effects are
-also ignored by generation in the effect runner.
+active runtime media generation, the current program source is media, and both
+the current program source URL and `AVPlayerCoordinator.currentURL` match the
+active runtime media URL. When `.programSelection` is owned, the current program
+source is `runtime.state.program.effectiveCurrentItem`; before that ownership it
+falls back to the ViewModel facade. When `.media` is owned, the active callback
+generation must also match `runtime.state.media.generation`. Accepted callbacks
+dispatch runtime actions with the active generation. Stale effects are also
+ignored by generation in the effect runner.
 
 Media-owned program selection must not mutate PPT mirror state and must not own
 non-media activation. PPT mirror state changes only through
@@ -660,10 +673,12 @@ remains ViewModel-owned.
 
 BGM callbacks require an active runtime BGM generation plus active item identity:
 the current BGM item id and URL must match the active callback guard before a
-finish, failure, or progress callback can dispatch into Runtime. Callback
-dispatch returns whether Runtime accepted the callback and must not fall back to
-`runtime.state.bgm.generation`. Ignored stale BGM callbacks must not record
-support events or playback-state support entries.
+finish, failure, or progress callback can dispatch into Runtime. When `.bgm` is
+owned, current item identity and generation are read from `runtime.state.bgm`;
+before BGM ownership they fall back to the ViewModel facade. Callback dispatch
+returns whether Runtime accepted the callback and must not accept stale callback
+generations. Ignored stale BGM callbacks must not record support events or
+playback-state support entries.
 
 BGM timers are generation-bound. Runtime paths start and stop timers with
 `startBGMTimer(generation:)` and `stopBGMTimer(generation:)`; stale stop
