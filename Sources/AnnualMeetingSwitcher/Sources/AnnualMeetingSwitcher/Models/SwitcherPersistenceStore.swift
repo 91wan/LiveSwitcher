@@ -72,6 +72,15 @@ struct SwitcherPersistenceStore {
         }
     }
 
+    func repairAudioStrategyPersistenceIfNeeded(_ strategy: AudioStrategy) {
+        guard let storedValue = userDefaults.string(forKey: SwitcherPersistenceKeys.audioStrategy),
+              storedValue != strategy.rawValue,
+              AudioStrategy(persistedValue: storedValue) == strategy
+        else { return }
+
+        saveAudioStrategy(strategy)
+    }
+
     func saveConsoleMode(_ mode: ConsoleMode) {
         userDefaults.set(mode.rawValue, forKey: SwitcherPersistenceKeys.consoleMode)
     }

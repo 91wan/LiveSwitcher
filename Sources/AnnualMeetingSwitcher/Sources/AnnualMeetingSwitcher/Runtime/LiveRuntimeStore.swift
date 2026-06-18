@@ -78,6 +78,11 @@ final class LiveRuntimeStore {
         }
     }
 
+    func replaceStateForPersistentLoad(_ state: LiveRuntimeState, preservingActionLog actionLog: [LiveRuntimeActionLogEntry]) {
+        self.state = state
+        self.actionLog = actionLog
+    }
+
     private static func summary(for state: LiveRuntimeState) -> String {
         let programSummary: String
         if let currentID = state.program.currentID {

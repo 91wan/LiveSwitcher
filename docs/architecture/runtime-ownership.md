@@ -151,6 +151,17 @@ after audio ownership. Explicit audio operator actions remain the path for
 updating Runtime-owned audio controls. Audio routing inputs still come from the
 source owner for each domain: Runtime when program selection, media, BGM, or
 Panic is owned, and the ViewModel/adapter facade before that domain is owned.
+Persistent save/load follows the same ownership boundary. When `.audio`,
+`.bgm`, `.programQueue`, or `.persistence` is owned, `makePersistentStateSnapshot()`
+serializes Runtime state for that domain instead of stale ViewModel facade
+values. Persistent load restores the ViewModel facade for UI compatibility,
+then hydrates owned audio strategy/speaker mode, BGM play mode, program queue,
+console mode, and persisted preferences into Runtime without leaving
+persistent-load action-log pollution or save effects. ViewModel-owned
+libraries remain ViewModel-owned: BGM library items, background wallpaper
+library, lower-third presets, countdown presets, and ticker presets still
+serialize from the ViewModel facade. There is no separate persistent
+snapshot/load Runtime domain or bridge mode.
 Production bridge mode remains `.panicOwned`.
 
 Program activation/switching side effects, source validation,
