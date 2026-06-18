@@ -255,6 +255,7 @@ final class SwitcherViewModel {
     var isPageInterceptEnabled: Bool = false
     @ObservationIgnored var pageInterceptSideEffectsEnabled = true
     @ObservationIgnored var testHooks = SwitcherViewModelTestHooks()
+    @ObservationIgnored var runtimeFacadeDispatchSuppressionDepth = 0
 
     private var pageInterceptEventTap: CFMachPort?
     private var pageInterceptRunLoopSource: CFRunLoopSource?

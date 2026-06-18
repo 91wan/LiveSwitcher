@@ -156,8 +156,14 @@ Persistent save/load follows the same ownership boundary. When `.audio`,
 serializes Runtime state for that domain instead of stale ViewModel facade
 values. Persistent load restores the ViewModel facade for UI compatibility,
 then hydrates owned audio strategy/speaker mode, BGM play mode, program queue,
-console mode, and persisted preferences into Runtime without leaving
-persistent-load action-log pollution or save effects. ViewModel-owned
+console mode, and persisted preferences into Runtime, mirrors unowned facade
+fields into Runtime exactly once, and does so without leaving persistent-load
+action-log pollution or save effects. Runtime bridge mode is immutable
+architecture configuration during persistent load; facade projection uses
+scoped `dispatchRuntimeFacadeAction` suppression and does not simulate
+`.recordingOnly`. `replaceStateForPersistentLoad` does not exist; hydration
+uses the existing facade-sync state replacement without clearing the action log.
+Unrelated Runtime domains must be preserved. ViewModel-owned
 libraries remain ViewModel-owned: BGM library items, background wallpaper
 library, lower-third presets, countdown presets, and ticker presets still
 serialize from the ViewModel facade. There is no separate persistent
@@ -498,6 +504,19 @@ returned repairs explicitly, and records each returned support event through
 Runtime-backed. Persistence hardening must not change Runtime bridge mode,
 production connected ports, UI, UserDefaults key names, defaults, or query
 ownership.
+
+During persistent load, Runtime ownership never changes, even temporarily.
+Facade properties are projected inside a balanced synchronous
+`withRuntimeFacadeDispatchSuppressed` scope so property observers cannot
+dispatch operator actions, run facade sync policy, or snapshot stale facade
+state into Runtime. After facade projection and direct hydration of
+Runtime-owned persisted fields, `loadData()` performs one ownership-aware
+facade-to-Runtime mirror for unowned fields with audio-input dispatch disabled.
+Program Queue retains its existing `.facadeLoadedProgramQueue` Runtime load path
+when `.programQueue` is owned, and image assets still load explicitly after the
+facade URL projection. Persistent load must not reference `.recordingOnly`, call
+an environment/bridge-mode update helper, or use a special persistent-load store
+replacement API.
 
 Runtime infrastructure domain hardening separates port connectivity from domain
 ownership. Production still wires the same connected ports:
