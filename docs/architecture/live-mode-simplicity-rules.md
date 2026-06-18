@@ -64,6 +64,10 @@ product boundary.
   `applyRepairs(...)`, and keeps persistence facade code in
   `ViewModel+Persistence.swift`; Live mode remains execution-only and code
   simplicity remains part of product simplicity.
+- Persistent-load Runtime bridge-mode mutation cleanup does not add live
+  controls or change operator workflow. Persistent load cannot change Runtime
+  ownership, cannot spoof bridge mode, and must use scoped synchronous facade
+  dispatch suppression instead of per-property loading flags.
 - Program and presentation facade extraction does not add live controls. It
   only moves Program queue methods to `ViewModel+ProgramQueue.swift`,
   presentation automation command/query boundary methods to

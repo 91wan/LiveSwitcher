@@ -266,6 +266,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
             .filter { line in
                 line.contains("@ObservationIgnored var")
                     && !line.contains("testHooks")
+                    && !line.contains("runtimeFacadeDispatchSuppressionDepth")
             }
 
         XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))

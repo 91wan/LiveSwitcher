@@ -45,8 +45,7 @@ extension SwitcherViewModel {
 
     func applyPersistentState(_ state: SwitcherPersistentState) {
         let bridgeMode = runtime.bridgeMode
-        let actionLogBeforeLoad = runtime.actionLog
-        projectPersistentStateToFacadeDuringLoad(state, bridgeMode: bridgeMode)
+        projectPersistentStateToFacadeDuringLoad(state)
         if bridgeMode.owns(.programQueue) {
             dispatchRuntimeFacadeAction(.facadeLoadedProgramQueue(state.programItems))
         } else {
@@ -58,36 +57,25 @@ extension SwitcherViewModel {
         countdownPresets = state.countdownPresets
         tickerPresets = state.tickerPresets
         loadPersistentImageAssetsAfterFacadeProjection()
-        applyPersistentStateToRuntimeIfOwned(
-            state,
-            bridgeMode: bridgeMode,
-            preservingActionLog: actionLogBeforeLoad
-        )
+        applyPersistentStateToRuntimeIfOwned(state, bridgeMode: bridgeMode)
+        syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
     }
 
     private func projectPersistentStateToFacadeDuringLoad(
-        _ state: SwitcherPersistentState,
-        bridgeMode: LiveRuntimeBridgeMode
+        _ state: SwitcherPersistentState
     ) {
-        let requiresSilentProjection = bridgeMode.owns(.audio) || bridgeMode.owns(.persistence)
-        if requiresSilentProjection {
-            updateRuntimeEnvironment(bridgeMode: .recordingOnly)
-        }
-
-        audioStrategy = state.audioStrategy
-        isSpeakerMode = state.isSpeakerMode
-        bgmPlayMode = state.bgmPlayMode
-        activeWallpaperURL = state.activeWallpaperURL
-        cornerLogoURL = state.cornerLogoURL
-        cornerLogoPosition = state.cornerLogoPosition
-        autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
-        autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
-        showAgendaTimeline = state.showAgendaTimeline
-        consoleMode = state.consoleMode
-        themeOverride = state.themeOverride
-
-        if requiresSilentProjection {
-            updateRuntimeEnvironment(bridgeMode: bridgeMode)
+        withRuntimeFacadeDispatchSuppressed {
+            audioStrategy = state.audioStrategy
+            isSpeakerMode = state.isSpeakerMode
+            bgmPlayMode = state.bgmPlayMode
+            activeWallpaperURL = state.activeWallpaperURL
+            cornerLogoURL = state.cornerLogoURL
+            cornerLogoPosition = state.cornerLogoPosition
+            autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
+            autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
+            showAgendaTimeline = state.showAgendaTimeline
+            consoleMode = state.consoleMode
+            themeOverride = state.themeOverride
         }
     }
 
@@ -130,8 +118,7 @@ extension SwitcherViewModel {
 
     private func applyPersistentStateToRuntimeIfOwned(
         _ state: SwitcherPersistentState,
-        bridgeMode: LiveRuntimeBridgeMode,
-        preservingActionLog actionLog: [LiveRuntimeActionLogEntry]
+        bridgeMode: LiveRuntimeBridgeMode
     ) {
         var runtimeState = runtime.state
         var shouldReplaceRuntimeState = false
@@ -163,19 +150,7 @@ extension SwitcherViewModel {
 
         guard shouldReplaceRuntimeState else { return }
 
-        runtime.replaceStateForPersistentLoad(runtimeState, preservingActionLog: actionLog)
-        updateRuntimeEnvironment(bridgeMode: bridgeMode)
-    }
-
-    private func updateRuntimeEnvironment(bridgeMode: LiveRuntimeBridgeMode) {
-        runtime.updateEnvironment(
-            LiveRuntimeEnvironment(
-                now: Date(),
-                speakerModeDuckedRatio: runtimeSpeakerModeDuckedRatio,
-                liveAudioFadeDuration: liveAudioFadeDuration,
-                bridgeMode: bridgeMode
-            )
-        )
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: false)
     }
 
     func persistConsoleModeFromRuntime(_ mode: ConsoleMode) {

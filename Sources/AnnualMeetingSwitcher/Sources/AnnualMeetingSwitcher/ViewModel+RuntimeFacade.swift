@@ -3,6 +3,8 @@ import Foundation
 @MainActor
 extension SwitcherViewModel {
     func dispatchRuntimeFacadeAction(_ action: LiveRuntimeAction) {
+        guard runtimeFacadeDispatchSuppressionDepth == 0 else { return }
+
         let syncOptions = LiveRuntimeFacadeSyncPolicy.options(for: action)
         syncRuntimeEnvironmentFromFacade()
         syncRuntimeStateFromFacade(
@@ -34,6 +36,14 @@ extension SwitcherViewModel {
         if syncOptions.syncPanic {
             syncPanicFacadeFromRuntime()
         }
+    }
+
+    func withRuntimeFacadeDispatchSuppressed(_ body: () -> Void) {
+        runtimeFacadeDispatchSuppressionDepth += 1
+        defer {
+            runtimeFacadeDispatchSuppressionDepth -= 1
+        }
+        body()
     }
 
     private func syncRuntimeEnvironmentFromFacade() {
