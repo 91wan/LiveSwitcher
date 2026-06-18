@@ -221,6 +221,11 @@ product boundary.
   change user workflow. It only prevents stale ViewModel audio facade controls
   from overwriting Runtime-owned audio controls while preserving source-owned
   routing inputs.
+- Persistent state Runtime source hardening does not add live controls or
+  change the operator workflow. It only makes persistent save/load follow
+  existing Runtime ownership for audio, BGM play mode, program queue, console
+  mode, and persisted preferences, while keeping ViewModel-owned libraries on
+  the ViewModel facade and avoiding new Runtime domains or bridge modes.
 - Projection facade sync hardening does not add live controls or change user
   workflow. It only makes Runtime-owned projection availability, broadcasting,
   and safety notice visible through the existing ViewModel facade.
