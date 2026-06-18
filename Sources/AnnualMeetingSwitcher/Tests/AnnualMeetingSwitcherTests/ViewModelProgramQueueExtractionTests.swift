@@ -90,7 +90,9 @@ final class ViewModelProgramQueueExtractionTests: XCTestCase {
         let body = try XCTUnwrap(programQueueExtensionSource()?.extractedRuntimeFunctionBody(named: "agendaAutoAdvancePrompt"))
 
         XCTAssertTrue(body.contains("AgendaAutoAdvanceModel.prompt("))
-        XCTAssertTrue(body.contains("programItems: programItems"))
+        XCTAssertTrue(body.contains("runtimeBackedProgramItemsForProgramQueueViewModel"))
+        XCTAssertTrue(body.contains("runtimeBackedCurrentProgramForProgramQueueViewModel"))
+        XCTAssertTrue(body.contains("runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel"))
     }
 
     func testProgramQueueStorageIsRuntimeOwnedAndProjectedToViewModel() {

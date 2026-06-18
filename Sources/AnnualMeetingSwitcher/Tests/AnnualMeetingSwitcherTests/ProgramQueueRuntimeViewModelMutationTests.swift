@@ -69,7 +69,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentMediaStillStopsMediaThroughRuntimeBeforeQueueRemoval() {
         let item = programItem("Current")
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
 
         viewModel.removeProgramItem(withID: item.id)
 
@@ -83,7 +83,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentDeckStillCallsDeckStopBeforeQueueRemoval() {
         let item = ProgramItem(title: "Deck", subtitle: "KEY", sourceURL: URL(fileURLWithPath: "/tmp/Deck.key"))
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
         var actionNamesAtDeckStop: [String] = []
         viewModel.programActivationSideEffects.stopDeck = {
             actionNamesAtDeckStop = viewModel.runtime.actionLog.map(\.actionName)
@@ -98,7 +98,7 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
     func testRemoveCurrentHTMLStillClearsCurrentHTML() {
         let item = ProgramItem(title: "HTML", subtitle: "HTML", sourceURL: URL(fileURLWithPath: "/tmp/index.html"))
         let viewModel = makeViewModel(initialItems: [item])
-        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        viewModel.dispatchRuntimeFacadeAction(.operatorSelectedProgram(item.id))
         viewModel.currentHTMLURL = item.sourceURL
 
         viewModel.removeProgramItem(withID: item.id)

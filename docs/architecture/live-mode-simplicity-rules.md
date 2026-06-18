@@ -120,6 +120,11 @@ product boundary.
   Runtime-owned queue supplies queued items and index/agenda prompt resolution,
   and stale ViewModel facade state must not replace Runtime-owned queue/current
   state while building activation plans.
+- Program Queue ViewModel source hardening does not add live controls or
+  change the operator workflow. Program Queue mutation still belongs to
+  Runtime reducers, while ViewModel-owned side effects such as deck stop, media
+  stop dispatch, HTML cleanup, and agenda prompting must follow Runtime-owned
+  queue/current/preference truth when those domains are owned.
 - Panic transition policy hardening does not add live controls or change
   emergency behavior. It only moves snapshot, media pause, delayed BGM pause,
   and resume decisions into `PanicTransitionPolicy`; the BGM fade delay is
