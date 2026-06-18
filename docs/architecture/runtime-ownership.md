@@ -37,6 +37,17 @@ and `operatorClearedCurrentProgram`. There is no
 `facadeCurrentProgramChanged` compatibility action. Production bridge mode
 remains `.panicOwned`.
 
+Program Queue ViewModel side-effect call sites remain ViewModel-owned, but
+their inputs follow Runtime ownership. When `.programQueue` is owned,
+queue-side decisions such as removed-item lookup use
+`runtime.state.program.items`. When `.programSelection` is owned, current-item
+side-effect decisions use `runtime.state.program.effectiveCurrentItem`.
+Agenda auto-advance prompt decisions use Runtime queue/current/preference when
+the respective `.programQueue`, `.programSelection`, and `.persistence`
+domains are owned. `ProgramQueueRuntimeReducer` remains the queue mutation
+owner; ViewModel still owns UI side effects such as `stopDeck()` and
+`currentHTMLURL` cleanup. Production bridge mode remains `.panicOwned`.
+
 Presentation Query lifecycle mutation is routed through
 `PresentationQueryRuntimeReducer.swift`. Main `LiveRuntimeReducer.swift` routes
 Presentation Query actions only and keeps the `.presentationQuery` ownership
@@ -158,9 +169,16 @@ detached selection use distinct payload-safe action names:
 `operatorSelectedProgram` and `operatorSelectedDetachedProgram`.
 There is no `facadeCurrentProgramChanged` compatibility action, and production
 selection paths must use `operatorSelectedProgram`,
-`operatorSelectedDetachedProgram`, or `operatorClearedCurrentProgram`. Program
-Activation port dispatches real selection actions through context. Main
-`LiveRuntimeReducer.swift` remains route-only. Program activation
+`operatorSelectedDetachedProgram`, or `operatorClearedCurrentProgram`.
+`ViewModel+ProgramQueue.swift` remains the Program Queue UI and side-effect
+call site, but its source inputs follow Runtime ownership: removed-item lookup
+uses Runtime queue when `.programQueue` is owned, current-item decisions use
+Runtime current program when `.programSelection` is owned, and agenda
+auto-advance prompting uses Runtime queue/current/preference when their
+respective domains are owned. `ProgramQueueRuntimeReducer` still owns queue
+mutation; ViewModel still owns concrete UI side effects such as deck stop and
+HTML cleanup. Program Activation port dispatches real selection actions
+through context. Main `LiveRuntimeReducer.swift` remains route-only. Program activation
 request/completion lifecycle is
 Runtime-owned in `.programActivationOwned`; Runtime records the active request
 ID, emits `.executeProgramActivation(id:plan:)`, and accepts matching completion

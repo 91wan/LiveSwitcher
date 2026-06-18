@@ -34,8 +34,9 @@ extension SwitcherViewModel {
     }
 
     func removeProgramItem(withID id: UUID) {
-        let removedItem = programItems.first { $0.id == id }
-        let isCurrent = currentProgramItem?.id == id
+        let removedItem = runtimeBackedProgramItemForProgramQueueViewModel(id: id)
+        let currentProgram = runtimeBackedCurrentProgramForProgramQueueViewModel
+        let isCurrent = currentProgram?.id == id && removedItem != nil
         if isCurrent {
             needsMutedMediaStartupAfterClearedProgram = removedItem?.sourceKind == .media
             if removedItem?.supportsPresentationControl == true {
@@ -63,9 +64,9 @@ extension SwitcherViewModel {
 
     func agendaAutoAdvancePrompt(now: Date = Date()) -> AgendaAutoAdvancePrompt? {
         AgendaAutoAdvanceModel.prompt(
-            isEnabled: autoAdvanceAtScheduledTime,
-            programItems: programItems,
-            currentProgramItem: currentProgramItem,
+            isEnabled: runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel,
+            programItems: runtimeBackedProgramItemsForProgramQueueViewModel,
+            currentProgramItem: runtimeBackedCurrentProgramForProgramQueueViewModel,
             now: now,
             promptedItemIDs: agendaAutoAdvancePromptedItemIDs
         )
@@ -73,5 +74,27 @@ extension SwitcherViewModel {
 
     func dismissAgendaAutoAdvancePrompt(_ prompt: AgendaAutoAdvancePrompt) {
         agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
+    }
+
+    private var runtimeBackedProgramItemsForProgramQueueViewModel: [ProgramItem] {
+        runtime.bridgeMode.owns(.programQueue)
+            ? runtime.state.program.items
+            : programItems
+    }
+
+    private var runtimeBackedCurrentProgramForProgramQueueViewModel: ProgramItem? {
+        runtime.bridgeMode.owns(.programSelection)
+            ? runtime.state.program.effectiveCurrentItem
+            : currentProgramItem
+    }
+
+    private var runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel: Bool {
+        runtime.bridgeMode.owns(.persistence)
+            ? runtime.state.preferences.autoAdvanceAtScheduledTime
+            : autoAdvanceAtScheduledTime
+    }
+
+    private func runtimeBackedProgramItemForProgramQueueViewModel(id: UUID) -> ProgramItem? {
+        runtimeBackedProgramItemsForProgramQueueViewModel.first { $0.id == id }
     }
 }
