@@ -230,6 +230,9 @@ product boundary.
   existing Runtime ownership for audio, BGM play mode, program queue, console
   mode, and persisted preferences, while keeping ViewModel-owned libraries on
   the ViewModel facade and avoiding new Runtime domains or bridge modes.
+- Persistent hydration audio invariant hardening does not add live controls or
+  change the operator workflow. Persist inputs; recompute derived outputs.
+  Never preserve stale derived state merely to preserve raw struct equality.
 - Projection facade sync hardening does not add live controls or change user
   workflow. It only makes Runtime-owned projection availability, broadcasting,
   and safety notice visible through the existing ViewModel facade.

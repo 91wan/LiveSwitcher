@@ -155,15 +155,24 @@ Persistent save/load follows the same ownership boundary. When `.audio`,
 `.bgm`, `.programQueue`, or `.persistence` is owned, `makePersistentStateSnapshot()`
 serializes Runtime state for that domain instead of stale ViewModel facade
 values. Persistent load restores the ViewModel facade for UI compatibility,
-then hydrates owned audio strategy/speaker mode, BGM play mode, program queue,
-console mode, and persisted preferences into Runtime, mirrors unowned facade
-fields into Runtime exactly once, and does so without leaving persistent-load
-action-log pollution or save effects. Runtime bridge mode is immutable
-architecture configuration during persistent load; facade projection uses
-scoped `dispatchRuntimeFacadeAction` suppression and does not simulate
-`.recordingOnly`. `replaceStateForPersistentLoad` does not exist; hydration
-uses the existing facade-sync state replacement without clearing the action log.
-Unrelated Runtime domains must be preserved. ViewModel-owned
+loads Program Queue through the existing queue path, loads ViewModel-owned
+libraries and image assets, mirrors unowned facade fields into Runtime exactly
+once, then calls `LiveRuntimeStore.hydratePersistentOwnedState(_:)` for owned
+audio strategy/speaker mode, BGM play mode, console mode, and persisted
+preferences. Hydration happens after the final facade sync, uses
+`environment.bridgeMode` and `environment.speakerModeDuckedRatio`, emits no
+actions or effects, does not clear the action log, and preserves unrelated
+state, bridge mode, environment, and connected ports. ViewModel persistence code
+must not directly mutate Runtime-owned audio, BGM, or preference fields. Audio
+effective media/BGM outputs are derived state: persistent load hydrates raw
+audio inputs and then recomputes effective outputs from the final routing
+context. Runtime bridge mode is immutable architecture configuration during
+persistent load; facade projection uses scoped `dispatchRuntimeFacadeAction`
+suppression and does not simulate `.recordingOnly`.
+`replaceStateForPersistentLoad` does not exist; persistent hydration is a
+semantic Runtime store API, not a generic state-mutation API. Production bridge
+mode remains `.panicOwned`. Unrelated Runtime domains must be preserved.
+ViewModel-owned
 libraries remain ViewModel-owned: BGM library items, background wallpaper
 library, lower-third presets, countdown presets, and ticker presets still
 serialize from the ViewModel facade. There is no separate persistent

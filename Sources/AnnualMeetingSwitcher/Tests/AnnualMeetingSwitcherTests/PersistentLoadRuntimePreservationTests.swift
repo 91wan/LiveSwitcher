@@ -138,8 +138,11 @@ final class PersistentLoadRuntimePreservationTests: XCTestCase {
 
         XCTAssertEqual(fixture.viewModel.runtime.state.audio.isBGMTakeoverActive, fixture.original.audio.isBGMTakeoverActive)
         XCTAssertEqual(fixture.viewModel.runtime.state.audio.routingContext, fixture.original.audio.routingContext)
-        XCTAssertEqual(fixture.viewModel.runtime.state.audio.effectiveMedia, fixture.original.audio.effectiveMedia)
-        XCTAssertEqual(fixture.viewModel.runtime.state.audio.effectiveBGM, fixture.original.audio.effectiveBGM)
+        let expected = expectedAudioOutput(from: fixture.viewModel.runtime.state)
+        XCTAssertEqual(fixture.viewModel.runtime.state.audio.effectiveMedia, expected.media, accuracy: 0.0001)
+        XCTAssertEqual(fixture.viewModel.runtime.state.audio.effectiveBGM, expected.bgm, accuracy: 0.0001)
+        XCTAssertNotEqual(fixture.viewModel.runtime.state.audio.effectiveMedia, fixture.original.audio.effectiveMedia)
+        XCTAssertNotEqual(fixture.viewModel.runtime.state.audio.effectiveBGM, fixture.original.audio.effectiveBGM)
     }
 
     func testPersistentHydrationUpdatesOnlyPersistedAudioFields() {
@@ -282,5 +285,24 @@ final class PersistentLoadRuntimePreservationTests: XCTestCase {
             themeOverride: .light
         )
         return (viewModel, state, persistentState)
+    }
+
+    private func expectedAudioOutput(from state: LiveRuntimeState) -> AudioRoutingOutput {
+        let context = state.audio.routingContext
+        return AudioRoutingEngine.output(for: AudioRoutingInput(
+            masterVolume: state.audio.masterVolume,
+            mediaVolume: state.audio.mediaVolume,
+            bgmVolume: state.audio.bgmVolume,
+            audioStrategy: state.audio.strategy,
+            isCurrentProgramMediaSource: context.isCurrentProgramMediaSource,
+            isMediaPlaying: context.isMediaPlaying,
+            isBGMAudioTakeoverActive: state.audio.isBGMTakeoverActive,
+            isSpeakerMode: state.audio.isSpeakerMode,
+            isPanicMode: context.isPanicMode,
+            isMasterMuted: state.audio.isMasterMuted,
+            isMediaMuted: state.audio.isMediaMuted,
+            isBGMMuted: state.audio.isBGMMuted,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        ))
     }
 }
