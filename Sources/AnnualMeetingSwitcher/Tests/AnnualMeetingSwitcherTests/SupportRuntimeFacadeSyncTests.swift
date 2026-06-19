@@ -66,6 +66,28 @@ final class SupportRuntimeFacadeSyncTests: XCTestCase {
         XCTAssertEqual(viewModel.supportEvents, [existing])
     }
 
+    func testRecordSupportEventProjectsSupportWhenSupportOwned() {
+        let viewModel = makeViewModel(bridgeMode: .supportOwned)
+
+        viewModel.recordSupportEvent(kind: .appleScriptFailed, detail: "action=keynote.next-slide,error=failed")
+
+        XCTAssertEqual(viewModel.supportEvents.map(\.kind), [.appleScriptFailed])
+    }
+
+    func testRecordSupportEventDoesNotProjectRuntimeSupportBeforeSupportOwnership() {
+        let viewModel = makeViewModel(bridgeMode: .automationNoticeOwned)
+        let existing = LiveSupportEvent(
+            timestamp: Date(timeIntervalSince1970: 1),
+            kind: .projectionStarted,
+            detail: "source=facade"
+        )
+        viewModel.applySupportEventsProjectionFromRuntime([existing])
+
+        viewModel.recordSupportEvent(kind: .appleScriptFailed, detail: "action=keynote.next-slide,error=failed")
+
+        XCTAssertEqual(viewModel.supportEvents, [existing])
+    }
+
     func testSupportFacadeSyncUsesSupportOwnershipGuard() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift")
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "syncSupportFacadeFromRuntime"))

@@ -130,6 +130,16 @@ final class PPTModeOwnershipTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
     }
 
+    func testDispatchPPTIntentClearsPendingSourceAfterSuccessfulStart() {
+        let viewModel = makeViewModel()
+        viewModel.testHooks.pageInterceptStartOverride = { true }
+
+        viewModel.setPPTMode(true, source: .liveMode)
+
+        XCTAssertNil(viewModel.currentPendingPPTToggleSource())
+        XCTAssertTrue(viewModel.runtime.state.ppt.isEventTapActive)
+    }
+
     func testPPTWPSKeyForwardingRemainsViewModelOwned() throws {
         let pptEventTapSource = try sourceText("ViewModel+PPTEventTap.swift")
         let effectPortSource = try runtimeSourceText("LiveRuntimeEffectPortKind.swift")
