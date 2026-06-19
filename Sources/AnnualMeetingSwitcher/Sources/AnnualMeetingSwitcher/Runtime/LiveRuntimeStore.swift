@@ -155,6 +155,7 @@ enum LiveRuntimeActionLogPolicy {
              .presentationQueryResultConsumed,
              .programActivationCompleted,
              .facadeLoadedProgramQueue,
+             .facadeBGMLibraryChanged,
              .bgmProgressUpdated,
              .mediaSeekCompleted,
              .panicBGMPauseDelayElapsed:

@@ -288,6 +288,16 @@ enum LiveRuntimeReducer {
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
+        case .facadeBGMLibraryChanged(let items):
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            BGMRuntimeReducer.replaceLibrary(
+                items,
+                state: &state,
+                effects: &effects,
+                liveAudioFadeDuration: environment.liveAudioFadeDuration,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
         case .operatorToggledPPTMode(let source):
             guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }
             PPTRuntimeReducer.toggleMode(

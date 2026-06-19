@@ -249,6 +249,11 @@ product boundary.
 - Runtime callback ownership guard hardening does not add live controls or
   change production callback behavior. It only makes async Media/BGM callbacks
   obey existing Runtime ownership before mutating state.
+- ViewModel-owned collections that drive Runtime decisions must have one
+  explicit mirror update path. BGM library edits use
+  `facadeBGMLibraryChanged` to mirror add, remove, and move operations into
+  Runtime BGM state without adding Live mode controls or moving BGM library
+  editing out of Setup.
 - Media/BGM callback validation source hardening does not add live controls or
   change the operator workflow. It only makes async callback identity validation
   read Runtime-owned current program, media generation, BGM current item, and
