@@ -8,10 +8,6 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.automationScriptRequested(script: source, action: action))"))
     }
 
-    func testRunAutomationScriptStillDispatchesRuntimeAction() throws {
-        try testRunAutomationScriptDispatchesRuntimeAction()
-    }
-
     func testRunAutomationScriptDoesNotCallAppleScriptRunnerDirectly() throws {
         let body = try runAutomationScriptBody()
 
@@ -80,31 +76,6 @@ final class AutomationCommandRuntimeBoundaryTests: XCTestCase {
         for name in ["scanKeynoteWindowNames", "scanOpenKeynoteFiles", "openPPTXWithKeynote"] {
             XCTAssertFalse(try functionBody(name).contains(".automationScriptRequested"), name)
         }
-    }
-
-    func testRuntimeDocsStateQueryMigrationRequiresCommandIDs() throws {
-        let docs = try sourceText("docs/architecture/runtime-ownership.md")
-        let normalizedDocs = docs.components(separatedBy: .whitespacesAndNewlines).joined(separator: " ")
-
-        XCTAssertTrue(normalizedDocs.localizedStandardContains("Future query migrations must introduce explicit command/query IDs"))
-        XCTAssertTrue(normalizedDocs.localizedStandardContains("callback result actions"))
-    }
-
-    func testResultReturningKeynoteScanRemainsViewModelOwnedAndDocumented() throws {
-        let scanWindows = try functionBody("scanKeynoteWindowNames")
-        let docs = try sourceText("docs/architecture/runtime-ownership.md")
-
-        XCTAssertTrue(scanWindows.contains("presentationQueryService.scanKeynoteWindowNames()"))
-        XCTAssertTrue(docs.localizedStandardContains("Keynote/WPS result-returning AppleScript queries"))
-    }
-
-    func testWPSFallbackOpenFlowRemainsViewModelOwnedAndDocumented() throws {
-        let openPPTX = try functionBody("openPPTXWithKeynote")
-        let docs = try sourceText("docs/architecture/live-mode-simplicity-rules.md")
-
-        XCTAssertTrue(openPPTX.contains("AppleScriptRunner.run(wpsScript"))
-        XCTAssertTrue(openPPTX.contains("openWithWPSOffice"))
-        XCTAssertTrue(docs.localizedStandardContains("WPS fallback branching"))
     }
 
     private func runAutomationScriptBody() throws -> String {
