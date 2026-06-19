@@ -78,33 +78,14 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 
 Related guides:
 
-- [`docs/qa/workspace-guard-v0.4.0.md`](docs/qa/workspace-guard-v0.4.0.md)
-- [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md)
-- [`docs/qa/workspace-guard-v0.3.8.md`](docs/qa/workspace-guard-v0.3.8.md)
-- [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)
-- [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
-- [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
-- [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
-- [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
-- [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
-- [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
-- [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
-- [`docs/qa/release-hygiene-v0.3.3.md`](docs/qa/release-hygiene-v0.3.3.md)
-- [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
-- [`docs/qa/release-hygiene-v0.3.2.md`](docs/qa/release-hygiene-v0.3.2.md)
-- [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)
-- [`docs/qa/release-hygiene-v0.3.1.md`](docs/qa/release-hygiene-v0.3.1.md)
-- [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)
-- [`docs/qa/release-hygiene-v0.3.0.md`](docs/qa/release-hygiene-v0.3.0.md)
-- [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)
-- [`docs/qa/release-hygiene-v0.2.9.md`](docs/qa/release-hygiene-v0.2.9.md)
-- [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)
-- [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)
-- [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)
-- [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)
-- [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md)
-- [`docs/qa/live-preflight-v0.2.2.md`](docs/qa/live-preflight-v0.2.2.md)
-- [`docs/qa/live-regression-v0.2.1.md`](docs/qa/live-regression-v0.2.1.md)
+- [Release Candidate rehearsal](docs/qa/release-candidate-rehearsal.md)
+- [v0.4.0 release hygiene](docs/qa/release-hygiene-v0.4.0.md)
+- [v0.4.0 workspace guard](docs/qa/workspace-guard-v0.4.0.md)
+- [Current UI verification](docs/qa/ui-current-main.md)
+- [Runtime ownership](docs/architecture/runtime-ownership.md)
+- [Live Mode simplicity rules](docs/architecture/live-mode-simplicity-rules.md)
+
+Older version-specific QA notes remain historical references and are not the current release gate.
 
 ## v0.2 Live Safety Baseline
 
