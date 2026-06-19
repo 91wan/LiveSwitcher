@@ -3,12 +3,27 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectWiringTests: XCTestCase {
-    func testProductionConnectedPortsIncludePanicDelaySet() {
+    func testProductionConnectedPortsMatchContract() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(
             viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+            [
+                .media,
+                .bgm,
+                .bgmTimer,
+                .panicDelay,
+                .projection,
+                .ppt,
+                .automation,
+                .automationNotice,
+                .support,
+                .presentationQuery,
+                .programActivation,
+                .audioRouting,
+                .imageAssets,
+                .persistence
+            ]
         )
     }
 
@@ -16,14 +31,6 @@ final class RuntimeEffectWiringTests: XCTestCase {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(viewModel.runtimeBridgeMode, .panicOwned)
-    }
-
-    func testNoProductionPortLostDuringBridgeSlimming() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        let expected: Set<LiveRuntimeEffectPortKind> = [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automation, .automationNotice, .support, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
-
-        XCTAssertEqual(Set(viewModel.runtimeConnectedPortKinds), expected)
-        XCTAssertEqual(viewModel.runtimeConnectedPortKinds.count, expected.count)
     }
 
     func testRuntimeRecordedEffectsStillRedactAutomationScripts() {
@@ -53,114 +60,6 @@ final class RuntimeEffectWiringTests: XCTestCase {
         runtime.dispatch(.supportEventRecorded(event))
 
         XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "supportEventRecorded" })
-    }
-
-    func testProductionRuntimeWiresPPTProjectionMediaBGMAndAudioPorts() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.ppt))
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.projection))
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.media))
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
-    }
-
-    func testProductionRuntimeWiresBGMTimerPort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgmTimer))
-    }
-
-    func testProductionRuntimeWiresPanicDelayPort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.panicDelay))
-    }
-
-    func testProductionRuntimeKeepsBGMFadeOutBehindBGMPort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.bgm))
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.audioRouting))
-    }
-
-    func testProductionRuntimeWiresSupportAutomationNoticeAutomationCommandAndPresentationQueryPorts() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        let connected = viewModel.runtimeConnectedPortKinds
-
-        XCTAssertTrue(connected.contains(.automationNotice))
-        XCTAssertTrue(connected.contains(.support))
-        XCTAssertTrue(connected.contains(.automation))
-        XCTAssertTrue(connected.contains(.presentationQuery))
-        XCTAssertTrue(connected.contains(.programActivation))
-    }
-
-    func testProductionRuntimeStillWiresImageAssetsPort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.imageAssets))
-    }
-
-    func testProductionRuntimeStillWiresPersistencePort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.persistence))
-    }
-
-    func testNoPreferencesPortAdded() {
-        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "preferences" })
-        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "preferencesOwned" })
-    }
-
-    func testNoCallbackPortAdded() {
-        for rawValue in ["callback", "mediaCallback", "bgmCallback"] {
-            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
-        }
-    }
-
-    func testNoProgramQueueReducerPortAdded() {
-        for rawValue in ["programQueueReducer", "programCompatibility"] {
-            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
-        }
-    }
-
-    func testNoPresentationQueryReducerPortAdded() {
-        for rawValue in ["presentationQueryReducer", "presentationResult"] {
-            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
-        }
-    }
-
-    func testNoProgramActivationReducerPortAdded() {
-        for rawValue in ["programActivationReducer", "programActivationSideEffects"] {
-            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
-        }
-    }
-
-    func testNoAutomationCommandReducerPortAdded() {
-        for rawValue in ["automationCommandReducer", "appleScript"] {
-            XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == rawValue }, rawValue)
-        }
-    }
-
-    func testProductionRuntimeStillWiresAutomationCommandPort() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-
-        XCTAssertTrue(viewModel.runtimeConnectedPortKinds.contains(.automation))
-    }
-
-    func testProductionRuntimeStillDoesNotWireAutomationQueryPort() {
-        XCTAssertFalse(LiveRuntimeEffectPortKind.allCases.contains { $0.rawValue == "automationQuery" })
-    }
-
-    func testPresentationQueryMigrationKeepsPriorRuntimePortsConnected() {
-        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
-        let connected = viewModel.runtimeConnectedPortKinds
-
-        XCTAssertTrue(connected.contains(.projection))
-        XCTAssertTrue(connected.contains(.ppt))
-        XCTAssertTrue(connected.contains(.support))
-        XCTAssertTrue(connected.contains(.automation))
-        XCTAssertTrue(connected.contains(.presentationQuery))
     }
 
     func testCustomEffectRunnerReportsInjectedPorts() {

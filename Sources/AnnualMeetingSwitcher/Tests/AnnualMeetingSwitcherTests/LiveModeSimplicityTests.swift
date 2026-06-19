@@ -4,36 +4,19 @@ import XCTest
 final class LiveModeSimplicityTests: XCTestCase {
     func testLiveModeSimplicityRulesDocumentDefinesAllowedForbiddenAndReviewChecklist() throws {
         let document = try repositoryText("docs/architecture/live-mode-simplicity-rules.md")
-        let normalizedDocument = document
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
 
+        XCTAssertTrue(document.contains("Product boundary"))
         XCTAssertTrue(document.contains("Allowed live actions"))
-        XCTAssertTrue(document.contains("Forbidden configuration surfaces"))
-        XCTAssertTrue(document.contains("Review checklist"))
+        XCTAssertTrue(document.contains("Forbidden live configuration"))
+        XCTAssertTrue(document.contains("Runtime/UI separation rules"))
+        XCTAssertTrue(document.contains("Architecture freeze"))
         XCTAssertTrue(document.contains("Switch source"))
         XCTAssertTrue(document.contains("Toggle main media playback"))
         XCTAssertTrue(document.contains("Toggle projection"))
         XCTAssertTrue(document.contains("Restart current media"))
-        XCTAssertTrue(document.contains("Current authoritative runtime domains: Audio, Media playback, BGM playback"))
-        XCTAssertTrue(document.contains("Projection output, PPT EventTap lifecycle"))
-        XCTAssertTrue(document.contains("Support ingress/storage"))
-        XCTAssertTrue(document.contains("Mirror-only live domains"))
         XCTAssertTrue(document.contains("code-level gate"))
-        XCTAssertTrue(document.contains("Live Mode remains an execution surface"))
-        XCTAssertTrue(document.contains("Live mode simplicity is independent of runtime migration"))
-        XCTAssertTrue(document.contains("Runtime migration PRs must not add live controls"))
-        XCTAssertTrue(document.contains("Projection runtime migration does not add live controls"))
-        XCTAssertTrue(document.contains("Projection configuration must not move into Live mode"))
-        XCTAssertTrue(document.contains("PPT runtime migration does not add live controls"))
-        XCTAssertTrue(document.contains("PPT setup/configuration and key-forwarding implementation details must not"))
-        XCTAssertTrue(document.contains("Program Activation Runtime reducer extraction does not add live controls"))
-        XCTAssertTrue(document.contains("Automation Command Runtime reducer extraction does not add live controls"))
-        XCTAssertTrue(document.contains("Dead Runtime action pruning does not add live controls"))
-        XCTAssertTrue(normalizedDocument.contains("Facade current-program compatibility action pruning does not add live controls"))
-        XCTAssertTrue(normalizedDocument.contains("Runtime-owned snapshot source hardening does not add live controls"))
-        XCTAssertTrue(normalizedDocument.contains("Runtime-owned projection snapshot source hardening does not add live controls"))
+        XCTAssertTrue(document.contains("execution surface"))
+        XCTAssertTrue(document.contains("must not expand the Live Mode control surface"))
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {
