@@ -115,13 +115,24 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
     func testApplyPersistentStateSourceUsesRuntimeHydrationHelper() throws {
         let source = try persistenceSource()
 
-        XCTAssertTrue(source.contains("applyPersistentStateToRuntimeIfOwned"))
+        XCTAssertTrue(source.contains("runtime.hydratePersistentOwnedState(state)"))
         XCTAssertTrue(source.contains("projectPersistentStateToFacadeDuringLoad"))
-        XCTAssertTrue(source.contains("bridgeMode.owns(.audio)"))
-        XCTAssertTrue(source.contains("bridgeMode.owns(.bgm)"))
-        XCTAssertTrue(source.contains("bridgeMode.owns(.persistence)"))
-        XCTAssertTrue(source.contains("runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: false)"))
+        XCTAssertFalse(source.contains("applyPersistentStateToRuntimeIfOwned"))
+        XCTAssertFalse(source.contains("runtimeState.audio.strategy"))
+        XCTAssertFalse(source.contains("runtimeState.audio.isSpeakerMode"))
+        XCTAssertFalse(source.contains("runtimeState.bgm.playMode"))
+        XCTAssertFalse(source.contains("runtimeState.preferences ="))
+        XCTAssertFalse(source.contains("AudioRuntimeReducer.recalculateAudio"))
         XCTAssertFalse(source.contains("replaceStateForPersistentLoad"))
+    }
+
+    func testApplyPersistentStateHydratesRuntimeAfterFinalFacadeSync() throws {
+        let source = try persistenceSource()
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "applyPersistentState"))
+        let syncRange = try XCTUnwrap(body.range(of: "syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)"))
+        let hydrateRange = try XCTUnwrap(body.range(of: "runtime.hydratePersistentOwnedState(state)"))
+
+        XCTAssertLessThan(syncRange.lowerBound, hydrateRange.lowerBound)
     }
 
     func testPersistentProjectionUsesScopedFacadeDispatchSuppression() throws {
@@ -260,7 +271,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
     func testPersistentLoadUsesExistingFacadeSyncReplacementAPI() throws {
         let source = try persistenceSource()
 
-        XCTAssertTrue(source.contains("runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: false)"))
+        XCTAssertTrue(source.contains("syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)"))
         XCTAssertFalse(source.contains("preservingActionLog"))
     }
 
@@ -291,8 +302,8 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.audio.masterVolume, 0.2)
         XCTAssertTrue(viewModel.runtime.state.audio.isMasterMuted)
         XCTAssertTrue(viewModel.runtime.state.audio.isBGMTakeoverActive)
-        XCTAssertEqual(viewModel.runtime.state.audio.effectiveMedia, 0.1)
-        XCTAssertEqual(viewModel.runtime.state.audio.effectiveBGM, 0.4)
+        XCTAssertEqual(viewModel.runtime.state.audio.effectiveMedia, 0)
+        XCTAssertEqual(viewModel.runtime.state.audio.effectiveBGM, 0)
     }
 
     func testPersistentHydrationDoesNotResetBGMPlaybackFields() {

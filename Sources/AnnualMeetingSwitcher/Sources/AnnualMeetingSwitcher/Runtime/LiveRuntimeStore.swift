@@ -78,6 +78,42 @@ final class LiveRuntimeStore {
         }
     }
 
+    func hydratePersistentOwnedState(_ persistentState: SwitcherPersistentState) {
+        var nextState = state
+        let bridgeMode = environment.bridgeMode
+
+        if bridgeMode.owns(.audio) {
+            nextState.audio.strategy = persistentState.audioStrategy
+            nextState.audio.isSpeakerMode = persistentState.isSpeakerMode
+        }
+
+        if bridgeMode.owns(.bgm) {
+            nextState.bgm.playMode = persistentState.bgmPlayMode
+        }
+
+        if bridgeMode.owns(.persistence) {
+            nextState.mode = persistentState.consoleMode
+            nextState.preferences = LiveRuntimePreferenceState(
+                themeOverride: persistentState.themeOverride,
+                activeWallpaperURL: persistentState.activeWallpaperURL,
+                cornerLogoURL: persistentState.cornerLogoURL,
+                autoPlayNextVideoOnEnd: persistentState.autoPlayNextVideoOnEnd,
+                autoAdvanceAtScheduledTime: persistentState.autoAdvanceAtScheduledTime,
+                showAgendaTimeline: persistentState.showAgendaTimeline,
+                cornerLogoPosition: persistentState.cornerLogoPosition
+            )
+        }
+
+        if bridgeMode.owns(.audio) {
+            AudioRuntimeReducer.recalculateAudio(
+                &nextState,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+        }
+
+        state = nextState
+    }
+
     private static func summary(for state: LiveRuntimeState) -> String {
         let programSummary: String
         if let currentID = state.program.currentID {

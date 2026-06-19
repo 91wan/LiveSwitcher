@@ -57,8 +57,8 @@ extension SwitcherViewModel {
         countdownPresets = state.countdownPresets
         tickerPresets = state.tickerPresets
         loadPersistentImageAssetsAfterFacadeProjection()
-        applyPersistentStateToRuntimeIfOwned(state, bridgeMode: bridgeMode)
         syncRuntimeStateFromFacade(clearActionLog: false, dispatchAudioInputsChanged: false)
+        runtime.hydratePersistentOwnedState(state)
     }
 
     private func projectPersistentStateToFacadeDuringLoad(
@@ -114,43 +114,6 @@ extension SwitcherViewModel {
             showAgendaTimeline: showAgendaTimeline,
             cornerLogoPosition: cornerLogoPosition
         )
-    }
-
-    private func applyPersistentStateToRuntimeIfOwned(
-        _ state: SwitcherPersistentState,
-        bridgeMode: LiveRuntimeBridgeMode
-    ) {
-        var runtimeState = runtime.state
-        var shouldReplaceRuntimeState = false
-
-        if bridgeMode.owns(.audio) {
-            runtimeState.audio.strategy = state.audioStrategy
-            runtimeState.audio.isSpeakerMode = state.isSpeakerMode
-            shouldReplaceRuntimeState = true
-        }
-
-        if bridgeMode.owns(.bgm) {
-            runtimeState.bgm.playMode = state.bgmPlayMode
-            shouldReplaceRuntimeState = true
-        }
-
-        if bridgeMode.owns(.persistence) {
-            runtimeState.mode = state.consoleMode
-            runtimeState.preferences = LiveRuntimePreferenceState(
-                themeOverride: state.themeOverride,
-                activeWallpaperURL: state.activeWallpaperURL,
-                cornerLogoURL: state.cornerLogoURL,
-                autoPlayNextVideoOnEnd: state.autoPlayNextVideoOnEnd,
-                autoAdvanceAtScheduledTime: state.autoAdvanceAtScheduledTime,
-                showAgendaTimeline: state.showAgendaTimeline,
-                cornerLogoPosition: state.cornerLogoPosition
-            )
-            shouldReplaceRuntimeState = true
-        }
-
-        guard shouldReplaceRuntimeState else { return }
-
-        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: false)
     }
 
     func persistConsoleModeFromRuntime(_ mode: ConsoleMode) {
