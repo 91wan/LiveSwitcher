@@ -46,15 +46,18 @@ extension SwitcherViewModel {
             importedCount += 1
         }
         if importedCount > 0 {
+            dispatchRuntimeFacadeAction(.facadeBGMLibraryChanged(bgmItems))
             saveData()
         }
         return importedCount
     }
 
     func removeBGMItem(_ item: BGMItem) {
+        let wasCurrent = currentBGMItem?.id == item.id
+            || runtime.state.bgm.currentID == item.id
         bgmItems.removeAll { $0.id == item.id }
-        if currentBGMItem?.id == item.id {
-            dispatchRuntimeFacadeAction(.operatorStoppedBGM)
+        dispatchRuntimeFacadeAction(.facadeBGMLibraryChanged(bgmItems))
+        if wasCurrent {
             recordBGMPlaybackState(isPlaying: false, reason: "removed")
         }
         saveData()
@@ -62,6 +65,7 @@ extension SwitcherViewModel {
 
     func moveBGMItems(from source: IndexSet, to destination: Int) {
         bgmItems.move(fromOffsets: source, toOffset: destination)
+        dispatchRuntimeFacadeAction(.facadeBGMLibraryChanged(bgmItems))
         saveData()
     }
 
@@ -75,6 +79,7 @@ extension SwitcherViewModel {
         for (scopedIndex, originalIndex) in categoryOffsets.enumerated() {
             bgmItems[originalIndex] = scopedItems[scopedIndex]
         }
+        dispatchRuntimeFacadeAction(.facadeBGMLibraryChanged(bgmItems))
         saveData()
     }
 

@@ -92,7 +92,8 @@ final class BGMProgressStoreTests: XCTestCase {
         let removeBody = try XCTUnwrap(source.functionBody(named: "removeBGMItem"))
 
         XCTAssertFalse(removeBody.contains("bgmAudioPlayer?.stop()"))
-        XCTAssertTrue(removeBody.contains(".operatorStoppedBGM"))
+        XCTAssertTrue(removeBody.contains(".facadeBGMLibraryChanged"))
+        XCTAssertFalse(removeBody.contains(".operatorStoppedBGM"))
     }
 
     func testFallbackBGMProgressTimerSamplesFallbackPlayerTime() throws {

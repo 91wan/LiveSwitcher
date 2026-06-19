@@ -139,6 +139,16 @@ progress, duration, generation, and `playMode` are preserved from
 snapshot source. BGM library items remain ViewModel-owned and enter the runtime
 snapshot only through `runtimeBGMItemsForSnapshot()`, which also preserves the
 current Runtime BGM item when it is missing from the ViewModel library.
+BGM library metadata and edit ownership remain in the ViewModel facade, but
+Runtime BGM decisions require an immediate mirror when `.bgm` is owned.
+`facadeBGMLibraryChanged([BGMItem])` is the only owner-to-Runtime mirror update
+path for add, remove, and move operations. It updates the Runtime BGM item
+mirror immediately; if the deleted item is the current Runtime BGM, Runtime
+clears the current BGM, stops BGM playback, stops the BGM timer, clears Panic's
+BGM resume snapshot for that item, and recalculates audio routing. Normal BGM
+stop still preserves the selected current BGM. BGM timer stop commands are
+monotonic by generation so stale stop requests cannot cancel a newer active
+timer. Production bridge mode remains `.panicOwned`.
 When `.persistence` is owned, `makeRuntimeStateSnapshot()` preserves
 `runtime.state.mode` and `runtime.state.preferences`; ViewModel preference
 properties are facade inputs, not a second source of truth after persistence

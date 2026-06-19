@@ -323,7 +323,8 @@ extension SwitcherViewModel {
     }
 
     func stopBGMTimer(generation: Int) {
-        guard activeBGMTimerGenerationForRuntime() == generation else { return }
+        guard let activeGeneration = activeBGMTimerGenerationForRuntime() else { return }
+        guard activeGeneration <= generation else { return }
         stopActiveBGMTimer()
     }
 
