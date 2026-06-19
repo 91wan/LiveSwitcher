@@ -2,421 +2,176 @@ import XCTest
 @testable import LiveSwitcher
 
 final class RuntimeFacadeSyncPolicyTests: XCTestCase {
-    func testAudioInputActionsDoNotDispatchExtraAudioInputs() {
-        for action in audioInputActions {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testMediaAndBGMCallbacksDoNotDispatchExtraAudioInputs() {
-        for action in [
-            LiveRuntimeAction.mediaPlaybackChanged(isPlaying: true, generation: 1),
-            .mediaReachedEnd(generation: 1),
-            .bgmPlaybackChanged(isPlaying: true, generation: 2),
-            .bgmReachedEnd(generation: 2),
-            .bgmFailed(reason: "decode", generation: 2)
-        ] {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testProgramAndProjectionActionsDispatchAudioInputsBeforeRuntime() {
-        for action in [
-            LiveRuntimeAction.operatorSelectedProgram(UUID()),
-            .operatorSelectedDetachedProgram(ProgramItem(title: "Detached")),
-            .operatorToggledProjection,
-            .projectionExternalDisplayAvailable
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testBGMActionsSyncBGMFacade() {
-        for action in [
-            LiveRuntimeAction.operatorSelectedBGM(UUID()),
-            .operatorStoppedBGM,
-            .operatorSelectedNextBGM,
-            .operatorSelectedPreviousBGM,
-            .operatorSelectedBGMPlayMode(.loopAll),
-            .bgmPlaybackChanged(isPlaying: true, generation: 1),
-            .bgmReachedEnd(generation: 1),
-            .bgmFailed(reason: "decode", generation: 1),
-            .bgmProgressUpdated(time: 1, duration: 10, generation: 1)
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncBGM, action.redactedName)
-        }
-    }
-
-    func testProjectionActionsSyncProjectionFacade() {
-        for action in [
-            LiveRuntimeAction.operatorToggledProjection,
-            .projectionStartFailed(reason: .noTargetScreen),
-            .projectionExternalDisplayLost,
-            .projectionExternalDisplayAvailable,
-            .projectionExternalDisplayUnavailable
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncProjection, action.redactedName)
-        }
-    }
-
-    func testPPTActionsSyncPPTFacade() {
-        for action in [
-            LiveRuntimeAction.operatorSetPPTMode(true, source: .programmatic),
-            .operatorToggledPPTMode(source: .programmatic),
-            .pptEventTapStarted,
-            .pptEventTapFailed(reason: "permission"),
-            .pptEventTapStopped(reason: .operatorDisabled)
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncPPT, action.redactedName)
-        }
-    }
-
-    func testPPTSetModeStillSyncsPPTFacade() {
-        XCTAssertTrue(
-            LiveRuntimeFacadeSyncPolicy.options(for: .operatorSetPPTMode(true, source: .programmatic)).syncPPT
-        )
-    }
-
-    func testPPTToggleModeStillSyncsPPTFacade() {
-        XCTAssertTrue(
-            LiveRuntimeFacadeSyncPolicy.options(for: .operatorToggledPPTMode(source: .programmatic)).syncPPT
-        )
-    }
-
-    func testPPTCallbacksStillSyncPPTFacade() {
-        for action in [
-            LiveRuntimeAction.pptEventTapStarted,
-            .pptEventTapFailed(reason: "permission"),
-            .pptEventTapStopped(reason: .operatorDisabled)
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncPPT, action.redactedName)
-        }
-    }
-
-    func testPPTActionsDoNotDispatchAudioInputs() {
-        for action in pptActions {
-            XCTAssertFalse(
-                LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged,
-                action.redactedName
+    func testFacadeSyncOptionsMatrix() {
+        for testCase in cases {
+            XCTAssertEqual(
+                LiveRuntimeFacadeSyncPolicy.options(for: testCase.action),
+                testCase.expected,
+                testCase.name
             )
         }
     }
 
-    func testPPTActionsDoNotSyncUnrelatedFacades() {
-        for action in pptActions {
-            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
-
-            XCTAssertFalse(options.syncBGM, action.redactedName)
-            XCTAssertFalse(options.syncProjection, action.redactedName)
-            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
-            XCTAssertFalse(options.syncSupport, action.redactedName)
-            XCTAssertFalse(options.syncProgramQueue, action.redactedName)
-            XCTAssertFalse(options.syncCurrentProgram, action.redactedName)
-            XCTAssertFalse(options.syncPanic, action.redactedName)
-        }
-    }
-
-    func testAutomationNoticeActionsSyncAutomationNoticeFacade() {
-        for action in [
-            LiveRuntimeAction.automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
-            .automationNoticeRequested(action: "keynote.next-slide"),
-            .automationNoticeExpired(UUID()),
-            .automationNoticeDismissed
-        ] {
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncAutomationNotice, action.redactedName)
-        }
-    }
-
-    func testSupportEventRecordedStillSyncsSupportFacadeThroughPolicy() {
+    private var cases: [Case] {
+        let programID = UUID()
+        let queryID = UUID()
         let event = LiveSupportEvent(
             timestamp: Date(timeIntervalSince1970: 1),
             kind: .appleScriptFailed,
             detail: "action=keynote.next-slide,error=executionFailed"
         )
-
-        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncSupport)
-    }
-
-    func testAutomationNoticeActionsStillSyncAutomationNoticeFacadeThroughPolicy() {
-        let actions: [LiveRuntimeAction] = [
-            .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
-            .automationNoticeRequested(action: "keynote.next-slide"),
-            .automationNoticeExpired(UUID()),
-            .automationNoticeDismissed
-        ]
-
-        actions.forEach { action in
-            XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: action).syncAutomationNotice, action.redactedName)
-        }
-    }
-
-    func testAutomationFailedAlsoSyncsSupportFacadeThroughPolicy() {
-        XCTAssertTrue(
-            LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
-                action: "keynote.next-slide",
-                sanitizedMessage: "executionFailed"
-            )).syncSupport
-        )
-    }
-
-    func testSupportAndAutomationNoticeActionsDoNotDispatchAudioInputs() {
-        let event = LiveSupportEvent(
-            timestamp: Date(timeIntervalSince1970: 1),
-            kind: .appleScriptFailed,
-            detail: "action=keynote.next-slide,error=executionFailed"
-        )
-        let actions: [LiveRuntimeAction] = [
-            .supportEventRecorded(event),
-            .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
-            .automationNoticeRequested(action: "keynote.next-slide"),
-            .automationNoticeExpired(UUID()),
-            .automationNoticeDismissed
-        ]
-
-        actions.forEach { action in
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testSupportEventRecordedDoesNotSyncAutomationNoticeFacade() {
-        let event = LiveSupportEvent(
-            timestamp: Date(timeIntervalSince1970: 1),
-            kind: .appleScriptFailed,
-            detail: "action=keynote.next-slide,error=executionFailed"
-        )
-
-        XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncAutomationNotice)
-    }
-
-    func testAutomationNoticeRequestedDoesNotSyncSupportFacade() {
-        XCTAssertFalse(
-            LiveRuntimeFacadeSyncPolicy.options(for: .automationNoticeRequested(action: "keynote.next-slide")).syncSupport
-        )
-    }
-
-    func testAutomationFailedDoesNotSyncBGMProjectionPPTProgramOrPanicFacades() {
-        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
-            action: "keynote.next-slide",
-            sanitizedMessage: "executionFailed"
-        ))
-
-        XCTAssertFalse(options.syncBGM)
-        XCTAssertFalse(options.syncProjection)
-        XCTAssertFalse(options.syncPPT)
-        XCTAssertFalse(options.syncProgramQueue)
-        XCTAssertFalse(options.syncCurrentProgram)
-        XCTAssertFalse(options.syncPanic)
-    }
-
-    func testSupportEventRecordedSyncsSupportFacade() {
-        let event = LiveSupportEvent(
-            timestamp: Date(timeIntervalSince1970: 1),
-            kind: .appleScriptFailed,
-            detail: "action=keynote.next-slide,error=executionFailed"
-        )
-
-        XCTAssertTrue(LiveRuntimeFacadeSyncPolicy.options(for: .supportEventRecorded(event)).syncSupport)
-    }
-
-    func testPresentationQueryActionsDoNotDispatchAudioInputs() {
-        for action in presentationQueryActions {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testPresentationQueryActionsDoNotSyncUnrelatedFacades() {
-        for action in presentationQueryActions {
-            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
-
-            XCTAssertFalse(options.syncBGM, action.redactedName)
-            XCTAssertFalse(options.syncProjection, action.redactedName)
-            XCTAssertFalse(options.syncPPT, action.redactedName)
-            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
-            XCTAssertFalse(options.syncSupport, action.redactedName)
-        }
-    }
-
-    func testProgramActivationActionsDoNotDispatchAudioInputs() {
-        for action in programActivationActions {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).dispatchAudioInputsChanged, action.redactedName)
-        }
-    }
-
-    func testProgramActivationActionsDoNotSyncCurrentProgramFacade() {
-        for action in programActivationActions {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).syncCurrentProgram, action.redactedName)
-        }
-    }
-
-    func testProgramActivationActionsDoNotSyncProgramQueueFacade() {
-        for action in programActivationActions {
-            XCTAssertFalse(LiveRuntimeFacadeSyncPolicy.options(for: action).syncProgramQueue, action.redactedName)
-        }
-    }
-
-    func testProgramActivationActionsDoNotSyncUnrelatedFacades() {
-        for action in programActivationActions {
-            let options = LiveRuntimeFacadeSyncPolicy.options(for: action)
-
-            XCTAssertFalse(options.syncBGM, action.redactedName)
-            XCTAssertFalse(options.syncProjection, action.redactedName)
-            XCTAssertFalse(options.syncPPT, action.redactedName)
-            XCTAssertFalse(options.syncAutomationNotice, action.redactedName)
-            XCTAssertFalse(options.syncSupport, action.redactedName)
-        }
-    }
-
-    func testAutomationScriptRequestedDoesNotDispatchAudioInputs() {
-        XCTAssertFalse(
-            LiveRuntimeFacadeSyncPolicy.options(for: automationScriptRequested).dispatchAudioInputsChanged
-        )
-    }
-
-    func testAutomationScriptRequestedDoesNotSyncUnrelatedFacades() {
-        let options = LiveRuntimeFacadeSyncPolicy.options(for: automationScriptRequested)
-
-        XCTAssertFalse(options.syncBGM)
-        XCTAssertFalse(options.syncProjection)
-        XCTAssertFalse(options.syncPPT)
-        XCTAssertFalse(options.syncAutomationNotice)
-        XCTAssertFalse(options.syncSupport)
-        XCTAssertFalse(options.syncProgramQueue)
-        XCTAssertFalse(options.syncCurrentProgram)
-        XCTAssertFalse(options.syncPanic)
-    }
-
-    func testAutomationFailedStillSyncsAutomationNoticeFacade() {
-        let options = LiveRuntimeFacadeSyncPolicy.options(for: .automationFailed(
-            action: "keynote.scan.windows",
-            sanitizedMessage: "permissionDenied"
-        ))
-
-        XCTAssertTrue(options.syncAutomationNotice)
-    }
-
-    func testPolicyMatchesPreviousViewModelBehaviorForKnownActions() {
-        XCTAssertEqual(
-            LiveRuntimeFacadeSyncPolicy.options(for: .operatorSelectedProgram(UUID())),
-            LiveRuntimeFacadeSyncOptions(
-                dispatchAudioInputsChanged: true,
-                syncBGM: false,
-                syncProjection: false,
-                syncPPT: false,
-                syncAutomationNotice: false,
-                syncSupport: false,
-                syncProgramQueue: false,
-                syncCurrentProgram: true,
-                syncPanic: false
-            )
-        )
-        XCTAssertEqual(
-            LiveRuntimeFacadeSyncPolicy.options(for: .operatorSelectedBGM(UUID())),
-            LiveRuntimeFacadeSyncOptions(
-                dispatchAudioInputsChanged: true,
-                syncBGM: true,
-                syncProjection: false,
-                syncPPT: false,
-                syncAutomationNotice: false,
-                syncSupport: false,
-                syncProgramQueue: false,
-                syncCurrentProgram: false,
-                syncPanic: false
-            )
-        )
-        XCTAssertEqual(
-            LiveRuntimeFacadeSyncPolicy.options(for: .facadeAudioInputsChanged(audioSnapshot)),
-            LiveRuntimeFacadeSyncOptions(
-                dispatchAudioInputsChanged: false,
-                syncBGM: false,
-                syncProjection: false,
-                syncPPT: false,
-                syncAutomationNotice: false,
-                syncSupport: false,
-                syncProgramQueue: false,
-                syncCurrentProgram: false,
-                syncPanic: false
-            )
-        )
-    }
-
-    private var audioInputActions: [LiveRuntimeAction] {
-        [
-            .operatorSelectedAudioStrategy(.mixed),
-            .operatorChangedMasterVolume(0.8),
-            .operatorChangedMediaVolume(0.7),
-            .operatorChangedBGMVolume(0.6),
-            .operatorChangedMasterMute(true),
-            .operatorChangedMediaMute(true),
-            .operatorChangedBGMMute(true),
-            .operatorChangedBGMTakeover(true),
-            .operatorToggledSpeakerMode,
-            .operatorSetSpeakerMode(true),
-            .mediaPlaybackChanged(isPlaying: true, generation: 1),
-            .mediaReachedEnd(generation: 1),
-            .bgmPlaybackChanged(isPlaying: true, generation: 1),
-            .bgmReachedEnd(generation: 1),
-            .bgmFailed(reason: "decode", generation: 1),
-            .operatorPausedBGMForPanic(generation: 1),
-            .operatorResumedBGMAfterPanic(generation: 1),
-            .facadeAudioInputsChanged(audioSnapshot)
-        ]
-    }
-
-    private var audioSnapshot: AudioFacadeSnapshot {
-        AudioFacadeSnapshot(
-            masterVolume: 1,
-            mediaVolume: 1,
-            bgmVolume: 1,
-            strategy: .mixed,
-            isMasterMuted: false,
-            isMediaMuted: false,
-            isBGMMuted: false,
-            isSpeakerMode: false,
-            isBGMTakeoverActive: false,
-            isPanicMode: false,
-            isCurrentProgramMediaSource: false,
-            isMediaPlaying: false,
-            isBGMPlaying: false
-        )
-    }
-
-    private var presentationQueryActions: [LiveRuntimeAction] {
-        let id = UUID()
         return [
-            .operatorRequestedPresentationQuery(id: id),
-            .presentationQueryCompleted(id: id, result: .empty),
-            .presentationQueryFailed(id: id, action: "keynote.scan.windows", sanitizedMessage: "permissionDenied"),
-            .presentationQueryResultConsumed(id: id)
+            Case(
+                "audio input action",
+                .operatorChangedMasterVolume(0.8),
+                expected: options()
+            ),
+            Case(
+                "current program selection dispatches audio and syncs current program",
+                .operatorSelectedProgram(programID),
+                expected: options(dispatchAudioInputsChanged: true, syncCurrentProgram: true)
+            ),
+            Case(
+                "detached current program selection dispatches audio and syncs current program",
+                .operatorSelectedDetachedProgram(ProgramItem(title: "Detached")),
+                expected: options(dispatchAudioInputsChanged: true, syncCurrentProgram: true)
+            ),
+            Case(
+                "current program clear syncs current program without audio",
+                .operatorClearedCurrentProgram(reason: .operatorCleared),
+                expected: options(syncCurrentProgram: true)
+            ),
+            Case(
+                "projection toggle dispatches audio and syncs projection",
+                .operatorToggledProjection,
+                expected: options(dispatchAudioInputsChanged: true, syncProjection: true)
+            ),
+            Case(
+                "projection failure dispatches audio and syncs projection",
+                .projectionStartFailed(reason: .noTargetScreen),
+                expected: options(dispatchAudioInputsChanged: true, syncProjection: true)
+            ),
+            Case(
+                "projection display callback dispatches audio and syncs projection",
+                .projectionExternalDisplayAvailable,
+                expected: options(dispatchAudioInputsChanged: true, syncProjection: true)
+            ),
+            Case(
+                "ppt intent syncs ppt only",
+                .operatorSetPPTMode(true, source: .programmatic),
+                expected: options(syncPPT: true)
+            ),
+            Case(
+                "ppt callback syncs ppt only",
+                .pptEventTapFailed(reason: "permission"),
+                expected: options(syncPPT: true)
+            ),
+            Case(
+                "automation notice request syncs automation notice only",
+                .automationNoticeRequested(action: "keynote.next-slide"),
+                expected: options(syncAutomationNotice: true)
+            ),
+            Case(
+                "automation failure syncs automation notice and support",
+                .automationFailed(action: "keynote.next-slide", sanitizedMessage: "executionFailed"),
+                expected: options(syncAutomationNotice: true, syncSupport: true)
+            ),
+            Case(
+                "support event syncs support only",
+                .supportEventRecorded(event),
+                expected: options(syncSupport: true)
+            ),
+            Case(
+                "program queue mutation syncs program queue only",
+                .operatorAddedProgramItems([ProgramItem(title: "Queued")]),
+                expected: options(syncProgramQueue: true)
+            ),
+            Case(
+                "program queue removal syncs queue and current program",
+                .operatorRemovedProgramItem(programID),
+                expected: options(syncProgramQueue: true, syncCurrentProgram: true)
+            ),
+            Case(
+                "presentation query consume syncs queue and current program",
+                .presentationQueryResultConsumed(id: queryID),
+                expected: options(syncProgramQueue: true, syncCurrentProgram: true)
+            ),
+            Case(
+                "bgm selection dispatches audio and syncs bgm",
+                .operatorSelectedBGM(UUID()),
+                expected: options(dispatchAudioInputsChanged: true, syncBGM: true)
+            ),
+            Case(
+                "bgm library mirror syncs bgm without audio dispatch",
+                .facadeBGMLibraryChanged([BGMItem(title: "Walk In", url: URL(fileURLWithPath: "/tmp/walk.mp3"))]),
+                expected: options(syncBGM: true)
+            ),
+            Case(
+                "bgm callback syncs bgm without audio dispatch",
+                .bgmPlaybackChanged(isPlaying: true, generation: 1),
+                expected: options(syncBGM: true)
+            ),
+            Case(
+                "panic set syncs panic and bgm without audio dispatch",
+                .operatorSetPanic(true),
+                expected: options(syncBGM: true, syncPanic: true)
+            ),
+            Case(
+                "panic delayed bgm pause syncs panic and bgm without audio dispatch",
+                .panicBGMPauseDelayElapsed(generation: 2, snapshot: PanicPlaybackSnapshot(
+                    currentProgramID: nil,
+                    wasMediaPlaying: false,
+                    currentBGMID: nil,
+                    wasBGMPlaying: false
+                )),
+                expected: options(syncBGM: true, syncPanic: true)
+            ),
+            Case(
+                "presentation query request has no facade sync",
+                .operatorRequestedPresentationQuery(id: queryID),
+                expected: options()
+            ),
+            Case(
+                "automation command request has no facade sync",
+                .automationScriptRequested(script: "tell application \"Keynote\" to activate", action: "keynote.activate"),
+                expected: options()
+            )
         ]
     }
 
-    private var pptActions: [LiveRuntimeAction] {
-        [
-            .operatorSetPPTMode(true, source: .programmatic),
-            .operatorToggledPPTMode(source: .programmatic),
-            .pptEventTapStarted,
-            .pptEventTapFailed(reason: "permission"),
-            .pptEventTapStopped(reason: .operatorDisabled)
-        ]
-    }
-
-    private var programActivationActions: [LiveRuntimeAction] {
-        let id = UUID()
-        return [
-            .operatorRequestedProgramActivation(id: id, plan: ProgramActivationPlan(
-                item: ProgramItem(title: "Private", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/private.mp4")),
-                runtimeSelection: .queued(UUID()),
-                preSelectionEffects: [],
-                postSelectionEffects: []
-            )),
-            .programActivationCompleted(id: id)
-        ]
-    }
-
-    private var automationScriptRequested: LiveRuntimeAction {
-        .automationScriptRequested(
-            script: "tell application \"Keynote\" to open POSIX file \"/Users/operator/private-show.key\"",
-            action: "keynote.open.present"
+    private func options(
+        dispatchAudioInputsChanged: Bool = false,
+        syncBGM: Bool = false,
+        syncProjection: Bool = false,
+        syncPPT: Bool = false,
+        syncAutomationNotice: Bool = false,
+        syncSupport: Bool = false,
+        syncProgramQueue: Bool = false,
+        syncCurrentProgram: Bool = false,
+        syncPanic: Bool = false
+    ) -> LiveRuntimeFacadeSyncOptions {
+        LiveRuntimeFacadeSyncOptions(
+            dispatchAudioInputsChanged: dispatchAudioInputsChanged,
+            syncBGM: syncBGM,
+            syncProjection: syncProjection,
+            syncPPT: syncPPT,
+            syncAutomationNotice: syncAutomationNotice,
+            syncSupport: syncSupport,
+            syncProgramQueue: syncProgramQueue,
+            syncCurrentProgram: syncCurrentProgram,
+            syncPanic: syncPanic
         )
+    }
+}
+
+private struct Case {
+    let name: String
+    let action: LiveRuntimeAction
+    let expected: LiveRuntimeFacadeSyncOptions
+
+    init(_ name: String, _ action: LiveRuntimeAction, expected: LiveRuntimeFacadeSyncOptions) {
+        self.name = name
+        self.action = action
+        self.expected = expected
     }
 }
