@@ -78,33 +78,16 @@ English maintainer note: `v0.4.0` extracts high-risk live-state logic from the V
 
 相关文档：
 
-- [`docs/qa/workspace-guard-v0.4.0.md`](docs/qa/workspace-guard-v0.4.0.md)
-- [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md)
-- [`docs/qa/workspace-guard-v0.3.8.md`](docs/qa/workspace-guard-v0.3.8.md)
-- [`docs/qa/release-hygiene-v0.3.8.md`](docs/qa/release-hygiene-v0.3.8.md)
-- [`docs/qa/workspace-guard-v0.3.6.md`](docs/qa/workspace-guard-v0.3.6.md)
-- [`docs/qa/release-hygiene-v0.3.6.md`](docs/qa/release-hygiene-v0.3.6.md)
-- [`docs/qa/workspace-guard-v0.3.5.md`](docs/qa/workspace-guard-v0.3.5.md)
-- [`docs/qa/release-hygiene-v0.3.5.md`](docs/qa/release-hygiene-v0.3.5.md)
-- [`docs/qa/live-overlay-reliability-v0.3.4.md`](docs/qa/live-overlay-reliability-v0.3.4.md)
-- [`docs/qa/release-hygiene-v0.3.4.md`](docs/qa/release-hygiene-v0.3.4.md)
-- [`docs/qa/live-safety-events-v0.3.3.md`](docs/qa/live-safety-events-v0.3.3.md)
-- [`docs/qa/release-hygiene-v0.3.3.md`](docs/qa/release-hygiene-v0.3.3.md)
-- [`docs/qa/live-action-guidance-v0.3.2.md`](docs/qa/live-action-guidance-v0.3.2.md)
-- [`docs/qa/release-hygiene-v0.3.2.md`](docs/qa/release-hygiene-v0.3.2.md)
-- [`docs/qa/live-safety-cockpit-v0.3.1.md`](docs/qa/live-safety-cockpit-v0.3.1.md)
-- [`docs/qa/release-hygiene-v0.3.1.md`](docs/qa/release-hygiene-v0.3.1.md)
-- [`docs/qa/live-safety-cockpit-v0.3.0.md`](docs/qa/live-safety-cockpit-v0.3.0.md)
-- [`docs/qa/release-hygiene-v0.3.0.md`](docs/qa/release-hygiene-v0.3.0.md)
-- [`docs/qa/live-support-report-hardening-v0.2.9.md`](docs/qa/live-support-report-hardening-v0.2.9.md)
-- [`docs/qa/release-hygiene-v0.2.9.md`](docs/qa/release-hygiene-v0.2.9.md)
-- [`docs/qa/live-support-report-v0.2.8.md`](docs/qa/live-support-report-v0.2.8.md)
-- [`docs/qa/live-diagnostics-v0.2.7.md`](docs/qa/live-diagnostics-v0.2.7.md)
-- [`docs/qa/live-preflight-focus-v0.2.5.md`](docs/qa/live-preflight-focus-v0.2.5.md)
-- [`docs/qa/live-preflight-summary-v0.2.4.md`](docs/qa/live-preflight-summary-v0.2.4.md)
-- [`docs/qa/live-preflight-actions-v0.2.3.md`](docs/qa/live-preflight-actions-v0.2.3.md)
-- [`docs/qa/live-preflight-v0.2.2.md`](docs/qa/live-preflight-v0.2.2.md)
-- [`docs/qa/live-regression-v0.2.1.md`](docs/qa/live-regression-v0.2.1.md)
+当前验收入口：
+
+- [Release Candidate 演练](docs/qa/release-candidate-rehearsal.md)
+- [v0.4.0 发布卫生检查](docs/qa/release-hygiene-v0.4.0.md)
+- [v0.4.0 工作区门禁](docs/qa/workspace-guard-v0.4.0.md)
+- [当前 UI 验证](docs/qa/ui-current-main.md)
+- [Runtime ownership](docs/architecture/runtime-ownership.md)
+- [Live Mode simplicity rules](docs/architecture/live-mode-simplicity-rules.md)
+
+旧版本 QA 文档仅供历史参考，不是当前发布门禁。
 
 ## v0.2 现场安全基线
 

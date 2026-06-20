@@ -22,7 +22,9 @@ final class ViewModelPanicTransitionOrderTests: XCTestCase {
         startBGM(bgm, in: viewModel)
 
         viewModel.togglePanicMode()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+        runMainLoop(until: {
+            !viewModel.isBGMPlaying && pauseBGMEffectCount(in: viewModel) == 1
+        })
 
         XCTAssertTrue(viewModel.isPanicMode)
         XCTAssertFalse(viewModel.isBGMPlaying)
@@ -37,7 +39,7 @@ final class ViewModelPanicTransitionOrderTests: XCTestCase {
 
         viewModel.togglePanicMode()
         viewModel.togglePanicMode()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+        runMainLoop(for: 0.2)
 
         XCTAssertFalse(viewModel.isPanicMode)
         XCTAssertTrue(viewModel.isBGMPlaying)
@@ -54,7 +56,7 @@ final class ViewModelPanicTransitionOrderTests: XCTestCase {
         var state = viewModel.runtime.state
         state.panic.generation += 1
         viewModel.runtime.replaceStateForFacadeSync(state)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+        runMainLoop(for: 0.2)
 
         XCTAssertTrue(viewModel.isPanicMode)
         XCTAssertTrue(viewModel.isBGMPlaying)
@@ -71,7 +73,7 @@ final class ViewModelPanicTransitionOrderTests: XCTestCase {
 
         viewModel.togglePanicMode()
         viewModel.toggleBGM(second)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+        runMainLoop(for: 0.2)
 
         XCTAssertEqual(viewModel.currentBGMItem?.id, second.id)
         XCTAssertFalse(viewModel.isBGMPlaying)
@@ -111,5 +113,23 @@ final class ViewModelPanicTransitionOrderTests: XCTestCase {
             if case .pauseBGM = $0 { return true }
             return false
         }.count
+    }
+
+    private func runMainLoop(
+        until condition: () -> Bool,
+        timeout: TimeInterval = 1.0,
+        tick: TimeInterval = 0.01
+    ) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(tick))
+        }
+    }
+
+    private func runMainLoop(for duration: TimeInterval, tick: TimeInterval = 0.01) {
+        let deadline = Date().addingTimeInterval(duration)
+        while Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(tick))
+        }
     }
 }
