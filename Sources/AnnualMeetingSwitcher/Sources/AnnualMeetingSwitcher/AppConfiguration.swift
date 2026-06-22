@@ -5,7 +5,7 @@ enum AppConfiguration {
     /// 应用显示名称
     static let appName = "LiveSwitcher"
     /// 应用版本
-    static let appVersion = "0.4.0"
+    static let appVersion = "0.5.0"
     /// 统一 Bundle Identifier
     static let bundleIdentifier = "com.91wan.liveswitcher"
     /// WPS Office Bundle Identifier

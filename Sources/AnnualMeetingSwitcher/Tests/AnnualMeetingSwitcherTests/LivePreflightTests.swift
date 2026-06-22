@@ -371,10 +371,11 @@ final class LivePreflightTests: XCTestCase {
         let viewModel = makeViewModel()
         viewModel.externalScreenProvider = { nil }
         viewModel.startTicker(text: "Welcome")
+        let expectedVersion = AppConfiguration.appVersion
 
         let report = viewModel.livePreflightReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Preflight v0.4.0"))
+        XCTAssertTrue(report.contains("LiveSwitcher Preflight v\(expectedVersion)"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("Display"))
         XCTAssertTrue(report.contains("Action: 需要硬件"))
@@ -448,10 +449,11 @@ final class LivePreflightTests: XCTestCase {
         viewModel.isSpeakerMode = true
         viewModel.startTicker(text: "Welcome")
         let beforeSnapshot = viewModel.livePreflightSnapshot
+        let expectedVersion = AppConfiguration.appVersion
 
         let report = viewModel.liveDiagnosticsReportText()
 
-        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v0.4.0"))
+        XCTAssertTrue(report.contains("LiveSwitcher Diagnostics v\(expectedVersion)"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("紧急切黑: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
@@ -617,12 +619,13 @@ final class LivePreflightTests: XCTestCase {
         let beforeProgramCount = viewModel.programItems.count
         let beforeBGMCount = viewModel.bgmItems.count
         let beforeWallpaperCount = viewModel.backgroundWallpapers.count
+        let expectedVersion = AppConfiguration.appVersion
 
         let report = viewModel.liveSupportReportText(
             generatedAt: Date(timeIntervalSince1970: 1_790_000_000)
         )
 
-        XCTAssertTrue(report.contains("LiveSwitcher Support Report v0.4.0"))
+        XCTAssertTrue(report.contains("LiveSwitcher Support Report v\(expectedVersion)"))
         XCTAssertTrue(report.contains("Overall: FAIL"))
         XCTAssertTrue(report.contains("紧急切黑: on"))
         XCTAssertTrue(report.contains("Speaker mode: on"))
