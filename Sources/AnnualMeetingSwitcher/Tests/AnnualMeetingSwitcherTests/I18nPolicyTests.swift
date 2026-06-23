@@ -59,6 +59,24 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertEqual(model.value, "1 故障 · 2 警告")
     }
 
+    func testFadeToBlackOperatorCopyUsesChineseInsteadOfFTB() throws {
+        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let output = try sourceText("Output/OutputWindowController.swift")
+
+        XCTAssertFalse(liveMode.contains("\"FTB\""))
+        XCTAssertFalse(liveMode.contains("从 FTB 恢复"))
+        XCTAssertFalse(liveMode.contains("FTB 切黑"))
+        XCTAssertFalse(output.contains("Fade to black active"))
+
+        XCTAssertTrue(liveMode.contains("\"切黑\""))
+        XCTAssertTrue(liveMode.contains("\"恢复\""))
+        XCTAssertTrue(liveMode.contains("\"已切黑\""))
+        XCTAssertTrue(liveMode.contains("\"淡出至黑场\""))
+        XCTAssertTrue(liveMode.contains("\"从黑场恢复\""))
+        XCTAssertTrue(liveMode.contains("\"恢复画面\""))
+        XCTAssertTrue(output.contains("\"切黑已启用\""))
+    }
+
     func testVisibleConsoleChromeDoesNotRegressToRoundSevenEnglishLabels() throws {
         let files = [
             "Views/LiveOpsPanel.swift",
@@ -117,7 +135,8 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(policy.contains("PPT"))
         XCTAssertTrue(policy.contains("HTML"))
         XCTAssertTrue(policy.contains("dB"))
-        XCTAssertTrue(policy.contains("FTB"))
+        XCTAssertFalse(policy.contains("- FTB"))
+        XCTAssertFalse(policy.contains("`FTB`"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

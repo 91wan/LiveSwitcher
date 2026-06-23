@@ -513,7 +513,7 @@ struct LiveQuickRail: View {
         )
         let restart = LiveMediaRestartControlModel.make(currentItem: viewModel.currentProgramItem)
 
-        return quickCard(title: "切换", status: viewModel.isFadeToBlackActive ? "FTB" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
+        return quickCard(title: "切换", status: viewModel.isFadeToBlackActive ? "已切黑" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
                 Button {
                     if let index = model.nextIndex {
@@ -558,11 +558,12 @@ struct LiveQuickRail: View {
                 viewModel.toggleFadeToBlack()
             }
         } label: {
-            Label(viewModel.isFadeToBlackActive ? "恢复" : "FTB", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
+            Label(viewModel.isFadeToBlackActive ? "恢复" : "切黑", systemImage: viewModel.isFadeToBlackActive ? "play.fill" : "moon.fill")
                 .font(StudioTheme.TypeScale.caption.weight(.black))
                 .frame(width: LiveModeLayoutMetrics.ftbButtonWidth, height: 40)
         }
-        .accessibilityLabel(viewModel.isFadeToBlackActive ? "从 FTB 恢复" : "FTB 切黑")
+        .help(viewModel.isFadeToBlackActive ? "从黑场恢复" : "淡出至黑场")
+        .accessibilityLabel(viewModel.isFadeToBlackActive ? "恢复画面" : "切黑")
 
         if viewModel.isFadeToBlackActive {
             button

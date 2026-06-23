@@ -353,7 +353,7 @@ private struct OutputOverlayLayer: View, Equatable {
                     .ignoresSafeArea()
                     .transition(.opacity)
                     .zIndex(OutputLayerZIndex.fadeToBlack)
-                    .accessibilityLabel("Fade to black active")
+                    .accessibilityLabel("切黑已启用")
             }
 
             // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）

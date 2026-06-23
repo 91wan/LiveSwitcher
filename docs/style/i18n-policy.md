@@ -12,7 +12,6 @@ LiveSwitcher UI copy is **中文为主**. Use concise Chinese for operator-facin
 - PPTX
 - Keynote
 - dB
-- FTB
 - LIVE
 
 ## Avoid
@@ -31,7 +30,7 @@ Good:
 - `信号源`
 - `紧急切黑`
 - `检查`
-- `FTB`
+- `切黑`
 
 Avoid:
 
