@@ -7,12 +7,8 @@ struct CountdownOverlay: View {
     @Environment(SwitcherViewModel.self) var viewModel
 
     var body: some View {
-        // 居中显示，不影响视频播放区域（视频透过背景可见）
-        VStack {
-            Spacer()
-            countdownCard
-            Spacer()
-        }
+        countdownCard
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.countdownAlignment)
         .transition(.opacity.combined(with: .scale(scale: 0.95)))
     }
 
