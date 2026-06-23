@@ -108,8 +108,8 @@ final class SwitcherViewModel {
         }
     }
 
-    /// 音频输出策略。默认保持“混合”，与当前已存在的实际行为一致。
-    var audioStrategy: AudioStrategy = .mixed {
+    /// 音频输出策略。新配置默认跟随当前节目，已保存偏好仍由持久化加载覆盖。
+    var audioStrategy: AudioStrategy = .followProgram {
         didSet {
             guard oldValue != audioStrategy else { return }
             dispatchRuntimeFacadeAction(.operatorSelectedAudioStrategy(audioStrategy))

@@ -209,6 +209,8 @@ final class AudioRoutingTransitionTests: XCTestCase {
     func testAudioStrategyChangeUsesFadedRouting() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 1.5
+        viewModel.audioStrategy = .mixed
+        viewModel.resetLastAudioRoutingTransitionForTesting()
 
         viewModel.audioStrategy = .followProgram
 

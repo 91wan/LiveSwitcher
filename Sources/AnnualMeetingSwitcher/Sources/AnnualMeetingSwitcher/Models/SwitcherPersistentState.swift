@@ -1,7 +1,7 @@
 import Foundation
 
 struct SwitcherPersistentState: Equatable {
-    var audioStrategy: AudioStrategy = .mixed
+    var audioStrategy: AudioStrategy = .followProgram
     var isSpeakerMode: Bool = false
     var bgmPlayMode: BGMPlayMode = .loopAll
 

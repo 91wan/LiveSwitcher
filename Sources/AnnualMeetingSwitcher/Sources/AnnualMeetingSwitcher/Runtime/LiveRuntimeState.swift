@@ -146,7 +146,7 @@ struct AudioRuntimeState: Equatable {
     var masterVolume: Double = 0.5
     var mediaVolume: Double = 1
     var bgmVolume: Double = 0.5
-    var strategy: AudioStrategy = .mixed
+    var strategy: AudioStrategy = .followProgram
     var isMasterMuted = false
     var isMediaMuted = false
     var isBGMMuted = false

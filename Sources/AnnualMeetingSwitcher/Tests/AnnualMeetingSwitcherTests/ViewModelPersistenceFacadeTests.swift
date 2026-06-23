@@ -143,6 +143,21 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
         XCTAssertEqual(viewModel.audioStrategy, .bgmOnly)
     }
 
+    func testFreshViewModelDefaultsAudioStrategyToFollowProgram() throws {
+        let suiteName = "ViewModelPersistenceFacadeTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: true,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+
+        XCTAssertEqual(viewModel.audioStrategy, .followProgram)
+        XCTAssertEqual(viewModel.runtime.state.audio.strategy, .followProgram)
+    }
+
     func testLoadPersistedDataCanBeDisabledForTests() throws {
         let suiteName = "ViewModelPersistenceFacadeTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
@@ -155,7 +170,7 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
             userDefaults: defaults
         )
 
-        XCTAssertEqual(viewModel.audioStrategy, .mixed)
+        XCTAssertEqual(viewModel.audioStrategy, .followProgram)
     }
 
     func testLoadDataIsIdempotentForProgramItems() throws {
