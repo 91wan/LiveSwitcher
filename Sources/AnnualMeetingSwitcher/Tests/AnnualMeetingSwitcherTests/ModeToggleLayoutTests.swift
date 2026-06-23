@@ -17,6 +17,21 @@ final class ModeToggleLayoutTests: XCTestCase {
         XCTAssertFalse(liveMode.contains("isOn: $viewModel.isSpeakerMode"))
     }
 
+    func testToolbarModeButtonVisibleCardIsInsideButtonLabelHitTarget() throws {
+        let toolbar = try sourceText("Views/MainToolbar.swift")
+        let labelBody = try toolbarModeButtonLabelBody(in: toolbar)
+
+        XCTAssertTrue(labelBody.contains(".frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)"))
+        XCTAssertTrue(labelBody.contains(".frame(height: ToolbarLayoutMetrics.actionHeight)"))
+        XCTAssertTrue(labelBody.contains(".contentShape(Rectangle())"))
+        XCTAssertTrue(labelBody.contains(".background("))
+        XCTAssertTrue(labelBody.contains(".overlay("))
+        XCTAssertTrue(labelBody.contains(".shadow("))
+        XCTAssertFalse(toolbar.contains(".onTapGesture"))
+        XCTAssertEqual(toolbar.components(separatedBy: "viewModel.toggleSpeakerMode()").count - 1, 1)
+        XCTAssertEqual(toolbar.components(separatedBy: "viewModel.togglePPTMode(source: pptModeToggleSource)").count - 1, 1)
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
@@ -33,5 +48,13 @@ final class ModeToggleLayoutTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func toolbarModeButtonLabelBody(in source: String) throws -> String {
+        guard let buttonStart = source.range(of: "Button(action: action) {"),
+              let styleStart = source.range(of: "\n        .buttonStyle(.plain)", range: buttonStart.upperBound..<source.endIndex) else {
+            throw XCTSkip("Could not locate ToolbarModeButton label body.")
+        }
+        return String(source[buttonStart.upperBound..<styleStart.lowerBound])
     }
 }
