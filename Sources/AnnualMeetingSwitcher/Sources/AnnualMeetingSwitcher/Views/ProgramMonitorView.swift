@@ -113,12 +113,6 @@ struct ProgramMonitorView: View {
     private var monitorCornerLogoOverlay: some View {
         if let image = viewModel.cornerLogoImage {
             monitorCornerLogoImage(image)
-        } else if let url = viewModel.cornerLogoURL {
-            AsyncLocalImage(url: url) {
-                EmptyView()
-            } content: { image in
-                monitorCornerLogoImage(image)
-            }
         }
     }
 

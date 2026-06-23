@@ -87,6 +87,18 @@ final class CornerLogoModelTests: XCTestCase {
         XCTAssertGreaterThan(OutputLayerZIndex.cornerLogo, OutputLayerZIndex.lowerThird)
     }
 
+    func testOutputLogoLayerUsesDecodedCornerLogoImageOnly() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+
+        XCTAssertTrue(source.contains("cornerLogoImage: viewModel.cornerLogoImage"))
+        XCTAssertTrue(source.contains("let image: NSImage?"))
+        XCTAssertTrue(source.contains("Image(nsImage: image)"))
+        XCTAssertFalse(source.contains("OutputCornerLogoLayer(\n                url:"))
+        XCTAssertFalse(source.contains("AsyncLocalImage(url: url)"))
+        XCTAssertFalse(source.contains("Data(contentsOf:"))
+        XCTAssertFalse(source.contains(".equatable()"))
+    }
+
     func testSetupRunDeskExposesCornerLogoControls() throws {
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
         let card = try sourceText("Sources/AnnualMeetingSwitcher/Views/CornerLogoCard.swift")
@@ -103,8 +115,8 @@ final class CornerLogoModelTests: XCTestCase {
 
         XCTAssertTrue(monitor.contains("monitorCornerLogoOverlay"))
         XCTAssertTrue(monitor.contains("if let image = viewModel.cornerLogoImage"))
-        XCTAssertTrue(monitor.contains("} else if let url = viewModel.cornerLogoURL"))
-        XCTAssertTrue(monitor.contains("AsyncLocalImage(url: url)"))
+        XCTAssertFalse(monitor.contains("} else if let url = viewModel.cornerLogoURL"))
+        XCTAssertFalse(monitor.contains("AsyncLocalImage(url: url)"))
         XCTAssertTrue(monitor.contains("monitorCornerLogoImage(image)"))
         XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
         XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorPadding"))

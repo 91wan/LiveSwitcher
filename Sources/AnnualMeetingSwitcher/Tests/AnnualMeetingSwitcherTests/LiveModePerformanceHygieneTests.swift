@@ -11,7 +11,8 @@ final class LiveModePerformanceHygieneTests: XCTestCase {
         XCTAssertFalse(output.contains("NSImage(contentsOf: url)"))
         XCTAssertFalse(wallpaper.contains("NSImage(contentsOf:"))
         XCTAssertTrue(liveMode.contains("AsyncLocalImage"))
-        XCTAssertTrue(output.contains("AsyncLocalImage"))
+        XCTAssertFalse(output.contains("AsyncLocalImage"))
+        XCTAssertFalse(output.contains("Data(contentsOf:"))
         XCTAssertTrue(wallpaper.contains("AsyncLocalImage(url: url)"))
     }
 

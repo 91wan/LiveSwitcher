@@ -267,8 +267,10 @@ struct OutputView: View {
             // 媒体内容层
             mediaContentLayer(displayState: displayState)
 
-            OutputOverlayLayer(displayState: displayState)
-                .equatable()
+            OutputOverlayLayer(
+                displayState: displayState,
+                cornerLogoImage: viewModel.cornerLogoImage
+            )
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -315,8 +317,9 @@ struct OutputView: View {
     }
 }
 
-private struct OutputOverlayLayer: View, Equatable {
+private struct OutputOverlayLayer: View {
     let displayState: OutputDisplayState
+    let cornerLogoImage: NSImage?
 
     var body: some View {
         ZStack {
@@ -347,7 +350,7 @@ private struct OutputOverlayLayer: View, Equatable {
             }
 
             OutputCornerLogoLayer(
-                url: displayState.cornerLogoURL,
+                image: cornerLogoImage,
                 position: displayState.cornerLogoPosition
             )
             .zIndex(OutputLayerZIndex.cornerLogo)
@@ -371,13 +374,11 @@ private struct OutputOverlayLayer: View, Equatable {
 }
 
 private struct OutputCornerLogoLayer: View {
-    let url: URL?
+    let image: NSImage?
     let position: CornerLogoPosition
 
     var body: some View {
-        AsyncLocalImage(url: url) {
-            EmptyView()
-        } content: { image in
+        if let image {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
