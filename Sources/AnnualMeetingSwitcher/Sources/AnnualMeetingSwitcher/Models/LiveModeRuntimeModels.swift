@@ -78,24 +78,24 @@ struct LiveCutBusModel: Equatable {
     }
 }
 
-struct LiveMediaRestartControlModel: Equatable {
+struct LiveMediaReturnToStartControlModel: Equatable {
     let isEnabled: Bool
     let title: String
     let help: String?
 
-    static func make(currentItem: ProgramItem?) -> LiveMediaRestartControlModel {
+    static func make(currentItem: ProgramItem?) -> LiveMediaReturnToStartControlModel {
         guard let currentItem, currentItem.supportsSeeking else {
-            return LiveMediaRestartControlModel(
+            return LiveMediaReturnToStartControlModel(
                 isEnabled: false,
-                title: "从头播放",
+                title: "回到片头",
                 help: nil
             )
         }
 
-        return LiveMediaRestartControlModel(
+        return LiveMediaReturnToStartControlModel(
             isEnabled: true,
-            title: "从头播放",
-            help: "从头重新播放当前视频"
+            title: "回到片头",
+            help: "暂停当前视频并回到 00:00"
         )
     }
 }

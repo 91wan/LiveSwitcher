@@ -8,6 +8,43 @@ final class MediaRuntimePanicRestartTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.restartMedia(generation: 3)))
     }
 
+    func testReturnCurrentMediaToStartPausesBeforeSeekingAndDoesNotRestart() {
+        let mutation = reduce(restartableState(panicActive: false), .operatorReturnedCurrentMediaToStart)
+
+        XCTAssertEqual(
+            mutation.effects.prefix(2),
+            [.pauseMedia(generation: 3), .seekMediaToStart(generation: 3)]
+        )
+        XCTAssertFalse(mutation.effects.contains { if case .restartMedia = $0 { return true }; return false })
+        XCTAssertFalse(mutation.effects.contains { if case .playMedia = $0 { return true }; return false })
+    }
+
+    func testReturnCurrentMediaToStartLeavesRuntimePausedAtBeginning() {
+        let mutation = reduce(restartableState(panicActive: false), .operatorReturnedCurrentMediaToStart)
+
+        XCTAssertFalse(mutation.state.media.isPlaying)
+        XCTAssertFalse(mutation.state.media.didPlayToEnd)
+        XCTAssertEqual(mutation.state.media.currentTime, 0)
+    }
+
+    func testReturnCurrentMediaToStartAppliesAudioRoutingWhenMediaWasPlaying() {
+        let mutation = reduce(restartableState(panicActive: false), .operatorReturnedCurrentMediaToStart)
+
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+        XCTAssertFalse(mutation.state.audio.routingContext.isMediaPlaying)
+    }
+
+    func testReturnCurrentMediaToStartDuringPanicPreventsPanicDeactivationResume() {
+        let returned = reduce(restartableState(panicActive: true), .operatorReturnedCurrentMediaToStart)
+
+        XCTAssertFalse(returned.state.panic.snapshot?.wasMediaPlaying == true)
+
+        let off = reduce(returned.state, .operatorSetPanic(false))
+
+        XCTAssertFalse(off.state.media.isPlaying)
+        XCTAssertFalse(off.effects.contains { if case .playMedia = $0 { return true }; return false })
+    }
+
     func testRestartCurrentMediaOutsidePanicSetsMediaPlayingTrue() {
         let mutation = reduce(restartableState(panicActive: false), .operatorRestartedCurrentMedia)
 

@@ -13,7 +13,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertTrue(document.contains("Switch source"))
         XCTAssertTrue(document.contains("Toggle main media playback"))
         XCTAssertTrue(document.contains("Toggle projection"))
-        XCTAssertTrue(document.contains("Restart current media"))
+        XCTAssertTrue(document.contains("Return current media to start"))
         XCTAssertTrue(document.contains("code-level gate"))
         XCTAssertTrue(document.contains("execution surface"))
         XCTAssertTrue(document.contains("must not expand the Live Mode control surface"))
@@ -36,7 +36,7 @@ final class LiveModeSimplicityTests: XCTestCase {
 
         XCTAssertTrue(liveMode.contains("viewModel.switchToProgramAfterReadinessConfirmation(item)"))
         XCTAssertTrue(liveMode.contains("viewModel.switchToProgram(at: index)"))
-        XCTAssertTrue(liveMode.contains("viewModel.restartCurrentMediaFromBeginning()"))
+        XCTAssertTrue(liveMode.contains("viewModel.returnCurrentMediaToStart()"))
         XCTAssertTrue(liveMode.contains("viewModel.handleSafeBroadcastToggle()"))
         XCTAssertTrue(liveMode.contains("viewModel.toggleBGM(row.item)"))
         XCTAssertTrue(toolbar.contains("viewModel.toggleSpeakerMode()"))

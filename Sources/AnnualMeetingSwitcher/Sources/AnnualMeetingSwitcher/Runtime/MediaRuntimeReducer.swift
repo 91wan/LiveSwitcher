@@ -52,6 +52,25 @@ enum MediaRuntimeReducer {
         effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
     }
 
+    static func returnCurrentToStart(
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
+    ) {
+        guard state.program.effectiveCurrentItem?.supportsSeeking == true else { return }
+        let wasPlaying = state.media.isPlaying
+        PanicRuntimeReducer.markMediaStoppedIfCurrentProgramMatchesSnapshot(state: &state)
+        state.media.didPlayToEnd = false
+        state.media.currentTime = 0
+        state.media.isPlaying = false
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        effects.append(.pauseMedia(generation: state.media.generation))
+        effects.append(.seekMediaToStart(generation: state.media.generation))
+        guard wasPlaying else { return }
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+        effects.append(.applyAudioRouting(reason: .mediaPlaybackChanged))
+    }
+
     static func seekCurrentToStart(
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect]

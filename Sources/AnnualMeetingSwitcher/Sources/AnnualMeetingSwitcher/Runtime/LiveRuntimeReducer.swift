@@ -73,6 +73,14 @@ enum LiveRuntimeReducer {
                 speakerModeDuckedRatio: environment.speakerModeDuckedRatio
             )
 
+        case .operatorReturnedCurrentMediaToStart:
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            MediaRuntimeReducer.returnCurrentToStart(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
         case .operatorSeekedCurrentMediaToStart:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.seekCurrentToStart(

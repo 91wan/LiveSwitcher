@@ -62,32 +62,40 @@ final class LiveMediaControlTests: XCTestCase {
         XCTAssertNil(viewModel.lastAudioRoutingTransition)
     }
 
-    func testRestartControlModelIsEnabledOnlyForSeekableCurrentMedia() throws {
+    func testReturnToStartControlModelIsEnabledOnlyForSeekableCurrentMedia() throws {
         let mediaURL = URL(fileURLWithPath: "/tmp/opening.mp4")
         let htmlURL = URL(fileURLWithPath: "/tmp/agenda.html")
 
         XCTAssertTrue(
-            LiveMediaRestartControlModel.make(
+            LiveMediaReturnToStartControlModel.make(
                 currentItem: ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: mediaURL)
             ).isEnabled
         )
         XCTAssertFalse(
-            LiveMediaRestartControlModel.make(
+            LiveMediaReturnToStartControlModel.make(
                 currentItem: ProgramItem(title: "Agenda", subtitle: "HTML", sourceURL: htmlURL)
             ).isEnabled
         )
-        let disabled = LiveMediaRestartControlModel.make(currentItem: nil)
+        let enabled = LiveMediaReturnToStartControlModel.make(
+            currentItem: ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: mediaURL)
+        )
+        XCTAssertEqual(enabled.title, "回到片头")
+        XCTAssertEqual(enabled.help, "暂停当前视频并回到 00:00")
+
+        let disabled = LiveMediaReturnToStartControlModel.make(currentItem: nil)
         XCTAssertFalse(disabled.isEnabled)
         XCTAssertNil(disabled.help)
     }
 
-    func testLiveModeContainsRestartCurrentAction() throws {
+    func testLiveModeContainsReturnToStartAction() throws {
         let source = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
 
-        XCTAssertTrue(source.contains("restartCurrentMediaFromBeginning"))
-        XCTAssertTrue(source.contains("LiveMediaRestartControlModel"))
-        XCTAssertTrue(source.contains("if restart.isEnabled"))
-        XCTAssertFalse(source.contains(".disabled(!restart.isEnabled)"))
+        XCTAssertTrue(source.contains("returnCurrentMediaToStart"))
+        XCTAssertTrue(source.contains("LiveMediaReturnToStartControlModel"))
+        XCTAssertTrue(source.contains("if returnToStart.isEnabled"))
+        XCTAssertFalse(source.contains("restartCurrentMediaFromBeginning()"))
+        XCTAssertFalse(source.contains("LiveMediaRestartControlModel"))
+        XCTAssertFalse(source.contains(".disabled(!returnToStart.isEnabled)"))
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

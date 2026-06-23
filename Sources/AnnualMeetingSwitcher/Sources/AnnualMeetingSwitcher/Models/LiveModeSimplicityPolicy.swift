@@ -4,7 +4,7 @@ enum LiveModeActionKind: String, CaseIterable {
     case switchSource
     case takeNext
     case toggleCurrentMediaPlayback
-    case restartCurrentMedia
+    case returnCurrentMediaToStart
     case toggleProjection
     case togglePanic
     case toggleFadeToBlack
@@ -25,8 +25,8 @@ enum LiveModeActionKind: String, CaseIterable {
             return "Take next"
         case .toggleCurrentMediaPlayback:
             return "Toggle main media playback"
-        case .restartCurrentMedia:
-            return "Restart current media"
+        case .returnCurrentMediaToStart:
+            return "Return current media to start"
         case .toggleProjection:
             return "Toggle projection"
         case .togglePanic:
@@ -93,7 +93,7 @@ enum LiveModeSimplicityPolicy {
         .switchSource,
         .takeNext,
         .toggleCurrentMediaPlayback,
-        .restartCurrentMedia,
+        .returnCurrentMediaToStart,
         .toggleProjection,
         .togglePanic,
         .toggleFadeToBlack,

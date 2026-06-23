@@ -25,6 +25,7 @@ enum LiveRuntimeAction: Equatable {
     case programActivationCompleted(id: UUID)
     case operatorToggledMediaPlayback
     case operatorRestartedCurrentMedia
+    case operatorReturnedCurrentMediaToStart
     case operatorSeekedCurrentMediaToStart
     case operatorSeekedCurrentMediaToEnd
     case operatorStoppedCurrentMedia
@@ -113,6 +114,7 @@ extension LiveRuntimeAction {
         case .programActivationCompleted: return "programActivationCompleted"
         case .operatorToggledMediaPlayback: return "operatorToggledMediaPlayback"
         case .operatorRestartedCurrentMedia: return "operatorRestartedCurrentMedia"
+        case .operatorReturnedCurrentMediaToStart: return "operatorReturnedCurrentMediaToStart"
         case .operatorSeekedCurrentMediaToStart: return "operatorSeekedCurrentMediaToStart"
         case .operatorSeekedCurrentMediaToEnd: return "operatorSeekedCurrentMediaToEnd"
         case .operatorStoppedCurrentMedia: return "operatorStoppedCurrentMedia"

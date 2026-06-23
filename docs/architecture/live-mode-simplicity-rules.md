@@ -13,7 +13,7 @@ Allowed live actions are the complete code-level gate:
 - Switch source
 - Take next
 - Toggle main media playback
-- Restart current media
+- Return current media to start
 - Toggle projection
 - Toggle panic
 - Toggle fade-to-black

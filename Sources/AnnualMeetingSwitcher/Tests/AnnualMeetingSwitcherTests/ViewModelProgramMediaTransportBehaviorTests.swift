@@ -130,6 +130,18 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
     }
 
+    func testReturnCurrentMediaToStartDispatchesReturnActionWithoutRestartSupportEvent() throws {
+        let viewModel = makeViewModel()
+        let item = try mediaProgram()
+        setCurrentProgram(item, in: viewModel)
+
+        viewModel.returnCurrentMediaToStart()
+
+        XCTAssertEqual(actionCount("operatorReturnedCurrentMediaToStart", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorRestartedCurrentMedia", in: viewModel), 0)
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
+    }
+
     func testViewModelRestartCurrentMediaDoesNotContainPanicSpecialCase() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift"
@@ -143,6 +155,17 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
         XCTAssertTrue(body.contains("operatorRestartedCurrentMedia"))
     }
 
+    func testViewModelReturnCurrentMediaToStartUsesDedicatedRuntimeAction() throws {
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramMediaTransport.swift"
+        )
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "returnCurrentMediaToStart"))
+
+        XCTAssertTrue(body.contains("operatorReturnedCurrentMediaToStart"))
+        XCTAssertFalse(body.contains("operatorRestartedCurrentMedia"))
+        XCTAssertFalse(body.contains("mediaRestarted"))
+    }
+
     func testTransportNoopsForUnsupportedSources() {
         let viewModel = makeViewModel()
         let item = ProgramItem(title: "Unsupported", subtitle: "TXT")
@@ -150,6 +173,7 @@ final class ViewModelProgramMediaTransportBehaviorTests: XCTestCase {
 
         viewModel.seekProgramItemToStart(item)
         viewModel.seekProgramItemToEnd(item)
+        viewModel.returnCurrentMediaToStart()
         viewModel.restartCurrentMediaFromBeginning()
         viewModel.toggleMainVideoPlayback()
 
