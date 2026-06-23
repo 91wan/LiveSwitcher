@@ -319,16 +319,19 @@ private struct OutputOverlayLayer: View, Equatable {
     let displayState: OutputDisplayState
 
     var body: some View {
-        Group {
+        ZStack {
             // MARK: - Tier1: 叠层渲染（倒计时 + 游动字幕）
             if displayState.isCountdownActive {
                 CountdownOverlay()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.countdownAlignment)
                     .transition(.opacity)
+                    .zIndex(OutputLayerZIndex.countdown)
             }
             if displayState.isTickerActive {
                 TickerOverlay()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.tickerAlignment)
                     .transition(.opacity)
+                    .zIndex(OutputLayerZIndex.ticker)
             }
 
             // MARK: - V27: Lower Third 人名条（下三分之一条）
@@ -338,6 +341,7 @@ private struct OutputOverlayLayer: View, Equatable {
                     title: displayState.lowerThirdTitle,
                     isVisible: displayState.isLowerThirdVisible
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.lowerThirdAlignment)
                 .transition(.opacity)
                 .zIndex(OutputLayerZIndex.lowerThird)
             }

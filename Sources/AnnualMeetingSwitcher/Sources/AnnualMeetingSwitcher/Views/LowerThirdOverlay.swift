@@ -19,17 +19,12 @@ struct LowerThirdView: View {
     private let exitAnim:  Animation = .easeIn(duration: 0.25)
 
     var body: some View {
-        VStack {
-            Spacer()
-
-            // 人名条主体
-            nameCardContent
-                .padding(.horizontal, 60)   // 16:9 横向留边
-                .padding(.bottom, 56)       // 底部安全边距（避免遮挡字幕条）
-                .offset(y: appeared ? 0 : 72)
-                .opacity(appeared ? 1.0 : 0.0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        nameCardContent
+            .padding(.horizontal, OutputOverlayLayoutMetrics.lowerThirdHorizontalPadding)
+            .padding(.bottom, OutputOverlayLayoutMetrics.lowerThirdBottomPadding)
+            .offset(y: appeared ? 0 : 72)
+            .opacity(appeared ? 1.0 : 0.0)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.lowerThirdAlignment)
         .onAppear {
             if isVisible {
                 withAnimation(enterAnim) { appeared = true }
@@ -146,12 +141,18 @@ struct TickerOverlay: View {
     @StateObject private var engine = TickerEngine()
 
     var body: some View {
-        VStack {
-            GeometryReader { geo in
-                let W = geo.size.width
-                ZStack(alignment: .leading) {
-                    Color.black.opacity(0.80)
+        GeometryReader { geo in
+            let cardWidth = max(0, geo.size.width - OutputOverlayLayoutMetrics.tickerHorizontalPadding * 2)
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius)
+                    .fill(Color.black.opacity(OutputOverlayLayoutMetrics.tickerBackgroundOpacity))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.34), radius: 12, x: 0, y: 6)
 
+                ZStack(alignment: .leading) {
                     // A 轨道
                     tickerTextView
                         .fixedSize()
@@ -162,7 +163,7 @@ struct TickerOverlay: View {
                                     // 用真实测量宽度初始化（仅首次）
                                     if engine.textWidth == 800 {
                                         engine.setup(
-                                            containerWidth: W,
+                                            containerWidth: cardWidth,
                                             textWidth: tg.size.width,
                                             speed: viewModel.tickerSpeed
                                         )
@@ -177,23 +178,25 @@ struct TickerOverlay: View {
                         .offset(x: engine.offsetB)
                 }
                 .clipped()
-                .frame(width: W, height: 56, alignment: .leading)  // 高度从40→56
+                .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)
                 .onAppear {
                     // 估算宽度兜底（若 background GeometryReader 未触发）
                     if engine.textWidth == 800 {
                         let estimated = CGFloat(viewModel.tickerText.count) * 28 + 120  // 估算字宽随字体增大
                         engine.setup(
-                            containerWidth: W,
+                            containerWidth: cardWidth,
                             textWidth: max(estimated, 400),
                             speed: viewModel.tickerSpeed
                         )
                     }
                 }
             }
-            .frame(height: 56)  // 高度从40→56
-            Spacer()  // 把字幕条推到顶部
+            .clipShape(.rect(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius))
+            .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)
+            .padding(.horizontal, OutputOverlayLayoutMetrics.tickerHorizontalPadding)
+            .padding(.top, OutputOverlayLayoutMetrics.tickerTopPadding)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.tickerAlignment)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)  // 新增：确保 VStack 铺满全屏，使字幕条真正吸附顶部
         .transition(.opacity)
         .onChange(of: viewModel.tickerText) { _, _ in
             let estimated = CGFloat(viewModel.tickerText.count) * 28 + 120  // 字体36pt，估算字宽更新

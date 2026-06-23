@@ -53,6 +53,8 @@ enum CornerLogoPosition: String, CaseIterable, Equatable {
 }
 
 enum OutputLayerZIndex {
+    static let ticker = 2.0
+    static let countdown = 3.0
     static let lowerThird = 5.0
     static let cornerLogo = 6.0
     static let fadeToBlack = 8.0
