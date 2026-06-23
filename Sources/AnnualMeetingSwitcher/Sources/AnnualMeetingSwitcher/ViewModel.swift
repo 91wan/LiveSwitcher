@@ -116,9 +116,6 @@ final class SwitcherViewModel {
         }
     }
 
-    // MARK: - 转场配置
-
-    var crossfadeDuration: Double = 3.0
     var liveAudioFadeDuration: Double = AudioRoutingDefaults.liveAudioFadeDuration
     private let speakerModeDuckedRatio = AudioRoutingDefaults.speakerModeDuckedRatio
 

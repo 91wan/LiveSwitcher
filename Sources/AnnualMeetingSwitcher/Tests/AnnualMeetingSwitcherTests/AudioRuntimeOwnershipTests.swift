@@ -418,11 +418,13 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
         let audioBlock = try XCTUnwrap(
             source.range(of: "// MARK: - 音量控制")
                 .flatMap { start in
-                    source.range(of: "// MARK: - 转场配置", range: start.upperBound..<source.endIndex)
+                    source.range(of: "// MARK: - 背景壁纸", range: start.upperBound..<source.endIndex)
                         .map { end in String(source[start.lowerBound..<end.lowerBound]) }
                 }
         )
 
+        XCTAssertFalse(source.contains("// MARK: - 转场配置"))
+        XCTAssertFalse(source.contains("crossfadeDuration"))
         XCTAssertTrue(audioBlock.contains("dispatchRuntimeFacadeAction(.operatorChangedMasterVolume(masterVolume))"))
         XCTAssertTrue(audioBlock.contains("dispatchRuntimeFacadeAction(.operatorChangedMediaVolume(mediaVolume))"))
         XCTAssertTrue(audioBlock.contains("dispatchRuntimeFacadeAction(.operatorChangedBGMVolume(bgmVolume))"))
