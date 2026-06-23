@@ -321,7 +321,8 @@ final class LiveModeMixerControlsTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("viewModel.toggleFadeToBlack()"))
-        XCTAssertTrue(source.contains("从 FTB 恢复"))
+        XCTAssertTrue(source.contains("从黑场恢复"))
+        XCTAssertTrue(source.contains("淡出至黑场"))
         XCTAssertFalse(source.contains("viewModel.togglePanicMode()"))
     }
 
@@ -331,7 +332,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
         XCTAssertTrue(source.contains("Label(\"下一项\", systemImage: \"arrow.right.to.line.compact\")"))
         XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
         XCTAssertTrue(source.contains(".tint(StudioTheme.Action.primary)"))
-        XCTAssertTrue(source.contains("Label(viewModel.isFadeToBlackActive ? \"恢复\" : \"FTB\""))
+        XCTAssertTrue(source.contains("Label(viewModel.isFadeToBlackActive ? \"恢复\" : \"切黑\""))
         XCTAssertTrue(source.contains("LiveModeLayoutMetrics.ftbButtonWidth"))
     }
 
