@@ -329,7 +329,7 @@ struct ProgramMonitorView: View {
 
     @ViewBuilder
     private var mediaLayer: some View {
-        if VideoLayerVisibilityModel.shouldShowVideoLayer(
+        if VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(
             sourceKind: viewModel.currentProgramItem?.sourceKind,
             hasLoadedMedia: avCoordinator.hasLoadedMedia
         ) {

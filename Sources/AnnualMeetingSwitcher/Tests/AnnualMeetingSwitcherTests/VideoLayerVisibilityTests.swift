@@ -11,7 +11,7 @@ final class VideoLayerVisibilityTests: XCTestCase {
         return url
     }
 
-    func testPausedMediaKeepsVideoLayerVisible() throws {
+    func testPausedMediaKeepsMonitorVideoLayerVisible() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
         defer { try? FileManager.default.removeItem(at: url) }
@@ -23,7 +23,51 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertFalse(coordinator.isPlaying)
         XCTAssertEqual(coordinator.currentURL, url)
         XCTAssertTrue(coordinator.hasLoadedMedia)
-        XCTAssertTrue(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .media, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertTrue(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia
+        ))
+    }
+
+    func testOutputVideoLayerOnlyShowsLoadedPlayingMedia() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+        XCTAssertFalse(coordinator.isPlaying)
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: coordinator.isPlaying
+        ))
+
+        coordinator.play()
+
+        XCTAssertTrue(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: coordinator.isPlaying
+        ))
+
+        coordinator.pause()
+
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: coordinator.isPlaying
+        ))
+
+        coordinator.didPlayToEnd = true
+
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: false
+        ))
     }
 
     func testStopClearsLoadedMediaAndHidesVideoLayer() throws {
@@ -38,7 +82,15 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertFalse(coordinator.isPlaying)
         XCTAssertNil(coordinator.currentURL)
         XCTAssertFalse(coordinator.hasLoadedMedia)
-        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .media, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia
+        ))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: coordinator.isPlaying
+        ))
     }
 
     func testLoadingNewMediaResetsPlayingStateUntilPlayIsRequested() throws {
@@ -316,18 +368,26 @@ final class VideoLayerVisibilityTests: XCTestCase {
         coordinator.load(url: url)
 
         XCTAssertTrue(coordinator.hasLoadedMedia)
-        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .html, hasLoadedMedia: coordinator.hasLoadedMedia))
-        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .pptx, hasLoadedMedia: coordinator.hasLoadedMedia))
-        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowVideoLayer(sourceKind: .keynote, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .html, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .pptx, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .keynote, hasLoadedMedia: coordinator.hasLoadedMedia))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(sourceKind: .html, hasLoadedMedia: coordinator.hasLoadedMedia, isPlaying: true))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(sourceKind: .pptx, hasLoadedMedia: coordinator.hasLoadedMedia, isPlaying: true))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(sourceKind: .keynote, hasLoadedMedia: coordinator.hasLoadedMedia, isPlaying: true))
     }
 
-    func testOutputVideoPlayerDoesNotHideByPlayingState() throws {
+    func testOutputVideoPlayerVisibilitySubscribesToLoadedMediaAndPlayingState() throws {
         let source = try sourceText("Output/OutputWindowController.swift")
 
         XCTAssertFalse(source.contains("isHidden = !coordinator.isPlaying"))
         XCTAssertFalse(source.contains("view?.isHidden = !isPlaying"))
-        XCTAssertFalse(source.contains("avCoordinator.$isPlaying"))
+        XCTAssertTrue(source.contains("avCoordinator.$hasLoadedMedia"))
+        XCTAssertTrue(source.contains("avCoordinator.$isPlaying"))
+        XCTAssertTrue(source.contains("isPlaying: coordinator.isPlaying"))
+        XCTAssertTrue(source.contains("isPlaying: isPlaying"))
         XCTAssertTrue(source.contains("VideoLayerVisibilityModel"))
+        XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowOutputVideoLayer"))
+        XCTAssertFalse(source.contains("VideoLayerVisibilityModel.shouldShowVideoLayer"))
     }
 
     func testOutputVideoPlayerVisibilityUsesCurrentProgramSourceKindNotLoadedURL() throws {
@@ -342,7 +402,8 @@ final class VideoLayerVisibilityTests: XCTestCase {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
         XCTAssertFalse(source.contains("if viewModel.avCoordinator.isPlaying {\n            VideoPlayerView"))
-        XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowVideoLayer"))
+        XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowMonitorVideoLayer"))
+        XCTAssertFalse(source.contains("VideoLayerVisibilityModel.shouldShowOutputVideoLayer"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

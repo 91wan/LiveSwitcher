@@ -1,15 +1,39 @@
 import Foundation
 
 struct VideoLayerVisibilityModel: Equatable {
-    let shouldShowVideoLayer: Bool
+    let shouldShowMonitorVideoLayer: Bool
+    let shouldShowOutputVideoLayer: Bool
 
-    static func make(sourceKind: ProgramSourceKind?, hasLoadedMedia: Bool) -> VideoLayerVisibilityModel {
+    static func make(
+        sourceKind: ProgramSourceKind?,
+        hasLoadedMedia: Bool,
+        isPlaying: Bool
+    ) -> VideoLayerVisibilityModel {
         VideoLayerVisibilityModel(
-            shouldShowVideoLayer: shouldShowVideoLayer(sourceKind: sourceKind, hasLoadedMedia: hasLoadedMedia)
+            shouldShowMonitorVideoLayer: shouldShowMonitorVideoLayer(
+                sourceKind: sourceKind,
+                hasLoadedMedia: hasLoadedMedia
+            ),
+            shouldShowOutputVideoLayer: shouldShowOutputVideoLayer(
+                sourceKind: sourceKind,
+                hasLoadedMedia: hasLoadedMedia,
+                isPlaying: isPlaying
+            )
         )
     }
 
-    static func shouldShowVideoLayer(sourceKind: ProgramSourceKind?, hasLoadedMedia: Bool) -> Bool {
+    static func shouldShowMonitorVideoLayer(
+        sourceKind: ProgramSourceKind?,
+        hasLoadedMedia: Bool
+    ) -> Bool {
         sourceKind == .media && hasLoadedMedia
+    }
+
+    static func shouldShowOutputVideoLayer(
+        sourceKind: ProgramSourceKind?,
+        hasLoadedMedia: Bool,
+        isPlaying: Bool
+    ) -> Bool {
+        sourceKind == .media && hasLoadedMedia && isPlaying
     }
 }
