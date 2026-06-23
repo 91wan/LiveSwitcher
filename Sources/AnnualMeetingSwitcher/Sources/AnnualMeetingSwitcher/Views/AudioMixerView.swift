@@ -29,7 +29,6 @@ struct AudioMixerView: View {
                         VStack(spacing: 18) {
                             mixerSection
                             routingStrategyCard
-                            transitionCard
                         }
                         .frame(minWidth: 430, idealWidth: 500, maxWidth: 560)
 
@@ -40,7 +39,6 @@ struct AudioMixerView: View {
                     VStack(spacing: 18) {
                         mixerSection
                         routingStrategyCard
-                        transitionCard
                         BGMLibraryCard()
                     }
                 }
@@ -133,30 +131,6 @@ struct AudioMixerView: View {
             channelLimitText: pageModel.channelLimitText,
             strategySummary: audioStrategySummary
         )
-    }
-
-    private var transitionCard: some View {
-        @Bindable var viewModel = viewModel
-        let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
-
-        return StudioSectionCard(
-            title: model.title,
-            subtitle: model.subtitle,
-            status: (model.statusText, model.statusKind)
-        ) {
-            HStack(spacing: 10) {
-                Text(model.currentValueText)
-                    .font(StudioTheme.TypeScale.body.weight(.semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                Slider(value: $viewModel.crossfadeDuration, in: 0.5...3.0, step: 0.1)
-                    .tint(model.controlTone.sliderTint)
-                    .accessibilityLabel("节目转场时长")
-                    .accessibilityValue(model.currentValueText)
-                Text("0.5s-3.0s")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-        }
     }
 
     private var audioStrategy: Binding<AudioStrategy> {

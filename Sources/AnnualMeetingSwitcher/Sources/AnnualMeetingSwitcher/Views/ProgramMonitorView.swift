@@ -51,8 +51,6 @@ struct ProgramMonitorView: View {
             mediaLayer
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                 .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
-                .animation(.easeInOut(duration: viewModel.crossfadeDuration),
-                           value: viewModel.currentProgramItem)
 
             monitorCornerLogoOverlay
 
@@ -268,7 +266,6 @@ struct ProgramMonitorView: View {
 
     private var monitorUtilitiesStack: some View {
         VStack(spacing: 10) {
-            transitionControlCard
             if !isLiveMode {
                 wallpaperTrayCard
                 CornerLogoCard()
@@ -279,46 +276,6 @@ struct ProgramMonitorView: View {
         .background(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .fill(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.overlay))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
-        )
-    }
-
-    private var transitionControlCard: some View {
-        @Bindable var viewModel = viewModel
-        let model = ProgramTransitionControlModel(crossfadeDuration: viewModel.crossfadeDuration)
-
-        return HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("转场")
-                    .font(StudioTheme.sectionTitle())
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Text("节目")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-
-            Slider(
-                value: $viewModel.crossfadeDuration,
-                in: 0.5...3.0,
-                step: 0.05
-            )
-            .tint(model.controlTone.sliderTint)
-            .accessibilityLabel("转场时长")
-            .accessibilityValue(String(format: "%.1f 秒", viewModel.crossfadeDuration))
-
-            Text(model.statusText)
-                .font(StudioTheme.TypeScale.numeric.weight(.bold))
-                .foregroundStyle(model.controlTone.valueTint)
-                .frame(width: 56, alignment: .trailing)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
-                .fill(StudioTheme.Surface.base)
         )
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)

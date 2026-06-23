@@ -87,7 +87,6 @@ final class I18nPolicyTests: XCTestCase {
             "Views/CornerLogoCard.swift",
             "Models/HelpCopyModel.swift",
             "Models/LivePreflight.swift",
-            "Models/ProgramTransitionControlModel.swift",
             "Models/OverlayLivePreviewModel.swift",
             "Models/LiveBGMQuickPickerModel.swift",
             "Resources/en.lproj/Localizable.strings"
@@ -123,7 +122,6 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(combined.contains("现场控制"))
         XCTAssertTrue(combined.contains("叠层编辑"))
         XCTAssertTrue(combined.contains("BGM 库"))
-        XCTAssertTrue(combined.contains("节目转场"))
         XCTAssertTrue(combined.contains("角标"))
     }
 

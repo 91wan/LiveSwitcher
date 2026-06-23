@@ -8,7 +8,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertFalse(source.contains("DisclosureGroup"))
         XCTAssertFalse(source.contains("utilitiesDisclosure"))
         XCTAssertTrue(source.contains("monitorUtilitiesStack"))
-        XCTAssertTrue(source.contains("transitionControlCard"))
+        XCTAssertFalse(source.contains("transitionControlCard"))
         XCTAssertTrue(source.contains("wallpaperTrayCard"))
     }
 
