@@ -188,20 +188,21 @@ private struct ToolbarModeButton: View {
             }
             .frame(maxWidth: .infinity)
             .foregroundStyle(isActive ? .white : StudioTheme.Action.primary)
+            .padding(.horizontal, 8)
+            .frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)
+            .frame(height: ToolbarLayoutMetrics.actionHeight)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .fill(isActive ? StudioTheme.Action.primary : StudioTheme.Surface.base)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(isActive ? StudioTheme.Action.primary.opacity(0.32) : StudioTheme.Action.primary.opacity(0.18), lineWidth: 1)
+            )
+            .shadow(color: isActive ? StudioTheme.Action.primary.opacity(0.18) : .clear, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 8)
-        .frame(width: ToolbarLayoutMetrics.modeButtonMinWidth)
-        .frame(height: ToolbarLayoutMetrics.actionHeight)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .fill(isActive ? StudioTheme.Action.primary : StudioTheme.Surface.base)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                .stroke(isActive ? StudioTheme.Action.primary.opacity(0.32) : StudioTheme.Action.primary.opacity(0.18), lineWidth: 1)
-        )
-        .shadow(color: isActive ? StudioTheme.Action.primary.opacity(0.18) : .clear, radius: 8, x: 0, y: 4)
         .focusable(false)
         .help(isActive ? "\(title)模式已开启" : "开启\(title)模式")
         .accessibilityLabel(title)
