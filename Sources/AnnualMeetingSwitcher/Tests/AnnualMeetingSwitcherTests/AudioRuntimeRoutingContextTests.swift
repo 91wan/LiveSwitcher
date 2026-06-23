@@ -21,6 +21,7 @@ final class AudioRuntimeRoutingContextTests: XCTestCase {
 
     func testRecalculateInitializesEmptyRoutingContextFromMirrorStateWhenNeeded() {
         var state = audioState(mediaPlaying: true, bgmPlaying: true)
+        state.audio.strategy = .mixed
         state.audio.routingContext = AudioRoutingContext()
 
         AudioRuntimeReducer.recalculateAudio(&state)

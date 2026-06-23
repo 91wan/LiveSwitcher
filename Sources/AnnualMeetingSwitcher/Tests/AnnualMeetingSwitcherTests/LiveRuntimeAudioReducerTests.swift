@@ -57,6 +57,7 @@ final class LiveRuntimeAudioReducerTests: XCTestCase {
 
     func testSpeakerModeDuckedRatioComesFromRuntimeEnvironment() {
         var state = baseState(mediaPlaying: true, bgmPlaying: true)
+        state.audio.strategy = .mixed
         state.audio.isSpeakerMode = true
 
         let mutation = LiveRuntimeReducer.reduce(

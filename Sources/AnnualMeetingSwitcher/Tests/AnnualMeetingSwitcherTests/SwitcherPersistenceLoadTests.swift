@@ -2,6 +2,14 @@ import XCTest
 @testable import LiveSwitcher
 
 final class SwitcherPersistenceLoadTests: XCTestCase {
+    func testFreshLoadDefaultsAudioStrategyToFollowProgram() throws {
+        let defaults = try makeDefaults()
+
+        let state = SwitcherPersistenceStore(userDefaults: defaults).load().state
+
+        XCTAssertEqual(state.audioStrategy, .followProgram)
+    }
+
     func testLoadRestoresProgramItems() throws {
         let defaults = try makeDefaults()
         let video = try makeTempFile(extension: "mp4")

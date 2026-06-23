@@ -3,8 +3,11 @@ import XCTest
 
 final class AudioRuntimeSpeakerModeTests: XCTestCase {
     func testToggleSpeakerModePersistsAndAppliesSpeakerRouting() {
+        var state = audioState(mediaPlaying: true, bgmPlaying: true)
+        state.audio.strategy = .mixed
+
         let mutation = LiveRuntimeReducer.reduce(
-            state: audioState(mediaPlaying: true, bgmPlaying: true),
+            state: state,
             action: .operatorToggledSpeakerMode,
             environment: .fullRuntimeForTests(speakerModeDuckedRatio: 0.1)
         )
