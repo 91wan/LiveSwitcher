@@ -49,6 +49,12 @@ extension SwitcherViewModel {
         recordSupportEvent(kind: .mediaRestarted, detail: "source=current")
     }
 
+    func returnCurrentMediaToStart() {
+        guard let item = runtimeBackedCurrentProgramForMediaTransport,
+              programItemSupportsSeeking(item) else { return }
+        dispatchRuntimeFacadeAction(.operatorReturnedCurrentMediaToStart)
+    }
+
     func seekProgramItemToEnd(_ item: ProgramItem) {
         if runtimeBackedCurrentProgramForMediaTransport?.id == item.id && programItemSupportsSeeking(item) {
             dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToEnd)

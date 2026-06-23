@@ -511,7 +511,7 @@ struct LiveQuickRail: View {
             programItems: viewModel.programItems,
             currentProgramItem: viewModel.currentProgramItem
         )
-        let restart = LiveMediaRestartControlModel.make(currentItem: viewModel.currentProgramItem)
+        let returnToStart = LiveMediaReturnToStartControlModel.make(currentItem: viewModel.currentProgramItem)
 
         return quickCard(title: "切换", status: viewModel.isFadeToBlackActive ? "已切黑" : "", kind: viewModel.isFadeToBlackActive ? .warn : .idle) {
             HStack(spacing: 7) {
@@ -533,20 +533,20 @@ struct LiveQuickRail: View {
                 ftbButton
             }
 
-            if restart.isEnabled {
+            if returnToStart.isEnabled {
                 Button {
-                    viewModel.restartCurrentMediaFromBeginning()
+                    viewModel.returnCurrentMediaToStart()
                 } label: {
-                    Label(restart.title, systemImage: "backward.end.fill")
+                    Label(returnToStart.title, systemImage: "backward.end.fill")
                         .font(StudioTheme.TypeScale.caption.weight(.black))
                         .frame(maxWidth: .infinity)
                         .frame(height: 34)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .help(restart.help ?? "")
-                .accessibilityLabel(restart.title)
-                .accessibilityHint(restart.help ?? "")
+                .help(returnToStart.help ?? "")
+                .accessibilityLabel(returnToStart.title)
+                .accessibilityHint(returnToStart.help ?? "")
             }
         }
     }
