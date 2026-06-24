@@ -454,6 +454,9 @@ private struct LiveAudioMeter: View {
 struct LiveQuickRail: View {
     @Environment(SwitcherViewModel.self) private var viewModel
     @State private var liveBGMCategory: BGMCategory = .warmUp
+    @State private var isBGMChooserPresented = false
+    @State private var bgmChooserSearchText = ""
+    @State private var bgmChooserCategory: BGMCategory?
     let onOpenMixer: () -> Void
 
     var body: some View {
@@ -881,6 +884,8 @@ struct LiveQuickRail: View {
             bgmCategoryMenu(picker: picker, title: playlist.categoryButtonTitle)
 
             liveBGMPlaylistRows(playlist)
+
+            fullBGMChooserButton()
         }
         .onAppear {
             syncLiveBGMCategoryToCurrent()
@@ -917,6 +922,30 @@ struct LiveQuickRail: View {
         .buttonStyle(.bordered)
         .controlSize(.small)
         .accessibilityLabel("选择 BGM 分类")
+    }
+
+    private func fullBGMChooserButton() -> some View {
+        Button {
+            isBGMChooserPresented = true
+        } label: {
+            Label("全部曲目 · \(viewModel.bgmItems.count)", systemImage: "music.note.list")
+                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .frame(maxWidth: .infinity)
+                .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .help(viewModel.bgmItems.isEmpty ? "曲库为空。" : "搜索并选择任意已有 BGM 曲目。")
+        .accessibilityLabel("选择任意 BGM 曲目")
+        .accessibilityValue("\(viewModel.bgmItems.count) 首")
+        .popover(isPresented: $isBGMChooserPresented) {
+            LiveBGMChooserPopover(
+                searchText: $bgmChooserSearchText,
+                selectedCategory: $bgmChooserCategory
+            ) {
+                isBGMChooserPresented = false
+            }
+        }
     }
 
     @ViewBuilder
