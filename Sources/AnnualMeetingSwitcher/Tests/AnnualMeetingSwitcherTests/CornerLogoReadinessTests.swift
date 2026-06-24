@@ -51,7 +51,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         XCTAssertTrue(viewModel.setCornerLogo(url: brokenURL))
         await loader.waitForRequestCount(1)
         loader.complete(url: brokenURL, with: .failure(.decodeFailed))
-        await Task.yield()
+        await waitForLogoFailure(viewModel)
 
         XCTAssertEqual(viewModel.cornerLogoURL, oldURL)
         XCTAssertTrue(viewModel.cornerLogoImage === oldImage)
