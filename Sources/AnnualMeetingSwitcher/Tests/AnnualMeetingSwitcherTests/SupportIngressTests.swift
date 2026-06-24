@@ -37,7 +37,7 @@ final class SupportIngressTests: XCTestCase {
     func testAudioOwnedBGMFailureDoesNotWriteSupportEvent() {
         var state = LiveRuntimeState()
         state.bgm.generation = 3
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,

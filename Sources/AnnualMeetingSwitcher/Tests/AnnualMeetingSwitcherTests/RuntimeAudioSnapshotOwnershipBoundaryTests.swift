@@ -97,7 +97,7 @@ final class RuntimeAudioSnapshotOwnershipBoundaryTests: XCTestCase {
         state.program.items = [mediaItem("runtime")]
         state.program.currentID = state.program.items[0].id
         state.media.isPlaying = true
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.panic.isActive = true
         state.audio.routingContext = AudioRoutingContext()
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .panicOwned) { viewModel in
@@ -261,7 +261,7 @@ final class RuntimeAudioSnapshotOwnershipBoundaryTests: XCTestCase {
 
     func testAudioOwnedSnapshotStillUsesRuntimeBGMPlayingWhenBGMOwned() {
         var state = runtimeAudioState()
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .bgmOwned) {
             $0.isBGMPlaying = false
         }
@@ -273,7 +273,7 @@ final class RuntimeAudioSnapshotOwnershipBoundaryTests: XCTestCase {
 
     func testAudioOwnedSnapshotStillUsesFacadeBGMPlayingWhenBGMNotOwned() {
         var state = runtimeAudioState()
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .mediaOwned) {
             $0.isBGMPlaying = true
         }

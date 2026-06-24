@@ -93,7 +93,7 @@ final class BGMRuntimeCallbackOwnershipGuardTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = isPlaying
+        state.bgm.phase = isPlaying ? .playing : .selected
         state.bgm.generation = 7
         state.bgm.currentTime = 10
         state.bgm.duration = 50

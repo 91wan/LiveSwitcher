@@ -53,7 +53,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     func testFacadeAudioInputsChangedUpdatesAudioRoutingContextOnly() {
         var state = LiveRuntimeState()
         state.media.isPlaying = false
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         state.panic.isActive = false
 
         let mutation = LiveRuntimeReducer.reduce(
@@ -97,7 +97,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
     func testFacadeAudioInputsChangedDoesNotMutateBGMState() {
         var state = LiveRuntimeState()
         state.bgm.currentID = UUID()
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         state.bgm.progress = 0.4
         let originalBGM = state.bgm
 
@@ -134,7 +134,7 @@ final class AudioRuntimeOwnershipTests: XCTestCase {
             isPanicMode: false
         )
         state.media.isPlaying = false
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         state.panic.isActive = true
 
         let mutation = LiveRuntimeReducer.reduce(

@@ -126,7 +126,7 @@ final class BGMRuntimeFacadeSyncTests: XCTestCase {
         var state = viewModel.runtime.state
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = isPlaying
+        state.bgm.phase = isPlaying ? .playing : .selected
         state.bgm.playMode = playMode
         state.bgm.progress = progress
         state.bgm.currentTime = currentTime

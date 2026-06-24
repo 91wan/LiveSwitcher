@@ -5,7 +5,7 @@ final class AudioRuntimeFacadeSnapshotTests: XCTestCase {
     func testFacadeSnapshotUpdatesOnlyAudioAndUsesRoutingContext() {
         var state = LiveRuntimeState()
         state.media.isPlaying = false
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         state.panic.isActive = false
         let originalMedia = state.media
         let originalBGM = state.bgm

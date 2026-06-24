@@ -47,7 +47,7 @@ final class BGMRuntimeLoopModeTests: XCTestCase {
         let item = BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.progress = 0.4
         state.bgm.currentTime = 8
         state.bgm.duration = 20

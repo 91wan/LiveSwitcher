@@ -33,7 +33,7 @@ final class BGMRuntimeFadeOutTests: XCTestCase {
         XCTAssertTrue(mutation.effects.contains(.stopBGM(fade: 1.25, generation: state.bgm.generation + 1)))
     }
 
-    func testToggleCurrentPlayingBGMStopsWithConfiguredFadeDuration() {
+    func testExplicitBGMStopUsesConfiguredFadeDurationThroughRuntimePort() {
         let item = bgmItem(title: "Walk-in")
         let ports = BGMRuntimeFadeOutPorts()
         let viewModel = makeViewModel(ports: ports, liveAudioFadeDuration: 1.25)
@@ -41,7 +41,7 @@ final class BGMRuntimeFadeOutTests: XCTestCase {
         viewModel.toggleBGM(item)
         ports.reset()
 
-        viewModel.toggleBGM(item)
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
 
         XCTAssertEqual(ports.bgm.events, [.stop(1.25, 2)])
     }
@@ -103,7 +103,7 @@ final class BGMRuntimeFadeOutTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 4
         return state
     }

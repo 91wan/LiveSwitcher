@@ -96,7 +96,14 @@ final class BGMRuntimePanicBridgeTests: XCTestCase {
         state.bgm.items = [item]
         state.bgm.currentID = item.id
         state.bgm.generation = 6
-        state.bgm.isPlaying = false
+        state.bgm.phase = .paused
+        state.panic.isActive = true
+        state.panic.snapshot = PanicPlaybackSnapshot(
+            currentProgramID: nil,
+            wasMediaPlaying: false,
+            currentBGMID: item.id,
+            wasBGMPlaying: true
+        )
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,

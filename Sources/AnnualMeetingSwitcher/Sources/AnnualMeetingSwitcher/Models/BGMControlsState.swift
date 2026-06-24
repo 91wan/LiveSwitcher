@@ -11,7 +11,12 @@ struct BGMControlsState: Equatable {
     let skipDisabledReason: String?
     let seekDisabledReason: String?
 
-    static func make(items: [BGMItem], currentItem: BGMItem?, isPlaying: Bool = false) -> BGMControlsState {
+    static func make(
+        items: [BGMItem],
+        currentItem: BGMItem?,
+        isPlaying: Bool = false,
+        phase: BGMPlaybackPhase? = nil
+    ) -> BGMControlsState {
         let hasLibraryItems = !items.isEmpty
         let categoryItems: [BGMItem]
         if let currentItem {
@@ -21,9 +26,12 @@ struct BGMControlsState: Equatable {
         }
         let canSkip = currentItem != nil && categoryItems.count >= 2
         let displayStatus: (text: String, kind: StudioTheme.StatusKind)
-        if isPlaying {
+        let playbackPhase = phase ?? (isPlaying ? .playing : (currentItem == nil ? .idle : .selected))
+        if playbackPhase == .playing {
             // BGM playback is safe active audio, not critical projection state.
             displayStatus = ("播放中", .ready)
+        } else if playbackPhase == .paused {
+            displayStatus = ("已暂停", .idle)
         } else if !hasLibraryItems {
             displayStatus = ("空", .warn)
         } else if currentItem != nil {

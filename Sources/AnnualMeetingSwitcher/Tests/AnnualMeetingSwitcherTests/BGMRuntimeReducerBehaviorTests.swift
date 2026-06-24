@@ -99,6 +99,101 @@ final class BGMRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertTrue(effects.contains(.stopBGMTimer(generation: 3)))
     }
 
+    func testToggleCurrentBGMFromPlayingPausesWithoutResettingPlaybackIdentity() {
+        let item = bgmItem(title: "Pause Toggle")
+        var state = playingState(item: item, generation: 6)
+        state.bgm.progress = 0.42
+        state.bgm.currentTime = 42
+        state.bgm.duration = 100
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledCurrentBGMPlayback,
+            environment: .productionBGMOwning()
+        )
+
+        XCTAssertEqual(mutation.state.bgm.phase, .paused)
+        XCTAssertEqual(mutation.state.bgm.generation, 6)
+        XCTAssertEqual(mutation.state.bgm.currentID, item.id)
+        XCTAssertEqual(mutation.state.bgm.progress, 0.42)
+        XCTAssertEqual(mutation.state.bgm.currentTime, 42)
+        XCTAssertEqual(mutation.state.bgm.duration, 100)
+        XCTAssertTrue(mutation.effects.contains(.pauseBGM(generation: 6)))
+        XCTAssertTrue(mutation.effects.contains(.stopBGMTimer(generation: 6)))
+        XCTAssertFalse(mutation.effects.contains(.prepareBGM(item, generation: 6)))
+        XCTAssertFalse(mutation.effects.contains(.stopBGM(fade: AudioRoutingDefaults.liveAudioFadeDuration, generation: 7)))
+    }
+
+    func testToggleCurrentBGMFromPausedResumesWithoutPreparingOrResettingProgress() {
+        let item = bgmItem(title: "Resume Toggle")
+        var state = pausedState(item: item, generation: 6)
+        state.bgm.progress = 0.42
+        state.bgm.currentTime = 42
+        state.bgm.duration = 100
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledCurrentBGMPlayback,
+            environment: .productionBGMOwning()
+        )
+
+        XCTAssertEqual(mutation.state.bgm.phase, .playing)
+        XCTAssertEqual(mutation.state.bgm.generation, 6)
+        XCTAssertEqual(mutation.state.bgm.progress, 0.42)
+        XCTAssertEqual(mutation.state.bgm.currentTime, 42)
+        XCTAssertEqual(mutation.state.bgm.duration, 100)
+        XCTAssertTrue(mutation.effects.contains(.playBGM(generation: 6)))
+        XCTAssertTrue(mutation.effects.contains(.startBGMTimer(generation: 6)))
+        XCTAssertFalse(mutation.effects.contains(.prepareBGM(item, generation: 6)))
+        XCTAssertFalse(mutation.effects.contains(.seekBGMToBeginning(generation: 6)))
+    }
+
+    func testToggleCurrentBGMFromSelectedStartsFreshGeneration() {
+        let item = bgmItem(title: "Selected Toggle")
+        var state = selectedState(item: item, generation: 6)
+        state.bgm.progress = 0.42
+        state.bgm.currentTime = 42
+        state.bgm.duration = 100
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorToggledCurrentBGMPlayback,
+            environment: .productionBGMOwning()
+        )
+
+        XCTAssertEqual(mutation.state.bgm.phase, .playing)
+        XCTAssertEqual(mutation.state.bgm.generation, 7)
+        XCTAssertEqual(mutation.state.bgm.progress, 0)
+        XCTAssertEqual(mutation.state.bgm.currentTime, 0)
+        XCTAssertNil(mutation.state.bgm.duration)
+        XCTAssertTrue(mutation.effects.contains(.prepareBGM(item, generation: 7)))
+        XCTAssertTrue(mutation.effects.contains(.playBGM(generation: 7)))
+        XCTAssertTrue(mutation.effects.contains(.startBGMTimer(generation: 7)))
+    }
+
+    func testExplicitStopKeepsSelectionButResetsPlaybackPosition() {
+        let item = bgmItem(title: "Explicit Stop")
+        var state = playingState(item: item, generation: 6)
+        state.bgm.progress = 0.42
+        state.bgm.currentTime = 42
+        state.bgm.duration = 100
+
+        let mutation = LiveRuntimeReducer.reduce(
+            state: state,
+            action: .operatorStoppedBGM,
+            environment: .productionBGMOwning()
+        )
+
+        XCTAssertEqual(mutation.state.bgm.phase, .selected)
+        XCTAssertEqual(mutation.state.bgm.generation, 7)
+        XCTAssertEqual(mutation.state.bgm.currentID, item.id)
+        XCTAssertEqual(mutation.state.bgm.progress, 0)
+        XCTAssertEqual(mutation.state.bgm.currentTime, 0)
+        XCTAssertNil(mutation.state.bgm.duration)
+        XCTAssertTrue(mutation.effects.contains(.stopBGM(fade: AudioRoutingDefaults.liveAudioFadeDuration, generation: 7)))
+        XCTAssertTrue(mutation.effects.contains(.stopBGMTimer(generation: 7)))
+    }
+
     func testPauseBGMForPanicUsesCurrentGenerationWhenNil() {
         let item = bgmItem(title: "Pause")
         var state = playingState(item: item, generation: 6)
@@ -133,7 +228,7 @@ final class BGMRuntimeReducerBehaviorTests: XCTestCase {
 
     func testResumeBGMAfterPanicUsesCurrentGenerationWhenNil() {
         let item = bgmItem(title: "Resume")
-        var state = stoppedState(item: item, generation: 9)
+        var state = panicPausedState(item: item, generation: 9)
         var effects: [LiveRuntimeEffect] = []
 
         BGMRuntimeReducer.resumeAfterPanic(
@@ -149,7 +244,7 @@ final class BGMRuntimeReducerBehaviorTests: XCTestCase {
 
     func testResumeBGMAfterPanicSetsVolumeZeroBeforePlay() {
         let item = bgmItem(title: "Fade Resume")
-        var state = stoppedState(item: item, generation: 9)
+        var state = panicPausedState(item: item, generation: 9)
         var effects: [LiveRuntimeEffect] = []
 
         BGMRuntimeReducer.resumeAfterPanic(
@@ -567,14 +662,38 @@ final class BGMRuntimeReducerBehaviorTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = generation
         return state
     }
 
     private func stoppedState(item: BGMItem, generation: Int) -> LiveRuntimeState {
         var state = playingState(item: item, generation: generation)
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
+        return state
+    }
+
+    private func pausedState(item: BGMItem, generation: Int) -> LiveRuntimeState {
+        var state = playingState(item: item, generation: generation)
+        state.bgm.phase = .paused
+        return state
+    }
+
+    private func panicPausedState(item: BGMItem, generation: Int) -> LiveRuntimeState {
+        var state = pausedState(item: item, generation: generation)
+        state.panic.isActive = true
+        state.panic.snapshot = PanicPlaybackSnapshot(
+            currentProgramID: nil,
+            wasMediaPlaying: false,
+            currentBGMID: item.id,
+            wasBGMPlaying: true
+        )
+        return state
+    }
+
+    private func selectedState(item: BGMItem, generation: Int) -> LiveRuntimeState {
+        var state = playingState(item: item, generation: generation)
+        state.bgm.phase = .selected
         return state
     }
 

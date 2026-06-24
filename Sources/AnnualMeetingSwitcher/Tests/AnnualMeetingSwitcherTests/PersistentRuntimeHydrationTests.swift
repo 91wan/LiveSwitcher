@@ -204,7 +204,7 @@ final class PersistentRuntimeHydrationTests: XCTestCase {
         state.media.isPlaying = true
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.audio.masterVolume = 0.8
         state.audio.mediaVolume = 0.5
         state.audio.bgmVolume = 0.25

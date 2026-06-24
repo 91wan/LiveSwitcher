@@ -127,7 +127,7 @@ final class PanicRuntimeProductionPortTests: XCTestCase {
         state.panic.snapshot = panicSnapshot()
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = bgmPlaying
+        state.bgm.phase = bgmPlaying ? .playing : .selected
         state.bgm.generation = 3
         state.audio.routingContext.isPanicMode = runtimePanic
         state.audio.routingContext.isBGMPlaying = bgmPlaying

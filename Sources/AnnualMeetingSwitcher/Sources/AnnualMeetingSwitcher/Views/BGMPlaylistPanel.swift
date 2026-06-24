@@ -368,7 +368,8 @@ struct BGMPlaylistPanel: View {
         BGMControlsState.make(
             items: viewModel.bgmItems,
             currentItem: viewModel.currentBGMItem,
-            isPlaying: viewModel.isBGMPlaying
+            isPlaying: viewModel.isBGMPlaying,
+            phase: viewModel.runtime.state.bgm.phase
         )
     }
 }

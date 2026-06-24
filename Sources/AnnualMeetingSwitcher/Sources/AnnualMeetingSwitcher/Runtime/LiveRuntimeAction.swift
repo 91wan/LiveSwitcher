@@ -47,6 +47,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorSelectedBGMPlayMode(BGMPlayMode)
     case operatorSeekedBGMToBeginning
     case operatorSeekedBGMToProgress(Double)
+    case operatorToggledCurrentBGMPlayback
     case operatorStoppedBGM
     case operatorSelectedNextBGM
     case operatorSelectedPreviousBGM
@@ -136,6 +137,7 @@ extension LiveRuntimeAction {
         case .operatorSelectedBGMPlayMode: return "operatorSelectedBGMPlayMode"
         case .operatorSeekedBGMToBeginning: return "operatorSeekedBGMToBeginning"
         case .operatorSeekedBGMToProgress: return "operatorSeekedBGMToProgress"
+        case .operatorToggledCurrentBGMPlayback: return "operatorToggledCurrentBGMPlayback"
         case .operatorStoppedBGM: return "operatorStoppedBGM"
         case .operatorSelectedNextBGM: return "operatorSelectedNextBGM"
         case .operatorSelectedPreviousBGM: return "operatorSelectedPreviousBGM"

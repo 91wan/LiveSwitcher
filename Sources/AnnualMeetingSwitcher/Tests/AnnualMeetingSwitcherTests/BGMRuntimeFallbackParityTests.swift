@@ -119,7 +119,7 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
 
-        viewModel.toggleBGM(item)
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
         RunLoop.main.run(until: Date().addingTimeInterval(0.08))
 
         XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)

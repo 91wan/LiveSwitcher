@@ -55,8 +55,11 @@ enum PanicRuntimeReducer {
             currentBGM: state.bgm.currentItem
         ) else { return }
 
-        state.bgm.isPlaying = false
-        effects.append(.pauseBGM(generation: state.bgm.generation))
+        state.bgm.phase = .paused
+        effects += [
+            .pauseBGM(generation: state.bgm.generation),
+            .stopBGMTimer(generation: state.bgm.generation)
+        ]
         syncAudio(state: &state, effects: &effects, speakerModeDuckedRatio: speakerModeDuckedRatio)
     }
 
@@ -95,8 +98,11 @@ enum PanicRuntimeReducer {
                 delay: liveAudioFadeDuration
             ))
         } else {
-            state.bgm.isPlaying = false
-            effects.append(.pauseBGM(generation: state.bgm.generation))
+            state.bgm.phase = .paused
+            effects += [
+                .pauseBGM(generation: state.bgm.generation),
+                .stopBGMTimer(generation: state.bgm.generation)
+            ]
         }
     }
 
@@ -124,8 +130,11 @@ enum PanicRuntimeReducer {
             snapshot: snapshot,
             currentBGM: state.bgm.currentItem
         ) {
-            state.bgm.isPlaying = true
-            effects.append(.playBGM(generation: state.bgm.generation))
+            state.bgm.phase = .playing
+            effects += [
+                .playBGM(generation: state.bgm.generation),
+                .startBGMTimer(generation: state.bgm.generation)
+            ]
         }
     }
 

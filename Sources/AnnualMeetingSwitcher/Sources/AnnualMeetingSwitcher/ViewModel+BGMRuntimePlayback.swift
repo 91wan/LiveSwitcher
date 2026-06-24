@@ -89,7 +89,6 @@ extension SwitcherViewModel {
             setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
         }
         setBGMTransitionGenerationForRuntime(generation)
-        rewindBGMIfAtEndBeforeResume()
         bgmAudioPlayer?.volume = 0
         bgmAudioPlayer?.isMeteringEnabled = true
         bgmAudioPlayer?.play()

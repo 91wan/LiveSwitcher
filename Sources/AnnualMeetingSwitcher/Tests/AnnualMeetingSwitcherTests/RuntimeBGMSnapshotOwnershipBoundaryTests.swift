@@ -115,7 +115,7 @@ final class RuntimeBGMSnapshotOwnershipBoundaryTests: XCTestCase {
         var bgm = BGMRuntimeState()
         bgm.items = items
         bgm.currentID = current.id
-        bgm.isPlaying = true
+        bgm.phase = .playing
         bgm.playMode = playMode
         bgm.generation = generation
         return bgm

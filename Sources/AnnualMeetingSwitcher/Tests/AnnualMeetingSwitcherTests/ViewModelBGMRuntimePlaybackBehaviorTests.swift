@@ -42,13 +42,26 @@ final class ViewModelBGMRuntimePlaybackBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.lastAudioRoutingTransition?.bgmFadeDuration, 1.25)
     }
 
-    func testStopRuntimeBGMStillClearsCallbackIdentity() {
+    func testPauseTogglePreservesCallbackIdentityForResume() {
         let viewModel = makeViewModel()
         let item = bgmItem()
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
 
         viewModel.toggleBGM(item)
+
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackGenerationForTesting, 1)
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackItemIDForTesting, item.id)
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackURLForTesting, item.url)
+    }
+
+    func testExplicitStopRuntimeBGMStillClearsCallbackIdentity() {
+        let viewModel = makeViewModel()
+        let item = bgmItem()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
 
         XCTAssertNil(viewModel.activeRuntimeBGMCallbackGenerationForTesting)
         XCTAssertNil(viewModel.activeRuntimeBGMCallbackItemIDForTesting)

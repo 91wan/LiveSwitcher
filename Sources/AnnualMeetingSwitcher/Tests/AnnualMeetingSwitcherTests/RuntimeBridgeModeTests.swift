@@ -114,7 +114,7 @@ final class RuntimeBridgeModeTests: XCTestCase {
     func testAudioOwnedModeStoresFacadeRoutingInputsInsideAudioState() {
         var state = LiveRuntimeState()
         state.media.isPlaying = false
-        state.bgm.isPlaying = false
+        state.bgm.phase = .selected
         state.panic.isActive = false
 
         let mutation = LiveRuntimeReducer.reduce(

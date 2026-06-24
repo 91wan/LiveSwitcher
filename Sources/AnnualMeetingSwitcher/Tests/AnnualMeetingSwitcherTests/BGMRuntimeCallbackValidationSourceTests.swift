@@ -225,7 +225,7 @@ final class BGMRuntimeCallbackValidationSourceTests: XCTestCase {
         state.bgm.items = [item]
         state.bgm.currentID = item.id
         state.bgm.generation = generation
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         return state
     }
 

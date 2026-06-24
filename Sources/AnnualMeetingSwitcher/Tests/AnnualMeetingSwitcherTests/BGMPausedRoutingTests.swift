@@ -40,7 +40,7 @@ final class BGMPausedRoutingTests: XCTestCase {
         let audioRouting = try String(contentsOf: sourceURL("ViewModel+AudioRouting.swift"), encoding: .utf8)
         let body = try XCTUnwrap(controls.functionBody(named: "toggleBGM"))
 
-        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.operatorStoppedBGM)"))
+        XCTAssertTrue(body.contains("dispatchRuntimeFacadeAction(.operatorToggledCurrentBGMPlayback)"))
         XCTAssertTrue(audioRouting.contains("applyAudioRoutingForRuntimeChange"))
         XCTAssertFalse(body.contains("fadeBGMPlayerVolume(to: 0, duration: fadeDur)"))
         XCTAssertFalse(body.contains("fadeBGMFallbackVolume(to: 0, duration: fadeDur)"))

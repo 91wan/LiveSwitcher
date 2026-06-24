@@ -128,7 +128,7 @@ final class PanicRuntimeDelayedBGMPauseTests: XCTestCase {
         )
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 12
         state.audio.routingContext.isBGMPlaying = true
         state.audio.routingContext.isPanicMode = true

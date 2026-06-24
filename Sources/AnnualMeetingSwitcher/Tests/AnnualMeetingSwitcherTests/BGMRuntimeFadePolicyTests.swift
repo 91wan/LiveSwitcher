@@ -23,7 +23,7 @@ final class BGMRuntimeFadePolicyTests: XCTestCase {
         ports.reset()
 
         viewModel.liveAudioFadeDuration = 1.25
-        viewModel.toggleBGM(item)
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
 
         XCTAssertEqual(ports.bgm.events, [.stop(1.25, 2)])
     }
@@ -37,7 +37,7 @@ final class BGMRuntimeFadePolicyTests: XCTestCase {
         ports.reset()
 
         viewModel.liveAudioFadeDuration = 1.75
-        viewModel.toggleBGM(item)
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
 
         XCTAssertEqual(ports.bgm.events, [.stop(1.75, 2)])
     }

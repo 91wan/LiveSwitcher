@@ -102,7 +102,7 @@ final class BGMRuntimeSeekTests: XCTestCase {
         state.bgm.items = [item]
         state.bgm.currentID = item.id
         state.bgm.generation = generation
-        state.bgm.isPlaying = isPlaying
+        state.bgm.phase = isPlaying ? .playing : .selected
         state.bgm.progress = progress
         state.bgm.currentTime = currentTime
         state.bgm.duration = duration

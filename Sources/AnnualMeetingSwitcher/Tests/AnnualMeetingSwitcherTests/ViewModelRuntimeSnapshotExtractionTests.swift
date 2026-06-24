@@ -77,7 +77,7 @@ final class ViewModelRuntimeSnapshotExtractionTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.progress = 0.7
         state.bgm.currentTime = 7
         state.bgm.duration = 10

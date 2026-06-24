@@ -212,7 +212,7 @@ private extension LiveRuntimeState {
         state.media.isPlaying = mediaPlaying
         state.bgm.items = bgmItems
         state.bgm.currentID = currentBGMID
-        state.bgm.isPlaying = bgmPlaying
+        state.bgm.phase = bgmPlaying ? .playing : .selected
         state.projection.hasExternalDisplay = hasExternalDisplay
         state.audio.effectiveMedia = mediaPlaying ? 1 : 0
         state.audio.effectiveBGM = bgmPlaying ? 0.5 : 0

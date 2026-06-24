@@ -28,7 +28,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,
@@ -49,7 +49,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
     func testBGMCallbacksIgnoreStaleGenerationAndRouteCurrentGeneration() {
         var state = LiveRuntimeState()
         state.bgm.generation = 6
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
 
         let stale = LiveRuntimeReducer.reduce(
             state: state,
@@ -105,7 +105,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .loopOne
         state.bgm.generation = 4
 
@@ -130,7 +130,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [first, second]
         state.bgm.currentID = first.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .loopAll
         state.bgm.generation = 7
 
@@ -154,7 +154,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [warmUp, ceremony, warmUpNext]
         state.bgm.currentID = warmUp.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 2
 
         let next = LiveRuntimeReducer.reduce(
@@ -181,7 +181,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [warmUp, ceremony, warmUpNext]
         state.bgm.currentID = warmUp.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .loopAll
         state.bgm.generation = 7
 
@@ -200,7 +200,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .sequential
         state.bgm.generation = 4
 
@@ -229,7 +229,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [first, second]
         state.bgm.currentID = second.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .sequential
         state.bgm.generation = 9
 
@@ -257,7 +257,7 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedBGM" })
     }
 
-    func testViewModelBGMStopDispatchesRuntimeAction() throws {
+    func testViewModelBGMCurrentTrackToggleDispatchesRuntimePauseResumeAction() throws {
         let viewModel = makeViewModel()
         viewModel.liveAudioFadeDuration = 0
         let item = try temporaryBGMItem(title: "Stop")
@@ -266,7 +266,8 @@ final class LiveRuntimeBGMBridgeTests: XCTestCase {
 
         viewModel.toggleBGM(item)
 
-        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorStoppedBGM" })
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorToggledCurrentBGMPlayback" })
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorStoppedBGM" })
     }
 
     func testViewModelBGMNextPreviousAndEndDispatchRuntimeActions() throws {
