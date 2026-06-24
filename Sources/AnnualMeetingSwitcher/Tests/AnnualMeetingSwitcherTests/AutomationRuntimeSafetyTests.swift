@@ -345,9 +345,11 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     func testTickerEngineDoesNotCreateMainActorTaskPerFrameAndGuardsInvalidSizes() throws {
         let source = try sourceText("Views/LowerThirdOverlay.swift")
         let startBody = try XCTUnwrap(source.functionBody(named: "start"))
+        let configureBody = try XCTUnwrap(source.functionBody(named: "configure"))
 
         XCTAssertFalse(startBody.contains("Task { @MainActor"))
-        XCTAssertTrue(startBody.contains("guard textWidth > 0, containerWidth > 0"))
+        XCTAssertTrue(configureBody.contains("guard containerWidth > 0, measuredTextWidth > 0"))
+        XCTAssertTrue(source.contains("TickerTrackGeometry"))
     }
 
     func testPersistentKeysAreCentralizedInSwitcherPersistenceKeys() throws {

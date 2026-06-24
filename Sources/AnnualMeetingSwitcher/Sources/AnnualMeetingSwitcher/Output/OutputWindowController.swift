@@ -322,52 +322,72 @@ private struct OutputOverlayLayer: View {
     let cornerLogoImage: NSImage?
 
     var body: some View {
-        ZStack {
-            // MARK: - Tier1: 叠层渲染（倒计时 + 游动字幕）
-            if displayState.isCountdownActive {
-                CountdownOverlay()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.countdownAlignment)
-                    .transition(.opacity)
-                    .zIndex(OutputLayerZIndex.countdown)
-            }
-            if displayState.isTickerActive {
-                TickerOverlay()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.tickerAlignment)
-                    .transition(.opacity)
-                    .zIndex(OutputLayerZIndex.ticker)
-            }
-
-            // MARK: - V27: Lower Third 人名条（下三分之一条）
-            if displayState.isLowerThirdVisible {
-                LowerThirdView(
-                    name: displayState.lowerThirdName,
-                    title: displayState.lowerThirdTitle,
-                    isVisible: displayState.isLowerThirdVisible
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.lowerThirdAlignment)
-                .transition(.opacity)
-                .zIndex(OutputLayerZIndex.lowerThird)
-            }
-
-            OutputCornerLogoLayer(
-                image: cornerLogoImage,
-                position: displayState.cornerLogoPosition
+        GeometryReader { geometry in
+            let plan = OutputOverlayLayoutPlan.make(
+                canvasSize: geometry.size,
+                isTickerActive: displayState.isTickerActive,
+                isCountdownActive: displayState.isCountdownActive,
+                isLowerThirdVisible: displayState.isLowerThirdVisible,
+                isLogoReady: cornerLogoImage != nil,
+                logoPosition: displayState.cornerLogoPosition
             )
-            .zIndex(OutputLayerZIndex.cornerLogo)
+            let lowerThirdMetrics = LowerThirdTypographyMetrics.metrics(
+                forCanvasHeight: geometry.size.height,
+                canvasWidth: geometry.size.width
+            )
 
-            if displayState.isFadeToBlackActive {
-                Color.black
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-                    .zIndex(OutputLayerZIndex.fadeToBlack)
-                    .accessibilityLabel("切黑已启用")
-            }
+            ZStack {
+                // MARK: - Tier1: 叠层渲染（倒计时 + 游动字幕）
+                if let countdownFrame = plan.countdownFrame {
+                    CountdownOverlay()
+                        .frame(width: countdownFrame.width, height: countdownFrame.height)
+                        .position(x: countdownFrame.midX, y: countdownFrame.midY)
+                        .transition(.opacity)
+                        .zIndex(OutputLayerZIndex.countdown)
+                }
+                if let tickerFrame = plan.tickerFrame {
+                    TickerOverlay()
+                        .frame(width: tickerFrame.width, height: tickerFrame.height)
+                        .position(x: tickerFrame.midX, y: tickerFrame.midY)
+                        .transition(.opacity)
+                        .zIndex(OutputLayerZIndex.ticker)
+                }
 
-            // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）
-            if displayState.isPanicMode {
-                PanicLayer()
+                // MARK: - V27: Lower Third 人名条（下三分之一条）
+                if let lowerThirdFrame = plan.lowerThirdFrame {
+                    LowerThirdView(
+                        name: displayState.lowerThirdName,
+                        title: displayState.lowerThirdTitle,
+                        isVisible: displayState.isLowerThirdVisible,
+                        metrics: lowerThirdMetrics
+                    )
+                    .frame(width: lowerThirdFrame.width, height: lowerThirdFrame.height, alignment: .leading)
+                    .position(x: lowerThirdFrame.midX, y: lowerThirdFrame.midY)
                     .transition(.opacity)
-                    .zIndex(OutputLayerZIndex.panic)
+                    .zIndex(OutputLayerZIndex.lowerThird)
+                }
+
+                if let logoFrame = plan.logoFrame {
+                    OutputCornerLogoLayer(image: cornerLogoImage)
+                        .frame(width: logoFrame.width, height: logoFrame.height)
+                        .position(x: logoFrame.midX, y: logoFrame.midY)
+                        .zIndex(OutputLayerZIndex.cornerLogo)
+                }
+
+                if displayState.isFadeToBlackActive {
+                    Color.black
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                        .zIndex(OutputLayerZIndex.fadeToBlack)
+                        .accessibilityLabel("切黑已启用")
+                }
+
+                // MARK: - Tier1: Panic 黑屏遮罩（最高优先级，必须在最顶层）
+                if displayState.isPanicMode {
+                    PanicLayer()
+                        .transition(.opacity)
+                        .zIndex(OutputLayerZIndex.panic)
+                }
             }
         }
     }
@@ -375,16 +395,13 @@ private struct OutputOverlayLayer: View {
 
 private struct OutputCornerLogoLayer: View {
     let image: NSImage?
-    let position: CornerLogoPosition
 
     var body: some View {
         if let image {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(height: 80)
-                .padding(28)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: position.alignment)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .accessibilityLabel("角标 Logo 输出")
         }
     }
