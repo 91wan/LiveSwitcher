@@ -134,6 +134,8 @@ final class SwitcherViewModel {
         }
     }
     var cornerLogoImage: NSImage?
+    var cornerLogoLoadPhase: CornerLogoLoadPhase = .off
+    @ObservationIgnored var cornerLogoImageLoader: @MainActor (URL) async -> Result<NSImage, CornerLogoLoadFailure> = SwitcherViewModel.defaultCornerLogoImageLoader
     var cornerLogoPosition: CornerLogoPosition = .topRight {
         didSet {
             guard oldValue != cornerLogoPosition else { return }

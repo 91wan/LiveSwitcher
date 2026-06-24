@@ -20,13 +20,70 @@ extension SwitcherViewModel {
         cleanupBag.cornerLogoImageLoadTask?.cancel()
         guard let url else {
             cornerLogoImage = nil
+            cornerLogoLoadPhase = .off
             return
         }
-        cornerLogoImage = NSImage(byReferencing: url)
+
+        if case .ready(let activeURL) = cornerLogoLoadPhase,
+           activeURL == url,
+           cornerLogoImage != nil {
+            return
+        }
+
+        startCornerLogoCandidateLoad(url: url, saveOnSuccess: false)
+    }
+
+    static func defaultCornerLogoImageLoader(_ url: URL) async -> Result<NSImage, CornerLogoLoadFailure> {
+        guard let data = await imageData(from: url),
+              let image = NSImage(data: data),
+              image.size.width > 0,
+              image.size.height > 0
+        else {
+            return .failure(.decodeFailed)
+        }
+        return .success(image)
+    }
+
+    private func startCornerLogoCandidateLoad(url: URL, saveOnSuccess: Bool) {
+        cleanupBag.cornerLogoImageLoadTask?.cancel()
+        let requestID = UUID()
+        cornerLogoLoadPhase = .loading(candidateURL: url, requestID: requestID)
         cleanupBag.cornerLogoImageLoadTask = Task { @MainActor [weak self] in
-            let data = await Self.imageData(from: url)
-            guard !Task.isCancelled, let self, self.cornerLogoURL == url else { return }
-            self.cornerLogoImage = data.flatMap(NSImage.init(data:))
+            guard let self else { return }
+            let result = await self.cornerLogoImageLoader(url)
+            guard !Task.isCancelled else { return }
+            self.completeCornerLogoCandidateLoad(
+                url: url,
+                requestID: requestID,
+                result: result,
+                saveOnSuccess: saveOnSuccess
+            )
+        }
+    }
+
+    private func completeCornerLogoCandidateLoad(
+        url: URL,
+        requestID: UUID,
+        result: Result<NSImage, CornerLogoLoadFailure>,
+        saveOnSuccess: Bool
+    ) {
+        guard case .loading(let candidateURL, let activeRequestID) = cornerLogoLoadPhase,
+              candidateURL == url,
+              activeRequestID == requestID
+        else { return }
+
+        switch result {
+        case .success(let image):
+            cornerLogoImage = image
+            cornerLogoLoadPhase = .ready(activeURL: url)
+            if cornerLogoURL != url {
+                cornerLogoURL = url
+            }
+            if saveOnSuccess {
+                saveData()
+            }
+        case .failure(let reason):
+            cornerLogoLoadPhase = .failed(candidateURL: url, reason: reason)
         }
     }
 
@@ -61,14 +118,25 @@ extension SwitcherViewModel {
 
     @discardableResult
     func setCornerLogo(url: URL) -> Bool {
-        guard WallpaperImagePolicy.isRenderableImage(url: url) else { return false }
-        cornerLogoURL = url
-        saveData()
+        guard WallpaperImagePolicy.isSupported(url: url) else {
+            cornerLogoLoadPhase = .failed(candidateURL: url, reason: .unsupportedFile)
+            return false
+        }
+        startCornerLogoCandidateLoad(url: url, saveOnSuccess: true)
         return true
     }
 
     func removeCornerLogo() {
+        cleanupBag.cornerLogoImageLoadTask?.cancel()
         cornerLogoURL = nil
+        cornerLogoImage = nil
+        cornerLogoLoadPhase = .off
         saveData()
+    }
+
+    func retryCornerLogoLoad() {
+        guard case .failed(let candidateURL, _) = cornerLogoLoadPhase,
+              let candidateURL else { return }
+        startCornerLogoCandidateLoad(url: candidateURL, saveOnSuccess: cornerLogoURL != candidateURL)
     }
 }

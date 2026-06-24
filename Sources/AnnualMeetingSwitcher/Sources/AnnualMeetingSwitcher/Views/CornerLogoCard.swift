@@ -33,10 +33,15 @@ struct CornerLogoCard: View {
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer()
-                if viewModel.cornerLogoURL == nil {
+                switch viewModel.cornerLogoLoadPhase {
+                case .off:
                     StatusBadge("关闭", kind: .idle)
-                } else {
+                case .loading:
+                    StatusBadge("加载中", kind: .warn)
+                case .ready:
                     StatusBadge(viewModel.cornerLogoPosition.shortLabel, kind: .ready)
+                case .failed:
+                    StatusBadge("加载失败", kind: .fail)
                 }
             }
 
@@ -69,8 +74,26 @@ struct CornerLogoCard: View {
                         .font(StudioTheme.TypeScale.caption.weight(.bold))
                         .buttonStyle(.bordered)
                         .controlSize(.small)
-                        .disabled(viewModel.cornerLogoURL == nil)
+                        .disabled(viewModel.cornerLogoLoadPhase == .off)
                     }
+
+                    if case .failed(let candidateURL, _) = viewModel.cornerLogoLoadPhase,
+                       candidateURL != nil {
+                        Button {
+                            viewModel.retryCornerLogoLoad()
+                        } label: {
+                            Label("重试", systemImage: "arrow.clockwise")
+                                .font(StudioTheme.TypeScale.caption.weight(.bold))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+
+                    Text(viewModel.cornerLogoLoadPhase.displayText)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
             }
         }
@@ -111,6 +134,19 @@ struct CornerLogoCard: View {
                 .frame(width: 86, height: 54)
             }
         }
-        .accessibilityLabel(viewModel.cornerLogoURL == nil ? "未选择角标 Logo" : "已选择角标 Logo")
+        .accessibilityLabel(cornerLogoAccessibilityLabel)
+    }
+
+    private var cornerLogoAccessibilityLabel: String {
+        switch viewModel.cornerLogoLoadPhase {
+        case .off:
+            "角标 Logo 已关闭"
+        case .loading:
+            "角标 Logo 正在加载"
+        case .ready:
+            "角标 Logo 已就绪"
+        case .failed:
+            "角标 Logo 加载失败"
+        }
     }
 }
