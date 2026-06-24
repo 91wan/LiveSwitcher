@@ -17,9 +17,11 @@ enum OutputOverlayLayoutMetrics {
     static let lowerThirdHorizontalPadding = lowerThirdOuterMargin
     static let lowerThirdBottomPadding = lowerThirdBottomMargin
 
-    static let logoMaxWidth: CGFloat = 260
-    static let logoMaxHeight: CGFloat = 80
-    static let logoOuterMargin: CGFloat = 28
+    static let logoMaxWidth: CGFloat = 340
+    static let logoMaxHeight: CGFloat = 104
+    static let logoHorizontalMargin = lowerThirdOuterMargin
+    static let logoTopMargin = lowerThirdOuterMargin
+    static let logoBottomMargin = lowerThirdBottomMargin
 }
 
 struct LowerThirdTypographyMetrics: Equatable {
@@ -116,21 +118,24 @@ struct OutputOverlayLayoutPlan: Equatable {
         lowerThirdFrame: CGRect?,
         position: CornerLogoPosition
     ) -> CGRect {
-        let margin = OutputOverlayLayoutMetrics.logoOuterMargin
+        let horizontalMargin = OutputOverlayLayoutMetrics.logoHorizontalMargin
+        let topMargin = OutputOverlayLayoutMetrics.logoTopMargin
+        let bottomMargin = OutputOverlayLayoutMetrics.logoBottomMargin
+        let verticalMargin = position == .topLeft || position == .topRight ? topMargin : bottomMargin
         let size = CGSize(
-            width: min(OutputOverlayLayoutMetrics.logoMaxWidth, max(0, canvas.width - margin * 2)),
-            height: min(OutputOverlayLayoutMetrics.logoMaxHeight, max(0, canvas.height - margin * 2))
+            width: min(OutputOverlayLayoutMetrics.logoMaxWidth, max(0, canvas.width - horizontalMargin * 2)),
+            height: min(OutputOverlayLayoutMetrics.logoMaxHeight, max(0, canvas.height - verticalMargin * 2))
         )
         var origin: CGPoint
         switch position {
         case .topLeft:
-            origin = CGPoint(x: margin, y: margin)
+            origin = CGPoint(x: horizontalMargin, y: topMargin)
         case .topRight:
-            origin = CGPoint(x: canvas.maxX - margin - size.width, y: margin)
+            origin = CGPoint(x: canvas.maxX - horizontalMargin - size.width, y: topMargin)
         case .bottomLeft:
-            origin = CGPoint(x: margin, y: canvas.maxY - margin - size.height)
+            origin = CGPoint(x: horizontalMargin, y: canvas.maxY - bottomMargin - size.height)
         case .bottomRight:
-            origin = CGPoint(x: canvas.maxX - margin - size.width, y: canvas.maxY - margin - size.height)
+            origin = CGPoint(x: canvas.maxX - horizontalMargin - size.width, y: canvas.maxY - bottomMargin - size.height)
         }
 
         if position == .topLeft || position == .topRight,
@@ -141,10 +146,10 @@ struct OutputOverlayLayoutPlan: Equatable {
         if position == .bottomLeft,
            let lowerThirdFrame {
             let preferredY = lowerThirdFrame.minY - OutputOverlayLayoutMetrics.minimumLayerGap - size.height
-            origin.y = max(margin, preferredY)
+            origin.y = max(topMargin, preferredY)
             if CGRect(origin: origin, size: size).intersects(lowerThirdFrame) {
                 origin.x = min(
-                    canvas.maxX - margin - size.width,
+                    canvas.maxX - horizontalMargin - size.width,
                     lowerThirdFrame.maxX + OutputOverlayLayoutMetrics.minimumLayerGap
                 )
             }

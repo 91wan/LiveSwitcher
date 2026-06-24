@@ -116,11 +116,11 @@ struct TickerTrackGeometry: Equatable {
     }
 
     var resetThreshold: CGFloat {
-        -(textWidth + Self.trackGap)
+        -textWidth
     }
 
     func nextOffset(after otherOffset: CGFloat) -> CGFloat {
-        otherOffset + textWidth + Self.trackGap
+        max(initialOffsetA, otherOffset + textWidth + Self.trackGap)
     }
 }
 
@@ -128,6 +128,7 @@ struct TickerTrackGeometry: Equatable {
 final class TickerEngine: ObservableObject {
     @Published var offsetA: CGFloat = TickerTrackGeometry.hiddenOffset
     @Published var offsetB: CGFloat = TickerTrackGeometry.hiddenOffset
+    @Published private(set) var isReadyForDisplay = false
 
     private var scrollTimer: Timer?
     private var currentGeometry: TickerTrackGeometry?
@@ -151,6 +152,7 @@ final class TickerEngine: ObservableObject {
             currentGeometry = nil
             offsetA = TickerTrackGeometry.hiddenOffset
             offsetB = TickerTrackGeometry.hiddenOffset
+            isReadyForDisplay = false
             return
         }
 
@@ -163,6 +165,7 @@ final class TickerEngine: ObservableObject {
             offsetA = geometry.initialOffsetA
             offsetB = geometry.initialOffsetB
         }
+        isReadyForDisplay = true
 
         stop()
         start(speed: speed, geometry: geometry)
@@ -259,8 +262,13 @@ struct TickerOverlay: View {
                         .fixedSize()
                         .offset(x: engine.offsetB)
                 }
-                .clipped()
                 .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)
+                .clipped()
+                .opacity(engine.isReadyForDisplay ? 1 : 0)
+                .transaction { transaction in
+                    transaction.animation = nil
+                    transaction.disablesAnimations = true
+                }
                 .onAppear {
                     engine.configure(
                         containerWidth: cardWidth,

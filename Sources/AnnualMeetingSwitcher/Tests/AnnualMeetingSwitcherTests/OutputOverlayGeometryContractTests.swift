@@ -72,6 +72,37 @@ final class OutputOverlayGeometryContractTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(canvas.height - lowerThirdFrame.maxY, 96)
     }
 
+    func testLogoUsesLowerThirdAlignedMarginsAndLargerDisplaySize() {
+        let canvas = CGSize(width: 1920, height: 1080)
+        let bottomRightPlan = OutputOverlayLayoutPlan.make(
+            canvasSize: canvas,
+            isTickerActive: false,
+            isCountdownActive: false,
+            isLowerThirdVisible: false,
+            isLogoReady: true,
+            logoPosition: .bottomRight
+        )
+        let bottomRightLogoFrame = tryUnwrap(bottomRightPlan.logoFrame)
+        XCTAssertEqual(canvas.width - bottomRightLogoFrame.maxX, OutputOverlayLayoutMetrics.lowerThirdOuterMargin, accuracy: 0.001)
+        XCTAssertEqual(canvas.height - bottomRightLogoFrame.maxY, OutputOverlayLayoutMetrics.lowerThirdBottomMargin, accuracy: 0.001)
+        XCTAssertGreaterThanOrEqual(bottomRightLogoFrame.width, 320)
+        XCTAssertGreaterThanOrEqual(bottomRightLogoFrame.height, 96)
+
+        let bottomLeftPlan = OutputOverlayLayoutPlan.make(
+            canvasSize: canvas,
+            isTickerActive: false,
+            isCountdownActive: false,
+            isLowerThirdVisible: true,
+            isLogoReady: true,
+            logoPosition: .bottomLeft
+        )
+        let lowerThirdFrame = tryUnwrap(bottomLeftPlan.lowerThirdFrame)
+        let bottomLeftLogoFrame = tryUnwrap(bottomLeftPlan.logoFrame)
+        XCTAssertEqual(bottomLeftLogoFrame.minX, lowerThirdFrame.minX, accuracy: 0.001)
+        XCTAssertGreaterThan(canvas.height - bottomLeftLogoFrame.maxY, OutputOverlayLayoutMetrics.lowerThirdBottomMargin)
+        XCTAssertGreaterThanOrEqual(lowerThirdFrame.minY - bottomLeftLogoFrame.maxY, OutputOverlayLayoutMetrics.minimumLayerGap)
+    }
+
     func testLogoAvoidsTickerAndLowerThirdWithoutShrinkingTicker() {
         let canvas = CGSize(width: 1920, height: 1080)
         let topPlan = OutputOverlayLayoutPlan.make(

@@ -3,25 +3,27 @@ import XCTest
 @testable import LiveSwitcher
 
 final class TickerTrackGeometryTests: XCTestCase {
-    func testTickerTracksAreOffscreenBeforeFirstConfiguration() async {
+    func testTickerTextIsHiddenUntilTrackStartsAtRightEdge() async {
         let result = await MainActor.run {
             let engine = TickerEngine()
-            let initialOffsetA = engine.offsetA
-            let initialOffsetB = engine.offsetB
+            let initialReadyState = engine.isReadyForDisplay
             engine.configure(containerWidth: 1920, measuredTextWidth: 640, speed: 80, resetPosition: true)
+            let configuredReadyState = engine.isReadyForDisplay
             let configuredOffset = engine.offsetA
             engine.configure(containerWidth: 0, measuredTextWidth: 640, speed: 80, resetPosition: true)
+            let invalidReadyState = engine.isReadyForDisplay
             let invalidOffsetA = engine.offsetA
             let invalidOffsetB = engine.offsetB
             engine.stop()
-            return (initialOffsetA, initialOffsetB, configuredOffset, invalidOffsetA, invalidOffsetB)
+            return (initialReadyState, configuredReadyState, configuredOffset, invalidReadyState, invalidOffsetA, invalidOffsetB)
         }
 
-        XCTAssertGreaterThan(result.0, 4096)
-        XCTAssertGreaterThan(result.1, 4096)
-        XCTAssertGreaterThan(result.2, 1920)
-        XCTAssertGreaterThan(result.3, 4096)
-        XCTAssertGreaterThan(result.4, 4096)
+        XCTAssertFalse(result.0)
+        XCTAssertTrue(result.1)
+        XCTAssertEqual(result.2, 1920 + TickerTrackGeometry.internalTextPadding, accuracy: 0.001)
+        XCTAssertFalse(result.3)
+        XCTAssertGreaterThan(result.4, 1920)
+        XCTAssertGreaterThan(result.5, 1920)
     }
 
     func testInitialOffsetsStartOutsideRightEdge() {
@@ -66,6 +68,16 @@ final class TickerTrackGeometryTests: XCTestCase {
         XCTAssertEqual(result.2, 760 + TickerTrackGeometry.trackGap, accuracy: 0.001)
     }
 
+    func testLoopResetReturnsToRightEdgeInsteadOfMiddleOfCanvas() {
+        let geometry = TickerTrackGeometry(containerWidth: 1920, measuredTextWidth: 640)
+
+        XCTAssertEqual(geometry.resetThreshold, -640, accuracy: 0.001)
+        XCTAssertEqual(geometry.nextOffset(after: 0), geometry.initialOffsetA, accuracy: 0.001)
+        XCTAssertEqual(geometry.nextOffset(after: 40), geometry.initialOffsetA, accuracy: 0.001)
+        XCTAssertGreaterThanOrEqual(geometry.nextOffset(after: 0), 1920 + TickerTrackGeometry.internalTextPadding)
+        XCTAssertEqual(geometry.nextOffset(after: 1800), 1800 + 640 + TickerTrackGeometry.trackGap, accuracy: 0.001)
+    }
+
     func testSpeedChangeKeepsSingleTimer() async {
         let result = await MainActor.run {
             let engine = TickerEngine()
@@ -98,5 +110,18 @@ final class TickerTrackGeometryTests: XCTestCase {
 
         XCTAssertFalse(source.contains("textWidth == 800"))
         XCTAssertFalse(source.contains("private var started"))
+    }
+
+    func testTickerTrackDisablesInheritedActivationAnimation() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+
+        XCTAssertTrue(source.contains(".transaction { transaction in\n                    transaction.animation = nil\n                    transaction.disablesAnimations = true\n                }"))
+    }
+
+    func testTickerTrackClipsAfterFullWidthFrame() throws {
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+
+        XCTAssertTrue(source.contains(".frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)\n                .clipped()"))
+        XCTAssertFalse(source.contains(".clipped()\n                .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)"))
     }
 }
