@@ -179,7 +179,7 @@ final class BGMRuntimeAdjacentPanicTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [first, second]
         state.bgm.currentID = current.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 7
         state.panic.isActive = panicActive
         if panicActive {

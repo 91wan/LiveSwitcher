@@ -61,6 +61,15 @@ final class BGMControlsStateTests: XCTestCase {
         XCTAssertEqual(state.displayStatusKind, .ready)
     }
 
+    func testPausedTrackDisplaysPausedStatus() {
+        let track = BGMItem(title: "Opening", url: URL(fileURLWithPath: "/tmp/opening.mp3"), category: .warmUp)
+
+        let state = BGMControlsState.make(items: [track], currentItem: track, phase: .paused)
+
+        XCTAssertEqual(state.displayStatusText, "已暂停")
+        XCTAssertEqual(state.displayStatusKind, .idle)
+    }
+
     func testCurrentCategoryNeedsAtLeastTwoTracksToSkip() {
         let current = BGMItem(title: "Opening A", url: URL(fileURLWithPath: "/tmp/opening-a.mp3"), category: .warmUp)
         let sameCategory = BGMItem(title: "Opening B", url: URL(fileURLWithPath: "/tmp/opening-b.mp3"), category: .warmUp)

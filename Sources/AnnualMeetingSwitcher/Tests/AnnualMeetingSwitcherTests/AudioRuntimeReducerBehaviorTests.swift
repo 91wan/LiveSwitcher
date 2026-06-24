@@ -54,7 +54,7 @@ func audioState(mediaPlaying: Bool, bgmPlaying: Bool) -> LiveRuntimeState {
     state.media.isPlaying = mediaPlaying
     state.bgm.items = [bgm]
     state.bgm.currentID = bgm.id
-    state.bgm.isPlaying = bgmPlaying
+    state.bgm.phase = bgmPlaying ? .playing : .selected
     state.audio.masterVolume = 0.8
     state.audio.mediaVolume = 0.5
     state.audio.bgmVolume = 0.25

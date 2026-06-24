@@ -89,7 +89,6 @@ extension SwitcherViewModel {
             setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
         }
         setBGMTransitionGenerationForRuntime(generation)
-        rewindBGMIfAtEndBeforeResume()
         bgmAudioPlayer?.volume = 0
         bgmAudioPlayer?.isMeteringEnabled = true
         bgmAudioPlayer?.play()
@@ -102,8 +101,16 @@ extension SwitcherViewModel {
 
     func pauseRuntimeBGM(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
-        bgmAudioPlayer?.pause()
-        bgmFallbackPlayer.pause()
+        setBGMTransitionGenerationForRuntime(generation)
+        let fadeDuration = liveAudioFadeDuration
+        fadeCurrentBGMPlayerVolume(to: 0, duration: fadeDuration, generation: generation)
+        fadeCurrentBGMFallbackVolume(to: 0, duration: fadeDuration, generation: generation)
+        guard fadeDuration > 0 else {
+            bgmAudioPlayer?.pause()
+            bgmFallbackPlayer.pause()
+            return
+        }
+        pauseCurrentBGMPlayersAfterFade(duration: fadeDuration, generation: generation, audioPlayer: bgmAudioPlayer)
     }
 
     func stopRuntimeBGM(fade: TimeInterval, generation: Int) {
@@ -356,6 +363,22 @@ extension SwitcherViewModel {
             self.bgmFallbackPlayer.pause()
             self.removeBGMFallbackEndObserver()
             self.bgmFallbackPlayer.replaceCurrentItem(with: nil)
+        }
+    }
+
+    private func pauseCurrentBGMPlayersAfterFade(duration: Double, generation: Int, audioPlayer: AVAudioPlayer?) {
+        let taskID = UUID()
+        cleanupBag.bgmTransitionTasks[taskID] = Task { @MainActor [weak self, weak audioPlayer] in
+            defer { self?.cleanupBag.bgmTransitionTasks[taskID] = nil }
+            let pauseDelay = BGMFadeCompletionPolicy.pauseDelay(fadeDuration: duration)
+            if pauseDelay > 0 {
+                try? await Task.sleep(nanoseconds: UInt64(pauseDelay * 1_000_000_000))
+            }
+            guard let self, !Task.isCancelled else { return }
+            guard self.runtime.state.bgm.generation == generation else { return }
+            guard self.runtime.state.bgm.phase == .paused else { return }
+            audioPlayer?.pause()
+            self.bgmFallbackPlayer.pause()
         }
     }
 

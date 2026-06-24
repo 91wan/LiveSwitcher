@@ -95,6 +95,7 @@ enum LiveRuntimeFacadeSyncPolicy {
     private static func shouldSyncBGMFacadeAfterRuntimeAction(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .operatorSelectedBGM,
+             .operatorToggledCurrentBGMPlayback,
              .operatorStoppedBGM,
              .operatorSelectedNextBGM,
              .operatorSelectedPreviousBGM,

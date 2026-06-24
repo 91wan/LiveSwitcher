@@ -145,13 +145,26 @@ final class BGMRuntimeCallbackIntegrityTests: XCTestCase {
         XCTAssertEqual(viewModel.activeRuntimeBGMCallbackURLForTesting, item.url)
     }
 
-    func testBGMStopClearsActiveCallbackIdentity() {
+    func testBGMPauseTogglePreservesActiveCallbackIdentity() {
         let viewModel = makeViewModel()
         let item = bgmItem()
         viewModel.bgmItems = [item]
         viewModel.toggleBGM(item)
 
         viewModel.toggleBGM(item)
+
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackGenerationForTesting, 1)
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackItemIDForTesting, item.id)
+        XCTAssertEqual(viewModel.activeRuntimeBGMCallbackURLForTesting, item.url)
+    }
+
+    func testExplicitBGMStopClearsActiveCallbackIdentity() {
+        let viewModel = makeViewModel()
+        let item = bgmItem()
+        viewModel.bgmItems = [item]
+        viewModel.toggleBGM(item)
+
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
 
         XCTAssertNil(viewModel.activeRuntimeBGMCallbackGenerationForTesting)
         XCTAssertNil(viewModel.activeRuntimeBGMCallbackItemIDForTesting)

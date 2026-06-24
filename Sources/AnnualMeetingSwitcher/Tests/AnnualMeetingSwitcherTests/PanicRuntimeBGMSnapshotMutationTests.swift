@@ -93,7 +93,7 @@ final class PanicRuntimeBGMSnapshotMutationTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 7
         state.panic.isActive = true
         state.panic.snapshot = PanicPlaybackSnapshot(

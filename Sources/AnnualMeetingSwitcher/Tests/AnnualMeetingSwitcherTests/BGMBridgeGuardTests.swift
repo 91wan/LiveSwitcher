@@ -23,7 +23,7 @@ final class BGMBridgeGuardTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         let originalBGM = state.bgm
 
         let mutation = LiveRuntimeReducer.reduce(

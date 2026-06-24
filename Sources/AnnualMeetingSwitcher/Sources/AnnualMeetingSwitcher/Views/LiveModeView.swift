@@ -840,7 +840,8 @@ struct LiveQuickRail: View {
         let controls = BGMControlsState.make(
             items: viewModel.bgmItems,
             currentItem: viewModel.currentBGMItem,
-            isPlaying: viewModel.isBGMPlaying
+            isPlaying: viewModel.isBGMPlaying,
+            phase: viewModel.runtime.state.bgm.phase
         )
         let playlist = LiveBGMPlaylistModel.make(
             items: viewModel.bgmItems,

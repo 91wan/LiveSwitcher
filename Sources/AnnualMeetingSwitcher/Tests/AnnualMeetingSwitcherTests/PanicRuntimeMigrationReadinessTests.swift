@@ -73,7 +73,7 @@ final class PanicRuntimeMigrationReadinessTests: XCTestCase {
         let bgm = BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
 
         let mutation = LiveRuntimeReducer.reduce(
             state: state,

@@ -311,7 +311,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         var state = LiveRuntimeState()
         state.bgm.items = [item]
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.progress = 0.5
         state.bgm.generation = 8
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .panicOwned)

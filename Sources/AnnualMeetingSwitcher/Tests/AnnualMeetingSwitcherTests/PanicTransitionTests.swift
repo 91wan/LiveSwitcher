@@ -37,7 +37,7 @@ final class PanicTransitionTests: XCTestCase {
             state.bgm.items.append(item)
         }
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = isPlaying
+        state.bgm.phase = isPlaying ? .playing : .selected
         viewModel.runtime.replaceStateForFacadeSync(state)
         viewModel.syncBGMFacadeFromRuntime()
     }

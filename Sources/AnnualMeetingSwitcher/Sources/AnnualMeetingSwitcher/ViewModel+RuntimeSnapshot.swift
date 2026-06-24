@@ -286,7 +286,13 @@ extension SwitcherViewModel {
         state.bgm.items = items
         state.bgm.playMode = bgmPlayMode
         state.bgm.currentID = currentBGMItem?.id
-        state.bgm.isPlaying = isBGMPlaying
+        if isBGMPlaying {
+            state.bgm.phase = .playing
+        } else if currentBGMItem != nil {
+            state.bgm.phase = .selected
+        } else {
+            state.bgm.phase = .idle
+        }
         state.bgm.progress = bgmProgress
         state.bgm.currentTime = bgmCurrentTime
         state.bgm.duration = bgmDuration

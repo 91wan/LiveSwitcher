@@ -169,7 +169,7 @@ final class PanicRuntimeReducerPolicyTests: XCTestCase {
         state.media.generation = 3
         state.bgm.items = [bgm]
         state.bgm.currentID = bgm.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.generation = 9
         return state
     }

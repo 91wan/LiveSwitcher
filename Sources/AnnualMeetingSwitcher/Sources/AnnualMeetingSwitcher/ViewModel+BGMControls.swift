@@ -170,9 +170,9 @@ extension SwitcherViewModel {
             return
         }
 
-        if currentBGMItem?.id == item.id, isBGMPlaying {
-            dispatchRuntimeFacadeAction(.operatorStoppedBGM)
-            recordBGMPlaybackState(isPlaying: false, reason: "operator")
+        if currentBGMItem?.id == item.id {
+            dispatchRuntimeFacadeAction(.operatorToggledCurrentBGMPlayback)
+            recordBGMPlaybackState(isPlaying: runtime.state.bgm.isPlaying, reason: "operatorToggle")
         } else {
             dispatchRuntimeBGMItemAction(.operatorSelectedBGM(item.id), item: item)
             recordBGMPlaybackState(isPlaying: true, reason: "selected")

@@ -199,7 +199,7 @@ final class PersistentLoadRuntimePreservationTests: XCTestCase {
         state.media.generation = 7
         state.bgm.items = [bgmItem]
         state.bgm.currentID = bgmItem.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = .loopAll
         state.bgm.progress = 0.35
         state.bgm.currentTime = 30

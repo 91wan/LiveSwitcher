@@ -284,7 +284,7 @@ final class RuntimeOwnedBGMSnapshotTests: XCTestCase {
         var bgm = BGMRuntimeState()
         bgm.items = [item]
         bgm.currentID = item.id
-        bgm.isPlaying = isPlaying
+        bgm.phase = isPlaying ? .playing : .selected
         bgm.playMode = playMode
         bgm.progress = progress
         bgm.currentTime = currentTime

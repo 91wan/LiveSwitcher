@@ -15,7 +15,7 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
         XCTAssertEqual(ports.timer.events, [.start(1)])
     }
 
-    func testToggleCurrentPlayingBGMStopsThroughRuntimePort() {
+    func testToggleCurrentPlayingBGMPausesThroughRuntimePort() {
         let item = bgmItem(title: "Walk-in")
         let ports = BGMRuntimeOwnershipPorts()
         let viewModel = makeViewModel(ports: ports)
@@ -25,21 +25,22 @@ final class BGMRuntimeOwnershipTests: XCTestCase {
 
         viewModel.toggleBGM(item)
 
-        XCTAssertEqual(ports.bgm.events, [.stop(2.0, 2)])
-        XCTAssertEqual(ports.timer.events, [.stop(2)])
+        XCTAssertEqual(ports.bgm.events, [.pause(1)])
+        XCTAssertEqual(ports.timer.events, [.stop(1)])
     }
 
-    func testToggleCurrentPausedBGMPlaysThroughRuntimePort() {
+    func testToggleCurrentPausedBGMResumesThroughRuntimePort() {
         let item = bgmItem(title: "Walk-in")
         let ports = BGMRuntimeOwnershipPorts()
         let viewModel = makeViewModel(ports: ports)
         viewModel.bgmItems = [item]
-        viewModel.currentBGMItem = item
-        viewModel.isBGMPlaying = false
+        viewModel.toggleBGM(item)
+        viewModel.toggleBGM(item)
+        ports.reset()
 
         viewModel.toggleBGM(item)
 
-        XCTAssertEqual(ports.bgm.events, [.prepare(item.id, 1), .play(1)])
+        XCTAssertEqual(ports.bgm.events, [.play(1)])
         XCTAssertEqual(ports.timer.events, [.start(1)])
     }
 
@@ -223,6 +224,7 @@ private final class BGMRuntimeOwnershipPlaybackPort: BGMPlaybackPort {
     enum Event: Equatable {
         case prepare(UUID, Int)
         case play(Int)
+        case pause(Int)
         case stop(TimeInterval, Int)
     }
 
@@ -230,7 +232,7 @@ private final class BGMRuntimeOwnershipPlaybackPort: BGMPlaybackPort {
 
     func prepare(item: BGMItem, generation: Int) { events.append(.prepare(item.id, generation)) }
     func play(generation: Int) { events.append(.play(generation)) }
-    func pause(generation: Int) {}
+    func pause(generation: Int) { events.append(.pause(generation)) }
     func stop(fade: TimeInterval, generation: Int) { events.append(.stop(fade, generation)) }
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {}
     func seekToBeginning(generation: Int) {}

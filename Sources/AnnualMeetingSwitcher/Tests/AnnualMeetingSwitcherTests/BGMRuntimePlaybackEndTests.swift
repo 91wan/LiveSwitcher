@@ -51,7 +51,7 @@ final class BGMRuntimePlaybackEndTests: XCTestCase {
     func testBGMReachedEndWithMissingCurrentStopsSafely() {
         var state = LiveRuntimeState()
         state.bgm.generation = 4
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
 
         let mutation = reduce(state, .bgmReachedEnd(generation: 4))
 
@@ -98,7 +98,7 @@ final class BGMRuntimePlaybackEndTests: XCTestCase {
         state.bgm.items = items
         state.bgm.currentID = current.id
         state.bgm.generation = 4
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.playMode = playMode
         return state
     }

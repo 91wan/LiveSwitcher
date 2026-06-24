@@ -15,14 +15,14 @@ enum BGMRuntimeReducer {
         state.bgm.currentTime = 0
         state.bgm.duration = nil
         if state.panic.isActive {
-            state.bgm.isPlaying = false
+            state.bgm.phase = .selected
             effects += [
                 .stopBGM(fade: 0, generation: state.bgm.generation),
                 .stopBGMTimer(generation: state.bgm.generation),
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
         } else {
-            state.bgm.isPlaying = true
+            state.bgm.phase = .playing
             effects += [
                 .prepareBGM(item, generation: state.bgm.generation),
                 .playBGM(generation: state.bgm.generation),
@@ -70,6 +70,48 @@ enum BGMRuntimeReducer {
         effects.append(.seekBGMToProgress(clampedProgress, generation: state.bgm.generation))
     }
 
+    static func toggleCurrentPlayback(
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect],
+        speakerModeDuckedRatio: Float
+    ) {
+        guard let currentItem = state.bgm.currentItem else { return }
+        switch state.bgm.phase {
+        case .playing:
+            state.bgm.phase = .paused
+            effects += [
+                .pauseBGM(generation: state.bgm.generation),
+                .stopBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
+            ]
+        case .paused:
+            guard !state.panic.isActive else { return }
+            state.bgm.phase = .playing
+            effects += [
+                .playBGM(generation: state.bgm.generation),
+                .startBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
+            ]
+        case .selected:
+            guard !state.panic.isActive else { return }
+            state.bgm.generation += 1
+            state.bgm.progress = 0
+            state.bgm.currentTime = 0
+            state.bgm.duration = nil
+            state.bgm.phase = .playing
+            effects += [
+                .prepareBGM(currentItem, generation: state.bgm.generation),
+                .playBGM(generation: state.bgm.generation),
+                .startBGMTimer(generation: state.bgm.generation),
+                .applyAudioRouting(reason: .bgmPlaybackChanged)
+            ]
+        case .idle:
+            return
+        }
+        AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
+        AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
+    }
+
     static func stop(
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
@@ -78,7 +120,10 @@ enum BGMRuntimeReducer {
     ) {
         PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
         state.bgm.generation += 1
-        state.bgm.isPlaying = false
+        state.bgm.phase = state.bgm.currentID == nil ? .idle : .selected
+        state.bgm.progress = 0
+        state.bgm.currentTime = 0
+        state.bgm.duration = nil
         effects += [
             .stopBGM(fade: liveAudioFadeDuration, generation: state.bgm.generation),
             .stopBGMTimer(generation: state.bgm.generation),
@@ -108,7 +153,7 @@ enum BGMRuntimeReducer {
         state.bgm.items = items
         state.bgm.generation += 1
         state.bgm.currentID = nil
-        state.bgm.isPlaying = false
+        state.bgm.phase = .idle
         state.bgm.progress = 0
         state.bgm.currentTime = 0
         state.bgm.duration = nil
@@ -142,14 +187,14 @@ enum BGMRuntimeReducer {
         state.bgm.currentTime = 0
         state.bgm.duration = nil
         if state.panic.isActive {
-            state.bgm.isPlaying = false
+            state.bgm.phase = .selected
             effects += [
                 .stopBGM(fade: 0, generation: state.bgm.generation),
                 .stopBGMTimer(generation: state.bgm.generation),
                 .applyAudioRouting(reason: .bgmPlaybackChanged)
             ]
         } else {
-            state.bgm.isPlaying = true
+            state.bgm.phase = .playing
             effects += [
                 .prepareBGM(nextItem, generation: state.bgm.generation),
                 .playBGM(generation: state.bgm.generation),
@@ -170,9 +215,12 @@ enum BGMRuntimeReducer {
         let targetGeneration = generation ?? state.bgm.generation
         guard targetGeneration == state.bgm.generation else { return }
         guard state.bgm.isPlaying else { return }
-        state.bgm.isPlaying = false
+        state.bgm.phase = .paused
         AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
-        effects.append(.pauseBGM(generation: targetGeneration))
+        effects += [
+            .pauseBGM(generation: targetGeneration),
+            .stopBGMTimer(generation: targetGeneration)
+        ]
         AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
     }
@@ -185,11 +233,14 @@ enum BGMRuntimeReducer {
     ) {
         let targetGeneration = generation ?? state.bgm.generation
         guard targetGeneration == state.bgm.generation else { return }
-        state.bgm.isPlaying = true
+        guard state.panic.snapshot?.wasBGMPlaying == true else { return }
+        guard state.bgm.phase == .paused else { return }
+        state.bgm.phase = .playing
         AudioRuntimeReducer.syncRoutingContextFromMirrorState(&state)
         effects += [
             .setBGMVolume(0, fade: 0, generation: targetGeneration),
-            .playBGM(generation: targetGeneration)
+            .playBGM(generation: targetGeneration),
+            .startBGMTimer(generation: targetGeneration)
         ]
         AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .panicChanged))
@@ -203,7 +254,13 @@ enum BGMRuntimeReducer {
         speakerModeDuckedRatio: Float
     ) {
         guard generation == state.bgm.generation else { return }
-        state.bgm.isPlaying = isPlaying
+        if isPlaying {
+            state.bgm.phase = .playing
+        } else if state.bgm.currentID == nil {
+            state.bgm.phase = .idle
+        } else {
+            state.bgm.phase = .paused
+        }
         state.audio.routingContext.isBGMPlaying = isPlaying
         AudioRuntimeReducer.recalculateAudio(&state, speakerModeDuckedRatio: speakerModeDuckedRatio)
         effects.append(.applyAudioRouting(reason: .bgmPlaybackChanged))
@@ -236,7 +293,7 @@ enum BGMRuntimeReducer {
         guard generation == state.bgm.generation else { return }
         PanicRuntimeReducer.markBGMStoppedIfCurrentBGMMatchesSnapshot(state: &state)
         state.bgm.generation += 1
-        state.bgm.isPlaying = false
+        state.bgm.phase = state.bgm.currentID == nil ? .idle : .selected
         state.audio.routingContext.isBGMPlaying = false
         if canWriteSupport {
             state.support.record(kind: .bgmPlaybackFailed, detail: "reason=\(reason)", at: now)
@@ -338,7 +395,7 @@ enum BGMRuntimeReducer {
     ) {
         state.bgm.generation += 1
         state.bgm.currentID = item.id
-        state.bgm.isPlaying = true
+        state.bgm.phase = .playing
         state.bgm.progress = 0
         state.bgm.currentTime = 0
         state.bgm.duration = nil
@@ -358,7 +415,7 @@ enum BGMRuntimeReducer {
         speakerModeDuckedRatio: Float
     ) {
         state.bgm.generation += 1
-        state.bgm.isPlaying = false
+        state.bgm.phase = state.bgm.currentID == nil ? .idle : .selected
         state.bgm.progress = 0
         state.bgm.currentTime = 0
         state.bgm.duration = nil

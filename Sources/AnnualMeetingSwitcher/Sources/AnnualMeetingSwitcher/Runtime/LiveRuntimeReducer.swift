@@ -251,6 +251,14 @@ enum LiveRuntimeReducer {
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.seekToProgress(progress, state: &state, effects: &effects)
 
+        case .operatorToggledCurrentBGMPlayback:
+            guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
+            BGMRuntimeReducer.toggleCurrentPlayback(
+                state: &state,
+                effects: &effects,
+                speakerModeDuckedRatio: environment.speakerModeDuckedRatio
+            )
+
         case .operatorStoppedBGM:
             guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }
             BGMRuntimeReducer.stop(

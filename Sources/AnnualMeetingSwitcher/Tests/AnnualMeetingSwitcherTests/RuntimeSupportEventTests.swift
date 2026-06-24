@@ -39,7 +39,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         var runtimeState = viewModel.runtime.state
         runtimeState.bgm.items = [item]
         runtimeState.bgm.currentID = item.id
-        runtimeState.bgm.isPlaying = true
+        runtimeState.bgm.phase = .playing
         runtimeState.bgm.progress = 0.6
         runtimeState.bgm.currentTime = 42
         runtimeState.bgm.duration = 100
