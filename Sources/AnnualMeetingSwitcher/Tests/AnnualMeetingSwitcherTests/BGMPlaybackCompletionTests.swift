@@ -354,7 +354,7 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         viewModel.toggleBGM(item)
         let player = try XCTUnwrap(viewModel.bgmAudioPlayer)
         player.currentTime = player.duration
-        viewModel.toggleBGM(item)
+        viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
         XCTAssertFalse(viewModel.isBGMPlaying)
 
         viewModel.toggleBGM(item)
