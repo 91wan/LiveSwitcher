@@ -117,7 +117,10 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("BGMCategory.allCases"))
         XCTAssertTrue(source.contains("viewModel.toggleBGM(row.item)"))
         XCTAssertTrue(source.contains("playlist.categoryButtonTitle"))
-        XCTAssertFalse(source.contains("Open BGM Library"))
+        XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
+        XCTAssertTrue(source.contains("全部曲目"))
+        let legacyLibraryLabel = "Open BGM " + "Library"
+        XCTAssertFalse(source.contains(legacyLibraryLabel))
         XCTAssertFalse(source.contains("onOpenMixer()"))
     }
 
@@ -143,7 +146,9 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("liveBGMPlaylistRows("))
         XCTAssertTrue(source.contains("playlist.rows"))
         XCTAssertTrue(source.contains("playlist.remainingCountText"))
-        XCTAssertFalse(source.contains("Label(\"Open BGM Library\""))
+        XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
+        let legacyLibraryLabel = "Label(\"Open BGM " + "Library\""
+        XCTAssertFalse(source.contains(legacyLibraryLabel))
     }
 
     func testLiveBGMTransportHasRestartButtonAndChineseTooltips() throws {
