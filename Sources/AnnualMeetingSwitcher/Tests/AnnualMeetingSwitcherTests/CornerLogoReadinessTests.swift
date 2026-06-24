@@ -27,7 +27,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         XCTAssertEqual(saveCount, 0)
 
         loader.complete(url: newURL, with: .success(newImage))
-        await Task.yield()
+        await waitForLogoReady(viewModel, activeURL: newURL)
 
         XCTAssertEqual(viewModel.cornerLogoURL, newURL)
         XCTAssertTrue(viewModel.cornerLogoImage === newImage)
@@ -82,7 +82,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         XCTAssertEqual(viewModel.cornerLogoLoadPhase.candidateURL, secondURL)
 
         loader.complete(url: secondURL, with: .success(secondImage))
-        await Task.yield()
+        await waitForLogoReady(viewModel, activeURL: secondURL)
 
         XCTAssertEqual(viewModel.cornerLogoURL, secondURL)
         XCTAssertTrue(viewModel.cornerLogoImage === secondImage)
@@ -123,7 +123,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.retryCornerLogoLoad()
         await loader.waitForRequestCount(2)
         loader.complete(url: url, with: .success(image))
-        await Task.yield()
+        await waitForLogoReady(viewModel, activeURL: url)
 
         XCTAssertEqual(viewModel.cornerLogoURL, url)
         XCTAssertTrue(viewModel.cornerLogoImage === image)
@@ -170,6 +170,16 @@ final class CornerLogoReadinessTests: XCTestCase {
             await Task.yield()
         }
         XCTFail("Corner logo did not fail")
+    }
+
+    private func waitForLogoReady(_ viewModel: SwitcherViewModel, activeURL: URL) async {
+        for _ in 0..<100 {
+            if viewModel.cornerLogoLoadPhase == .ready(activeURL: activeURL) {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not become ready")
     }
 }
 
