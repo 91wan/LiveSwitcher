@@ -343,6 +343,51 @@ final class BGMPlaybackCompletionTests: XCTestCase {
         XCTAssertFalse(viewModel.isBGMPlaying)
     }
 
+    func testPausingCurrentBGMFadesOutBeforePausingPlayer() async throws {
+        let (directory, audioURL) = try makeAudioFixture(named: "pause.wav", duration: 1.0)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Pause Fade", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let player = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        XCTAssertTrue(player.isPlaying)
+        viewModel.liveAudioFadeDuration = 0.08
+
+        viewModel.toggleBGM(item)
+
+        XCTAssertFalse(viewModel.isBGMPlaying)
+        XCTAssertTrue(player.isPlaying)
+        XCTAssertNotNil(viewModel.cleanupBag.bgmPlayerVolumeFadeTask)
+
+        try await Task.sleep(nanoseconds: 160_000_000)
+
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertNotNil(viewModel.bgmAudioPlayer)
+    }
+
+    func testResumingDuringBGMFadeOutDoesNotGetPausedByStaleFadeTask() async throws {
+        let (directory, audioURL) = try makeAudioFixture(named: "quick-resume.wav", duration: 1.0)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let item = BGMItem(title: "Quick Resume", url: audioURL, category: .warmUp)
+        let viewModel = makeViewModel()
+        viewModel.liveAudioFadeDuration = 0
+        viewModel.bgmItems = [item]
+
+        viewModel.toggleBGM(item)
+        let player = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        viewModel.liveAudioFadeDuration = 0.08
+        viewModel.toggleBGM(item)
+        viewModel.toggleBGM(item)
+
+        try await Task.sleep(nanoseconds: 160_000_000)
+
+        XCTAssertTrue(viewModel.isBGMPlaying)
+        XCTAssertTrue(player.isPlaying)
+    }
+
     func testResumingSelectedBGMAtEndRestartsFromBeginning() throws {
         let (directory, audioURL) = try makeAudioFixture()
         defer { try? FileManager.default.removeItem(at: directory) }
