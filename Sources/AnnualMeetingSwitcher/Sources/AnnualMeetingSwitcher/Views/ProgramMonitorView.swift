@@ -42,8 +42,8 @@ struct ProgramMonitorView: View {
 
     private var previewDeck: some View {
         ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
-                .fill(StudioTheme.monitorGradient)
+            StandbyWallpaperLayer(image: viewModel.backgroundImage)
+                .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
 
             RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
                 .stroke(StudioTheme.monitorBorder, lineWidth: 1)

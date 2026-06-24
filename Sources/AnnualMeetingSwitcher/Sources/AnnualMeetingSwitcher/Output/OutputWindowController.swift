@@ -285,18 +285,8 @@ struct OutputView: View {
 
     @ViewBuilder
     private var backgroundLayer: some View {
-        if let wallpaper = viewModel.backgroundImage {
-            // V32 等比填满：.scaledToFill() 等比放大直到填满屏幕，左右可能裁切，无黑边
-            Image(nsImage: wallpaper)
-                .resizable()
-                .scaledToFill()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
-                .ignoresSafeArea()
-        } else {
-            Color.black
-                .ignoresSafeArea()
-        }
+        StandbyWallpaperLayer(image: viewModel.backgroundImage)
+            .ignoresSafeArea()
     }
 
     @ViewBuilder
