@@ -385,7 +385,7 @@ private struct OutputCornerLogoLayer: View {
                 .frame(height: 80)
                 .padding(28)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: position.alignment)
-                .accessibilityLabel("Corner logo")
+                .accessibilityLabel("角标 Logo 输出")
         }
     }
 }

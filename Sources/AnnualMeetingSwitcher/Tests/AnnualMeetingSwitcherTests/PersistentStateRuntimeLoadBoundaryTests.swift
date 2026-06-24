@@ -1,3 +1,4 @@
+import AppKit
 import XCTest
 @testable import LiveSwitcher
 
@@ -375,11 +376,12 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         XCTAssertNotNil(viewModel.backgroundImage)
     }
 
-    func testPersistentLoadStillLoadsCornerLogoImage() {
+    func testPersistentLoadStillLoadsCornerLogoImage() async throws {
         let viewModel = makeViewModel(bridgeMode: .panicOwned)
-        let url = URL(fileURLWithPath: "/tmp/persistent-logo.png")
+        let url = try makePNG(name: "persistent-logo")
 
         viewModel.applyPersistentState(SwitcherPersistentState(cornerLogoURL: url))
+        await waitForCornerLogoReady(viewModel, activeURL: url)
 
         XCTAssertNotNil(viewModel.cornerLogoImage)
     }
@@ -521,5 +523,30 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         try XCTUnwrap(optionalRepositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Persistence.swift"
         ))
+    }
+
+    private func makePNG(name: String) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("live-switcher-\(name)-\(UUID().uuidString)")
+            .appendingPathExtension("png")
+        let image = NSImage(size: NSSize(width: 2, height: 2))
+        image.lockFocus()
+        NSColor.white.setFill()
+        NSRect(x: 0, y: 0, width: 2, height: 2).fill()
+        image.unlockFocus()
+        let data = try XCTUnwrap(image.tiffRepresentation)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(data: data))
+        try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
+        return url
+    }
+
+    private func waitForCornerLogoReady(_ viewModel: SwitcherViewModel, activeURL: URL) async {
+        for _ in 0..<100 {
+            if viewModel.cornerLogoLoadPhase == .ready(activeURL: activeURL) {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not become ready")
     }
 }

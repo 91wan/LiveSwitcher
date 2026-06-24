@@ -59,12 +59,15 @@ final class ViewModelAssetsBehaviorTests: XCTestCase {
         XCTAssertEqual(viewModel.activeWallpaperURL, known)
     }
 
-    func testSetCornerLogoRejectsNonRenderableImage() {
+    func testSetCornerLogoReportsNonRenderableImageAsDecodeFailure() async {
         let viewModel = makeViewModel()
         let invalidURL = temporaryInvalidImageURL()
 
-        XCTAssertFalse(viewModel.setCornerLogo(url: invalidURL))
+        XCTAssertTrue(viewModel.setCornerLogo(url: invalidURL))
+        await waitForCornerLogoFailure(viewModel)
+
         XCTAssertNil(viewModel.cornerLogoURL)
+        XCTAssertEqual(viewModel.cornerLogoLoadPhase, .failed(candidateURL: invalidURL, reason: .decodeFailed))
     }
 
     func testRemoveCornerLogoClearsURLAndSavesData() {
@@ -136,5 +139,15 @@ final class ViewModelAssetsBehaviorTests: XCTestCase {
             .appendingPathComponent("LiveSwitcherAssetsBehaviorTests", isDirectory: true)
         try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         return url
+    }
+
+    private func waitForCornerLogoFailure(_ viewModel: SwitcherViewModel) async {
+        for _ in 0..<100 {
+            if case .failed = viewModel.cornerLogoLoadPhase {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not fail")
     }
 }

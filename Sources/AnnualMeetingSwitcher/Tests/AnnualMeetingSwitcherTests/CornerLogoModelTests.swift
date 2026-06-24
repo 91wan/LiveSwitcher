@@ -12,12 +12,13 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     @MainActor
-    func testCornerLogoURLAndPositionPersist() {
+    func testCornerLogoURLAndPositionPersist() async {
         let defaults = isolatedDefaults()
         let url = temporaryImageURL(named: "company-logo.png")
         let writer = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
 
         XCTAssertTrue(writer.setCornerLogo(url: url))
+        await waitForCornerLogoReady(writer, activeURL: url)
         writer.cornerLogoPosition = .bottomLeft
         writer.saveData()
 
@@ -28,12 +29,13 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     @MainActor
-    func testRemovingCornerLogoClearsPersistedURLWithoutChangingPosition() {
+    func testRemovingCornerLogoClearsPersistedURLWithoutChangingPosition() async {
         let defaults = isolatedDefaults()
         let url = temporaryImageURL(named: "company-logo.png")
         let writer = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
 
         XCTAssertTrue(writer.setCornerLogo(url: url))
+        await waitForCornerLogoReady(writer, activeURL: url)
         writer.cornerLogoPosition = .bottomRight
         writer.removeCornerLogo()
 
@@ -44,16 +46,18 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     @MainActor
-    func testRejectsUndecodableCornerLogoImageInsteadOfSavingInvisibleLogo() throws {
+    func testRejectsUndecodableCornerLogoImageInsteadOfSavingInvisibleLogo() async throws {
         let defaults = isolatedDefaults()
         let invalidURL = temporaryInvalidImageURL(named: "broken-logo.png")
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
 
-        XCTAssertFalse(viewModel.setCornerLogo(url: invalidURL))
+        XCTAssertTrue(viewModel.setCornerLogo(url: invalidURL))
+        await waitForCornerLogoFailure(viewModel)
 
         XCTAssertNil(viewModel.cornerLogoURL)
         XCTAssertNil(viewModel.cornerLogoImage)
         XCTAssertNil(defaults.string(forKey: "cornerLogo_path"))
+        XCTAssertEqual(viewModel.cornerLogoLoadPhase, .failed(candidateURL: invalidURL, reason: .decodeFailed))
     }
 
     @MainActor
@@ -97,6 +101,8 @@ final class CornerLogoModelTests: XCTestCase {
         XCTAssertFalse(source.contains("AsyncLocalImage(url: url)"))
         XCTAssertFalse(source.contains("Data(contentsOf:"))
         XCTAssertFalse(source.contains(".equatable()"))
+        XCTAssertTrue(source.contains(".accessibilityLabel(\"角标 Logo 输出\")"))
+        XCTAssertFalse(source.contains(".accessibilityLabel(\"Corner logo\")"))
     }
 
     func testSetupRunDeskExposesCornerLogoControls() throws {
@@ -161,6 +167,28 @@ final class CornerLogoModelTests: XCTestCase {
         let url = directory.appendingPathComponent(fileName)
         try? Data("not an image".utf8).write(to: url)
         return url
+    }
+
+    @MainActor
+    private func waitForCornerLogoReady(_ viewModel: SwitcherViewModel, activeURL: URL) async {
+        for _ in 0..<100 {
+            if viewModel.cornerLogoLoadPhase == .ready(activeURL: activeURL) {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not become ready")
+    }
+
+    @MainActor
+    private func waitForCornerLogoFailure(_ viewModel: SwitcherViewModel) async {
+        for _ in 0..<100 {
+            if case .failed = viewModel.cornerLogoLoadPhase {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not fail")
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

@@ -204,13 +204,14 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
         XCTAssertEqual(viewModel.avCoordinator.volume, viewModel.runtime.state.audio.effectiveMedia, accuracy: 0.0001)
     }
 
-    func testImageAssetPortStillLoadsBackgroundAndCornerLogo() throws {
+    func testImageAssetPortStillLoadsBackgroundAndCornerLogo() async throws {
         let viewModel = makeViewModel()
         let background = try makePNG(name: "background")
         let logo = try makePNG(name: "logo")
 
         viewModel.activeWallpaperURL = background
         viewModel.cornerLogoURL = logo
+        await waitForCornerLogoReady(viewModel, activeURL: logo)
 
         XCTAssertNotNil(viewModel.backgroundImage)
         XCTAssertNotNil(viewModel.cornerLogoImage)
@@ -267,6 +268,16 @@ final class ViewModelRuntimeBridgeWiringTests: XCTestCase {
         let bitmap = try XCTUnwrap(NSBitmapImageRep(data: data))
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
         return url
+    }
+
+    private func waitForCornerLogoReady(_ viewModel: SwitcherViewModel, activeURL: URL) async {
+        for _ in 0..<100 {
+            if viewModel.cornerLogoLoadPhase == .ready(activeURL: activeURL) {
+                return
+            }
+            await Task.yield()
+        }
+        XCTFail("Corner logo did not become ready")
     }
 }
 

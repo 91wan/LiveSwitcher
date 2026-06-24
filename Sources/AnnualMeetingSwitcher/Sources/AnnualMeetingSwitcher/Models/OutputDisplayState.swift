@@ -9,7 +9,6 @@ struct OutputDisplayState: Equatable {
     var lowerThirdTitle: String
     var isPanicMode: Bool
     var isFadeToBlackActive: Bool
-    var cornerLogoURL: URL?
     var cornerLogoPosition: CornerLogoPosition
 
     static func make(
@@ -21,7 +20,6 @@ struct OutputDisplayState: Equatable {
         lowerThirdTitle: String,
         isPanicMode: Bool,
         isFadeToBlackActive: Bool,
-        cornerLogoURL: URL? = nil,
         cornerLogoPosition: CornerLogoPosition = .topRight
     ) -> OutputDisplayState {
         OutputDisplayState(
@@ -33,7 +31,6 @@ struct OutputDisplayState: Equatable {
             lowerThirdTitle: lowerThirdTitle,
             isPanicMode: isPanicMode,
             isFadeToBlackActive: isFadeToBlackActive,
-            cornerLogoURL: cornerLogoURL,
             cornerLogoPosition: cornerLogoPosition
         )
     }
@@ -49,7 +46,6 @@ struct OutputDisplayState: Equatable {
             lowerThirdTitle: viewModel.lowerThirdTitle,
             isPanicMode: viewModel.isPanicMode,
             isFadeToBlackActive: viewModel.isFadeToBlackActive,
-            cornerLogoURL: viewModel.cornerLogoURL,
             cornerLogoPosition: viewModel.cornerLogoPosition
         )
     }
