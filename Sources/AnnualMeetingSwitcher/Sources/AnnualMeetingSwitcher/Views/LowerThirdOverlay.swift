@@ -10,6 +10,7 @@ struct LowerThirdView: View {
     let name: String
     let title: String
     let isVisible: Bool
+    let metrics: LowerThirdTypographyMetrics
 
     // 进出动画状态
     @State private var appeared: Bool = false
@@ -18,13 +19,23 @@ struct LowerThirdView: View {
     private let enterAnim: Animation = .spring(response: 0.45, dampingFraction: 0.78)
     private let exitAnim:  Animation = .easeIn(duration: 0.25)
 
+    init(
+        name: String,
+        title: String,
+        isVisible: Bool,
+        metrics: LowerThirdTypographyMetrics = .metrics(forCanvasHeight: 1080, canvasWidth: 1920)
+    ) {
+        self.name = name
+        self.title = title
+        self.isVisible = isVisible
+        self.metrics = metrics
+    }
+
     var body: some View {
         nameCardContent
-            .padding(.horizontal, OutputOverlayLayoutMetrics.lowerThirdHorizontalPadding)
-            .padding(.bottom, OutputOverlayLayoutMetrics.lowerThirdBottomPadding)
             .offset(y: appeared ? 0 : 72)
             .opacity(appeared ? 1.0 : 0.0)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.lowerThirdAlignment)
+            .transition(.opacity.combined(with: .scale(scale: 0.95)))
         .onAppear {
             if isVisible {
                 withAnimation(enterAnim) { appeared = true }
@@ -46,75 +57,140 @@ struct LowerThirdView: View {
             // Left accent rail.
             Rectangle()
                 .fill(Color(red: 0.80, green: 0.00, blue: 0.00))
-                .frame(width: 5)
+                .frame(width: metrics.accentWidth)
 
             // 文字区
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: metrics.textSpacing) {
                 Text(name)
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(.white)
+                    .font(.system(size: metrics.nameFontSize, weight: .bold))
+                    .foregroundStyle(.white)
                     .lineLimit(1)
+                    .minimumScaleFactor(metrics.minimumTextScaleFactor)
 
                 if !title.isEmpty {
                     Text(title)
-                        .font(.system(size: 17, weight: .regular))
-                        .foregroundColor(.white.opacity(0.88))
+                        .font(.system(size: metrics.titleFontSize, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.88))
                         .lineLimit(1)
+                        .minimumScaleFactor(metrics.minimumTextScaleFactor)
                 }
             }
-            .padding(.horizontal, 18)
-            .padding(.vertical, 12)
-            .background(Color.black.opacity(0.80))
+            .padding(.horizontal, metrics.horizontalPadding)
+            .padding(.vertical, metrics.verticalPadding)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 3))
-        .frame(maxWidth: 560, alignment: .leading)
-        // 外边框微妙高光
-        .overlay(
-            RoundedRectangle(cornerRadius: 3)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        .background(
+            RoundedRectangle(cornerRadius: 0)
+                .fill(Color.black.opacity(0.65))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 0)
+                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                )
         )
-        .shadow(color: Color.black.opacity(0.45), radius: 8, x: 0, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 0))
+        .frame(maxWidth: metrics.maxWidth, alignment: .leading)
+        .shadow(color: Color.black.opacity(0.5), radius: 20, x: 0, y: 8)
     }
 }
 
 // MARK: - TickerEngine（类，持有 Timer 避免 SwiftUI 重建时泄漏）
 
+struct TickerTrackGeometry: Equatable {
+    static let internalTextPadding: CGFloat = 8
+    static let trackGap: CGFloat = 40
+    static let hiddenOffset: CGFloat = 10_000
+
+    let containerWidth: CGFloat
+    let textWidth: CGFloat
+
+    init(containerWidth: CGFloat, measuredTextWidth: CGFloat) {
+        self.containerWidth = max(0, containerWidth)
+        self.textWidth = max(1, measuredTextWidth)
+    }
+
+    var initialOffsetA: CGFloat {
+        containerWidth + Self.internalTextPadding
+    }
+
+    var initialOffsetB: CGFloat {
+        initialOffsetA + textWidth + Self.trackGap
+    }
+
+    var resetThreshold: CGFloat {
+        -textWidth
+    }
+
+    func nextOffset(after otherOffset: CGFloat) -> CGFloat {
+        max(initialOffsetA, otherOffset + textWidth + Self.trackGap)
+    }
+}
+
 @MainActor
 final class TickerEngine: ObservableObject {
-    @Published var offsetA: CGFloat = 0
-    @Published var offsetB: CGFloat = 0
+    @Published var offsetA: CGFloat = TickerTrackGeometry.hiddenOffset
+    @Published var offsetB: CGFloat = TickerTrackGeometry.hiddenOffset
+    @Published private(set) var isReadyForDisplay = false
 
     private var scrollTimer: Timer?
-    var textWidth: CGFloat = 800
-    var containerWidth: CGFloat = 1920
-    private var started: Bool = false
+    private var currentGeometry: TickerTrackGeometry?
+    var textWidth: CGFloat = 0
+    var containerWidth: CGFloat = 0
 
-    func setup(containerWidth W: CGFloat, textWidth tw: CGFloat, speed: Double) {
-        self.containerWidth = W
-        self.textWidth = max(tw, 200)
+    var activeTimerCountForTesting: Int {
+        scrollTimer == nil ? 0 : 1
+    }
+
+    func configure(
+        containerWidth: CGFloat,
+        measuredTextWidth: CGFloat,
+        speed: Double,
+        resetPosition: Bool
+    ) {
+        guard containerWidth > 0, measuredTextWidth > 0 else {
+            stop()
+            self.containerWidth = max(0, containerWidth)
+            self.textWidth = max(0, measuredTextWidth)
+            currentGeometry = nil
+            offsetA = TickerTrackGeometry.hiddenOffset
+            offsetB = TickerTrackGeometry.hiddenOffset
+            isReadyForDisplay = false
+            return
+        }
+
+        let geometry = TickerTrackGeometry(containerWidth: containerWidth, measuredTextWidth: measuredTextWidth)
+        let shouldReset = resetPosition || currentGeometry != geometry
+        self.containerWidth = geometry.containerWidth
+        self.textWidth = geometry.textWidth
+        currentGeometry = geometry
+        if shouldReset {
+            offsetA = geometry.initialOffsetA
+            offsetB = geometry.initialOffsetB
+        }
+        isReadyForDisplay = true
+
         stop()
-        // A 从右侧屏幕外，B 紧随 A 之后
-        offsetA = W
-        offsetB = W + self.textWidth + 40
-        start(speed: speed)
+        start(speed: speed, geometry: geometry)
     }
 
     func start(speed: Double) {
+        guard let geometry = currentGeometry else { return }
         stop()
-        guard textWidth > 0, containerWidth > 0 else { return }
+        start(speed: speed, geometry: geometry)
+    }
+
+    private func start(speed: Double, geometry: TickerTrackGeometry) {
+        stop()
         let spd = max(speed, 20.0)
         let delta = CGFloat(spd / 60.0)
-        let tw = textWidth
         scrollTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             guard let self else { return }
             MainActor.assumeIsolated {
                 self.offsetA -= delta
                 self.offsetB -= delta
-                if self.offsetA < -(tw + 40) {
-                    self.offsetA = self.offsetB + tw + 40
+                if self.offsetA < geometry.resetThreshold {
+                    self.offsetA = geometry.nextOffset(after: self.offsetB)
                 }
-                if self.offsetB < -(tw + 40) {
-                    self.offsetB = self.offsetA + tw + 40
+                if self.offsetB < geometry.resetThreshold {
+                    self.offsetB = geometry.nextOffset(after: self.offsetA)
                 }
             }
         }
@@ -139,18 +215,18 @@ final class TickerEngine: ObservableObject {
 struct TickerOverlay: View {
     @Environment(SwitcherViewModel.self) var viewModel
     @StateObject private var engine = TickerEngine()
+    @State private var measuredTextWidth: CGFloat = 0
 
     var body: some View {
         GeometryReader { geo in
-            let cardWidth = max(0, geo.size.width - OutputOverlayLayoutMetrics.tickerHorizontalPadding * 2)
+            let cardWidth = max(0, geo.size.width)
             ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius)
+                Rectangle()
                     .fill(Color.black.opacity(OutputOverlayLayoutMetrics.tickerBackgroundOpacity))
                     .overlay(
-                        RoundedRectangle(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius)
+                        Rectangle()
                             .stroke(Color.white.opacity(0.14), lineWidth: 1)
                     )
-                    .shadow(color: Color.black.opacity(0.34), radius: 12, x: 0, y: 6)
 
                 ZStack(alignment: .leading) {
                     // A 轨道
@@ -159,16 +235,25 @@ struct TickerOverlay: View {
                         .offset(x: engine.offsetA)
                         .background(
                             GeometryReader { tg in
-                                Color.clear.onAppear {
-                                    // 用真实测量宽度初始化（仅首次）
-                                    if engine.textWidth == 800 {
-                                        engine.setup(
+                                Color.clear
+                                    .onAppear {
+                                        measuredTextWidth = tg.size.width
+                                        engine.configure(
                                             containerWidth: cardWidth,
-                                            textWidth: tg.size.width,
-                                            speed: viewModel.tickerSpeed
+                                            measuredTextWidth: tg.size.width,
+                                            speed: viewModel.tickerSpeed,
+                                            resetPosition: true
                                         )
                                     }
-                                }
+                                    .onChange(of: tg.size.width) { _, width in
+                                        measuredTextWidth = width
+                                        engine.configure(
+                                            containerWidth: cardWidth,
+                                            measuredTextWidth: width,
+                                            speed: viewModel.tickerSpeed,
+                                            resetPosition: true
+                                        )
+                                    }
                             }
                         )
 
@@ -177,39 +262,40 @@ struct TickerOverlay: View {
                         .fixedSize()
                         .offset(x: engine.offsetB)
                 }
-                .clipped()
                 .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)
+                .clipped()
+                .opacity(engine.isReadyForDisplay ? 1 : 0)
+                .transaction { transaction in
+                    transaction.animation = nil
+                    transaction.disablesAnimations = true
+                }
                 .onAppear {
-                    // 估算宽度兜底（若 background GeometryReader 未触发）
-                    if engine.textWidth == 800 {
-                        let estimated = CGFloat(viewModel.tickerText.count) * 28 + 120  // 估算字宽随字体增大
-                        engine.setup(
-                            containerWidth: cardWidth,
-                            textWidth: max(estimated, 400),
-                            speed: viewModel.tickerSpeed
-                        )
-                    }
+                    engine.configure(
+                        containerWidth: cardWidth,
+                        measuredTextWidth: measuredTextWidth > 0 ? measuredTextWidth : estimatedTickerTextWidth,
+                        speed: viewModel.tickerSpeed,
+                        resetPosition: true
+                    )
                 }
             }
-            .clipShape(.rect(cornerRadius: OutputOverlayLayoutMetrics.tickerCornerRadius))
             .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)
-            .padding(.horizontal, OutputOverlayLayoutMetrics.tickerHorizontalPadding)
-            .padding(.top, OutputOverlayLayoutMetrics.tickerTopPadding)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: OutputOverlayLayoutMetrics.tickerAlignment)
         }
         .transition(.opacity)
         .onChange(of: viewModel.tickerText) { _, _ in
-            let estimated = CGFloat(viewModel.tickerText.count) * 28 + 120  // 字体36pt，估算字宽更新
-            engine.textWidth = 800  // 重置，触发下次 GeometryReader 重新测量
-            engine.setup(
+            engine.configure(
                 containerWidth: engine.containerWidth,
-                textWidth: max(estimated, 400),
-                speed: viewModel.tickerSpeed
+                measuredTextWidth: estimatedTickerTextWidth,
+                speed: viewModel.tickerSpeed,
+                resetPosition: true
             )
         }
         .onChange(of: viewModel.tickerSpeed) { _, _ in
-            engine.stop()
-            engine.start(speed: viewModel.tickerSpeed)
+            engine.configure(
+                containerWidth: engine.containerWidth,
+                measuredTextWidth: engine.textWidth,
+                speed: viewModel.tickerSpeed,
+                resetPosition: false
+            )
         }
         .onDisappear {
             engine.stop()
@@ -219,8 +305,12 @@ struct TickerOverlay: View {
     private var tickerTextView: some View {
         Text(viewModel.tickerText + "    ◆    ")
             .font(.system(size: 36, weight: .bold, design: .rounded))
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .lineLimit(1)
             .padding(.horizontal, 8)
+    }
+
+    private var estimatedTickerTextWidth: CGFloat {
+        max(CGFloat(viewModel.tickerText.count) * 28 + 120, 240)
     }
 }

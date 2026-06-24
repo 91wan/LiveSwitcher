@@ -26,6 +26,16 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertTrue(source.contains("Color.black"))
     }
 
+    func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
+        let source = try String(contentsOf: sourceURL("Views/LowerThirdOverlay.swift"), encoding: .utf8)
+
+        XCTAssertTrue(source.contains(".transition(.opacity.combined(with: .scale(scale: 0.95)))"))
+        XCTAssertTrue(source.contains("RoundedRectangle(cornerRadius: 0)"))
+        XCTAssertTrue(source.contains(".fill(Color.black.opacity(0.65))"))
+        XCTAssertTrue(source.contains(".stroke(Color.white.opacity(0.15), lineWidth: 1)"))
+        XCTAssertTrue(source.contains(".shadow(color: Color.black.opacity(0.5), radius: 20, x: 0, y: 8)"))
+    }
+
     private func sourceFiles(under relativeDirectory: String) throws -> [URL] {
         let root = try sourceRoot().appendingPathComponent(relativeDirectory)
         guard let enumerator = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else {

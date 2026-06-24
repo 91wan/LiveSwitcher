@@ -2,7 +2,7 @@ import XCTest
 @testable import LiveSwitcher
 
 final class OutputOverlayLayoutTests: XCTestCase {
-    func testBusinessOverlaysUseIndependentPlacementsForAllVisibilityCombinations() {
+    func testBusinessOverlaysUseIndependentLayoutPlanFramesForAllVisibilityCombinations() {
         let combinations: [(Bool, Bool, Bool)] = [
             (false, false, false),
             (true, false, false),
@@ -15,15 +15,18 @@ final class OutputOverlayLayoutTests: XCTestCase {
         ]
 
         for (ticker, countdown, lowerThird) in combinations {
-            let placements = OutputOverlayLayoutMetrics.placements(
+            let plan = OutputOverlayLayoutPlan.make(
+                canvasSize: CGSize(width: 1920, height: 1080),
                 isTickerActive: ticker,
                 isCountdownActive: countdown,
-                isLowerThirdVisible: lowerThird
+                isLowerThirdVisible: lowerThird,
+                isLogoReady: false,
+                logoPosition: .topRight
             )
 
-            XCTAssertEqual(placements.contains(.tickerTop), ticker)
-            XCTAssertEqual(placements.contains(.countdownCenter), countdown)
-            XCTAssertEqual(placements.contains(.lowerThirdBottomLeading), lowerThird)
+            XCTAssertEqual(plan.tickerFrame != nil, ticker)
+            XCTAssertEqual(plan.countdownFrame != nil, countdown)
+            XCTAssertEqual(plan.lowerThirdFrame != nil, lowerThird)
         }
     }
 
@@ -44,20 +47,23 @@ final class OutputOverlayLayoutTests: XCTestCase {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
 
         XCTAssertTrue(source.contains("ZStack {"))
-        XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.tickerAlignment"))
-        XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.countdownAlignment"))
-        XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.lowerThirdAlignment"))
+        XCTAssertTrue(source.contains("OutputOverlayLayoutPlan.make"))
+        XCTAssertTrue(source.contains("plan.tickerFrame"))
+        XCTAssertTrue(source.contains("plan.countdownFrame"))
+        XCTAssertTrue(source.contains("plan.lowerThirdFrame"))
         XCTAssertTrue(source.contains(".zIndex(OutputLayerZIndex.ticker)"))
         XCTAssertTrue(source.contains(".zIndex(OutputLayerZIndex.countdown)"))
         XCTAssertTrue(source.contains(".zIndex(OutputLayerZIndex.lowerThird)"))
     }
 
-    func testTickerRendersFloatingTopCardInsteadOfFullWidthBar() throws {
+    func testTickerRendersFullWidthTopBarInsteadOfFloatingCard() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
 
-        XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.tickerHorizontalPadding"))
-        XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.tickerCornerRadius"))
+        XCTAssertEqual(OutputOverlayLayoutMetrics.tickerCornerRadius, 0)
+        XCTAssertTrue(source.contains("Rectangle()"))
         XCTAssertTrue(source.contains("OutputOverlayLayoutMetrics.tickerBackgroundOpacity"))
+        XCTAssertFalse(source.contains(".padding(.horizontal, OutputOverlayLayoutMetrics.tickerHorizontalPadding)"))
+        XCTAssertFalse(source.contains(".padding(.top, OutputOverlayLayoutMetrics.tickerTopPadding)"))
         XCTAssertFalse(source.contains("Color.black.opacity(0.80)\n\n                    // A 轨道"))
         XCTAssertFalse(source.contains("Spacer()  // 把字幕条推到顶部"))
     }
