@@ -10,11 +10,39 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.title, "人名条")
-        XCTAssertEqual(model.presetLabel, "+ 新建预设")
+        XCTAssertEqual(model.presetLabel, "新建人名条")
+        XCTAssertEqual(model.presetInteraction, .create(.lowerThird))
         XCTAssertTrue(model.isPlaceholder)
         XCTAssertFalse(model.canToggle)
         XCTAssertEqual(model.toggleText, "上屏")
         XCTAssertEqual(model.disabledHint, "请先选择人名条预设。")
+        XCTAssertEqual(model.accessibilityLabel, "人名条, 新建人名条, 上屏")
+    }
+
+    func testEmptyCountdownUsesSpecificCreateCopyAndAction() {
+        let model = LiveOverlayRailRowModel.countdown(
+            presets: [],
+            selectedID: nil,
+            isLive: false
+        )
+
+        XCTAssertEqual(model.presetLabel, "新建倒计时")
+        XCTAssertEqual(model.presetInteraction, .create(.countdown))
+        XCTAssertTrue(model.isPlaceholder)
+        XCTAssertFalse(model.canToggle)
+    }
+
+    func testEmptyTickerUsesSpecificCreateCopyAndAction() {
+        let model = LiveOverlayRailRowModel.ticker(
+            presets: [],
+            selectedID: nil,
+            isLive: false
+        )
+
+        XCTAssertEqual(model.presetLabel, "新建游动字幕")
+        XCTAssertEqual(model.presetInteraction, .create(.ticker))
+        XCTAssertTrue(model.isPlaceholder)
+        XCTAssertFalse(model.canToggle)
     }
 
     func testSelectedLowerThirdShowsPresetNameAndEnablesToggle() throws {
@@ -31,6 +59,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.presetLabel, "王五 · 董事长")
+        XCTAssertEqual(model.presetInteraction, .choose)
         XCTAssertFalse(model.isPlaceholder)
         XCTAssertTrue(model.canToggle)
         XCTAssertEqual(model.toggleText, "关闭")
@@ -51,6 +80,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.presetLabel, "Opening 10:25")
+        XCTAssertEqual(model.presetInteraction, .choose)
         XCTAssertTrue(model.canToggle)
         XCTAssertEqual(model.toggleText, "上屏")
     }
@@ -69,6 +99,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.presetLabel, "Welcome to the annual...")
+        XCTAssertEqual(model.presetInteraction, .choose)
         XCTAssertTrue(model.canToggle)
     }
 
@@ -86,7 +117,28 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         )
 
         XCTAssertEqual(model.presetLabel, "选择预设...")
+        XCTAssertEqual(model.presetInteraction, .choose)
         XCTAssertTrue(model.isPlaceholder)
         XCTAssertFalse(model.canToggle)
+    }
+
+    func testLiveModePresetCreationUsesStructuredInteractionInsteadOfDisplayCopy() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("switch model.presetInteraction"))
+        XCTAssertTrue(source.contains("case .create(let kind):"))
+        XCTAssertFalse(source.contains("model.presetLabel =="))
+        XCTAssertFalse(source.contains("\"+ 新建预设\""))
+    }
+
+    func testOverlayCreationCopyDoesNotUseGenericPresetLabels() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OverlayControlPanel.swift")
+
+        XCTAssertTrue(source.contains("新建人名条"))
+        XCTAssertTrue(source.contains("新建倒计时"))
+        XCTAssertTrue(source.contains("新建游动字幕"))
+        XCTAssertFalse(source.contains("Label(\"新建预设\""))
+        XCTAssertFalse(source.contains("新建倒计时预设"))
+        XCTAssertFalse(source.contains("新建游动字幕预设"))
     }
 }
