@@ -612,7 +612,8 @@ final class SwitcherViewModel {
     // MARK: - V27: Lower Third（下三分之一条）状态
     var isLowerThirdVisible: Bool = false
     var lowerThirdName: String    = ""
-    var lowerThirdTitle: String   = ""
+    var lowerThirdRole: String = ""
+    var lowerThirdOrganization: String = ""
     var lowerThirdPresets: [LowerThirdPreset] = []
 }
 

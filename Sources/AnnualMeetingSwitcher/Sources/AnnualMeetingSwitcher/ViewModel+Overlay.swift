@@ -284,18 +284,24 @@ extension SwitcherViewModel {
     func saveLowerThirdPresetFromDraft() -> Bool {
         saveLowerThirdPreset(
             name: overlayComposerState.lowerThirdNameDraft,
-            subtitle: overlayComposerState.lowerThirdTitleDraft,
+            role: overlayComposerState.lowerThirdRoleDraft,
+            organization: overlayComposerState.lowerThirdOrganizationDraft,
             updatingSelectedPreset: true
         )
     }
 
     @discardableResult
-    func saveLowerThirdPreset(name: String, subtitle: String) -> Bool {
-        saveLowerThirdPreset(name: name, subtitle: subtitle, updatingSelectedPreset: false)
+    func saveLowerThirdPreset(name: String, role: String, organization: String) -> Bool {
+        saveLowerThirdPreset(name: name, role: role, organization: organization, updatingSelectedPreset: false)
     }
 
     @discardableResult
-    private func saveLowerThirdPreset(name: String, subtitle: String, updatingSelectedPreset: Bool) -> Bool {
+    private func saveLowerThirdPreset(
+        name: String,
+        role: String,
+        organization: String,
+        updatingSelectedPreset: Bool
+    ) -> Bool {
         let selectedID = overlayComposerState.selectedLowerThirdPresetID
         let existingIndex = updatingSelectedPreset ? selectedID.flatMap { selectedID in
             lowerThirdPresets.firstIndex { $0.id == selectedID }
@@ -306,7 +312,8 @@ extension SwitcherViewModel {
         guard let preset = LowerThirdPreset.make(
             id: presetID,
             name: name,
-            subtitle: subtitle,
+            role: role,
+            organization: organization,
             orderIndex: orderIndex
         ) else {
             return false
@@ -327,7 +334,8 @@ extension SwitcherViewModel {
         guard let storedPreset = lowerThirdPresets.first(where: { $0.id == preset.id }) ?? LowerThirdPreset.make(
             id: preset.id,
             name: preset.name,
-            subtitle: preset.subtitle,
+            role: preset.role,
+            organization: preset.organization,
             orderIndex: preset.orderIndex
         ) else {
             return
@@ -336,14 +344,16 @@ extension SwitcherViewModel {
         overlayComposerState.selectedKind = .lowerThird
         overlayComposerState.selectedLowerThirdPresetID = storedPreset.id
         overlayComposerState.lowerThirdNameDraft = storedPreset.name
-        overlayComposerState.lowerThirdTitleDraft = storedPreset.subtitle
+        overlayComposerState.lowerThirdRoleDraft = storedPreset.role
+        overlayComposerState.lowerThirdOrganizationDraft = storedPreset.organization
     }
 
     func clearLowerThirdPresetDraft() {
         overlayComposerState.selectedKind = .lowerThird
         overlayComposerState.selectedLowerThirdPresetID = nil
         overlayComposerState.lowerThirdNameDraft = ""
-        overlayComposerState.lowerThirdTitleDraft = ""
+        overlayComposerState.lowerThirdRoleDraft = ""
+        overlayComposerState.lowerThirdOrganizationDraft = ""
     }
 
     func deleteLowerThirdPreset(id: UUID) {
@@ -389,21 +399,27 @@ extension SwitcherViewModel {
         guard let sanitizedPreset = LowerThirdPreset.make(
             id: preset.id,
             name: preset.name,
-            subtitle: preset.subtitle,
+            role: preset.role,
+            organization: preset.organization,
             orderIndex: preset.orderIndex
         ) else {
             return
         }
-        showLowerThird(name: sanitizedPreset.name, title: sanitizedPreset.subtitle)
+        showLowerThird(
+            name: sanitizedPreset.name,
+            role: sanitizedPreset.role,
+            organization: sanitizedPreset.organization
+        )
     }
 
     /// 显示人名条（弹簧飞入）
-    func showLowerThird(name: String, title: String) {
+    func showLowerThird(name: String, role: String, organization: String) {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
 
-        lowerThirdName    = trimmedName
-        lowerThirdTitle   = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        lowerThirdName = trimmedName
+        lowerThirdRole = role.trimmingCharacters(in: .whitespacesAndNewlines)
+        lowerThirdOrganization = organization.trimmingCharacters(in: .whitespacesAndNewlines)
         isLowerThirdVisible = true
         recordSupportEvent(kind: .lowerThirdShown, detail: "state=shown")
     }
@@ -423,7 +439,8 @@ extension SwitcherViewModel {
         stopTicker()
         dismissLowerThird()
         lowerThirdName = ""
-        lowerThirdTitle = ""
+        lowerThirdRole = ""
+        lowerThirdOrganization = ""
         recordSupportEvent(kind: .overlaysCleared, detail: "state=cleared")
     }
 }

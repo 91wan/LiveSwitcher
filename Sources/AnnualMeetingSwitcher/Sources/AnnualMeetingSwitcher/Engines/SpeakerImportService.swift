@@ -44,10 +44,21 @@ enum SpeakerImportService {
             .filter { row in row.contains { !$0.isEmpty } }
 
         let dataRows = rows.dropFirst(shouldSkipHeader(rows.first) ? 1 : 0)
-        let presets = dataRows.enumerated().compactMap { index, row in
-            LowerThirdPreset.make(
-                name: row[safe: 0] ?? "",
-                subtitle: row[safe: 1] ?? "",
+        let presets: [LowerThirdPreset] = dataRows.enumerated().compactMap { index, row in
+            let name = row[safe: 0] ?? ""
+            let role: String
+            let organization: String
+            if row.count >= 3 {
+                role = row[safe: 1] ?? ""
+                organization = row[safe: 2] ?? ""
+            } else {
+                role = ""
+                organization = row[safe: 1] ?? ""
+            }
+            return LowerThirdPreset.make(
+                name: name,
+                role: role,
+                organization: organization,
                 orderIndex: index
             )
         }
@@ -79,7 +90,8 @@ enum SpeakerImportService {
                     if let replacement = LowerThirdPreset.make(
                         id: existingPreset.id,
                         name: importedPreset.name,
-                        subtitle: importedPreset.subtitle,
+                        role: importedPreset.role,
+                        organization: importedPreset.organization,
                         orderIndex: existingPreset.orderIndex
                     ) {
                         merged[existingIndex] = replacement
@@ -89,7 +101,8 @@ enum SpeakerImportService {
                     if let appended = LowerThirdPreset.make(
                         id: importedPreset.id,
                         name: importedPreset.name,
-                        subtitle: importedPreset.subtitle,
+                        role: importedPreset.role,
+                        organization: importedPreset.organization,
                         orderIndex: merged.count
                     ) {
                         merged.append(appended)
@@ -99,7 +112,8 @@ enum SpeakerImportService {
             } else if let appended = LowerThirdPreset.make(
                 id: importedPreset.id,
                 name: importedPreset.name,
-                subtitle: importedPreset.subtitle,
+                role: importedPreset.role,
+                organization: importedPreset.organization,
                 orderIndex: merged.count
             ) {
                 merged.append(appended)
@@ -117,9 +131,9 @@ enum SpeakerImportService {
 
     static func exportCSV(_ presets: [LowerThirdPreset]) -> String {
         let rows = LowerThirdPreset.normalized(presets).map { preset in
-            "\(escapeCSVField(preset.name)),\(escapeCSVField(preset.subtitle))"
+            "\(escapeCSVField(preset.name)),\(escapeCSVField(preset.role)),\(escapeCSVField(preset.organization))"
         }
-        return (["name,title"] + rows).joined(separator: "\n") + "\n"
+        return (["name,role,organization"] + rows).joined(separator: "\n") + "\n"
     }
 
     private static func shouldSkipHeader(_ row: [String]?) -> Bool {

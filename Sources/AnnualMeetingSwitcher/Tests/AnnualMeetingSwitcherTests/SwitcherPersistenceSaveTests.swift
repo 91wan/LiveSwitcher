@@ -58,7 +58,7 @@ final class SwitcherPersistenceSaveTests: XCTestCase {
     func testSaveLowerThirdCountdownTickerPresets() throws {
         let defaults = try makeDefaults()
         let store = SwitcherPersistenceStore(userDefaults: defaults)
-        let lowerThird = LowerThirdPreset(id: UUID(), name: "Host", subtitle: "MC", orderIndex: 0)
+        let lowerThird = LowerThirdPreset(id: UUID(), name: "Host", role: "MC", organization: "Example", orderIndex: 0)
         let countdown = CountdownPreset(id: UUID(), title: "Start", totalSeconds: 30, orderIndex: 0)
         let ticker = TickerPreset(id: UUID(), text: "Welcome", speedIndex: 1, orderIndex: 0)
 

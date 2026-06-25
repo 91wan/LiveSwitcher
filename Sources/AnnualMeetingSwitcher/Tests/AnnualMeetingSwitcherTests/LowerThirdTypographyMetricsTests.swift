@@ -6,13 +6,16 @@ final class LowerThirdTypographyMetricsTests: XCTestCase {
     func testTypographyScalesAndClampsAcrossCanvasHeights() {
         let small = LowerThirdTypographyMetrics.metrics(forCanvasHeight: 720, canvasWidth: 1280)
         XCTAssertGreaterThanOrEqual(small.nameFontSize, 36)
-        XCTAssertGreaterThanOrEqual(small.titleFontSize, 20)
+        XCTAssertGreaterThanOrEqual(small.roleFontSize, 22)
+        XCTAssertGreaterThanOrEqual(small.organizationFontSize, 20)
 
         let hd = LowerThirdTypographyMetrics.metrics(forCanvasHeight: 1080, canvasWidth: 1920)
         XCTAssertGreaterThanOrEqual(hd.nameFontSize, 44)
         XCTAssertLessThanOrEqual(hd.nameFontSize, 48)
-        XCTAssertGreaterThanOrEqual(hd.titleFontSize, 23)
-        XCTAssertLessThanOrEqual(hd.titleFontSize, 26)
+        XCTAssertGreaterThanOrEqual(hd.roleFontSize / hd.nameFontSize, 0.55)
+        XCTAssertLessThanOrEqual(hd.roleFontSize / hd.nameFontSize, 0.70)
+        XCTAssertGreaterThanOrEqual(hd.organizationFontSize, 23)
+        XCTAssertLessThanOrEqual(hd.organizationFontSize, 26)
         XCTAssertEqual(hd.accentWidth, 6, accuracy: 0.001)
         XCTAssertEqual(hd.horizontalPadding, 24, accuracy: 0.001)
         XCTAssertEqual(hd.verticalPadding, 16, accuracy: 0.001)
@@ -20,7 +23,8 @@ final class LowerThirdTypographyMetricsTests: XCTestCase {
 
         let large = LowerThirdTypographyMetrics.metrics(forCanvasHeight: 2160, canvasWidth: 3840)
         XCTAssertLessThanOrEqual(large.nameFontSize, 54)
-        XCTAssertLessThanOrEqual(large.titleFontSize, 30)
+        XCTAssertLessThanOrEqual(large.roleFontSize, 34)
+        XCTAssertLessThanOrEqual(large.organizationFontSize, 30)
     }
 
     func testLongTextKeepsAStableSafeBoxAndReadableScaleFactor() {
@@ -28,6 +32,11 @@ final class LowerThirdTypographyMetricsTests: XCTestCase {
 
         XCTAssertLessThanOrEqual(metrics.maxWidth, 820)
         XCTAssertGreaterThanOrEqual(metrics.minimumTextScaleFactor, 0.72)
-        XCTAssertGreaterThan(metrics.nameFontSize, metrics.titleFontSize)
+        XCTAssertGreaterThan(metrics.nameFontSize, metrics.roleFontSize)
+        XCTAssertGreaterThan(metrics.nameFontSize, metrics.organizationFontSize)
+        XCTAssertLessThan(
+            metrics.cardHeight(hasOrganization: false),
+            metrics.cardHeight(hasOrganization: true)
+        )
     }
 }

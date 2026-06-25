@@ -40,7 +40,8 @@ struct OverlayComposerState: Equatable {
     var tickerTextDraft = "欢迎莅临，活动即将开始"
     var tickerSpeedIndex = 1
     var lowerThirdNameDraft = ""
-    var lowerThirdTitleDraft = ""
+    var lowerThirdRoleDraft = ""
+    var lowerThirdOrganizationDraft = ""
     var selectedLowerThirdPresetID: UUID?
     var selectedCountdownPresetID: UUID?
     var selectedTickerPresetID: UUID?

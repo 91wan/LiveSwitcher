@@ -142,7 +142,11 @@ struct OverlayControlPanel: View {
                     .textFieldStyle(.roundedBorder)
                     .font(StudioTheme.TypeScale.body)
 
-                TextField("职务 / 单位（可留空）", text: composerBinding(\.lowerThirdTitleDraft))
+                TextField("职位（可留空）", text: composerBinding(\.lowerThirdRoleDraft))
+                    .textFieldStyle(.roundedBorder)
+                    .font(StudioTheme.TypeScale.body)
+
+                TextField("公司名称（可留空）", text: composerBinding(\.lowerThirdOrganizationDraft))
                     .textFieldStyle(.roundedBorder)
                     .font(StudioTheme.TypeScale.body)
 
@@ -159,7 +163,8 @@ struct OverlayControlPanel: View {
                         withAnimation(.easeInOut(duration: 0.2)) {
                             viewModel.showLowerThird(
                                 name: composerState.lowerThirdNameDraft,
-                                title: composerState.lowerThirdTitleDraft
+                                role: composerState.lowerThirdRoleDraft,
+                                organization: composerState.lowerThirdOrganizationDraft
                             )
                         }
                     }
@@ -269,8 +274,9 @@ struct OverlayControlPanel: View {
                                         .font(StudioTheme.TypeScale.caption.weight(.black))
                                         .foregroundStyle(StudioTheme.textPrimary)
                                         .lineLimit(1)
-                                    if !preset.subtitle.isEmpty {
-                                        Text(preset.subtitle)
+                                    let details = lowerThirdPresetDetails(preset)
+                                    if !details.isEmpty {
+                                        Text(details)
                                             .font(StudioTheme.caption())
                                             .foregroundStyle(StudioTheme.textTertiary)
                                             .lineLimit(1)
@@ -298,7 +304,7 @@ struct OverlayControlPanel: View {
                             .buttonStyle(.plain)
                             .help("载入人名条预设")
                             .accessibilityLabel("载入人名条预设")
-                            .accessibilityValue(preset.subtitle.isEmpty ? preset.name : "\(preset.name), \(preset.subtitle)")
+                            .accessibilityValue(lowerThirdPresetAccessibilityValue(preset))
                         }
                     }
                     .padding(.vertical, 1)
@@ -353,7 +359,7 @@ struct OverlayControlPanel: View {
 
     private func confirmAndImportSpeakerPresets(_ presets: [LowerThirdPreset], sourceLabel: String) {
         let preview = presets.prefix(5).map { preset in
-            preset.subtitle.isEmpty ? preset.name : "\(preset.name) - \(preset.subtitle)"
+            lowerThirdPresetAccessibilityValue(preset)
         }.joined(separator: "\n")
 
         let previewAlert = NSAlert()
@@ -367,6 +373,18 @@ struct OverlayControlPanel: View {
 
         let policy = duplicatePolicy(for: presets)
         viewModel.importLowerThirdPresets(presets, duplicatePolicy: policy)
+    }
+
+    private func lowerThirdPresetDetails(_ preset: LowerThirdPreset) -> String {
+        [preset.role, preset.organization]
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+            .joined(separator: " · ")
+    }
+
+    private func lowerThirdPresetAccessibilityValue(_ preset: LowerThirdPreset) -> String {
+        let details = lowerThirdPresetDetails(preset)
+        return details.isEmpty ? preset.name : "\(preset.name), \(details)"
     }
 
     private func duplicatePolicy(for presets: [LowerThirdPreset]) -> SpeakerImportDuplicatePolicy {
@@ -812,7 +830,8 @@ struct OverlayControlPanel: View {
         OverlayLivePreviewModel.make(
             isLowerThirdVisible: viewModel.isLowerThirdVisible,
             lowerThirdName: viewModel.lowerThirdName,
-            lowerThirdTitle: viewModel.lowerThirdTitle,
+            lowerThirdRole: viewModel.lowerThirdRole,
+            lowerThirdOrganization: viewModel.lowerThirdOrganization,
             isCountdownActive: viewModel.isCountdownActive,
             countdownSeconds: viewModel.countdownSeconds,
             countdownTitle: viewModel.countdownTitle,

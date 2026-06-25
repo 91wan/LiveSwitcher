@@ -6,7 +6,8 @@ struct OutputDisplayState: Equatable {
     var isTickerActive: Bool
     var isLowerThirdVisible: Bool
     var lowerThirdName: String
-    var lowerThirdTitle: String
+    var lowerThirdRole: String
+    var lowerThirdOrganization: String
     var isPanicMode: Bool
     var isFadeToBlackActive: Bool
     var cornerLogoPosition: CornerLogoPosition
@@ -17,7 +18,8 @@ struct OutputDisplayState: Equatable {
         isTickerActive: Bool,
         isLowerThirdVisible: Bool,
         lowerThirdName: String,
-        lowerThirdTitle: String,
+        lowerThirdRole: String,
+        lowerThirdOrganization: String,
         isPanicMode: Bool,
         isFadeToBlackActive: Bool,
         cornerLogoPosition: CornerLogoPosition = .topRight
@@ -28,7 +30,8 @@ struct OutputDisplayState: Equatable {
             isTickerActive: isTickerActive,
             isLowerThirdVisible: isLowerThirdVisible,
             lowerThirdName: lowerThirdName,
-            lowerThirdTitle: lowerThirdTitle,
+            lowerThirdRole: lowerThirdRole,
+            lowerThirdOrganization: lowerThirdOrganization,
             isPanicMode: isPanicMode,
             isFadeToBlackActive: isFadeToBlackActive,
             cornerLogoPosition: cornerLogoPosition
@@ -43,7 +46,8 @@ struct OutputDisplayState: Equatable {
             isTickerActive: viewModel.isTickerActive,
             isLowerThirdVisible: viewModel.isLowerThirdVisible,
             lowerThirdName: viewModel.lowerThirdName,
-            lowerThirdTitle: viewModel.lowerThirdTitle,
+            lowerThirdRole: viewModel.lowerThirdRole,
+            lowerThirdOrganization: viewModel.lowerThirdOrganization,
             isPanicMode: viewModel.isPanicMode,
             isFadeToBlackActive: viewModel.isFadeToBlackActive,
             cornerLogoPosition: viewModel.cornerLogoPosition

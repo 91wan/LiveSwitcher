@@ -48,7 +48,8 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
     func testSelectedLowerThirdShowsPresetNameAndEnablesToggle() throws {
         let preset = try XCTUnwrap(LowerThirdPreset.make(
             name: "王五",
-            subtitle: "董事长",
+            role: "董事长",
+            organization: "示例集团",
             orderIndex: 0
         ))
 
@@ -58,12 +59,12 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
             isLive: true
         )
 
-        XCTAssertEqual(model.presetLabel, "王五 · 董事长")
+        XCTAssertEqual(model.presetLabel, "王五 · 董事长 · 示例集团")
         XCTAssertEqual(model.presetInteraction, .choose)
         XCTAssertFalse(model.isPlaceholder)
         XCTAssertTrue(model.canToggle)
         XCTAssertEqual(model.toggleText, "关闭")
-        XCTAssertEqual(model.accessibilityLabel, "人名条, 王五 · 董事长, 关闭")
+        XCTAssertEqual(model.accessibilityLabel, "人名条, 王五 · 董事长 · 示例集团, 关闭")
     }
 
     func testCountdownLabelIncludesFormattedDuration() throws {

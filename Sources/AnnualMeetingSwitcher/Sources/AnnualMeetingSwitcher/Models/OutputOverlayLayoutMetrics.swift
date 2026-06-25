@@ -26,7 +26,8 @@ enum OutputOverlayLayoutMetrics {
 
 struct LowerThirdTypographyMetrics: Equatable {
     let nameFontSize: CGFloat
-    let titleFontSize: CGFloat
+    let roleFontSize: CGFloat
+    let organizationFontSize: CGFloat
     let accentWidth: CGFloat
     let horizontalPadding: CGFloat
     let verticalPadding: CGFloat
@@ -34,17 +35,20 @@ struct LowerThirdTypographyMetrics: Equatable {
     let minimumTextScaleFactor: CGFloat
 
     var textSpacing: CGFloat { 4 }
-    var cardHeight: CGFloat {
-        nameFontSize + titleFontSize + textSpacing + verticalPadding * 2
+    func cardHeight(hasOrganization: Bool) -> CGFloat {
+        let secondLineHeight = hasOrganization ? organizationFontSize + textSpacing : 0
+        return nameFontSize + secondLineHeight + verticalPadding * 2
     }
 
     static func metrics(forCanvasHeight height: CGFloat, canvasWidth width: CGFloat) -> LowerThirdTypographyMetrics {
         let scale = max(height, 1) / 1080
         let nameSize = min(54, max(36, 46 * scale))
-        let titleSize = min(30, max(20, 24 * scale))
+        let roleSize = min(34, max(22, nameSize * 0.62))
+        let organizationSize = min(30, max(20, 24 * scale))
         return LowerThirdTypographyMetrics(
             nameFontSize: nameSize,
-            titleFontSize: titleSize,
+            roleFontSize: roleSize,
+            organizationFontSize: organizationSize,
             accentWidth: 6,
             horizontalPadding: 24,
             verticalPadding: 16,
@@ -65,6 +69,7 @@ struct OutputOverlayLayoutPlan: Equatable {
         isTickerActive: Bool,
         isCountdownActive: Bool,
         isLowerThirdVisible: Bool,
+        hasLowerThirdOrganization: Bool = true,
         isLogoReady: Bool,
         logoPosition: CornerLogoPosition
     ) -> OutputOverlayLayoutPlan {
@@ -91,9 +96,11 @@ struct OutputOverlayLayoutPlan: Equatable {
         let lowerThirdFrame = isLowerThirdVisible
             ? CGRect(
                 x: OutputOverlayLayoutMetrics.lowerThirdOuterMargin,
-                y: canvasSize.height - OutputOverlayLayoutMetrics.lowerThirdBottomMargin - lowerThirdMetrics.cardHeight,
+                y: canvasSize.height
+                    - OutputOverlayLayoutMetrics.lowerThirdBottomMargin
+                    - lowerThirdMetrics.cardHeight(hasOrganization: hasLowerThirdOrganization),
                 width: lowerThirdMetrics.maxWidth,
-                height: lowerThirdMetrics.cardHeight
+                height: lowerThirdMetrics.cardHeight(hasOrganization: hasLowerThirdOrganization)
             )
             : nil
         let logoFrame = isLogoReady

@@ -228,7 +228,7 @@ final class RuntimeSupportEventTests: XCTestCase {
         viewModel.stopCountdown()
         viewModel.startTicker(text: "Customer ticker text")
         viewModel.stopTicker()
-        viewModel.showLowerThird(name: "Private Host", title: "Private Company")
+        viewModel.showLowerThird(name: "Private Host", role: "", organization: "Private Company")
         viewModel.dismissLowerThird()
         viewModel.clearAllOverlays()
 

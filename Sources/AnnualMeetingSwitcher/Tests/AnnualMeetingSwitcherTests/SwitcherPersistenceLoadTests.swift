@@ -159,9 +159,9 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
     func testLoadRestoresOverlayPresetsNormalized() throws {
         let defaults = try makeDefaults()
         let lowerThirds = [
-            LowerThirdPreset(id: UUID(), name: " Beta ", subtitle: " Two ", orderIndex: 3),
-            LowerThirdPreset(id: UUID(), name: "Alpha", subtitle: " One ", orderIndex: 1),
-            LowerThirdPreset(id: UUID(), name: "   ", subtitle: "Drop", orderIndex: 0)
+            LowerThirdPreset(id: UUID(), name: " Beta ", role: " Role Two ", organization: " Org Two ", orderIndex: 3),
+            LowerThirdPreset(id: UUID(), name: "Alpha", role: " Role One ", organization: " Org One ", orderIndex: 1),
+            LowerThirdPreset(id: UUID(), name: "   ", role: "Drop", organization: "Drop", orderIndex: 0)
         ]
         let countdowns = [
             CountdownPreset(id: UUID(), title: "", totalSeconds: 30, orderIndex: 4),
@@ -178,10 +178,52 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         let state = SwitcherPersistenceStore(userDefaults: defaults).load().state
 
         XCTAssertEqual(state.lowerThirdPresets.map(\.name), ["Alpha", "Beta"])
+        XCTAssertEqual(state.lowerThirdPresets.map(\.role), ["Role One", "Role Two"])
+        XCTAssertEqual(state.lowerThirdPresets.map(\.organization), ["Org One", "Org Two"])
         XCTAssertEqual(state.lowerThirdPresets.map(\.orderIndex), [0, 1])
         XCTAssertEqual(state.countdownPresets.map(\.title), [CountdownPreset.defaultTitle])
         XCTAssertEqual(state.tickerPresets.map(\.text), ["Welcome"])
         XCTAssertEqual(state.tickerPresets.first?.speedIndex, OverlaySpeedSelection.options.index(before: OverlaySpeedSelection.options.endIndex))
+    }
+
+    func testLoadMigratesLegacyLowerThirdSubtitleToOrganization() throws {
+        let defaults = try makeDefaults()
+        let id = UUID()
+        let legacyJSON = """
+        [
+          {"id":"\(id.uuidString)","name":"张三","subtitle":"示例科技有限公司","orderIndex":2}
+        ]
+        """.data(using: .utf8)!
+        defaults.set(legacyJSON, forKey: "overlay.presets.lowerThird.json")
+
+        let state = SwitcherPersistenceStore(userDefaults: defaults).load().state
+
+        XCTAssertEqual(state.lowerThirdPresets.count, 1)
+        XCTAssertEqual(state.lowerThirdPresets[0].id, id)
+        XCTAssertEqual(state.lowerThirdPresets[0].name, "张三")
+        XCTAssertEqual(state.lowerThirdPresets[0].role, "")
+        XCTAssertEqual(state.lowerThirdPresets[0].organization, "示例科技有限公司")
+        XCTAssertEqual(state.lowerThirdPresets[0].orderIndex, 0)
+    }
+
+    func testLoadSkipsBadLowerThirdPresetWithoutDroppingValidPresets() throws {
+        let defaults = try makeDefaults()
+        let validID = UUID()
+        let mixedJSON = """
+        [
+          {"id":"\(validID.uuidString)","name":"张三","role":"主持人","organization":"示例科技","orderIndex":0},
+          {"id":"not-a-uuid","name":"坏数据","role":"错误","organization":"错误","orderIndex":1},
+          {"id":"\(UUID().uuidString)","name":"李四","subtitle":"旧单位","orderIndex":2}
+        ]
+        """.data(using: .utf8)!
+        defaults.set(mixedJSON, forKey: "overlay.presets.lowerThird.json")
+
+        let state = SwitcherPersistenceStore(userDefaults: defaults).load().state
+
+        XCTAssertEqual(state.lowerThirdPresets.map(\.name), ["张三", "李四"])
+        XCTAssertEqual(state.lowerThirdPresets.map(\.role), ["主持人", ""])
+        XCTAssertEqual(state.lowerThirdPresets.map(\.organization), ["示例科技", "旧单位"])
+        XCTAssertEqual(state.lowerThirdPresets.map(\.orderIndex), [0, 1])
     }
 
     private func makeDefaults() throws -> UserDefaults {

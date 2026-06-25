@@ -8,7 +8,8 @@ import SwiftUI
 
 struct LowerThirdView: View {
     let name: String
-    let title: String
+    let role: String
+    let organization: String
     let isVisible: Bool
     let metrics: LowerThirdTypographyMetrics
 
@@ -21,12 +22,14 @@ struct LowerThirdView: View {
 
     init(
         name: String,
-        title: String,
+        role: String,
+        organization: String,
         isVisible: Bool,
         metrics: LowerThirdTypographyMetrics = .metrics(forCanvasHeight: 1080, canvasWidth: 1920)
     ) {
         self.name = name
-        self.title = title
+        self.role = role
+        self.organization = organization
         self.isVisible = isVisible
         self.metrics = metrics
     }
@@ -61,15 +64,26 @@ struct LowerThirdView: View {
 
             // 文字区
             VStack(alignment: .leading, spacing: metrics.textSpacing) {
-                Text(name)
-                    .font(.system(size: metrics.nameFontSize, weight: .bold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .minimumScaleFactor(metrics.minimumTextScaleFactor)
+                HStack(alignment: .firstTextBaseline, spacing: 14) {
+                    Text(name)
+                        .font(.system(size: metrics.nameFontSize, weight: .bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(metrics.minimumTextScaleFactor)
 
-                if !title.isEmpty {
-                    Text(title)
-                        .font(.system(size: metrics.titleFontSize, weight: .regular))
+                    if !role.isEmpty {
+                        Text(role)
+                            .font(.system(size: metrics.roleFontSize, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.9))
+                            .lineLimit(1)
+                            .minimumScaleFactor(metrics.minimumTextScaleFactor)
+                    }
+                }
+                .lineLimit(1)
+
+                if !organization.isEmpty {
+                    Text(organization)
+                        .font(.system(size: metrics.organizationFontSize, weight: .regular))
                         .foregroundStyle(.white.opacity(0.88))
                         .lineLimit(1)
                         .minimumScaleFactor(metrics.minimumTextScaleFactor)

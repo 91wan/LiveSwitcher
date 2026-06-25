@@ -6,7 +6,8 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         let model = OverlayLivePreviewModel.make(
             isLowerThirdVisible: false,
             lowerThirdName: "",
-            lowerThirdTitle: "",
+            lowerThirdRole: "",
+            lowerThirdOrganization: "",
             isCountdownActive: false,
             countdownSeconds: 0,
             countdownTitle: "",
@@ -24,7 +25,8 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         let model = OverlayLivePreviewModel.make(
             isLowerThirdVisible: true,
             lowerThirdName: "Host",
-            lowerThirdTitle: "CEO",
+            lowerThirdRole: "CEO",
+            lowerThirdOrganization: "Example Inc.",
             isCountdownActive: true,
             countdownSeconds: 90,
             countdownTitle: "Starts soon",
@@ -37,21 +39,50 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertEqual(model.layers.first(where: { $0.kind == .ticker })?.primaryText, "Doors closing")
         XCTAssertEqual(model.layers.first(where: { $0.kind == .countdown })?.primaryText, "01:30")
         XCTAssertEqual(model.layers.first(where: { $0.kind == .lowerThird })?.primaryText, "Host")
+        XCTAssertEqual(model.layers.first(where: { $0.kind == .lowerThird })?.secondaryText, "CEO · Example Inc.")
         XCTAssertTrue(model.layers.allSatisfy { !$0.isDraft && $0.opacity == 1 })
         XCTAssertTrue(model.accessibilityLabel.contains("叠层预览"))
         XCTAssertTrue(model.accessibilityLabel.contains("上屏"))
+    }
+
+    func testLowerThirdPreviewSecondaryTextCoversOptionalRoleAndOrganization() {
+        let cases: [(role: String, organization: String, expected: String?)] = [
+            ("", "", nil),
+            ("主持人", "", "主持人"),
+            ("", "示例科技", "示例科技"),
+            ("主持人", "示例科技", "主持人 · 示例科技")
+        ]
+
+        for item in cases {
+            let model = OverlayLivePreviewModel.make(
+                isLowerThirdVisible: true,
+                lowerThirdName: "张三",
+                lowerThirdRole: item.role,
+                lowerThirdOrganization: item.organization,
+                isCountdownActive: false,
+                countdownSeconds: 0,
+                countdownTitle: "",
+                isTickerActive: false,
+                tickerText: "",
+                composerState: OverlayComposerState()
+            )
+
+            XCTAssertEqual(model.layers.first(where: { $0.kind == .lowerThird })?.secondaryText, item.expected)
+        }
     }
 
     func testSelectedDraftCanRenderDimmedWithoutLookingLive() {
         var draft = OverlayComposerState()
         draft.selectedKind = .lowerThird
         draft.lowerThirdNameDraft = "Upcoming Guest"
-        draft.lowerThirdTitleDraft = "Panel"
+        draft.lowerThirdRoleDraft = "Panel"
+        draft.lowerThirdOrganizationDraft = "Forum"
 
         let model = OverlayLivePreviewModel.make(
             isLowerThirdVisible: false,
             lowerThirdName: "",
-            lowerThirdTitle: "",
+            lowerThirdRole: "",
+            lowerThirdOrganization: "",
             isCountdownActive: false,
             countdownSeconds: 0,
             countdownTitle: "",
@@ -62,6 +93,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
 
         XCTAssertEqual(model.layers.count, 1)
         XCTAssertEqual(model.layers[0].kind, .lowerThird)
+        XCTAssertEqual(model.layers[0].secondaryText, "Panel · Forum")
         XCTAssertTrue(model.layers[0].isDraft)
         XCTAssertEqual(model.layers[0].opacity, 0.35)
     }

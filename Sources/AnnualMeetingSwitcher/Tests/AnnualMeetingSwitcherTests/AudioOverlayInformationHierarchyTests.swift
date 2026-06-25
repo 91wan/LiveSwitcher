@@ -67,7 +67,8 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
     func testOverlayComposerStateKeepsDraftsWhenSwitchingTools() {
         var state = OverlayComposerState()
         state.lowerThirdNameDraft = "Guest A"
-        state.lowerThirdTitleDraft = "Keynote"
+        state.lowerThirdRoleDraft = "Keynote"
+        state.lowerThirdOrganizationDraft = "Example"
         state.tickerTextDraft = "Welcome ticker"
         state.select(.ticker)
         state.select(.lowerThird)
@@ -75,7 +76,8 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
         XCTAssertEqual(state.selectedKind, .lowerThird)
         XCTAssertEqual(state.visibleComposerTitles, ["人名条"])
         XCTAssertEqual(state.lowerThirdNameDraft, "Guest A")
-        XCTAssertEqual(state.lowerThirdTitleDraft, "Keynote")
+        XCTAssertEqual(state.lowerThirdRoleDraft, "Keynote")
+        XCTAssertEqual(state.lowerThirdOrganizationDraft, "Example")
         XCTAssertEqual(state.tickerTextDraft, "Welcome ticker")
     }
 
