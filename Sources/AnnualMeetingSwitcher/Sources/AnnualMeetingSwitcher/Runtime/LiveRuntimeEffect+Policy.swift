@@ -37,6 +37,7 @@ extension LiveRuntimeEffect {
              .restartMedia,
              .seekMediaToStart,
              .seekMediaToEnd,
+             .seekMediaToProgress,
              .stopMedia,
              .setMediaVolume:
             return .media

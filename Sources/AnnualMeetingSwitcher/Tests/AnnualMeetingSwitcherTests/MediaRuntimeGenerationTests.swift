@@ -31,6 +31,10 @@ final class MediaRuntimeGenerationTests: XCTestCase {
         assertStaleEffectIgnored(.seekMediaToEnd(generation: 4))
     }
 
+    func testStaleSeekToProgressEffectIsIgnored() {
+        assertStaleEffectIgnored(.seekMediaToProgress(0.4, generation: 4))
+    }
+
     func testCurrentGenerationMediaEffectExecutes() {
         let media = MediaRuntimeGenerationPortSpy()
         let runner = LiveRuntimeEffectRunner(recordsOnly: false, media: media)
@@ -68,5 +72,6 @@ private final class MediaRuntimeGenerationPortSpy: MediaPlaybackPort {
     func stop(generation: Int) { callCount += 1 }
     func seekToStart(generation: Int) { callCount += 1 }
     func seekToEnd(generation: Int) { callCount += 1 }
+    func seek(toProgress progress: Double, generation: Int) { callCount += 1 }
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) { callCount += 1 }
 }

@@ -98,6 +98,10 @@ private final class RuntimeMediaRestartPortSpy: MediaPlaybackPort {
         events.append("seekToEnd:\(generation)")
     }
 
+    func seek(toProgress progress: Double, generation: Int) {
+        events.append("seekToProgress:\(generation):\(progress)")
+    }
+
     func stop(generation: Int) {
         events.append("stop:\(generation)")
     }

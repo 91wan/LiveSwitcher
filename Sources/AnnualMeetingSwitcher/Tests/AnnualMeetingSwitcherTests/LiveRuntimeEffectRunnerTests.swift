@@ -158,6 +158,10 @@ private final class MediaPortSpy: MediaPlaybackPort {
         calls.append("seekToEnd:\(generation)")
     }
 
+    func seek(toProgress progress: Double, generation: Int) {
+        calls.append("seekToProgress:\(generation):\(progress)")
+    }
+
     func stop(generation: Int) {
         calls.append("stop:\(generation)")
     }

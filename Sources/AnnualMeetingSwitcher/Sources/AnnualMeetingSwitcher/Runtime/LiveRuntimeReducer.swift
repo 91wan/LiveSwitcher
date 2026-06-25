@@ -95,6 +95,14 @@ enum LiveRuntimeReducer {
                 effects: &effects
             )
 
+        case .operatorSeekedCurrentMediaToProgress(let progress):
+            guard isRuntimeOwned(.media, in: bridgeMode) else { break }
+            MediaRuntimeReducer.seekCurrent(
+                toProgress: progress,
+                state: &state,
+                effects: &effects
+            )
+
         case .operatorStoppedCurrentMedia:
             guard isRuntimeOwned(.media, in: bridgeMode) else { break }
             MediaRuntimeReducer.stopCurrent(

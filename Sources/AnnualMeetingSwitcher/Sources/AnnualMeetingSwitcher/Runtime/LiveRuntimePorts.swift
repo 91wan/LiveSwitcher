@@ -7,6 +7,7 @@ protocol MediaPlaybackPort {
     func restart(generation: Int)
     func seekToStart(generation: Int)
     func seekToEnd(generation: Int)
+    func seek(toProgress progress: Double, generation: Int)
     func stop(generation: Int)
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int)
 }

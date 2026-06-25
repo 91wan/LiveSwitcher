@@ -171,6 +171,7 @@ private final class RunnerMediaPortSpy: MediaPlaybackPort {
     func restart(generation: Int) { calls.append("restart:\(generation)") }
     func seekToStart(generation: Int) { calls.append("seekToStart:\(generation)") }
     func seekToEnd(generation: Int) { calls.append("seekToEnd:\(generation)") }
+    func seek(toProgress progress: Double, generation: Int) { calls.append("seekToProgress:\(generation):\(progress)") }
     func stop(generation: Int) { calls.append("stop:\(generation)") }
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         calls.append("volume:\(generation):\(volume):\(fade)")

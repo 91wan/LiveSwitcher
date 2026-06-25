@@ -93,6 +93,20 @@ enum MediaRuntimeReducer {
         effects.append(.seekMediaToEnd(generation: state.media.generation))
     }
 
+    static func seekCurrent(
+        toProgress progress: Double,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        guard state.program.effectiveCurrentItem?.supportsSeeking == true else { return }
+        let clampedProgress = clampProgress(progress)
+        state.media.didPlayToEnd = false
+        if let duration = state.media.duration, duration.isFinite, duration > 0 {
+            state.media.currentTime = duration * clampedProgress
+        }
+        effects.append(.seekMediaToProgress(clampedProgress, generation: state.media.generation))
+    }
+
     static func stopCurrent(
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect],
@@ -212,5 +226,10 @@ enum MediaRuntimeReducer {
     ) {
         guard generation == state.media.generation else { return }
         state.media.currentTime = max(0, time)
+    }
+
+    private static func clampProgress(_ progress: Double) -> Double {
+        guard progress.isFinite else { return 0 }
+        return min(max(progress, 0), 1)
     }
 }

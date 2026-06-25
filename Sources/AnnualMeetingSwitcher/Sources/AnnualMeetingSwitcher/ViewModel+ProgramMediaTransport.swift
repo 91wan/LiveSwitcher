@@ -61,6 +61,15 @@ extension SwitcherViewModel {
         }
     }
 
+    func seekCurrentMedia(toProgress progress: Double, expectedGeneration: Int) {
+        guard let item = runtimeBackedCurrentProgramForMediaTransport,
+              programItemSupportsSeeking(item),
+              runtime.state.media.generation == expectedGeneration
+        else { return }
+
+        dispatchRuntimeFacadeAction(.operatorSeekedCurrentMediaToProgress(progress))
+    }
+
     private var runtimeBackedCurrentProgramForMediaTransport: ProgramItem? {
         runtime.bridgeMode.owns(.programSelection)
             ? runtime.state.program.effectiveCurrentItem
