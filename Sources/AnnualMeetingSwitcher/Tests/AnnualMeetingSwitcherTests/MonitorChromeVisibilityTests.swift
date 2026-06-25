@@ -8,7 +8,8 @@ final class MonitorChromeVisibilityTests: XCTestCase {
                 let model = MonitorChromeVisibility.make(
                     isPlaying: false,
                     isHovering: hovering,
-                    isBroadcasting: broadcasting
+                    isBroadcasting: broadcasting,
+                    isTickerActive: false
                 )
 
                 XCTAssertEqual(model.inlineChromeOpacity, 1)
@@ -23,7 +24,8 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         let model = MonitorChromeVisibility.make(
             isPlaying: true,
             isHovering: false,
-            isBroadcasting: false
+            isBroadcasting: false,
+            isTickerActive: false
         )
 
         XCTAssertEqual(model.inlineChromeOpacity, 0)
@@ -35,7 +37,8 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         let model = MonitorChromeVisibility.make(
             isPlaying: true,
             isHovering: true,
-            isBroadcasting: true
+            isBroadcasting: true,
+            isTickerActive: false
         )
 
         XCTAssertEqual(model.inlineChromeOpacity, 1)
@@ -47,7 +50,8 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         let model = MonitorChromeVisibility.make(
             isPlaying: true,
             isHovering: false,
-            isBroadcasting: true
+            isBroadcasting: true,
+            isTickerActive: false
         )
 
         XCTAssertEqual(model.inlineChromeOpacity, 0)
@@ -56,11 +60,34 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         XCTAssertEqual(model.compactLiveIndicatorOpacity, 1)
     }
 
+    func testTickerActiveHidesInlineChromeEvenWhenMediaIsNotPlaying() {
+        let hidden = MonitorChromeVisibility.make(
+            isPlaying: false,
+            isHovering: false,
+            isBroadcasting: true,
+            isTickerActive: true
+        )
+        XCTAssertEqual(hidden.inlineChromeOpacity, 0)
+        XCTAssertFalse(hidden.inlineChromeAllowsHitTesting)
+        XCTAssertTrue(hidden.showsCompactLiveIndicator)
+
+        let hovered = MonitorChromeVisibility.make(
+            isPlaying: false,
+            isHovering: true,
+            isBroadcasting: true,
+            isTickerActive: true
+        )
+        XCTAssertEqual(hovered.inlineChromeOpacity, 1)
+        XCTAssertTrue(hovered.inlineChromeAllowsHitTesting)
+        XCTAssertFalse(hovered.showsCompactLiveIndicator)
+    }
+
     func testProgramMonitorViewUsesVisibilityModelAndHoverState() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
         XCTAssertTrue(source.contains("@State private var isHoveringPreviewDeck"))
         XCTAssertTrue(source.contains("MonitorChromeVisibility.make("))
+        XCTAssertTrue(source.contains("isTickerActive: viewModel.isTickerActive"))
         XCTAssertTrue(source.contains(".onHover { hovering in"))
         XCTAssertTrue(source.contains("compactLiveIndicator"))
     }

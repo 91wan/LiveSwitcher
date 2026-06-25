@@ -44,7 +44,7 @@ final class OutputOverlayLayoutTests: XCTestCase {
     }
 
     func testOutputOverlayLayerUsesAbsoluteZStackPlacements() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
 
         XCTAssertTrue(source.contains("ZStack {"))
         XCTAssertTrue(source.contains("OutputOverlayLayoutPlan.make"))
