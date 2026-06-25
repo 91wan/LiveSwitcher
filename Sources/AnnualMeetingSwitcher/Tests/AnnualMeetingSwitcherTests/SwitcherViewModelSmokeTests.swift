@@ -244,15 +244,20 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertTrue(viewModel.isTickerActive)
         XCTAssertTrue(viewModel.isLowerThirdVisible)
 
+        let supportEventCountBeforeClear = viewModel.supportEvents.count
         viewModel.clearAllOverlays()
+        let clearEvents = Array(viewModel.supportEvents.dropFirst(supportEventCountBeforeClear))
 
         XCTAssertFalse(viewModel.isCountdownActive)
+        XCTAssertNil(viewModel.countdownTimer)
         XCTAssertEqual(viewModel.countdownSeconds, 0)
         XCTAssertFalse(viewModel.isTickerActive)
         XCTAssertFalse(viewModel.isLowerThirdVisible)
         XCTAssertEqual(viewModel.lowerThirdName, "")
         XCTAssertEqual(viewModel.lowerThirdRole, "")
         XCTAssertEqual(viewModel.lowerThirdOrganization, "")
+        XCTAssertEqual(clearEvents.map(\.kind), [.overlaysCleared])
+        XCTAssertEqual(clearEvents.map(\.detail), ["state=cleared"])
     }
 
     func testMixedStrategyKeepsMediaAndBGMChannelsActive() {

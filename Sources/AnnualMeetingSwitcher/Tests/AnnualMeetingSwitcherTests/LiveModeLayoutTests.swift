@@ -232,6 +232,21 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
     }
 
+    func testLiveOverlayRailProvidesClearAllAction() throws {
+        let source = try sourceText("Views/LiveModeView.swift")
+
+        XCTAssertTrue(source.contains("overlayClearAllButton"))
+        XCTAssertTrue(source.contains("Label(\"全部清空\", systemImage: \"xmark.circle\")"))
+        XCTAssertTrue(source.contains("let hasActiveOverlay = overlayActiveCount > 0"))
+        XCTAssertEqual(source.components(separatedBy: "viewModel.clearAllOverlays()").count - 1, 1)
+        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
+        XCTAssertTrue(source.contains(".buttonStyle(.bordered)"))
+        XCTAssertTrue(source.contains(".disabled(!hasActiveOverlay)"))
+        XCTAssertTrue(source.contains(".opacity(hasActiveOverlay ? 1 : 0.42)"))
+        XCTAssertTrue(source.contains(".help(\"关闭当前全部上屏叠层\")"))
+        XCTAssertTrue(source.contains(".accessibilityLabel(\"全部清空叠层\")"))
+    }
+
     func testOverlayRailUsesIconOnlyTypeLabelAndTailTruncatedPresetName() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
