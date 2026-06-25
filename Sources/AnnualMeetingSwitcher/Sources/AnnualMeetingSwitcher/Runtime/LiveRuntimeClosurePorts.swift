@@ -15,6 +15,7 @@ final class ClosureMediaPlaybackPort: MediaPlaybackPort {
     var restartHandler: ((Int) -> Void)?
     var seekToStartHandler: ((Int) -> Void)?
     var seekToEndHandler: ((Int) -> Void)?
+    var seekToProgressHandler: ((Double, Int) -> Void)?
     var stopHandler: ((Int) -> Void)?
     var setVolumeHandler: ((Float, TimeInterval, Int) -> Void)?
 
@@ -40,6 +41,10 @@ final class ClosureMediaPlaybackPort: MediaPlaybackPort {
 
     func seekToEnd(generation: Int) {
         seekToEndHandler?(generation)
+    }
+
+    func seek(toProgress progress: Double, generation: Int) {
+        seekToProgressHandler?(progress, generation)
     }
 
     func stop(generation: Int) {

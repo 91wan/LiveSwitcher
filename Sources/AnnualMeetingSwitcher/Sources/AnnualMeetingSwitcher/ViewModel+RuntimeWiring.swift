@@ -96,6 +96,15 @@ extension SwitcherViewModel {
         ports.mediaPlaybackPort.seekToEndHandler = { [weak self] _ in
             self?.avCoordinator.seekToEnd()
         }
+        ports.mediaPlaybackPort.seekToProgressHandler = { [weak self] progress, _ in
+            guard let self,
+                  let duration = self.avCoordinator.duration,
+                  duration.isFinite,
+                  duration > 0
+            else { return }
+            let clampedProgress = progress.isFinite ? min(max(progress, 0), 1) : 0
+            self.avCoordinator.seek(to: clampedProgress * duration)
+        }
         ports.mediaPlaybackPort.stopHandler = { [weak self] generation in
             self?.clearActiveRuntimeMediaCallbackIdentity(ifGeneration: generation)
             self?.avCoordinator.stop()

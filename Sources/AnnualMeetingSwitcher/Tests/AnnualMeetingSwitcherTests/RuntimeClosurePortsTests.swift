@@ -13,6 +13,7 @@ final class RuntimeClosurePortsTests: XCTestCase {
         port.restartHandler = { events.append("restart:\($0)") }
         port.seekToStartHandler = { events.append("seekStart:\($0)") }
         port.seekToEndHandler = { events.append("seekEnd:\($0)") }
+        port.seekToProgressHandler = { events.append("seekProgress:\($0):\($1)") }
         port.stopHandler = { events.append("stop:\($0)") }
         port.setVolumeHandler = { events.append("volume:\($0):\($1):\($2)") }
 
@@ -22,8 +23,9 @@ final class RuntimeClosurePortsTests: XCTestCase {
         port.restart(generation: 4)
         port.seekToStart(generation: 5)
         port.seekToEnd(generation: 6)
-        port.stop(generation: 7)
-        port.setVolume(0.5, fade: 0.25, generation: 8)
+        port.seek(toProgress: 0.75, generation: 7)
+        port.stop(generation: 8)
+        port.setVolume(0.5, fade: 0.25, generation: 9)
 
         XCTAssertEqual(events, [
             "load:media.mp4:1",
@@ -32,8 +34,9 @@ final class RuntimeClosurePortsTests: XCTestCase {
             "restart:4",
             "seekStart:5",
             "seekEnd:6",
-            "stop:7",
-            "volume:0.5:0.25:8"
+            "seekProgress:0.75:7",
+            "stop:8",
+            "volume:0.5:0.25:9"
         ])
     }
 

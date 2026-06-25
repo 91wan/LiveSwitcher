@@ -7,6 +7,7 @@ enum LiveRuntimeEffect: Equatable {
     case restartMedia(generation: Int)
     case seekMediaToStart(generation: Int)
     case seekMediaToEnd(generation: Int)
+    case seekMediaToProgress(Double, generation: Int)
     case stopMedia(generation: Int)
     case setMediaVolume(Float, fade: TimeInterval, generation: Int)
 

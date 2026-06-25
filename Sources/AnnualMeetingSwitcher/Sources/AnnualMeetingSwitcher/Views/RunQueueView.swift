@@ -22,11 +22,13 @@ struct SignalSourceRow: View {
     let isSelected: Bool
     let isBroadcasting: Bool
     let isPlaying: Bool
+    let mediaGeneration: Int
     let avCoordinator: AVPlayerCoordinator
     let onSelect: () -> Void
     let onTogglePause: () -> Void
     let onEndHTML: () -> Void
     let onJumpToBeginning: () -> Void
+    let onSeekProgress: (Double, Int) -> Void
     var onSkipToEnd: (() -> Void)? = nil
     var onUpdateSchedule: (Date?, TimeInterval?) -> Void = { _, _ in }
     let onDelete: () -> Void
@@ -101,7 +103,11 @@ struct SignalSourceRow: View {
             }
 
             if isSelected && rowModel.showsProgressSlider {
-                ProgressSliderRow(avCoordinator: avCoordinator)
+                ProgressSliderRow(
+                    avCoordinator: avCoordinator,
+                    mediaGeneration: mediaGeneration,
+                    onSeekProgress: onSeekProgress
+                )
                     .padding(.leading, rowContentIndent)
             }
         }
@@ -554,8 +560,11 @@ struct AgendaScheduleEditorPopover: View {
 @MainActor
 struct ProgressSliderRow: View {
     @ObservedObject var avCoordinator: AVPlayerCoordinator
+    let mediaGeneration: Int
+    let onSeekProgress: (Double, Int) -> Void
     @State private var isDragging = false
     @State private var dragValue: Double = 0.0
+    @State private var dragGeneration: Int?
 
     private var displayProgress: Double {
         isDragging ? dragValue : avCoordinator.progress
@@ -572,17 +581,22 @@ struct ProgressSliderRow: View {
                 value: Binding(
                     get: { displayProgress },
                     set: { newValue in
+                        if !isDragging {
+                            dragGeneration = mediaGeneration
+                        }
                         isDragging = true
                         dragValue = newValue
                     }
                 ),
                 in: 0...1
             ) { editing in
+                if editing && dragGeneration == nil {
+                    dragGeneration = mediaGeneration
+                }
                 if !editing && isDragging {
-                    if let dur = avCoordinator.duration {
-                        avCoordinator.seek(to: dragValue * dur)
-                    }
+                    onSeekProgress(dragValue, dragGeneration ?? mediaGeneration)
                     isDragging = false
+                    dragGeneration = nil
                 }
             }
             .tint(StudioTheme.Action.primary)

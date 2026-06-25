@@ -277,11 +277,15 @@ struct LeftPanel: View {
                         isSelected: viewModel.currentProgramItem?.id == item.id,
                         isBroadcasting: viewModel.isBroadcasting,
                         isPlaying: viewModel.currentProgramItem?.id == item.id && viewModel.avCoordinator.isPlaying,
+                        mediaGeneration: viewModel.runtime.state.media.generation,
                         avCoordinator: viewModel.avCoordinator,
                         onSelect: { viewModel.switchToProgramAfterReadinessConfirmation(item) },
                         onTogglePause: { viewModel.togglePause(for: item) },
                         onEndHTML: { viewModel.endHTMLPresentation() },
                         onJumpToBeginning: { viewModel.seekProgramItemToStart(item) },
+                        onSeekProgress: { progress, generation in
+                            viewModel.seekCurrentMedia(toProgress: progress, expectedGeneration: generation)
+                        },
                         onSkipToEnd: item.supportsSeeking ? { viewModel.seekProgramItemToEnd(item) } : nil,
                         onUpdateSchedule: { start, duration in
                             viewModel.updateProgramItemSchedule(

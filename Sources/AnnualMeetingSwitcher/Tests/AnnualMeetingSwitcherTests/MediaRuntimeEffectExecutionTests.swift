@@ -84,6 +84,16 @@ final class MediaRuntimeEffectExecutionTests: XCTestCase {
         XCTAssertEqual(media.events, [.seekToEnd(generation: 3)])
     }
 
+    func testSeekMediaToProgressEffectCallsMediaPort() {
+        let media = MediaRuntimeEffectPortSpy()
+        let runner = runner(media: media)
+        let state = state(generation: 3)
+
+        runner.run([.seekMediaToProgress(0.4, generation: 3)], currentState: { state }, dispatch: { _ in })
+
+        XCTAssertEqual(media.events, [.seekToProgress(0.4, generation: 3)])
+    }
+
     private func runner(media: MediaRuntimeEffectPortSpy) -> LiveRuntimeEffectRunner {
         LiveRuntimeEffectRunner(recordsOnly: false, media: media)
     }
@@ -103,6 +113,7 @@ private enum MediaRuntimeEffectEvent: Equatable {
     case stop(generation: Int)
     case seekToStart(generation: Int)
     case seekToEnd(generation: Int)
+    case seekToProgress(Double, generation: Int)
     case setVolume(Float, fade: TimeInterval, generation: Int)
 }
 
@@ -135,6 +146,10 @@ private final class MediaRuntimeEffectPortSpy: MediaPlaybackPort {
 
     func seekToEnd(generation: Int) {
         events.append(.seekToEnd(generation: generation))
+    }
+
+    func seek(toProgress progress: Double, generation: Int) {
+        events.append(.seekToProgress(progress, generation: generation))
     }
 
     func setVolume(_ volume: Float, fade: TimeInterval, generation: Int) {

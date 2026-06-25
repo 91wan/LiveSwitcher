@@ -28,6 +28,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorReturnedCurrentMediaToStart
     case operatorSeekedCurrentMediaToStart
     case operatorSeekedCurrentMediaToEnd
+    case operatorSeekedCurrentMediaToProgress(Double)
     case operatorStoppedCurrentMedia
     case operatorPausedMediaForPanic(generation: Int?)
     case operatorResumedMediaAfterPanic(generation: Int?)
@@ -118,6 +119,7 @@ extension LiveRuntimeAction {
         case .operatorReturnedCurrentMediaToStart: return "operatorReturnedCurrentMediaToStart"
         case .operatorSeekedCurrentMediaToStart: return "operatorSeekedCurrentMediaToStart"
         case .operatorSeekedCurrentMediaToEnd: return "operatorSeekedCurrentMediaToEnd"
+        case .operatorSeekedCurrentMediaToProgress: return "operatorSeekedCurrentMediaToProgress"
         case .operatorStoppedCurrentMedia: return "operatorStoppedCurrentMedia"
         case .operatorPausedMediaForPanic: return "operatorPausedMediaForPanic"
         case .operatorResumedMediaAfterPanic: return "operatorResumedMediaAfterPanic"

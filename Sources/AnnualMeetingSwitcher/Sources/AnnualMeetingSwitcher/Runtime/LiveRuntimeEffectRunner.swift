@@ -109,6 +109,9 @@ final class LiveRuntimeEffectRunner {
         case .seekMediaToEnd(let generation):
             guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.seekToEnd(generation: generation)
+        case .seekMediaToProgress(let progress, let generation):
+            guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
+            media?.seek(toProgress: progress, generation: generation)
         case .stopMedia(let generation):
             guard isCurrentMediaGeneration(generation, currentState: context.currentState) else { return }
             media?.stop(generation: generation)
