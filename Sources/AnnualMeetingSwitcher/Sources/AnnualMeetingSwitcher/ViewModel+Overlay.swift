@@ -435,9 +435,12 @@ extension SwitcherViewModel {
 
     /// 一键清空所有大屏叠层
     func clearAllOverlays() {
-        stopCountdown()
-        stopTicker()
-        dismissLowerThird()
+        countdownTimer?.invalidate()
+        countdownTimer = nil
+        isCountdownActive = false
+        countdownSeconds = 0
+        isTickerActive = false
+        isLowerThirdVisible = false
         lowerThirdName = ""
         lowerThirdRole = ""
         lowerThirdOrganization = ""

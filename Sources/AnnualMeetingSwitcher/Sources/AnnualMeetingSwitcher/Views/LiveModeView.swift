@@ -661,7 +661,28 @@ struct LiveQuickRail: View {
                     viewModel.startTickerPreset(preset)
                 }
             }
+
+            overlayClearAllButton
         }
+    }
+
+    private var overlayClearAllButton: some View {
+        let hasActiveOverlay = overlayActiveCount > 0
+
+        return Button {
+            viewModel.clearAllOverlays()
+        } label: {
+            Label("全部清空", systemImage: "xmark.circle")
+                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .frame(maxWidth: .infinity)
+                .frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.small)
+        .disabled(!hasActiveOverlay)
+        .opacity(hasActiveOverlay ? 1 : 0.42)
+        .help("关闭当前全部上屏叠层")
+        .accessibilityLabel("全部清空叠层")
     }
 
     private func compactOverlayRow<MenuContent: View>(
@@ -1057,12 +1078,15 @@ struct LiveQuickRail: View {
     }
 
     private var overlayStatusText: String {
-        let activeCount = [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].filter { $0 }.count
-        return activeCount == 0 ? "关闭" : "\(activeCount) 上屏"
+        overlayActiveCount == 0 ? "关闭" : "\(overlayActiveCount) 上屏"
     }
 
     private var overlayStatusKind: StudioTheme.StatusKind {
-        [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].contains(true) ? .warn : .idle
+        overlayActiveCount > 0 ? .warn : .idle
+    }
+
+    private var overlayActiveCount: Int {
+        [viewModel.isLowerThirdVisible, viewModel.isCountdownActive, viewModel.isTickerActive].filter { $0 }.count
     }
 
     private func formattedTime(_ seconds: Int) -> String {
