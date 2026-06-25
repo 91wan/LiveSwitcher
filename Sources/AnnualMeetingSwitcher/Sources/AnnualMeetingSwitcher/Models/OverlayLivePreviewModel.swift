@@ -31,7 +31,8 @@ struct OverlayLivePreviewModel: Equatable {
     static func make(
         isLowerThirdVisible: Bool,
         lowerThirdName: String,
-        lowerThirdTitle: String,
+        lowerThirdRole: String,
+        lowerThirdOrganization: String,
         isCountdownActive: Bool,
         countdownSeconds: Int,
         countdownTitle: String,
@@ -65,7 +66,10 @@ struct OverlayLivePreviewModel: Equatable {
             layers.append(Layer(
                 kind: .lowerThird,
                 primaryText: trimmed(lowerThirdName),
-                secondaryText: trimmed(lowerThirdTitle).isEmpty ? nil : trimmed(lowerThirdTitle),
+                secondaryText: lowerThirdSecondaryText(
+                    role: lowerThirdRole,
+                    organization: lowerThirdOrganization
+                ),
                 isDraft: false,
                 opacity: 1
             ))
@@ -86,11 +90,13 @@ struct OverlayLivePreviewModel: Equatable {
         case .lowerThird where !liveKinds.contains(.lowerThird):
             let name = composerState.trimmedLowerThirdName
             guard !name.isEmpty else { return nil }
-            let title = trimmed(composerState.lowerThirdTitleDraft)
             return Layer(
                 kind: .lowerThird,
                 primaryText: name,
-                secondaryText: title.isEmpty ? nil : title,
+                secondaryText: lowerThirdSecondaryText(
+                    role: composerState.lowerThirdRoleDraft,
+                    organization: composerState.lowerThirdOrganizationDraft
+                ),
                 isDraft: true,
                 opacity: 0.35
             )
@@ -123,6 +129,11 @@ struct OverlayLivePreviewModel: Equatable {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private static func lowerThirdSecondaryText(role: String, organization: String) -> String? {
+        let parts = [trimmed(role), trimmed(organization)].filter { !$0.isEmpty }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     private static func formattedTime(_ seconds: Int) -> String {
         let total = max(seconds, 0)
         return String(format: "%02d:%02d", total / 60, total % 60)
@@ -133,11 +144,11 @@ private extension OverlayLivePreviewModel.LayerKind {
     var accessibilityName: String {
         switch self {
         case .ticker:
-            return "ticker"
+            return "游动字幕"
         case .countdown:
-            return "countdown"
+            return "倒计时"
         case .lowerThird:
-            return "lower third"
+            return "人名条"
         }
     }
 }

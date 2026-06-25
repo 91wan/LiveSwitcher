@@ -12,6 +12,9 @@ struct ActiveProgramOverlayLayer: View {
                 isTickerActive: displayState.isTickerActive,
                 isCountdownActive: displayState.isCountdownActive,
                 isLowerThirdVisible: displayState.isLowerThirdVisible,
+                hasLowerThirdOrganization: !displayState.lowerThirdOrganization
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                    .isEmpty,
                 isLogoReady: cornerLogoImage != nil,
                 logoPosition: displayState.cornerLogoPosition
             )
@@ -39,7 +42,8 @@ struct ActiveProgramOverlayLayer: View {
                 if let lowerThirdFrame = plan.lowerThirdFrame {
                     LowerThirdView(
                         name: displayState.lowerThirdName,
-                        title: displayState.lowerThirdTitle,
+                        role: displayState.lowerThirdRole,
+                        organization: displayState.lowerThirdOrganization,
                         isVisible: displayState.isLowerThirdVisible,
                         metrics: lowerThirdMetrics
                     )

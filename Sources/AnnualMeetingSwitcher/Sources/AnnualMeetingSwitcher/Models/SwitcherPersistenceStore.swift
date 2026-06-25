@@ -249,9 +249,10 @@ struct SwitcherPersistenceStore {
     }
 
     private func loadOverlayPresets(into state: inout SwitcherPersistentState) {
-        if let lowerThirdPresetData = userDefaults.data(forKey: SwitcherPersistenceKeys.lowerThirdPresets),
-           let storedPresets = try? JSONDecoder().decode([LowerThirdPreset].self, from: lowerThirdPresetData) {
-            state.lowerThirdPresets = LowerThirdPreset.normalized(storedPresets)
+        if let lowerThirdPresetData = userDefaults.data(forKey: SwitcherPersistenceKeys.lowerThirdPresets) {
+            state.lowerThirdPresets = LowerThirdPreset.normalized(
+                Self.decodeLowerThirdPresetsLossy(from: lowerThirdPresetData)
+            )
         }
         if let countdownPresetData = userDefaults.data(forKey: SwitcherPersistenceKeys.countdownPresets),
            let storedPresets = try? JSONDecoder().decode([CountdownPreset].self, from: countdownPresetData) {
@@ -266,5 +267,26 @@ struct SwitcherPersistenceStore {
     private func saveEncoded<T: Encodable>(_ value: T, forKey key: String) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         userDefaults.set(data, forKey: key)
+    }
+
+    private static func decodeLowerThirdPresetsLossy(from data: Data) -> [LowerThirdPreset] {
+        let decoder = JSONDecoder()
+        if let presets = try? decoder.decode([LowerThirdPreset].self, from: data) {
+            return presets
+        }
+        guard
+            let rawItems = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+        else {
+            return []
+        }
+
+        return rawItems.compactMap { item in
+            guard JSONSerialization.isValidJSONObject(item),
+                  let itemData = try? JSONSerialization.data(withJSONObject: item)
+            else {
+                return nil
+            }
+            return try? decoder.decode(LowerThirdPreset.self, from: itemData)
+        }
     }
 }

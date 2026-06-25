@@ -232,7 +232,7 @@ final class LivePreflightTests: XCTestCase {
         let viewModel = makeViewModel()
         viewModel.startCountdown(seconds: 30, title: "Start")
         viewModel.startTicker(text: "Welcome")
-        viewModel.showLowerThird(name: "Host", title: "Opening")
+        viewModel.showLowerThird(name: "Host", role: "", organization: "Opening")
 
         let snapshot = viewModel.livePreflightSnapshot
         XCTAssertEqual(snapshot.activeOverlayCount, 3)
@@ -260,14 +260,15 @@ final class LivePreflightTests: XCTestCase {
         XCTAssertFalse(viewModel.isTickerActive)
         XCTAssertFalse(viewModel.isLowerThirdVisible)
         XCTAssertEqual(viewModel.lowerThirdName, "")
-        XCTAssertEqual(viewModel.lowerThirdTitle, "")
+        XCTAssertEqual(viewModel.lowerThirdRole, "")
+        XCTAssertEqual(viewModel.lowerThirdOrganization, "")
     }
 
     func testOverlayReportsDoNotLeakOverlayContent() {
         let viewModel = makeViewModel()
         viewModel.startCountdown(seconds: 45, title: "Private Show Title")
         viewModel.startTicker(text: "Customer ticker text")
-        viewModel.showLowerThird(name: "Private Host", title: "Private Company")
+        viewModel.showLowerThird(name: "Private Host", role: "Private Role", organization: "Private Company")
 
         let preflightReport = viewModel.livePreflightReportText()
         let diagnosticsReport = viewModel.liveDiagnosticsReportText()

@@ -164,10 +164,11 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.stopTicker()
         XCTAssertFalse(viewModel.isTickerActive)
 
-        viewModel.showLowerThird(name: "主持人", title: "开场")
+        viewModel.showLowerThird(name: "主持人", role: "开场", organization: "示例科技")
         XCTAssertTrue(viewModel.isLowerThirdVisible)
         XCTAssertEqual(viewModel.lowerThirdName, "主持人")
-        XCTAssertEqual(viewModel.lowerThirdTitle, "开场")
+        XCTAssertEqual(viewModel.lowerThirdRole, "开场")
+        XCTAssertEqual(viewModel.lowerThirdOrganization, "示例科技")
 
         viewModel.dismissLowerThird()
         XCTAssertFalse(viewModel.isLowerThirdVisible)
@@ -220,7 +221,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.startTicker(text: "   ")
         XCTAssertFalse(viewModel.isTickerActive)
 
-        viewModel.showLowerThird(name: "   ", title: "主持")
+        viewModel.showLowerThird(name: "   ", role: "", organization: "主持")
         XCTAssertFalse(viewModel.isLowerThirdVisible)
 
         viewModel.startCountdown(seconds: 0, title: "即将开始")
@@ -237,7 +238,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
 
         viewModel.startCountdown(seconds: 30, title: "准备开始")
         viewModel.startTicker(text: "欢迎光临")
-        viewModel.showLowerThird(name: "主持人", title: "开场")
+        viewModel.showLowerThird(name: "主持人", role: "", organization: "开场")
 
         XCTAssertTrue(viewModel.isCountdownActive)
         XCTAssertTrue(viewModel.isTickerActive)
@@ -250,7 +251,8 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         XCTAssertFalse(viewModel.isTickerActive)
         XCTAssertFalse(viewModel.isLowerThirdVisible)
         XCTAssertEqual(viewModel.lowerThirdName, "")
-        XCTAssertEqual(viewModel.lowerThirdTitle, "")
+        XCTAssertEqual(viewModel.lowerThirdRole, "")
+        XCTAssertEqual(viewModel.lowerThirdOrganization, "")
     }
 
     func testMixedStrategyKeepsMediaAndBGMChannelsActive() {

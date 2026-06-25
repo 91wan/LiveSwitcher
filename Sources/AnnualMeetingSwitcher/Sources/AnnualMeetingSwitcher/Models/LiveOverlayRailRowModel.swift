@@ -97,9 +97,12 @@ struct LiveOverlayRailRowModel: Equatable {
     }
 
     private static func lowerThirdDisplayName(_ preset: LowerThirdPreset) -> String {
-        let subtitle = preset.subtitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !subtitle.isEmpty else { return preset.name }
-        return "\(preset.name) · \(subtitle)"
+        let parts = [
+            preset.name.trimmingCharacters(in: .whitespacesAndNewlines),
+            preset.role.trimmingCharacters(in: .whitespacesAndNewlines),
+            preset.organization.trimmingCharacters(in: .whitespacesAndNewlines)
+        ].filter { !$0.isEmpty }
+        return parts.joined(separator: " · ")
     }
 
     private static func formattedTime(_ seconds: Int) -> String {

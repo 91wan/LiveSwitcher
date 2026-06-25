@@ -11,7 +11,8 @@ final class OutputProjectionConvergenceTests: XCTestCase {
         viewModel.isTickerActive = true
         viewModel.isLowerThirdVisible = true
         viewModel.lowerThirdName = "Presenter"
-        viewModel.lowerThirdTitle = "Host"
+        viewModel.lowerThirdRole = "Host"
+        viewModel.lowerThirdOrganization = "Example"
 
         let before = OutputDisplayState.make(from: viewModel)
         viewModel.avCoordinator.progress = 0.75

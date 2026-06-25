@@ -41,7 +41,7 @@ final class PersistentStateRuntimeSourceBoundaryTests: XCTestCase {
     func testViewModelOwnedLibrariesStillUseFacadeSourcesInPersistentSnapshot() {
         let bgmItem = BGMItem(title: "Library BGM", url: URL(fileURLWithPath: "/tmp/library.mp3"), category: .award)
         let wallpaper = URL(fileURLWithPath: "/tmp/facade-library-wallpaper.png")
-        let lowerThird = LowerThirdPreset(id: UUID(), name: "Name", subtitle: "Role", orderIndex: 0)
+        let lowerThird = LowerThirdPreset(id: UUID(), name: "Name", role: "Role", organization: "Org", orderIndex: 0)
         let countdown = CountdownPreset(id: UUID(), title: "Break", totalSeconds: 60, orderIndex: 0)
         let ticker = TickerPreset(id: UUID(), text: "Welcome", speedIndex: 0, orderIndex: 0)
         let viewModel = makeViewModel(bridgeMode: .panicOwned)
