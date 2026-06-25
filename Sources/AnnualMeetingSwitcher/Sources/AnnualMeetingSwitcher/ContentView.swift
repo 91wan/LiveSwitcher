@@ -546,10 +546,8 @@ final class KeyMonitorView: NSView {
             Task { @MainActor in vm.keynoteNextSlide() }
             return nil
         default:
-            // 数字键 1-9 (keyCodes: 18-26 for 1-9 on main keyboard)
-            let numKeyCodes: [UInt16: Int] = [18:1, 19:2, 20:3, 21:4, 23:5, 22:6, 26:7, 28:8, 25:9]
-            if let idx = numKeyCodes[event.keyCode] {
-                Task { @MainActor in vm.switchToProgram(at: idx - 1) }
+            if let index = vm.programShortcutTargetIndex(forKeyCode: event.keyCode) {
+                Task { @MainActor in vm.switchToProgram(at: index) }
                 return nil
             }
             return event
