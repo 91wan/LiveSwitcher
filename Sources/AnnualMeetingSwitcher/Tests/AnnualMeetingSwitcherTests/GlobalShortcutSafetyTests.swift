@@ -85,6 +85,28 @@ final class GlobalShortcutSafetyTests: XCTestCase {
     }
 
     @MainActor
+    func testNumberShortcutsDoNotPassThroughFocusedNativeControls() {
+        let eventWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        let toggle = NSSwitch(frame: NSRect(x: 0, y: 0, width: 60, height: 28))
+        eventWindow.contentView = toggle
+        eventWindow.makeFirstResponder(toggle)
+
+        XCTAssertFalse(
+            GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 18),
+            "Number shortcuts should still switch programs when a switch or button is focused."
+        )
+        XCTAssertFalse(
+            GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 25),
+            "All 1-9 program shortcuts should remain global on focused native controls."
+        )
+    }
+
+    @MainActor
     func testSpaceShortcutStillPassesThroughFocusedTextInput() {
         let eventWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
