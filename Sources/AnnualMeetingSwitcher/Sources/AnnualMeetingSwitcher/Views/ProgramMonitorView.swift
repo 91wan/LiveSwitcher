@@ -28,7 +28,7 @@ struct ProgramMonitorView: View {
                 }
             }
 
-            previewDeck
+            previewDeckFrame
 
             if !isLiveMode {
                 monitorUtilitiesStack
@@ -38,6 +38,11 @@ struct ProgramMonitorView: View {
         }
         .padding(isLiveMode ? 12 : 18)
         .studioCard(cornerRadius: 24)
+    }
+
+    private var previewDeckFrame: some View {
+        previewDeck
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var previewDeck: some View {
@@ -74,9 +79,8 @@ struct ProgramMonitorView: View {
                     .transition(.opacity)
             }
         }
-        .frame(maxWidth: .infinity)
         .frame(maxHeight: livePreviewMaxHeight)
-        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+        .aspectRatio(ProgramMonitorPreviewDeckLayout.aspectRatio, contentMode: .fit)
         .shadow(color: StudioTheme.shadowStrong, radius: 12, x: 0, y: 8)
         .onHover { hovering in
             withAnimation(.easeInOut(duration: 0.16)) {
@@ -394,6 +398,28 @@ struct ProgramMonitorView: View {
             current: viewModel.currentProgramItem,
             in: viewModel.programItems
         )
+    }
+}
+
+struct ProgramMonitorPreviewDeckLayout: Equatable {
+    static let aspectRatio: CGFloat = 16.0 / 9.0
+
+    let size: CGSize
+    let leftGutter: CGFloat
+    let rightGutter: CGFloat
+
+    static func make(containerWidth: CGFloat, maxHeight: CGFloat) -> ProgramMonitorPreviewDeckLayout {
+        guard containerWidth > 0 else {
+            return ProgramMonitorPreviewDeckLayout(size: .zero, leftGutter: 0, rightGutter: 0)
+        }
+
+        let heightLimitedWidth = maxHeight.isFinite && maxHeight > 0
+            ? maxHeight * aspectRatio
+            : containerWidth
+        let width = min(containerWidth, heightLimitedWidth)
+        let size = CGSize(width: width, height: width / aspectRatio)
+        let gutter = max(0, (containerWidth - width) / 2)
+        return ProgramMonitorPreviewDeckLayout(size: size, leftGutter: gutter, rightGutter: gutter)
     }
 }
 

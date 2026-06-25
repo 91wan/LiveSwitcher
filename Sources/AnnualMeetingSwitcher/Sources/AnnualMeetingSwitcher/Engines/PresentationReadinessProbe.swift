@@ -41,24 +41,24 @@ enum PresentationReadinessResult: Equatable {
         case .notPresentation:
             return nil
         case .ready:
-            return "Ready"
+            return "就绪"
         case .permissionDenied, .unknown:
-            return "Review"
+            return "需检查"
         case .missingApp, .fileBroken:
-            return "Blocked"
+            return "不可用"
         }
     }
 
     var operatorMessage: String {
         switch self {
         case .notPresentation:
-            return "No presentation readiness check required."
+            return "无需演示就绪检查。"
         case .ready(let appName):
-            return "\(appName) is ready for this presentation."
+            return "\(appName) 已就绪。"
         case .missingApp(let appName):
-            return "\(appName) is not installed."
+            return "未安装 \(appName)。"
         case .permissionDenied(let appName):
-            return "Automation permission for \(appName) needs review in System Settings."
+            return "\(appName) 自动化权限被拒绝，请在系统设置中允许。"
         case .fileBroken(let reason):
             return reason
         case .unknown(let reason):
@@ -121,61 +121,6 @@ struct PresentationReadinessEnvironment {
     )
 }
 
-struct PresentationReadinessSummary: Equatable {
-    let readyCount: Int
-    let warningCount: Int
-    let blockedCount: Int
-
-    var hasPresentationItems: Bool {
-        readyCount + warningCount + blockedCount > 0
-    }
-
-    var displayText: String {
-        "\(readyCount) ready · \(warningCount) warn · \(blockedCount) blocked"
-    }
-
-    var statusKind: StudioTheme.StatusKind {
-        if blockedCount > 0 {
-            return .fail
-        }
-        if warningCount > 0 {
-            return .warn
-        }
-        if readyCount > 0 {
-            return .ready
-        }
-        return .idle
-    }
-
-    static func make(
-        items: [ProgramItem],
-        environment: PresentationReadinessEnvironment = .live
-    ) -> PresentationReadinessSummary {
-        var readyCount = 0
-        var warningCount = 0
-        var blockedCount = 0
-
-        for item in items {
-            switch PresentationReadinessProbe.probe(item: item, environment: environment).severity {
-            case .ready:
-                readyCount += 1
-            case .warning:
-                warningCount += 1
-            case .blocked:
-                blockedCount += 1
-            case .notApplicable:
-                continue
-            }
-        }
-
-        return PresentationReadinessSummary(
-            readyCount: readyCount,
-            warningCount: warningCount,
-            blockedCount: blockedCount
-        )
-    }
-}
-
 enum PresentationReadinessProbe {
     static let keynoteBundleIdentifier = "com.apple.iWork.Keynote"
     static let wpsBundleIdentifier = AppConfiguration.wpsBundleIdentifier
@@ -227,25 +172,25 @@ enum PresentationReadinessProbe {
         switch item.sourceKind {
         case .keynote:
             guard let sourceURL = item.sourceURL else {
-                return .fileBroken("Keynote file missing")
+                return .fileBroken("Keynote 文件缺失。")
             }
             guard environment.fileExists(sourceURL) else {
-                return .fileBroken("File missing")
+                return .fileBroken("文件缺失。")
             }
             guard environment.presentationDocumentIsValid(sourceURL, .keynote) else {
-                return .fileBroken("Presentation file is invalid")
+                return .fileBroken("演示文件缺失或损坏。")
             }
             return appReadiness(bundleID: keynoteBundleIdentifier, environment: environment)
 
         case .pptx:
             guard let sourceURL = item.sourceURL else {
-                return .fileBroken("PPTX file missing")
+                return .fileBroken("PPTX 文件缺失。")
             }
             guard environment.fileExists(sourceURL) else {
-                return .fileBroken("File missing")
+                return .fileBroken("文件缺失。")
             }
             guard environment.presentationDocumentIsValid(sourceURL, .pptx) else {
-                return .fileBroken("Presentation file is invalid")
+                return .fileBroken("演示文件缺失或损坏。")
             }
             if environment.applicationInstalled(wpsBundleIdentifier) {
                 return appReadiness(bundleID: wpsBundleIdentifier, environment: environment)
@@ -278,7 +223,7 @@ enum PresentationReadinessProbe {
         case .denied:
             return .permissionDenied(appName)
         case .unknown:
-            return .unknown("\(appName) automation permission is not confirmed.")
+            return .unknown("\(appName) 自动化权限未确认。")
         }
     }
 
