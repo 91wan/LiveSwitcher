@@ -105,7 +105,7 @@ final class CornerLogoReadinessTests: XCTestCase {
 
         XCTAssertNil(viewModel.cornerLogoURL)
         XCTAssertNil(viewModel.cornerLogoImage)
-        XCTAssertEqual(viewModel.cornerLogoLoadPhase, .off)
+        XCTAssertEqual(viewModel.cornerLogoLoadPhase, .empty)
     }
 
     func testRetryingFailedLogoCandidateRestartsDecodeAndCommitsOnSuccess() async throws {

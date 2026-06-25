@@ -108,7 +108,7 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
         XCTAssertEqual(wallpaper.state.preferences.activeWallpaperURL, wallpaperURL)
         XCTAssertEqual(wallpaper.effects, [.loadBackgroundImage(wallpaperURL)])
         XCTAssertEqual(logo.state.preferences.cornerLogoURL, logoURL)
-        XCTAssertEqual(logo.effects, [.loadCornerLogoImage(logoURL)])
+        XCTAssertEqual(logo.effects, [.loadCornerLogoImage(logoURL), .saveCornerLogoVisible(true)])
     }
 
     func testAllPreferenceCasesHaveExplicitOwnershipGuard() throws {

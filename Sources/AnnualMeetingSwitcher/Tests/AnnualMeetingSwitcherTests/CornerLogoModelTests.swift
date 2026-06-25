@@ -110,9 +110,10 @@ final class CornerLogoModelTests: XCTestCase {
         let card = try sourceText("Sources/AnnualMeetingSwitcher/Views/CornerLogoCard.swift")
 
         XCTAssertTrue(monitor.contains("CornerLogoCard"))
-        XCTAssertTrue(card.contains("Text(\"角标\")"))
+        XCTAssertTrue(card.contains("Text(\"品牌标识\")"))
         XCTAssertFalse(card.contains("Text(\"角标 Logo\")"))
         XCTAssertTrue(card.contains("导入 Logo"))
+        XCTAssertTrue(card.contains("显示 Logo"))
         XCTAssertTrue(card.contains("cornerLogoPosition"))
     }
 

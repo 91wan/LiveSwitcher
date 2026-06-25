@@ -26,11 +26,13 @@ struct SwitcherPersistenceStore {
         } else {
             userDefaults.removeObject(forKey: SwitcherPersistenceKeys.activeWallpaper)
         }
+        saveCompanyDisplayName(state.companyDisplayName)
         if let cornerLogoURL = state.cornerLogoURL {
             userDefaults.set(cornerLogoURL.path, forKey: SwitcherPersistenceKeys.cornerLogo)
         } else {
             userDefaults.removeObject(forKey: SwitcherPersistenceKeys.cornerLogo)
         }
+        saveCornerLogoVisible(state.isCornerLogoVisible && state.cornerLogoURL != nil)
         saveCornerLogoPosition(state.cornerLogoPosition)
 
         saveEncoded(state.lowerThirdPresets, forKey: SwitcherPersistenceKeys.lowerThirdPresets)
@@ -68,6 +70,7 @@ struct SwitcherPersistenceStore {
                 userDefaults.removeObject(forKey: SwitcherPersistenceKeys.activeWallpaper)
             case .removeCornerLogo:
                 userDefaults.removeObject(forKey: SwitcherPersistenceKeys.cornerLogo)
+                userDefaults.set(false, forKey: SwitcherPersistenceKeys.cornerLogoVisible)
             }
         }
     }
@@ -87,6 +90,16 @@ struct SwitcherPersistenceStore {
 
     func saveThemeOverride(_ theme: ThemeOverride) {
         userDefaults.set(theme.rawValue, forKey: SwitcherPersistenceKeys.themeOverride)
+    }
+
+    func saveCompanyDisplayName(_ displayName: String) {
+        let normalized = BrandingDisplayNamePolicy.normalizedDisplayName(from: displayName)
+        guard BrandingDisplayNamePolicy.validationMessage(for: normalized) == nil else { return }
+        if normalized.isEmpty {
+            userDefaults.removeObject(forKey: SwitcherPersistenceKeys.companyDisplayName)
+        } else {
+            userDefaults.set(normalized, forKey: SwitcherPersistenceKeys.companyDisplayName)
+        }
     }
 
     func saveAudioStrategy(_ strategy: AudioStrategy) {
@@ -111,6 +124,10 @@ struct SwitcherPersistenceStore {
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
         userDefaults.set(isEnabled, forKey: SwitcherPersistenceKeys.showAgendaTimeline)
+    }
+
+    func saveCornerLogoVisible(_ isVisible: Bool) {
+        userDefaults.set(isVisible, forKey: SwitcherPersistenceKeys.cornerLogoVisible)
     }
 
     func saveCornerLogoPosition(_ position: CornerLogoPosition) {
@@ -215,9 +232,21 @@ struct SwitcherPersistenceStore {
                 repairs.append(.removeCornerLogo)
             }
         }
+        if userDefaults.object(forKey: SwitcherPersistenceKeys.cornerLogoVisible) != nil {
+            state.isCornerLogoVisible = userDefaults.bool(forKey: SwitcherPersistenceKeys.cornerLogoVisible)
+                && state.cornerLogoURL != nil
+        } else {
+            state.isCornerLogoVisible = state.cornerLogoURL != nil
+        }
     }
 
     private func loadPreferences(into state: inout SwitcherPersistentState) {
+        if let companyName = userDefaults.string(forKey: SwitcherPersistenceKeys.companyDisplayName) {
+            let normalized = BrandingDisplayNamePolicy.normalizedDisplayName(from: companyName)
+            if BrandingDisplayNamePolicy.validationMessage(for: normalized) == nil {
+                state.companyDisplayName = normalized
+            }
+        }
         if let storedAudioStrategy = userDefaults.string(forKey: SwitcherPersistenceKeys.audioStrategy),
            let audioStrategy = AudioStrategy(persistedValue: storedAudioStrategy) {
             state.audioStrategy = audioStrategy

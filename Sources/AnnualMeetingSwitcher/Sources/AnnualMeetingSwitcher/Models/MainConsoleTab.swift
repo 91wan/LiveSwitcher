@@ -5,15 +5,19 @@ enum MainConsoleTab: Int, CaseIterable, Equatable {
     case audioMixer = 1
     case overlays = 2
 
-    var chromeTitle: String {
+    var chromeTitleSuffix: String {
         switch self {
         case .preview:
-            return "LiveSwitcher · 导播台"
+            return "导播台"
         case .audioMixer:
-            return "LiveSwitcher · 音频"
+            return "音频"
         case .overlays:
-            return "LiveSwitcher · 叠层"
+            return "叠层"
         }
+    }
+
+    var chromeTitle: String {
+        ConsoleBrandingModel.title(brandName: "", mode: .setup, tab: self)
     }
 
     var setupMenuTitle: String {

@@ -30,7 +30,9 @@ extension SwitcherViewModel {
             bgmItems: bgmItems,
             backgroundWallpapers: backgroundWallpapers,
             activeWallpaperURL: preferences.activeWallpaperURL,
+            companyDisplayName: preferences.companyDisplayName,
             cornerLogoURL: preferences.cornerLogoURL,
+            isCornerLogoVisible: preferences.isCornerLogoVisible,
             cornerLogoPosition: preferences.cornerLogoPosition,
             autoPlayNextVideoOnEnd: preferences.autoPlayNextVideoOnEnd,
             autoAdvanceAtScheduledTime: preferences.autoAdvanceAtScheduledTime,
@@ -69,7 +71,9 @@ extension SwitcherViewModel {
             isSpeakerMode = state.isSpeakerMode
             bgmPlayMode = state.bgmPlayMode
             activeWallpaperURL = state.activeWallpaperURL
+            companyDisplayName = state.companyDisplayName
             cornerLogoURL = state.cornerLogoURL
+            isCornerLogoVisible = state.isCornerLogoVisible
             cornerLogoPosition = state.cornerLogoPosition
             autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
             autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
@@ -108,7 +112,9 @@ extension SwitcherViewModel {
         runtime.bridgeMode.owns(.persistence) ? runtime.state.preferences : LiveRuntimePreferenceState(
             themeOverride: themeOverride,
             activeWallpaperURL: activeWallpaperURL,
+            companyDisplayName: companyDisplayName,
             cornerLogoURL: cornerLogoURL,
+            isCornerLogoVisible: isCornerLogoVisible,
             autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd,
             autoAdvanceAtScheduledTime: autoAdvanceAtScheduledTime,
             showAgendaTimeline: showAgendaTimeline,
@@ -122,6 +128,10 @@ extension SwitcherViewModel {
 
     func persistThemeOverrideFromRuntime(_ theme: ThemeOverride) {
         persistenceStore.saveThemeOverride(theme)
+    }
+
+    func persistCompanyDisplayNameFromRuntime(_ displayName: String) {
+        persistenceStore.saveCompanyDisplayName(displayName)
     }
 
     func persistAudioStrategyFromRuntime(_ strategy: AudioStrategy) {
@@ -146,6 +156,10 @@ extension SwitcherViewModel {
 
     func persistShowAgendaTimelineFromRuntime(_ isEnabled: Bool) {
         persistenceStore.saveShowAgendaTimeline(isEnabled)
+    }
+
+    func persistCornerLogoVisibleFromRuntime(_ isVisible: Bool) {
+        persistenceStore.saveCornerLogoVisible(isVisible)
     }
 
     func persistCornerLogoPositionFromRuntime(_ position: CornerLogoPosition) {

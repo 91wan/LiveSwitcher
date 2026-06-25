@@ -220,12 +220,14 @@ final class ClosurePersistencePort: PersistencePort {
     var saveHandler: (() -> Void)?
     var saveConsoleModeHandler: ((ConsoleMode) -> Void)?
     var saveThemeOverrideHandler: ((ThemeOverride) -> Void)?
+    var saveCompanyDisplayNameHandler: ((String) -> Void)?
     var saveAudioStrategyHandler: ((AudioStrategy) -> Void)?
     var saveSpeakerModeHandler: ((Bool) -> Void)?
     var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
     var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
     var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
     var saveShowAgendaTimelineHandler: ((Bool) -> Void)?
+    var saveCornerLogoVisibleHandler: ((Bool) -> Void)?
     var saveCornerLogoPositionHandler: ((CornerLogoPosition) -> Void)?
 
     func save() {
@@ -238,6 +240,10 @@ final class ClosurePersistencePort: PersistencePort {
 
     func saveThemeOverride(_ theme: ThemeOverride) {
         saveThemeOverrideHandler?(theme)
+    }
+
+    func saveCompanyDisplayName(_ displayName: String) {
+        saveCompanyDisplayNameHandler?(displayName)
     }
 
     func saveAudioStrategy(_ strategy: AudioStrategy) {
@@ -262,6 +268,10 @@ final class ClosurePersistencePort: PersistencePort {
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
         saveShowAgendaTimelineHandler?(isEnabled)
+    }
+
+    func saveCornerLogoVisible(_ isVisible: Bool) {
+        saveCornerLogoVisibleHandler?(isVisible)
     }
 
     func saveCornerLogoPosition(_ position: CornerLogoPosition) {

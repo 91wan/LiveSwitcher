@@ -31,7 +31,7 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(liveMode.contains("Label(\"下一项\""))
         XCTAssertFalse(liveMode.contains("视频播毕自动下一条"))
         XCTAssertTrue(try sourceText("Views/LeftPanel.swift").contains("自动续播下一项"))
-        XCTAssertTrue(tabs.contains("LiveSwitcher · 导播台"))
+        XCTAssertTrue(tabs.contains("导播台"))
         XCTAssertTrue(tabs.contains("return \"节目单\""))
         XCTAssertTrue(app.contains("Button(\"节目单\")"))
         XCTAssertFalse(app.contains("CommandMenu(\"Mode\")"))
@@ -123,7 +123,7 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(combined.contains("现场控制"))
         XCTAssertTrue(combined.contains("叠层编辑"))
         XCTAssertTrue(combined.contains("BGM 库"))
-        XCTAssertTrue(combined.contains("角标"))
+        XCTAssertTrue(combined.contains("品牌标识"))
     }
 
     func testI18nPolicyDocumentExistsAndPreservesAllowedTerms() throws {

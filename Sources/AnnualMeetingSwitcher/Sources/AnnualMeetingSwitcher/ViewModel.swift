@@ -128,13 +128,25 @@ final class SwitcherViewModel {
             dispatchRuntimeFacadeAction(.operatorSetActiveWallpaperURL(activeWallpaperURL))
         }
     }
+    var companyDisplayName: String = "" {
+        didSet {
+            guard oldValue != companyDisplayName else { return }
+            dispatchRuntimeFacadeAction(.operatorSetCompanyDisplayName(companyDisplayName))
+        }
+    }
     var cornerLogoURL: URL? {
         didSet {
             dispatchRuntimeFacadeAction(.operatorSetCornerLogoURL(cornerLogoURL))
         }
     }
+    var isCornerLogoVisible: Bool = false {
+        didSet {
+            guard oldValue != isCornerLogoVisible else { return }
+            dispatchRuntimeFacadeAction(.operatorSetCornerLogoVisible(isCornerLogoVisible))
+        }
+    }
     var cornerLogoImage: NSImage?
-    var cornerLogoLoadPhase: CornerLogoLoadPhase = .off
+    var cornerLogoLoadPhase: CornerLogoLoadPhase = .empty
     @ObservationIgnored var cornerLogoImageLoader: @MainActor (URL) async -> Result<NSImage, CornerLogoLoadFailure> = SwitcherViewModel.defaultCornerLogoImageLoader
     var cornerLogoPosition: CornerLogoPosition = .topRight {
         didSet {

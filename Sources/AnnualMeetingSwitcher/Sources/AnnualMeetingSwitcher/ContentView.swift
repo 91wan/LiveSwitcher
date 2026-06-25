@@ -198,7 +198,9 @@ struct ContentView: View {
                 .font(StudioTheme.TypeScale.heading.weight(.black))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
-                .frame(width: 190, alignment: .leading)
+                .truncationMode(.tail)
+                .frame(minWidth: 190, idealWidth: 240, maxWidth: 280, alignment: .leading)
+                .help(chromeTitle)
 
             Spacer(minLength: 0)
             panicChromeButton
@@ -245,7 +247,11 @@ struct ContentView: View {
     }
 
     private var chromeTitle: String {
-        viewModel.consoleMode == .live ? "LiveSwitcher · LIVE" : viewModel.selectedMainTab.chromeTitle
+        ConsoleBrandingModel.title(
+            brandName: viewModel.companyDisplayName,
+            mode: viewModel.consoleMode,
+            tab: viewModel.selectedMainTab
+        )
     }
 
     private var consoleModeCluster: some View {

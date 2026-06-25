@@ -15,7 +15,7 @@ enum CornerLogoLoadFailure: Error, Equatable {
 }
 
 enum CornerLogoLoadPhase: Equatable {
-    case off
+    case empty
     case loading(candidateURL: URL, requestID: UUID)
     case ready(activeURL: URL)
     case failed(candidateURL: URL?, reason: CornerLogoLoadFailure)
@@ -26,15 +26,15 @@ enum CornerLogoLoadPhase: Equatable {
             candidateURL
         case .failed(let candidateURL, _):
             candidateURL
-        case .off, .ready:
+        case .empty, .ready:
             nil
         }
     }
 
     var displayText: String {
         switch self {
-        case .off:
-            "关闭"
+        case .empty:
+            "未导入"
         case .loading:
             "加载中"
         case .ready:

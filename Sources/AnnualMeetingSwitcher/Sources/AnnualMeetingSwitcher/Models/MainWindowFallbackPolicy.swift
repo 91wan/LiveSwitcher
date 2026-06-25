@@ -29,6 +29,9 @@ enum MainWindowFallbackPolicy {
     }
 
     static func shouldCloseUnusableMainWindow(origin: Origin) -> Bool {
-        origin == .fallback
+        switch origin {
+        case .windowGroup, .fallback, .legacyTitleMatch:
+            return true
+        }
     }
 }

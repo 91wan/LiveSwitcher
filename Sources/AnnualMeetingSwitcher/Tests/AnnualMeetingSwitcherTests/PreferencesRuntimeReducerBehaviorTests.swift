@@ -54,7 +54,7 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertEqual(effects, [.loadBackgroundImage(nil)])
     }
 
-    func testSetCornerLogoURLUpdatesStateAndEmitsLoadCornerLogo() {
+    func testSetCornerLogoURLUpdatesStateShowsFirstLogoAndEmitsLoadCornerLogo() {
         var state = LiveRuntimeState()
         var effects: [LiveRuntimeEffect] = []
         let url = URL(fileURLWithPath: "/tmp/logo.png")
@@ -62,16 +62,20 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
 
         XCTAssertEqual(state.preferences.cornerLogoURL, url)
-        XCTAssertEqual(effects, [.loadCornerLogoImage(url)])
+        XCTAssertTrue(state.preferences.isCornerLogoVisible)
+        XCTAssertEqual(effects, [.loadCornerLogoImage(url), .saveCornerLogoVisible(true)])
     }
 
-    func testSetCornerLogoURLStillEmitsLoadCornerLogoImage() {
+    func testSetCornerLogoURLForExistingLogoPreservesVisibilityAndStillEmitsLoadCornerLogoImage() {
         var state = LiveRuntimeState()
+        state.preferences.cornerLogoURL = URL(fileURLWithPath: "/tmp/old-logo.png")
+        state.preferences.isCornerLogoVisible = false
         var effects: [LiveRuntimeEffect] = []
         let url = URL(fileURLWithPath: "/tmp/logo.png")
 
         PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
 
+        XCTAssertFalse(state.preferences.isCornerLogoVisible)
         XCTAssertEqual(effects, [.loadCornerLogoImage(url)])
     }
 
@@ -83,7 +87,8 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         PreferencesRuntimeReducer.setCornerLogoURL(nil, state: &state, effects: &effects)
 
         XCTAssertNil(state.preferences.cornerLogoURL)
-        XCTAssertEqual(effects, [.loadCornerLogoImage(nil)])
+        XCTAssertFalse(state.preferences.isCornerLogoVisible)
+        XCTAssertEqual(effects, [.loadCornerLogoImage(nil), .saveCornerLogoVisible(false)])
     }
 
     func testSetAutoPlayNextVideoUpdatesStateAndEmitsSave() {

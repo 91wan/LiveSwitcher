@@ -28,13 +28,41 @@ enum PreferencesRuntimeReducer {
         effects.append(.loadBackgroundImage(url))
     }
 
+    static func setCompanyDisplayName(
+        _ displayName: String,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        let normalized = BrandingDisplayNamePolicy.normalizedDisplayName(from: displayName)
+        guard BrandingDisplayNamePolicy.validationMessage(for: normalized) == nil else { return }
+        state.preferences.companyDisplayName = normalized
+        effects.append(.saveCompanyDisplayName(normalized))
+    }
+
     static func setCornerLogoURL(
         _ url: URL?,
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect]
     ) {
+        let hadLogo = state.preferences.cornerLogoURL != nil
         state.preferences.cornerLogoURL = url
         effects.append(.loadCornerLogoImage(url))
+        if url == nil {
+            state.preferences.isCornerLogoVisible = false
+            effects.append(.saveCornerLogoVisible(false))
+        } else if !hadLogo {
+            state.preferences.isCornerLogoVisible = true
+            effects.append(.saveCornerLogoVisible(true))
+        }
+    }
+
+    static func setCornerLogoVisible(
+        _ isVisible: Bool,
+        state: inout LiveRuntimeState,
+        effects: inout [LiveRuntimeEffect]
+    ) {
+        state.preferences.isCornerLogoVisible = isVisible && state.preferences.cornerLogoURL != nil
+        effects.append(.saveCornerLogoVisible(state.preferences.isCornerLogoVisible))
     }
 
     static func setAutoPlayNextVideoOnEnd(

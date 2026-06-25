@@ -5,14 +5,13 @@ import SwiftUI
 // Do NOT add @main here.
 
 struct LiveSwitcherApp: App {
-    @NSApplicationDelegateAdaptor(LiveSwitcherAppDelegate.self) private var appDelegate
     @State private var viewModel: SwitcherViewModel
     @Environment(\.openWindow) private var openWindow
 
     init() {
         let viewModel = Self.makeViewModel()
         _viewModel = State(wrappedValue: viewModel)
-        LiveSwitcherAppDelegate.sharedViewModel = viewModel
+        LiveSwitcherLaunchCoordinator.sharedViewModel = viewModel
     }
 
     var body: some Scene {
@@ -113,6 +112,7 @@ struct LiveSwitcherApp: App {
         .windowResizability(.contentMinSize)
     }
 
+    @MainActor
     private static func makeViewModel() -> SwitcherViewModel {
         let environment = ProcessInfo.processInfo.environment
         guard let suiteName = environment["LIVESWITCHER_USER_DEFAULTS_SUITE"],
@@ -135,35 +135,74 @@ struct LiveSwitcherApp: App {
     }
 }
 
-final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
+final class LiveSwitcherLaunchCoordinator {
     static var sharedViewModel: SwitcherViewModel?
     private static var fallbackMainWindow: NSWindow?
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
-        Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 700_000_000)
-            Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)
+    private var activationObserver: NSObjectProtocol?
+    private var launchObserver: NSObjectProtocol?
+    private var didScheduleDelayedFallback = false
+
+    func install() {
+        guard launchObserver == nil else { return }
+
+        launchObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didFinishLaunchingNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.ensureMainWindow(shouldScheduleDelayedCheck: true)
+        }
+
+        activationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.ensureMainWindow(shouldScheduleDelayedCheck: false)
         }
     }
 
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag {
-            Task { @MainActor in
-                Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)
+    deinit {
+        if let launchObserver {
+            NotificationCenter.default.removeObserver(launchObserver)
+        }
+        if let activationObserver {
+            NotificationCenter.default.removeObserver(activationObserver)
+        }
+    }
+
+    private func ensureMainWindow(shouldScheduleDelayedCheck: Bool) {
+        let shouldSchedule = shouldScheduleDelayedCheck && !didScheduleDelayedFallback
+        if shouldSchedule {
+            didScheduleDelayedFallback = true
+        }
+
+        Task { @MainActor in
+            Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)
+            if shouldSchedule {
+                Self.scheduleMainWindowFallback(viewModel: Self.sharedViewModel, delayNanoseconds: 700_000_000)
             }
         }
-        return true
+    }
+
+    @MainActor
+    static func scheduleMainWindowFallback(viewModel: SwitcherViewModel?, delayNanoseconds: UInt64) {
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: delayNanoseconds)
+            Self.ensureMainWindowIfNeeded(viewModel: viewModel, activate: true)
+        }
     }
 
     @MainActor
     static func ensureMainWindowIfNeeded(viewModel: SwitcherViewModel?, activate: Bool) {
         if let existingMainWindow = NSApp.windows.first(where: isMainConsoleWindow) {
             bringMainWindowToFront(existingMainWindow, activate: activate)
-            if isUsablyVisibleMainWindow(existingMainWindow) {
-                return
-            }
             guard let origin = mainWindowOrigin(for: existingMainWindow),
                   MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: origin) else {
+                return
+            }
+            if origin == .fallback, isUsablyVisibleMainWindow(existingMainWindow) {
                 return
             }
             closeUnusableMainWindow(existingMainWindow)
@@ -177,7 +216,9 @@ final class LiveSwitcherAppDelegate: NSObject, NSApplicationDelegate {
             closeUnusableMainWindow(fallbackMainWindow)
         }
 
-        guard let viewModel else { return }
+        guard let viewModel else {
+            return
+        }
 
         let window = NSWindow(
             contentRect: NSRect(

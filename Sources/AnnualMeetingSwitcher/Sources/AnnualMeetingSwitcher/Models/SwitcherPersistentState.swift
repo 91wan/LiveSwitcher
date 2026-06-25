@@ -10,7 +10,9 @@ struct SwitcherPersistentState: Equatable {
 
     var backgroundWallpapers: [URL] = []
     var activeWallpaperURL: URL?
+    var companyDisplayName: String = ""
     var cornerLogoURL: URL?
+    var isCornerLogoVisible: Bool = false
     var cornerLogoPosition: CornerLogoPosition = .topRight
 
     var autoPlayNextVideoOnEnd: Bool = false

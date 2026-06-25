@@ -5,6 +5,8 @@ extension LiveRuntimeEffect {
             return .executeProgramActivation(id: id, plan: plan.redactedForRecording)
         case .runAppleScript(_, let action):
             return .runAppleScript(script: "<redacted>", action: action)
+        case .saveCompanyDisplayName:
+            return .saveCompanyDisplayName("<redacted>")
         default:
             return self
         }
@@ -21,12 +23,14 @@ extension LiveRuntimeEffect {
 
         case .saveConsoleMode,
              .saveThemeOverride,
+             .saveCompanyDisplayName,
              .saveAudioStrategy,
              .saveSpeakerMode,
              .saveBGMPlayMode,
              .saveAutoPlayNextVideoOnEnd,
              .saveAutoAdvanceAtScheduledTime,
              .saveShowAgendaTimeline,
+             .saveCornerLogoVisible,
              .saveCornerLogoPosition,
              .savePersistentState:
             return .persistence

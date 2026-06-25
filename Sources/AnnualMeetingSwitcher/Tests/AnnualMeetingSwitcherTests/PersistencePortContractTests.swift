@@ -20,12 +20,14 @@ final class PersistencePortContractTests: XCTestCase {
             "func save()",
             "func saveConsoleMode(_ mode: ConsoleMode)",
             "func saveThemeOverride(_ theme: ThemeOverride)",
+            "func saveCompanyDisplayName(_ displayName: String)",
             "func saveAudioStrategy(_ strategy: AudioStrategy)",
             "func saveSpeakerMode(_ isEnabled: Bool)",
             "func saveBGMPlayMode(_ playMode: BGMPlayMode)",
             "func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool)",
             "func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool)",
             "func saveShowAgendaTimeline(_ isEnabled: Bool)",
+            "func saveCornerLogoVisible(_ isVisible: Bool)",
             "func saveCornerLogoPosition(_ position: CornerLogoPosition)"
         ].forEach { snippet in
             XCTAssertTrue(source.contains(snippet), snippet)
@@ -39,25 +41,30 @@ final class PersistencePortContractTests: XCTestCase {
         port.saveHandler = { genericSaveCount += 1 }
         port.saveConsoleModeHandler = { specificEvents.append("console:\($0.rawValue)") }
         port.saveThemeOverrideHandler = { specificEvents.append("theme:\($0.rawValue)") }
+        port.saveCompanyDisplayNameHandler = { _ in specificEvents.append("company:<redacted>") }
         port.saveAudioStrategyHandler = { specificEvents.append("strategy:\($0.rawValue)") }
         port.saveSpeakerModeHandler = { specificEvents.append("speaker:\($0)") }
         port.saveBGMPlayModeHandler = { specificEvents.append("bgm:\($0.rawValue)") }
         port.saveAutoPlayNextVideoOnEndHandler = { specificEvents.append("autoNext:\($0)") }
         port.saveAutoAdvanceAtScheduledTimeHandler = { specificEvents.append("autoAdvance:\($0)") }
         port.saveShowAgendaTimelineHandler = { specificEvents.append("timeline:\($0)") }
+        port.saveCornerLogoVisibleHandler = { specificEvents.append("logoVisible:\($0)") }
         port.saveCornerLogoPositionHandler = { specificEvents.append("corner:\($0.rawValue)") }
 
         port.saveConsoleMode(.live)
         port.saveThemeOverride(.dark)
+        port.saveCompanyDisplayName("机密客户甲有限公司")
         port.saveAudioStrategy(.mixed)
         port.saveSpeakerMode(true)
         port.saveBGMPlayMode(.sequential)
         port.saveAutoPlayNextVideoOnEnd(true)
         port.saveAutoAdvanceAtScheduledTime(true)
         port.saveShowAgendaTimeline(true)
+        port.saveCornerLogoVisible(true)
         port.saveCornerLogoPosition(.bottomLeft)
 
         XCTAssertEqual(genericSaveCount, 0)
-        XCTAssertEqual(specificEvents.count, 9)
+        XCTAssertEqual(specificEvents.count, 11)
+        XCTAssertFalse(specificEvents.joined(separator: ",").contains("机密客户甲有限公司"))
     }
 }

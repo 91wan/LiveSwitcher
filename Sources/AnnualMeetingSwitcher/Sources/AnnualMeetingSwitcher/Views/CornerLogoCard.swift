@@ -5,7 +5,7 @@ private enum CornerLogoImportService {
     @MainActor
     static func presentPicker(viewModel: SwitcherViewModel) {
         let panel = NSOpenPanel()
-        panel.title = "导入角标 Logo"
+        panel.title = "导入品牌 Logo"
         panel.allowsMultipleSelection = false
         panel.canChooseDirectories = false
         panel.allowedContentTypes = [.image, .png, .jpeg, .gif]
@@ -18,84 +18,15 @@ private enum CornerLogoImportService {
 @MainActor
 struct CornerLogoCard: View {
     @Environment(SwitcherViewModel.self) var viewModel
+    @State private var companyNameDraft = ""
 
     var body: some View {
-        @Bindable var viewModel = viewModel
-
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("角标")
-                        .font(StudioTheme.sectionTitle())
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("输出画面的常驻品牌标识")
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                }
-                Spacer()
-                switch viewModel.cornerLogoLoadPhase {
-                case .off:
-                    StatusBadge("关闭", kind: .idle)
-                case .loading:
-                    StatusBadge("加载中", kind: .warn)
-                case .ready:
-                    StatusBadge(viewModel.cornerLogoPosition.shortLabel, kind: .ready)
-                case .failed:
-                    StatusBadge("加载失败", kind: .fail)
-                }
-            }
-
-            HStack(spacing: 10) {
-                logoPreview
-                VStack(alignment: .leading, spacing: 8) {
-                    Picker("位置", selection: $viewModel.cornerLogoPosition) {
-                        ForEach(CornerLogoPosition.allCases, id: \.self) { position in
-                            Text(position.displayName)
-                                .tag(position)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
-                    .help("选择 Logo 显示角落")
-
-                    HStack(spacing: 8) {
-                        Button {
-                            CornerLogoImportService.presentPicker(viewModel: viewModel)
-                        } label: {
-                            Label("导入 Logo...", systemImage: "photo.badge.plus")
-                                .font(StudioTheme.TypeScale.caption.weight(.bold))
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-
-                        Button("移除") {
-                            viewModel.removeCornerLogo()
-                        }
-                        .font(StudioTheme.TypeScale.caption.weight(.bold))
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                        .disabled(viewModel.cornerLogoLoadPhase == .off)
-                    }
-
-                    if case .failed(let candidateURL, _) = viewModel.cornerLogoLoadPhase,
-                       candidateURL != nil {
-                        Button {
-                            viewModel.retryCornerLogoLoad()
-                        } label: {
-                            Label("重试", systemImage: "arrow.clockwise")
-                                .font(StudioTheme.TypeScale.caption.weight(.bold))
-                        }
-                        .buttonStyle(.bordered)
-                        .controlSize(.small)
-                    }
-
-                    Text(viewModel.cornerLogoLoadPhase.displayText)
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textTertiary)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            companyNameEditor
+            Divider()
+                .overlay(StudioTheme.borderSubtle)
+            logoControls
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
@@ -107,6 +38,125 @@ struct CornerLogoCard: View {
             RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.borderSubtle, lineWidth: 1)
         )
+        .onAppear {
+            companyNameDraft = viewModel.companyDisplayName
+        }
+        .onChange(of: viewModel.companyDisplayName) { _, newValue in
+            companyNameDraft = newValue
+        }
+    }
+
+    private var header: some View {
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("品牌标识")
+                    .font(StudioTheme.sectionTitle())
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text("输出画面与控制台标题使用的品牌信息")
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+            }
+            Spacer()
+            logoStatusBadge
+        }
+    }
+
+    private var companyNameEditor: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("公司名称")
+                .font(StudioTheme.TypeScale.label.weight(.semibold))
+                .foregroundStyle(StudioTheme.textSecondary)
+
+            HStack(spacing: 8) {
+                TextField("公司名称", text: $companyNameDraft)
+                    .textFieldStyle(.roundedBorder)
+                    .lineLimit(1)
+
+                Button("应用") {
+                    applyCompanyNameDraft()
+                }
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(companyNameValidationMessage != nil)
+
+                Button("恢复默认") {
+                    companyNameDraft = ""
+                    viewModel.companyDisplayName = ""
+                }
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+            Text(companyNameFooterText)
+                .font(StudioTheme.caption())
+                .foregroundStyle(companyNameValidationMessage == nil ? StudioTheme.textTertiary : StudioTheme.Action.danger)
+                .lineLimit(1)
+        }
+    }
+
+    private var logoControls: some View {
+        @Bindable var viewModel = viewModel
+
+        return HStack(alignment: .top, spacing: 10) {
+            logoPreview
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle("显示 Logo", isOn: $viewModel.isCornerLogoVisible)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .font(StudioTheme.TypeScale.caption.weight(.semibold))
+                    .disabled(!hasLogo)
+
+                Picker("位置", selection: $viewModel.cornerLogoPosition) {
+                    ForEach(CornerLogoPosition.allCases, id: \.self) { position in
+                        Text(position.displayName)
+                            .tag(position)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .disabled(!hasLogo)
+                .help("选择 Logo 显示角落")
+
+                HStack(spacing: 8) {
+                    Button {
+                        CornerLogoImportService.presentPicker(viewModel: self.viewModel)
+                    } label: {
+                        Label("导入 Logo...", systemImage: "photo.badge.plus")
+                            .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+
+                    Button("移除") {
+                        self.viewModel.removeCornerLogo()
+                    }
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .disabled(viewModel.cornerLogoLoadPhase == .empty)
+                }
+
+                if case .failed(let candidateURL, _) = viewModel.cornerLogoLoadPhase,
+                   candidateURL != nil {
+                    Button {
+                        self.viewModel.retryCornerLogoLoad()
+                    } label: {
+                        Label("重试", systemImage: "arrow.clockwise")
+                            .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+
+                Text(logoStatusText)
+                    .font(StudioTheme.caption())
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
     }
 
     @ViewBuilder
@@ -137,16 +187,67 @@ struct CornerLogoCard: View {
         .accessibilityLabel(cornerLogoAccessibilityLabel)
     }
 
+    private var logoStatusBadge: some View {
+        switch viewModel.cornerLogoLoadPhase {
+        case .empty:
+            StatusBadge("未导入", kind: .idle)
+        case .loading:
+            StatusBadge("加载中", kind: .warn)
+        case .ready:
+            StatusBadge(viewModel.isCornerLogoVisible ? "已显示" : "已隐藏", kind: .ready)
+        case .failed:
+            StatusBadge(hasLogo ? "已保留" : "加载失败", kind: hasLogo ? .warn : .fail)
+        }
+    }
+
+    private var logoStatusText: String {
+        switch viewModel.cornerLogoLoadPhase {
+        case .empty:
+            "未导入"
+        case .loading:
+            "加载中"
+        case .ready:
+            viewModel.isCornerLogoVisible
+                ? "已显示 · \(viewModel.cornerLogoPosition.shortLabel)"
+                : "已隐藏"
+        case .failed(_, let reason):
+            hasLogo ? "换图失败，当前 Logo 已保留" : "加载失败：\(reason.displayText)"
+        }
+    }
+
     private var cornerLogoAccessibilityLabel: String {
         switch viewModel.cornerLogoLoadPhase {
-        case .off:
-            "角标 Logo 已关闭"
+        case .empty:
+            "品牌 Logo 未导入"
         case .loading:
-            "角标 Logo 正在加载"
+            "品牌 Logo 正在加载"
         case .ready:
-            "角标 Logo 已就绪"
+            viewModel.isCornerLogoVisible ? "品牌 Logo 已显示" : "品牌 Logo 已隐藏"
         case .failed:
-            "角标 Logo 加载失败"
+            hasLogo ? "品牌 Logo 换图失败，当前 Logo 已保留" : "品牌 Logo 加载失败"
         }
+    }
+
+    private var hasLogo: Bool {
+        viewModel.cornerLogoURL != nil && viewModel.cornerLogoImage != nil
+    }
+
+    private var normalizedCompanyNameDraft: String {
+        BrandingDisplayNamePolicy.normalizedDisplayName(from: companyNameDraft)
+    }
+
+    private var companyNameValidationMessage: String? {
+        BrandingDisplayNamePolicy.validationMessage(for: companyNameDraft)
+    }
+
+    private var companyNameFooterText: String {
+        companyNameValidationMessage ?? "留空时显示 \(AppConfiguration.appName)"
+    }
+
+    private func applyCompanyNameDraft() {
+        guard companyNameValidationMessage == nil else { return }
+        let normalized = normalizedCompanyNameDraft
+        companyNameDraft = normalized
+        viewModel.companyDisplayName = normalized
     }
 }
