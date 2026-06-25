@@ -36,7 +36,8 @@ final class ProgramQueueRuntimeOwnershipGuardTests: XCTestCase {
             ".operatorRemovedProgramItem(let id)",
             ".operatorMovedProgramItems(let fromOffsets, let toOffset)",
             ".operatorUpdatedProgramItemSchedule(let id, let scheduledStartAt, let scheduledDuration)",
-            ".operatorAddedAgendaMarker(let title)",
+            ".operatorAddedAgendaMarker(let input)",
+            ".operatorUpdatedAgendaMarker(let id, let input)",
             ".facadeLoadedProgramQueue(let items)"
         ] {
             assertCase(
@@ -54,7 +55,8 @@ final class ProgramQueueRuntimeOwnershipGuardTests: XCTestCase {
             .operatorRemovedProgramItem(item.id),
             .operatorMovedProgramItems(fromOffsets: [0], toOffset: 1),
             .operatorUpdatedProgramItemSchedule(id: item.id, scheduledStartAt: Date(), scheduledDuration: 20),
-            .operatorAddedAgendaMarker(title: "Break")
+            .operatorAddedAgendaMarker(AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60)),
+            .operatorUpdatedAgendaMarker(id: item.id, input: AgendaMarkerInput(title: "转场", scheduledStartAt: nil, duration: 10 * 60))
         ]
     }
 
@@ -64,12 +66,14 @@ final class ProgramQueueRuntimeOwnershipGuardTests: XCTestCase {
         let first = programItem("First")
         let second = programItem("Second")
         let scheduled = programItem("Scheduled")
+        let marker = ProgramItem.agendaMarker(title: "茶歇")
         return [
             (queueState([existing]), .operatorAddedProgramItems([added])),
             (queueState([existing]), .operatorRemovedProgramItem(existing.id)),
             (queueState([first, second]), .operatorMovedProgramItems(fromOffsets: [0], toOffset: 2)),
             (queueState([scheduled]), .operatorUpdatedProgramItemSchedule(id: scheduled.id, scheduledStartAt: Date(), scheduledDuration: 20)),
-            (queueState([existing]), .operatorAddedAgendaMarker(title: "Break"))
+            (queueState([existing]), .operatorAddedAgendaMarker(AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60))),
+            (queueState([marker]), .operatorUpdatedAgendaMarker(id: marker.id, input: AgendaMarkerInput(title: "转场", scheduledStartAt: nil, duration: 10 * 60)))
         ]
     }
 

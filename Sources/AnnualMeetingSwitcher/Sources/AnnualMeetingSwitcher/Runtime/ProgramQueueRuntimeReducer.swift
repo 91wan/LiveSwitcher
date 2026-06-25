@@ -37,10 +37,18 @@ enum ProgramQueueRuntimeReducer {
     }
 
     static func addAgendaMarker(
-        title: String,
+        input: AgendaMarkerInput,
         state: inout LiveRuntimeState
     ) {
-        state.program.appendAgendaMarker(title: title)
+        state.program.appendAgendaMarker(input: input)
+    }
+
+    static func updateAgendaMarker(
+        id: UUID,
+        input: AgendaMarkerInput,
+        state: inout LiveRuntimeState
+    ) {
+        state.program.updateAgendaMarker(id: id, input: input)
     }
 
     static func loadProgramQueueFromFacade(

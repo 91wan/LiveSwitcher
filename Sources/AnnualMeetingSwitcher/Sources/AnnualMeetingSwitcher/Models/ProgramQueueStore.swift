@@ -19,7 +19,7 @@ enum ProgramQueueStore {
             let scheduledDuration = decodedDuration(at: index, in: scheduledDurations)
 
             if path.isEmpty, ProgramItem.isAgendaMarkerSubtitle(subtitle) {
-                let title = index < titles.count ? titles[index] : "Marker"
+                let title = index < titles.count ? titles[index] : "议程标记"
                 return ProgramItem(
                     title: title,
                     subtitle: subtitle,

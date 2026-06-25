@@ -72,7 +72,8 @@ enum LiveRuntimeAction: Equatable {
     case operatorRemovedProgramItem(UUID)
     case operatorMovedProgramItems(fromOffsets: [Int], toOffset: Int)
     case operatorUpdatedProgramItemSchedule(id: UUID, scheduledStartAt: Date?, scheduledDuration: TimeInterval?)
-    case operatorAddedAgendaMarker(title: String)
+    case operatorAddedAgendaMarker(AgendaMarkerInput)
+    case operatorUpdatedAgendaMarker(id: UUID, input: AgendaMarkerInput)
     case facadeLoadedProgramQueue([ProgramItem])
 
     case mediaLoaded(url: URL, generation: Int)
@@ -166,6 +167,7 @@ extension LiveRuntimeAction {
         case .operatorMovedProgramItems: return "operatorMovedProgramItems"
         case .operatorUpdatedProgramItemSchedule: return "operatorUpdatedProgramItemSchedule"
         case .operatorAddedAgendaMarker: return "operatorAddedAgendaMarker"
+        case .operatorUpdatedAgendaMarker: return "operatorUpdatedAgendaMarker"
         case .facadeLoadedProgramQueue: return "facadeLoadedProgramQueue"
         case .mediaLoaded: return "mediaLoaded"
         case .mediaPlaybackChanged: return "mediaPlaybackChanged"

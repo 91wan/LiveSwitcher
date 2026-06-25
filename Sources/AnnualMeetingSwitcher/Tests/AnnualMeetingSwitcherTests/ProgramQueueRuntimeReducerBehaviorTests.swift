@@ -93,16 +93,20 @@ final class ProgramQueueRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertEqual(mutation.state.program.items, [item])
     }
 
-    func testAddAgendaMarkerUsesPreviousScheduledEndWhenAvailable() {
+    func testAddAgendaMarkerUsesInputWithoutPreviousEndInference() {
         let start = Date(timeIntervalSince1970: 100)
         var item = programItem("Video")
         item.scheduledStartAt = start
         item.scheduledDuration = 60
 
-        let mutation = reduce(queueState([item]), .operatorAddedAgendaMarker(title: "Break"))
+        let mutation = reduce(
+            queueState([item]),
+            .operatorAddedAgendaMarker(AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60))
+        )
 
-        XCTAssertEqual(mutation.state.program.items.last?.title, "Break")
-        XCTAssertEqual(mutation.state.program.items.last?.scheduledStartAt, start.addingTimeInterval(60))
+        XCTAssertEqual(mutation.state.program.items.last?.title, "茶歇")
+        XCTAssertNil(mutation.state.program.items.last?.scheduledStartAt)
+        XCTAssertEqual(mutation.state.program.items.last?.scheduledDuration, 15 * 60)
     }
 
     func testLoadProgramQueueFromFacadeReplacesItems() {

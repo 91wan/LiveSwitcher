@@ -99,7 +99,7 @@ final class ProgramQueueRuntimeStateTests: XCTestCase {
         XCTAssertEqual(mutation.state.program.items, [item])
     }
 
-    func testAddedAgendaMarkerUsesLastScheduledEnd() {
+    func testAddedAgendaMarkerUsesExplicitInput() {
         let start = Date(timeIntervalSince1970: 100)
         var item = programItem("Video")
         item.scheduledStartAt = start
@@ -107,10 +107,15 @@ final class ProgramQueueRuntimeStateTests: XCTestCase {
         var state = LiveRuntimeState()
         state.program.items = [item]
 
-        let mutation = reduce(state, .operatorAddedAgendaMarker(title: "Break"), bridgeMode: .programQueueOwned)
+        let mutation = reduce(
+            state,
+            .operatorAddedAgendaMarker(AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60)),
+            bridgeMode: .programQueueOwned
+        )
 
-        XCTAssertEqual(mutation.state.program.items.last?.title, "Break")
-        XCTAssertEqual(mutation.state.program.items.last?.scheduledStartAt, start.addingTimeInterval(60))
+        XCTAssertEqual(mutation.state.program.items.last?.title, "茶歇")
+        XCTAssertNil(mutation.state.program.items.last?.scheduledStartAt)
+        XCTAssertEqual(mutation.state.program.items.last?.scheduledDuration, 15 * 60)
     }
 
     func testFacadeLoadedProgramQueueReplacesRuntimeItems() {

@@ -174,7 +174,8 @@ final class ProgramQueueRuntimeFacadeSyncTests: XCTestCase {
             .operatorRemovedProgramItem(item.id),
             .operatorMovedProgramItems(fromOffsets: [0], toOffset: 1),
             .operatorUpdatedProgramItemSchedule(id: item.id, scheduledStartAt: nil, scheduledDuration: nil),
-            .operatorAddedAgendaMarker(title: "Break"),
+            .operatorAddedAgendaMarker(AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60)),
+            .operatorUpdatedAgendaMarker(id: item.id, input: AgendaMarkerInput(title: "转场", scheduledStartAt: nil, duration: 10 * 60)),
             .facadeLoadedProgramQueue([item])
         ]
     }

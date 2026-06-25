@@ -143,14 +143,21 @@ struct LiveSourceRail: View {
                 ScrollView {
                     LazyVStack(spacing: 8) {
                         ForEach(Array(viewModel.programItems.enumerated()), id: \.element.id) { index, item in
-                            LiveSourceRailRow(
-                                item: item,
-                                queueRole: role(for: item),
-                                queuePosition: index + 1,
-                                isSelected: item.id == viewModel.currentProgramItem?.id,
-                                isBroadcasting: viewModel.isBroadcasting,
-                                action: { viewModel.switchToProgramAfterReadinessConfirmation(item) }
-                            )
+                            if item.isAgendaMarker {
+                                LiveSourceRailMarkerCueRow(
+                                    item: item,
+                                    queuePosition: index + 1
+                                )
+                            } else {
+                                LiveSourceRailRow(
+                                    item: item,
+                                    queueRole: role(for: item),
+                                    queuePosition: index + 1,
+                                    isSelected: item.id == viewModel.currentProgramItem?.id,
+                                    isBroadcasting: viewModel.isBroadcasting,
+                                    action: { viewModel.switchToProgramAfterReadinessConfirmation(item) }
+                                )
+                            }
                         }
                     }
                     .padding(.vertical, 2)
@@ -183,6 +190,66 @@ struct LiveSourceRail: View {
             current: viewModel.currentProgramItem,
             in: viewModel.programItems
         )
+    }
+}
+
+private struct LiveSourceRailMarkerCueRow: View {
+    let item: ProgramItem
+    let queuePosition: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 7) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(StudioTheme.TypeScale.caption.weight(.bold))
+                    .foregroundStyle(StudioTheme.Tone.warn)
+                    .frame(
+                        width: LiveModeLayoutMetrics.transportButtonSize,
+                        height: LiveModeLayoutMetrics.transportButtonSize
+                    )
+                    .background(
+                        Circle()
+                            .fill(StudioTheme.Tone.warn.opacity(0.12))
+                    )
+
+                Text("标记 \(queuePosition)")
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
+                    .foregroundStyle(StudioTheme.Tone.warn)
+                    .lineLimit(1)
+
+                Spacer(minLength: 0)
+            }
+
+            Text(item.title)
+                .font(StudioTheme.TypeScale.caption.weight(.semibold))
+                .foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(2)
+                .truncationMode(.tail)
+
+            if let scheduledStartText {
+                Text(scheduledStartText)
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .lineLimit(1)
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(StudioTheme.Tone.warn.opacity(0.07), in: RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                .stroke(StudioTheme.Tone.warn.opacity(0.22), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("议程标记，\(item.title)")
+    }
+
+    private var scheduledStartText: String? {
+        guard let scheduledStartAt = item.scheduledStartAt else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: scheduledStartAt)
     }
 }
 

@@ -10,6 +10,7 @@ struct LeftPanel: View {
     @State private var programQueueRowFrames: [UUID: CGRect] = [:]
     @State private var programQueueListFrame: CGRect = .null
     @State private var programQueueDropPreview: ProgramQueueDropPreview?
+    @State private var isAgendaMarkerPopoverPresented = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -31,6 +32,9 @@ struct LeftPanel: View {
                             scheduledStartAt: start,
                             scheduledDuration: duration
                         )
+                    },
+                    onUpdateAgendaMarker: { item, input in
+                        viewModel.updateAgendaMarker(id: item.id, input: input)
                     },
                     onDelete: { item in viewModel.removeProgramItem(withID: item.id) }
                 )
@@ -82,9 +86,9 @@ struct LeftPanel: View {
             .help("下一项到达计划开始时间时提示；不会自动切换。")
 
             Button {
-                viewModel.addAgendaMarker()
+                isAgendaMarkerPopoverPresented = true
             } label: {
-                Label("标记", systemImage: "mappin.and.ellipse")
+                Label("添加标记", systemImage: "mappin.and.ellipse")
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .lineLimit(1)
             }
@@ -92,6 +96,15 @@ struct LeftPanel: View {
             .controlSize(.small)
             .focusable(false)
             .help("添加茶歇、转场等不可播放的议程标记。")
+            .popover(isPresented: $isAgendaMarkerPopoverPresented, arrowEdge: .trailing) {
+                AgendaMarkerEditorPopover(
+                    mode: .add,
+                    initialInput: .initial()
+                ) { input in
+                    viewModel.addAgendaMarker(input)
+                    isAgendaMarkerPopoverPresented = false
+                }
+            }
         }
         .padding(.horizontal, 2)
         .padding(.vertical, 2)
@@ -258,6 +271,9 @@ struct LeftPanel: View {
                                 scheduledStartAt: start,
                                 scheduledDuration: duration
                             )
+                        },
+                        onUpdateAgendaMarker: { input in
+                            viewModel.updateAgendaMarker(id: item.id, input: input)
                         },
                         onDelete: { viewModel.removeProgramItem(withID: item.id) },
                         manualDropPlacement: programQueueDropPreview?.targetID == item.id ? programQueueDropPreview?.placement : nil,

@@ -272,10 +272,27 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
         var saveCount = 0
         viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
-        viewModel.addAgendaMarker(title: "Break")
+        let input = AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60)
+        viewModel.addAgendaMarker(input)
 
         XCTAssertEqual(saveCount, 1)
         XCTAssertEqual(actionCount("operatorAddedAgendaMarker", in: viewModel), 1)
+    }
+
+    func testUpdateAgendaMarkerStillSavesAfterSingleRuntimeDispatch() {
+        let marker = ProgramItem.agendaMarker(title: "茶歇")
+        let viewModel = makeViewModel(bridgeMode: .programQueueOwned, runtimeItems: [marker], facadeItems: [marker])
+        var saveCount = 0
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
+
+        viewModel.updateAgendaMarker(
+            id: marker.id,
+            input: AgendaMarkerInput(title: "转场", scheduledStartAt: Date(timeIntervalSince1970: 100), duration: 20 * 60)
+        )
+
+        XCTAssertEqual(saveCount, 1)
+        XCTAssertEqual(actionCount("operatorUpdatedAgendaMarker", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorUpdatedProgramItemSchedule", in: viewModel), 0)
     }
 
     func testProgramQueueActionsStillSyncProgramQueueFacadeThroughPolicy() {
