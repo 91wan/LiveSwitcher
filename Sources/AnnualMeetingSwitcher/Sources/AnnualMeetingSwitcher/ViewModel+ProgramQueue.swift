@@ -54,12 +54,37 @@ extension SwitcherViewModel {
         saveData()
     }
 
+    func removeProgramItems(at indexSet: IndexSet) {
+        let currentItems = runtimeBackedProgramItemsForProgramQueueViewModel
+        let ids = indexSet.compactMap { index in
+            currentItems.indices.contains(index) ? currentItems[index].id : nil
+        }
+        ids.forEach { removeProgramItem(withID: $0) }
+    }
+
     func moveProgramItems(from source: IndexSet, to destination: Int) {
         dispatchRuntimeFacadeAction(.operatorMovedProgramItems(
             fromOffsets: Array(source),
             toOffset: destination
         ))
         saveData()
+    }
+
+    @discardableResult
+    func moveProgramItem(
+        draggedID: UUID,
+        targetID: UUID,
+        placement: ProgramQueueDropPlacement
+    ) -> Bool {
+        let itemIDs = runtimeBackedProgramItemsForProgramQueueViewModel.map(\.id)
+        let plan = ProgramQueueDropPlan(
+            draggedID: draggedID,
+            targetID: targetID,
+            placement: placement
+        )
+        guard let move = plan.resolvedMove(in: itemIDs) else { return false }
+        moveProgramItems(from: move.fromOffsets, to: move.toOffset)
+        return true
     }
 
     func agendaAutoAdvancePrompt(now: Date = Date()) -> AgendaAutoAdvancePrompt? {

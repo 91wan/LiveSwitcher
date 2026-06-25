@@ -1,5 +1,18 @@
 import SwiftUI
 
+struct ProgramQueueDropPreview: Equatable {
+    let targetID: UUID
+    let placement: ProgramQueueDropPlacement
+}
+
+struct ProgramQueueRowFramePreferenceKey: PreferenceKey {
+    static let defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
 // MARK: - Queue Row
 
 struct SignalSourceRow: View {
@@ -17,10 +30,13 @@ struct SignalSourceRow: View {
     var onSkipToEnd: (() -> Void)? = nil
     var onUpdateSchedule: (Date?, TimeInterval?) -> Void = { _, _ in }
     let onDelete: () -> Void
+    let manualDropPlacement: ProgramQueueDropPlacement?
+    let onHandleDragChanged: (CGPoint) -> Void
+    let onHandleDragEnded: (CGPoint) -> Void
 
     @State private var isHovered = false
     @State private var isSchedulePopoverPresented = false
-    private let rowContentIndent: CGFloat = 94
+    private let rowContentIndent: CGFloat = 124
 
     private var rowModel: ProgramQueueRowModel {
         ProgramQueueRowModel(
@@ -35,6 +51,12 @@ struct SignalSourceRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 9) {
+                ProgramQueueDragHandle(
+                    title: item.title,
+                    onDragChanged: onHandleDragChanged,
+                    onDragEnded: onHandleDragEnded
+                )
+
                 queueBadge
 
                 ProgramThumbnailView(
@@ -86,7 +108,19 @@ struct SignalSourceRow: View {
         .padding(.vertical, 9)
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
-        .background(backgroundFill)
+        .background(
+            ZStack {
+                backgroundFill
+                GeometryReader { proxy in
+                    Color.clear
+                        .preference(
+                            key: ProgramQueueRowFramePreferenceKey.self,
+                            value: [item.id: proxy.frame(in: .global)]
+                        )
+                }
+            }
+        )
+        .overlay(dropIndicatorOverlay)
         .overlay(
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .stroke(borderColor, lineWidth: queueRole == .current ? 1.4 : 0.9)
@@ -98,6 +132,24 @@ struct SignalSourceRow: View {
                 isHovered = hovering
             }
         }
+    }
+
+    private var dropIndicatorOverlay: some View {
+        return VStack(spacing: 0) {
+            dropIndicator(isActive: manualDropPlacement == .before)
+            Spacer(minLength: 0)
+            dropIndicator(isActive: manualDropPlacement == .after)
+        }
+        .padding(.horizontal, 6)
+        .allowsHitTesting(false)
+    }
+
+    private func dropIndicator(isActive: Bool) -> some View {
+        RoundedRectangle(cornerRadius: 2, style: .continuous)
+            .fill(StudioTheme.Action.primary)
+            .frame(height: 3)
+            .opacity(isActive ? 1 : 0)
+            .shadow(color: StudioTheme.Action.primary.opacity(isActive ? 0.45 : 0), radius: 5)
     }
 
     private var scheduleButton: some View {
@@ -420,6 +472,31 @@ struct SignalSourceRow: View {
         case .unsupported:
             return "doc.fill"
         }
+    }
+}
+
+struct ProgramQueueDragHandle: View {
+    let title: String
+    let onDragChanged: (CGPoint) -> Void
+    let onDragEnded: (CGPoint) -> Void
+
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(StudioTheme.TypeScale.body.weight(.bold))
+            .foregroundStyle(StudioTheme.textTertiary)
+            .frame(width: 22, height: 34)
+            .contentShape(Rectangle())
+            .help("拖拽调整节目顺序")
+            .accessibilityLabel("拖拽排序 \(title)")
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { value in
+                        onDragChanged(value.location)
+                    }
+                    .onEnded { value in
+                        onDragEnded(value.location)
+                    }
+            )
     }
 }
 
