@@ -55,7 +55,7 @@ final class AgendaTimelineModelTests: XCTestCase {
 
         XCTAssertTrue(marker.isAgendaMarker)
         XCTAssertEqual(marker.sourceKind, .agendaMarker)
-        XCTAssertEqual(marker.displaySourceLabel, "MARKER")
+        XCTAssertEqual(marker.displaySourceLabel, "标记")
         XCTAssertFalse(marker.sourceKind.isImportableFile)
         XCTAssertFalse(marker.supportsSeeking)
     }

@@ -117,7 +117,7 @@ extension ProgramItem {
         case .activeDeck:
             return "DECK"
         case .agendaMarker:
-            return "MARKER"
+            return "标记"
         case .unsupported:
             return subtitle.isEmpty ? "FILE" : subtitle.uppercased()
         }

@@ -88,25 +88,40 @@ final class ProgramQueueRuntimeMutationPolicyTests: XCTestCase {
         XCTAssertEqual(state.items, [item])
     }
 
-    func testAppendAgendaMarkerUsesLastScheduledEnd() {
+    func testAppendAgendaMarkerUsesInputWithoutImplicitStart() {
         let start = Date(timeIntervalSince1970: 100)
         var item = programItem("Video")
         item.scheduledStartAt = start
         item.scheduledDuration = 60
         var state = ProgramRuntimeState(items: [item])
 
-        state.appendAgendaMarker(title: "Break")
+        state.appendAgendaMarker(input: AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60))
 
-        XCTAssertEqual(state.items.last?.title, "Break")
-        XCTAssertEqual(state.items.last?.scheduledStartAt, start.addingTimeInterval(60))
+        XCTAssertEqual(state.items.last?.title, "茶歇")
+        XCTAssertNil(state.items.last?.scheduledStartAt)
+        XCTAssertEqual(state.items.last?.scheduledDuration, 15 * 60)
     }
 
-    func testAppendAgendaMarkerUsesNilStartWhenNoSchedule() {
+    func testAppendAgendaMarkerPreservesExplicitStartWhenProvided() {
+        let start = Date(timeIntervalSince1970: 100)
         var state = ProgramRuntimeState(items: [programItem("Unscheduled")])
 
-        state.appendAgendaMarker(title: "Break")
+        state.appendAgendaMarker(input: AgendaMarkerInput(title: "提醒", scheduledStartAt: start, duration: 10 * 60))
 
-        XCTAssertNil(state.items.last?.scheduledStartAt)
+        XCTAssertEqual(state.items.last?.scheduledStartAt, start)
+        XCTAssertEqual(state.items.last?.scheduledDuration, 10 * 60)
+    }
+
+    func testUpdateAgendaMarkerNoopsForNormalProgram() {
+        let item = programItem("Program")
+        var state = ProgramRuntimeState(items: [item])
+
+        state.updateAgendaMarker(
+            id: item.id,
+            input: AgendaMarkerInput(title: "转场", scheduledStartAt: Date(), duration: 20 * 60)
+        )
+
+        XCTAssertEqual(state.items, [item])
     }
 
     func testReplaceProgramQueueClearsMissingCurrentID() {

@@ -84,6 +84,7 @@ enum LiveRuntimeFacadeSyncPolicy {
              .operatorMovedProgramItems,
              .operatorUpdatedProgramItemSchedule,
              .operatorAddedAgendaMarker,
+             .operatorUpdatedAgendaMarker,
              .facadeLoadedProgramQueue,
              .facadeAudioInputsChanged:
             return false
@@ -171,6 +172,7 @@ enum LiveRuntimeFacadeSyncPolicy {
              .operatorMovedProgramItems,
              .operatorUpdatedProgramItemSchedule,
              .operatorAddedAgendaMarker,
+             .operatorUpdatedAgendaMarker,
              .facadeLoadedProgramQueue,
              .presentationQueryResultConsumed:
             return true

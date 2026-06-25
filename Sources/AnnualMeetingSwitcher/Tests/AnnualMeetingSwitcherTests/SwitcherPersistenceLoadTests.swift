@@ -41,6 +41,18 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         XCTAssertFalse(result.supportEvents.contains { $0.kind == .programItemFileMissing })
     }
 
+    func testLoadRestoresAgendaMarkerMissingTitleWithLocalizedFallback() throws {
+        let defaults = try makeDefaults()
+        defaults.set([""], forKey: "pushList_paths")
+        defaults.set([ProgramItem.agendaMarkerSubtitle], forKey: "pushList_subtitles")
+
+        let result = SwitcherPersistenceStore(userDefaults: defaults).load()
+
+        XCTAssertEqual(result.state.programItems.first?.title, "议程标记")
+        XCTAssertTrue(result.state.programItems.first?.isAgendaMarker == true)
+        XCTAssertFalse(result.supportEvents.contains { $0.kind == .programItemFileMissing })
+    }
+
     func testLoadReportsMissingProgramFiles() throws {
         let defaults = try makeDefaults()
         defaults.set(["/tmp/missing-\(UUID().uuidString).mp4"], forKey: "pushList_paths")

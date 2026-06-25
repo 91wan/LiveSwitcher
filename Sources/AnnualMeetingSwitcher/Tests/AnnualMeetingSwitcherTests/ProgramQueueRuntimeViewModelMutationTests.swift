@@ -21,11 +21,12 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
 
     func testAddAgendaMarkerDispatchesRuntimeAction() {
         let viewModel = makeViewModel()
+        let input = AgendaMarkerInput(title: "茶歇", scheduledStartAt: nil, duration: 15 * 60)
 
-        viewModel.addAgendaMarker(title: "Break")
+        viewModel.addAgendaMarker(input)
 
         XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorAddedAgendaMarker" })
-        XCTAssertEqual(viewModel.programItems.last?.title, "Break")
+        XCTAssertEqual(viewModel.programItems.last?.title, "茶歇")
     }
 
     func testAddAgendaMarkerDoesNotCalculateStartLocally() throws {
@@ -34,6 +35,30 @@ final class ProgramQueueRuntimeViewModelMutationTests: XCTestCase {
 
         XCTAssertFalse(body.contains("scheduledStartAt.addingTimeInterval"))
         XCTAssertTrue(body.contains("operatorAddedAgendaMarker"))
+    }
+
+    func testUpdateAgendaMarkerDispatchesRuntimeAction() {
+        let marker = ProgramItem.agendaMarker(title: "茶歇")
+        let viewModel = makeViewModel(initialItems: [marker])
+
+        viewModel.updateAgendaMarker(
+            id: marker.id,
+            input: AgendaMarkerInput(title: "提醒", scheduledStartAt: nil, duration: 10 * 60)
+        )
+
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "operatorUpdatedAgendaMarker" })
+        XCTAssertEqual(viewModel.programItems.first?.title, "提醒")
+    }
+
+    func testSupportReportDoesNotExposeAgendaMarkerTitleAfterRuntimeAction() {
+        let viewModel = makeViewModel()
+        let sensitiveTitle = "客户内部流程"
+
+        viewModel.addAgendaMarker(AgendaMarkerInput(title: sensitiveTitle, scheduledStartAt: nil, duration: 15 * 60))
+
+        let report = viewModel.liveSupportReportText(generatedAt: Date(timeIntervalSince1970: 1_800_000_000))
+        XCTAssertTrue(report.contains("operatorAddedAgendaMarker"))
+        XCTAssertFalse(report.localizedStandardContains(sensitiveTitle))
     }
 
     func testUpdateProgramItemScheduleDispatchesRuntimeAction() {

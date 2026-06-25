@@ -36,19 +36,34 @@ extension ProgramRuntimeState {
         scheduledStartAt: Date?,
         scheduledDuration: TimeInterval?
     ) {
-        guard let index = items.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              !items[index].isAgendaMarker else { return }
         items[index].scheduledStartAt = scheduledStartAt
         items[index].scheduledDuration = scheduledDuration
     }
 
-    mutating func appendAgendaMarker(title: String) {
-        let start = items.last.flatMap { item -> Date? in
-            guard let scheduledStartAt = item.scheduledStartAt,
-                  let scheduledDuration = item.scheduledDuration
-            else { return nil }
-            return scheduledStartAt.addingTimeInterval(scheduledDuration)
+    mutating func appendAgendaMarker(input: AgendaMarkerInput) {
+        guard let input = input.normalized() else { return }
+        items.append(ProgramItem(
+            title: input.title,
+            subtitle: ProgramItem.agendaMarkerSubtitle,
+            sourceURL: nil,
+            scheduledStartAt: input.scheduledStartAt,
+            scheduledDuration: input.duration
+        ))
+    }
+
+    mutating func updateAgendaMarker(id: UUID, input: AgendaMarkerInput) {
+        guard let index = items.firstIndex(where: { $0.id == id }),
+              items[index].isAgendaMarker,
+              let input = input.normalized() else {
+            return
         }
-        items.append(ProgramItem.agendaMarker(title: title, scheduledStartAt: start))
+        items[index].title = input.title
+        items[index].subtitle = ProgramItem.agendaMarkerSubtitle
+        items[index].sourceURL = nil
+        items[index].scheduledStartAt = input.scheduledStartAt
+        items[index].scheduledDuration = input.duration
     }
 
     mutating func replaceProgramQueueFromFacade(_ items: [ProgramItem]) {

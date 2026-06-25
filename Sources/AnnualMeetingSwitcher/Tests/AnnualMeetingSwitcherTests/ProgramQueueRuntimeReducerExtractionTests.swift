@@ -23,7 +23,9 @@ final class ProgramQueueRuntimeReducerExtractionTests: XCTestCase {
             "static func updateProgramItemSchedule",
             "state.program.updateProgramItemSchedule(",
             "static func addAgendaMarker",
-            "state.program.appendAgendaMarker(title: title)",
+            "state.program.appendAgendaMarker(input: input)",
+            "static func updateAgendaMarker",
+            "state.program.updateAgendaMarker(id: id, input: input)",
             "static func loadProgramQueueFromFacade",
             "state.program.replaceProgramQueueFromFacade(items)"
         ] {
@@ -39,7 +41,8 @@ final class ProgramQueueRuntimeReducerExtractionTests: XCTestCase {
             "ProgramQueueRuntimeReducer.removeProgramItem(id: id, state: &state)",
             "ProgramQueueRuntimeReducer.moveProgramItems(fromOffsets: fromOffsets, toOffset: toOffset, state: &state)",
             "ProgramQueueRuntimeReducer.updateProgramItemSchedule(",
-            "ProgramQueueRuntimeReducer.addAgendaMarker(title: title, state: &state)",
+            "ProgramQueueRuntimeReducer.addAgendaMarker(input: input, state: &state)",
+            "ProgramQueueRuntimeReducer.updateAgendaMarker(id: id, input: input, state: &state)",
             "ProgramQueueRuntimeReducer.loadProgramQueueFromFacade(items, state: &state)"
         ] {
             XCTAssertTrue(source.contains(expected), expected)

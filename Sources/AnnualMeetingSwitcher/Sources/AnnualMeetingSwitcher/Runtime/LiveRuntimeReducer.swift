@@ -413,9 +413,13 @@ enum LiveRuntimeReducer {
                 state: &state
             )
 
-        case .operatorAddedAgendaMarker(let title):
+        case .operatorAddedAgendaMarker(let input):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
-            ProgramQueueRuntimeReducer.addAgendaMarker(title: title, state: &state)
+            ProgramQueueRuntimeReducer.addAgendaMarker(input: input, state: &state)
+
+        case .operatorUpdatedAgendaMarker(let id, let input):
+            guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }
+            ProgramQueueRuntimeReducer.updateAgendaMarker(id: id, input: input, state: &state)
 
         case .facadeLoadedProgramQueue(let items):
             guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }

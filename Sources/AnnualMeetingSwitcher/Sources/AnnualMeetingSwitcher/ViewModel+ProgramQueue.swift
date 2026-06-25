@@ -14,8 +14,14 @@ extension SwitcherViewModel {
         saveData()
     }
 
-    func addAgendaMarker(title: String = "Break") {
-        dispatchRuntimeFacadeAction(.operatorAddedAgendaMarker(title: title))
+    func addAgendaMarker(_ input: AgendaMarkerInput) {
+        dispatchRuntimeFacadeAction(.operatorAddedAgendaMarker(input))
+        saveData()
+    }
+
+    func updateAgendaMarker(id: UUID, input: AgendaMarkerInput) {
+        dispatchRuntimeFacadeAction(.operatorUpdatedAgendaMarker(id: id, input: input))
+        agendaAutoAdvancePromptedItemIDs.remove(id)
         saveData()
     }
 
