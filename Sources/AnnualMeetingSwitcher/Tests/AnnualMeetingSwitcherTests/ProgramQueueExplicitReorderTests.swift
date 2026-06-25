@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import LiveSwitcher
 
@@ -47,8 +48,100 @@ final class ProgramQueueDropPlanTests: XCTestCase {
         XCTAssertNil(ProgramQueueDropPlan(draggedID: ids[0], targetID: ids[1], placement: .before).resolvedMove(in: ids))
     }
 
+    func testDropTargetResolverRejectsLocationsOutsideListFrame() {
+        let ids = makeIDs(count: 3)
+        let rowFrames = rowFrames(for: ids)
+        let listFrame = CGRect(x: 90, y: 90, width: 260, height: 190)
+        let outsidePoints = [
+            CGPoint(x: listFrame.minX - 11, y: listFrame.midY),
+            CGPoint(x: listFrame.maxX + 11, y: listFrame.midY),
+            CGPoint(x: listFrame.midX, y: listFrame.minY - 11),
+            CGPoint(x: listFrame.midX, y: listFrame.maxY + 11)
+        ]
+
+        for point in outsidePoints {
+            XCTAssertNil(
+                ProgramQueueDropTargetResolver.resolve(
+                    location: point,
+                    draggedID: ids[1],
+                    rowFrames: rowFrames,
+                    listFrame: listFrame,
+                    tolerance: 10
+                ),
+                "Expected \(point) outside \(listFrame) to cancel the drop target."
+            )
+        }
+    }
+
+    func testDropTargetResolverResolvesNearestRowInsideListFrame() throws {
+        let ids = makeIDs(count: 3)
+        let rowFrames = rowFrames(for: ids)
+        let listFrame = CGRect(x: 90, y: 90, width: 260, height: 190)
+
+        let beforeThird = try XCTUnwrap(
+            ProgramQueueDropTargetResolver.resolve(
+                location: CGPoint(x: 120, y: 225),
+                draggedID: ids[0],
+                rowFrames: rowFrames,
+                listFrame: listFrame
+            )
+        )
+        XCTAssertEqual(beforeThird.targetID, ids[2])
+        XCTAssertEqual(beforeThird.placement, .before)
+
+        let afterFirst = try XCTUnwrap(
+            ProgramQueueDropTargetResolver.resolve(
+                location: CGPoint(x: 120, y: 148),
+                draggedID: ids[2],
+                rowFrames: rowFrames,
+                listFrame: listFrame
+            )
+        )
+        XCTAssertEqual(afterFirst.targetID, ids[0])
+        XCTAssertEqual(afterFirst.placement, .after)
+    }
+
+    func testDropTargetResolverFallsBackToVisibleRowsWhenListFrameIsUnavailable() throws {
+        let ids = makeIDs(count: 3)
+        let rowFrames = rowFrames(for: ids)
+
+        let target = try XCTUnwrap(
+            ProgramQueueDropTargetResolver.resolve(
+                location: CGPoint(x: 120, y: 225),
+                draggedID: ids[0],
+                rowFrames: rowFrames,
+                listFrame: .null
+            )
+        )
+
+        XCTAssertEqual(target.targetID, ids[2])
+        XCTAssertEqual(target.placement, .before)
+        XCTAssertNil(
+            ProgramQueueDropTargetResolver.resolve(
+                location: CGPoint(x: 120, y: 400),
+                draggedID: ids[0],
+                rowFrames: rowFrames,
+                listFrame: .null
+            )
+        )
+    }
+
     private func makeIDs(count: Int) -> [UUID] {
         (0..<count).map { _ in UUID() }
+    }
+
+    private func rowFrames(for ids: [UUID]) -> [UUID: CGRect] {
+        Dictionary(uniqueKeysWithValues: ids.enumerated().map { index, id in
+            (
+                id,
+                CGRect(
+                    x: 100,
+                    y: 100 + CGFloat(index * 60),
+                    width: 220,
+                    height: 48
+                )
+            )
+        })
     }
 }
 
@@ -199,12 +292,12 @@ final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift")
 
         XCTAssertTrue(source.contains("onHandleDragEnded:"))
-        XCTAssertTrue(source.contains("@State private var draggedProgramItemID"))
         XCTAssertTrue(source.contains("@State private var programQueueRowFrames"))
         XCTAssertTrue(source.contains("programQueueDropTarget(at:"))
         XCTAssertTrue(source.contains("finishProgramQueueDrag(draggedID:"))
         XCTAssertTrue(source.contains("viewModel.moveProgramItem("))
         XCTAssertTrue(source.contains("viewModel.removeProgramItems(at: indexSet)"))
+        XCTAssertFalse(source.contains("@State private var draggedProgramItemID"))
         XCTAssertFalse(source.contains(".onMove"))
         XCTAssertFalse(source.contains("viewModel.programItems[$0]"))
     }
@@ -226,12 +319,13 @@ final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
     }
 
     func testRunQueueUsesLocalDragSessionInsteadOfPasteboardMetadata() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let runQueueSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let dropPlanSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/ProgramQueueDropPlan.swift")
 
-        XCTAssertTrue(source.contains("ProgramQueueDropPreview"))
-        XCTAssertTrue(source.contains("ProgramQueueRowFramePreferenceKey"))
-        XCTAssertFalse(source.contains("NSItemProvider"))
-        XCTAssertFalse(source.contains("suggestedName"))
+        XCTAssertTrue(dropPlanSource.contains("ProgramQueueDropPreview"))
+        XCTAssertTrue(runQueueSource.contains("ProgramQueueRowFramePreferenceKey"))
+        XCTAssertFalse(runQueueSource.contains("NSItemProvider"))
+        XCTAssertFalse(runQueueSource.contains("suggestedName"))
     }
 
     func testViewModelProgramQueueDoesNotMutateFacadeQueueDirectlyForIDReorder() throws {
@@ -241,5 +335,14 @@ final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
         XCTAssertTrue(body.contains("ProgramQueueDropPlan"))
         XCTAssertTrue(body.contains("moveProgramItems(from:"))
         XCTAssertFalse(body.contains("programItems.move"))
+    }
+
+    func testMediaProgressRowUsesFullWidthTransportLayout() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let progressBlock = try XCTUnwrap(source.balancedBlock(after: "if isSelected && rowModel.showsProgressSlider"))
+
+        XCTAssertTrue(progressBlock.contains("ProgressSliderRow("))
+        XCTAssertFalse(progressBlock.contains(".padding(.leading, rowContentIndent)"))
+        XCTAssertTrue(source.contains(".layoutPriority(1)"))
     }
 }

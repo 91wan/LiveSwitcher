@@ -64,7 +64,7 @@ final class ConsoleChromeCleanupTests: XCTestCase {
     func testGlobalShortcutsRespectNativeControlFocus() throws {
         let content = try sourceText("ContentView.swift")
 
-        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window)"))
+        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
     }
 
     func testNonEmergencyGlobalShortcutsIgnoreShiftModifiedKeys() throws {

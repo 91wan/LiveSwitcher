@@ -1,15 +1,18 @@
 import SwiftUI
 
-struct ProgramQueueDropPreview: Equatable {
-    let targetID: UUID
-    let placement: ProgramQueueDropPlacement
-}
-
 struct ProgramQueueRowFramePreferenceKey: PreferenceKey {
     static let defaultValue: [UUID: CGRect] = [:]
 
     static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+struct ProgramQueueListFramePreferenceKey: PreferenceKey {
+    static let defaultValue: CGRect = .null
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
 
@@ -108,7 +111,6 @@ struct SignalSourceRow: View {
                     mediaGeneration: mediaGeneration,
                     onSeekProgress: onSeekProgress
                 )
-                    .padding(.leading, rowContentIndent)
             }
         }
         .padding(.vertical, 9)
@@ -600,6 +602,7 @@ struct ProgressSliderRow: View {
                 }
             }
             .tint(StudioTheme.Action.primary)
+            .layoutPriority(1)
             .accessibilityLabel("当前节目进度")
             .accessibilityValue("\(formatTime(avCoordinator.currentTime)) / \(avCoordinator.duration.map { formatTime($0) } ?? "未知时长")")
 

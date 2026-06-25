@@ -2,6 +2,7 @@ import AppKit
 
 enum GlobalShortcutPolicy {
     private static let emergencyPanicKeyCode: UInt16 = 11
+    private static let mediaToggleKeyCode: UInt16 = 49
     private static let nonEmergencyModifierMask: NSEvent.ModifierFlags = [
         .command,
         .option,
@@ -29,5 +30,12 @@ enum GlobalShortcutPolicy {
     static func shouldPassThroughFocusedResponder(in eventWindow: NSWindow?) -> Bool {
         guard let responder = eventWindow?.firstResponder else { return false }
         return responder is NSText || responder is NSControl
+    }
+
+    static func shouldPassThroughFocusedResponder(in eventWindow: NSWindow?, keyCode: UInt16) -> Bool {
+        guard let responder = eventWindow?.firstResponder else { return false }
+        if responder is NSText { return true }
+        if keyCode == mediaToggleKeyCode { return false }
+        return responder is NSControl
     }
 }

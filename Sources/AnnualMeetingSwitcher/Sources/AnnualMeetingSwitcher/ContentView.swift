@@ -502,7 +502,9 @@ final class KeyMonitorView: NSView {
         guard !GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags) else { return event }
 
         // 如果当前焦点在文本框或原生控件，不拦截，避免抢走按钮/滑杆的键盘操作
-        if GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window) { return event }
+        if GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode) {
+            return event
+        }
 
         let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true
 
