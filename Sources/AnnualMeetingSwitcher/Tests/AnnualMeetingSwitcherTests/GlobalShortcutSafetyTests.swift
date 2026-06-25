@@ -62,11 +62,48 @@ final class GlobalShortcutSafetyTests: XCTestCase {
         XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow))
     }
 
+    @MainActor
+    func testSpaceShortcutDoesNotPassThroughFocusedNativeControls() {
+        let eventWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        let toggle = NSSwitch(frame: NSRect(x: 0, y: 0, width: 60, height: 28))
+        eventWindow.contentView = toggle
+        eventWindow.makeFirstResponder(toggle)
+
+        XCTAssertFalse(
+            GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 49),
+            "Space should remain the media toggle even when a switch is focused."
+        )
+        XCTAssertTrue(
+            GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 30),
+            "Non-space shortcuts should still respect native control focus."
+        )
+    }
+
+    @MainActor
+    func testSpaceShortcutStillPassesThroughFocusedTextInput() {
+        let eventWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+        let textView = NSTextView(frame: NSRect(x: 0, y: 0, width: 80, height: 24))
+        eventWindow.contentView = textView
+        eventWindow.makeFirstResponder(textView)
+
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 49))
+    }
+
     func testKeyMonitorUsesEventWindowForScopeAndResponderChecks() throws {
         let content = try sourceText("ContentView.swift")
 
         XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldHandleEvent(monitorWindow: window, eventWindow: event.window)"))
-        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window)"))
+        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
         XCTAssertFalse(content.contains("window?.firstResponder"))
     }
 

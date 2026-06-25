@@ -7,8 +7,8 @@ import UniformTypeIdentifiers
 struct LeftPanel: View {
     @Environment(SwitcherViewModel.self) var viewModel
     @State private var isDraggingOver = false
-    @State private var draggedProgramItemID: UUID?
     @State private var programQueueRowFrames: [UUID: CGRect] = [:]
+    @State private var programQueueListFrame: CGRect = .null
     @State private var programQueueDropPreview: ProgramQueueDropPreview?
 
     var body: some View {
@@ -317,9 +317,20 @@ struct LeftPanel: View {
             .onPreferenceChange(ProgramQueueRowFramePreferenceKey.self) { frames in
                 programQueueRowFrames = frames
             }
+            .onPreferenceChange(ProgramQueueListFramePreferenceKey.self) { frame in
+                programQueueListFrame = frame
+            }
             .frame(maxHeight: .infinity)
             .scrollContentBackground(.hidden)
-            .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium))
+            .background(
+                GeometryReader { proxy in
+                    StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium)
+                        .preference(
+                            key: ProgramQueueListFramePreferenceKey.self,
+                            value: proxy.frame(in: .global)
+                        )
+                }
+            )
             .clipShape(RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
@@ -349,16 +360,14 @@ struct LeftPanel: View {
     }
 
     private func updateProgramQueueDrag(draggedID: UUID, location: CGPoint) {
-        draggedProgramItemID = draggedID
-        programQueueDropPreview = programQueueDropTarget(at: location.y, excluding: draggedID)
+        programQueueDropPreview = programQueueDropTarget(at: location, excluding: draggedID)
     }
 
     private func finishProgramQueueDrag(draggedID: UUID, location: CGPoint) {
         defer {
-            draggedProgramItemID = nil
             programQueueDropPreview = nil
         }
-        guard let target = programQueueDropTarget(at: location.y, excluding: draggedID) else {
+        guard let target = programQueueDropTarget(at: location, excluding: draggedID) else {
             return
         }
         _ = viewModel.moveProgramItem(
@@ -368,28 +377,13 @@ struct LeftPanel: View {
         )
     }
 
-    private func programQueueDropTarget(at globalY: CGFloat, excluding draggedID: UUID) -> ProgramQueueDropPreview? {
-        let candidates = viewModel.programItems.compactMap { item -> (id: UUID, frame: CGRect)? in
-            guard item.id != draggedID, let frame = programQueueRowFrames[item.id] else {
-                return nil
-            }
-            return (item.id, frame)
-        }
-        guard let target = candidates.min(by: { lhs, rhs in
-            distance(from: globalY, to: lhs.frame) < distance(from: globalY, to: rhs.frame)
-        }) else {
-            return nil
-        }
-        return ProgramQueueDropPreview(
-            targetID: target.id,
-            placement: globalY < target.frame.midY ? .before : .after
+    private func programQueueDropTarget(at location: CGPoint, excluding draggedID: UUID) -> ProgramQueueDropPreview? {
+        ProgramQueueDropTargetResolver.resolve(
+            location: location,
+            draggedID: draggedID,
+            rowFrames: programQueueRowFrames,
+            listFrame: programQueueListFrame
         )
-    }
-
-    private func distance(from globalY: CGFloat, to frame: CGRect) -> CGFloat {
-        if globalY < frame.minY { return frame.minY - globalY }
-        if globalY > frame.maxY { return globalY - frame.maxY }
-        return 0
     }
     // MARK: - 文件选择
 
