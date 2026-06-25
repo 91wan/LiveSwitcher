@@ -74,10 +74,10 @@ final class MonitorWallpaperParityTests: XCTestCase {
         )
         XCTAssertLessThan(
             try XCTUnwrap(monitor.range(of: "mediaLayer")?.lowerBound),
-            try XCTUnwrap(monitor.range(of: "monitorCornerLogoOverlay")?.lowerBound)
+            try XCTUnwrap(monitor.range(of: "monitorActiveOverlayLayer")?.lowerBound)
         )
         XCTAssertLessThan(
-            try XCTUnwrap(monitor.range(of: "monitorCornerLogoOverlay")?.lowerBound),
+            try XCTUnwrap(monitor.range(of: "monitorActiveOverlayLayer")?.lowerBound),
             try XCTUnwrap(monitor.range(of: "monitorTopChrome")?.lowerBound)
         )
     }
@@ -86,7 +86,7 @@ final class MonitorWallpaperParityTests: XCTestCase {
         let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
         let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
         let outputBodyStart = try XCTUnwrap(output.range(of: "ZStack {")).lowerBound
-        let outputBodyEnd = try XCTUnwrap(output.range(of: "OutputOverlayLayer(")).lowerBound
+        let outputBodyEnd = try XCTUnwrap(output.range(of: "ActiveProgramOverlayLayer(")).lowerBound
         let outputBody = outputBodyStart..<outputBodyEnd
         let outputBodySource = String(output[outputBody])
 

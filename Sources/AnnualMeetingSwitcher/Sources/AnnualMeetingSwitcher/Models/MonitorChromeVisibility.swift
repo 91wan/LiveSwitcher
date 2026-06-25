@@ -6,8 +6,13 @@ struct MonitorChromeVisibility: Equatable {
     let showsCompactLiveIndicator: Bool
     let compactLiveIndicatorOpacity: Double
 
-    static func make(isPlaying: Bool, isHovering: Bool, isBroadcasting: Bool) -> MonitorChromeVisibility {
-        let inlineChromeVisible = !isPlaying || isHovering
+    static func make(
+        isPlaying: Bool,
+        isHovering: Bool,
+        isBroadcasting: Bool,
+        isTickerActive: Bool = false
+    ) -> MonitorChromeVisibility {
+        let inlineChromeVisible = (!isPlaying && !isTickerActive) || isHovering
         let showsCompactLiveIndicator = isBroadcasting && !inlineChromeVisible
 
         return MonitorChromeVisibility(

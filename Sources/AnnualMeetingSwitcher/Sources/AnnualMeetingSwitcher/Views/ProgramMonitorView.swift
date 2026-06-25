@@ -41,24 +41,25 @@ struct ProgramMonitorView: View {
     }
 
     private var previewDeck: some View {
-        ZStack(alignment: .topTrailing) {
-            StandbyWallpaperLayer(image: viewModel.backgroundImage)
-                .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
+        GeometryReader { proxy in
+            ZStack(alignment: .topTrailing) {
+                StandbyWallpaperLayer(image: viewModel.backgroundImage)
 
-            RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
-                .stroke(StudioTheme.monitorBorder, lineWidth: 1)
+                mediaLayer
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
-            mediaLayer
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
+                monitorActiveOverlayLayer(in: proxy.size)
 
-            monitorCornerLogoOverlay
-
-            if viewModel.isBroadcasting {
                 RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
-                    .stroke(StudioTheme.borderCritical.opacity(0.95), lineWidth: 3)
-                    .padding(1)
+                    .stroke(StudioTheme.monitorBorder, lineWidth: 1)
+
+                if viewModel.isBroadcasting {
+                    RoundedRectangle(cornerRadius: StudioTheme.monitorRadius, style: .continuous)
+                        .stroke(StudioTheme.borderCritical.opacity(0.95), lineWidth: 3)
+                        .padding(1)
+                }
             }
+            .clipShape(.rect(cornerRadius: StudioTheme.monitorRadius, style: .continuous))
         }
         .overlay(alignment: .top) {
             monitorTopChrome
@@ -87,6 +88,30 @@ struct ProgramMonitorView: View {
         .accessibilityLabel(viewModel.isBroadcasting ? "主输出正在直播" : "主输出待机")
     }
 
+    private func monitorActiveOverlayLayer(in monitorSize: CGSize) -> some View {
+        let logicalSize = ProgramMonitorOverlayCanvas.logicalSize
+        let displayState = OutputDisplayState.make(from: viewModel)
+        let scale = min(
+            safeScale(monitorSize.width, logicalSize.width),
+            safeScale(monitorSize.height, logicalSize.height)
+        )
+
+        return ActiveProgramOverlayLayer(
+            displayState: displayState,
+            cornerLogoImage: viewModel.cornerLogoImage
+        )
+        .frame(width: logicalSize.width, height: logicalSize.height)
+        .scaleEffect(scale, anchor: .topLeading)
+        .frame(width: monitorSize.width, height: monitorSize.height, alignment: .topLeading)
+        .clipped()
+        .allowsHitTesting(false)
+    }
+
+    private func safeScale(_ available: CGFloat, _ logical: CGFloat) -> CGFloat {
+        guard available > 0, logical > 0 else { return 0 }
+        return available / logical
+    }
+
     private var livePreviewMaxHeight: CGFloat {
         isLiveMode ? .infinity : 342
     }
@@ -105,29 +130,6 @@ struct ProgramMonitorView: View {
         .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderCritical.opacity(0.75), lineWidth: 1))
         .accessibilityLabel("主输出正在直播")
-    }
-
-    @ViewBuilder
-    private var monitorCornerLogoOverlay: some View {
-        if let image = viewModel.cornerLogoImage {
-            monitorCornerLogoImage(image)
-        }
-    }
-
-    private func monitorCornerLogoImage(_ image: NSImage) -> some View {
-        Image(nsImage: image)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(height: isLiveMode ? 52 : 42)
-            .padding(viewModel.cornerLogoPosition.monitorPadding(
-                chromeVisible: monitorChromeVisibility.inlineChromeOpacity > 0
-            ))
-            .frame(
-                maxWidth: .infinity,
-                maxHeight: .infinity,
-                alignment: viewModel.cornerLogoPosition.monitorAlignment
-            )
-            .accessibilityLabel("角标监看")
     }
 
     private var monitorTopChrome: some View {
@@ -256,7 +258,8 @@ struct ProgramMonitorView: View {
         MonitorChromeVisibility.make(
             isPlaying: isMediaPlaybackActive,
             isHovering: isHoveringPreviewDeck,
-            isBroadcasting: viewModel.isBroadcasting
+            isBroadcasting: viewModel.isBroadcasting,
+            isTickerActive: viewModel.isTickerActive
         )
     }
 
@@ -392,4 +395,8 @@ struct ProgramMonitorView: View {
             in: viewModel.programItems
         )
     }
+}
+
+private enum ProgramMonitorOverlayCanvas {
+    static let logicalSize = CGSize(width: 1920, height: 1080)
 }

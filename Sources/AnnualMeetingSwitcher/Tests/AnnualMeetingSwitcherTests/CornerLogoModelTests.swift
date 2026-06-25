@@ -82,7 +82,7 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     func testOutputLayerPlacesCornerLogoBelowPanicAndAboveOverlays() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
 
         XCTAssertTrue(source.contains("OutputCornerLogoLayer"))
         XCTAssertTrue(source.contains("OutputLayerZIndex.cornerLogo"))
@@ -92,9 +92,9 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     func testOutputLogoLayerUsesDecodedCornerLogoImageOnly() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
 
-        XCTAssertTrue(source.contains("cornerLogoImage: viewModel.cornerLogoImage"))
+        XCTAssertTrue(source.contains("let cornerLogoImage: NSImage?"))
         XCTAssertTrue(source.contains("let image: NSImage?"))
         XCTAssertTrue(source.contains("Image(nsImage: image)"))
         XCTAssertFalse(source.contains("OutputCornerLogoLayer(\n                url:"))
@@ -119,13 +119,13 @@ final class CornerLogoModelTests: XCTestCase {
     func testProgramMonitorPreviewsCornerLogoOverlay() throws {
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
 
-        XCTAssertTrue(monitor.contains("monitorCornerLogoOverlay"))
-        XCTAssertTrue(monitor.contains("if let image = viewModel.cornerLogoImage"))
+        XCTAssertTrue(monitor.contains("ActiveProgramOverlayLayer("))
+        XCTAssertTrue(monitor.contains("cornerLogoImage: viewModel.cornerLogoImage"))
         XCTAssertFalse(monitor.contains("} else if let url = viewModel.cornerLogoURL"))
         XCTAssertFalse(monitor.contains("AsyncLocalImage(url: url)"))
-        XCTAssertTrue(monitor.contains("monitorCornerLogoImage(image)"))
-        XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
-        XCTAssertTrue(monitor.contains("viewModel.cornerLogoPosition.monitorPadding"))
+        XCTAssertFalse(monitor.contains("monitorCornerLogoImage(image)"))
+        XCTAssertFalse(monitor.contains("viewModel.cornerLogoPosition.monitorAlignment"))
+        XCTAssertFalse(monitor.contains("viewModel.cornerLogoPosition.monitorPadding"))
     }
 
     func testTopMonitorLogoPositionsAvoidInlineChrome() {

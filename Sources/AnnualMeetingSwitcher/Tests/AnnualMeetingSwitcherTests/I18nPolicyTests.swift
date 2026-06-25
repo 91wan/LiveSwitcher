@@ -62,6 +62,7 @@ final class I18nPolicyTests: XCTestCase {
     func testFadeToBlackOperatorCopyUsesChineseInsteadOfFTB() throws {
         let liveMode = try sourceText("Views/LiveModeView.swift")
         let output = try sourceText("Output/OutputWindowController.swift")
+        let activeOverlay = try sourceText("Views/ActiveProgramOverlayLayer.swift")
 
         XCTAssertFalse(liveMode.contains("\"FTB\""))
         XCTAssertFalse(liveMode.contains("从 FTB 恢复"))
@@ -74,7 +75,7 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(liveMode.contains("\"淡出至黑场\""))
         XCTAssertTrue(liveMode.contains("\"从黑场恢复\""))
         XCTAssertTrue(liveMode.contains("\"恢复画面\""))
-        XCTAssertTrue(output.contains("\"切黑已启用\""))
+        XCTAssertTrue(activeOverlay.contains("\"切黑已启用\""))
     }
 
     func testVisibleConsoleChromeDoesNotRegressToRoundSevenEnglishLabels() throws {
