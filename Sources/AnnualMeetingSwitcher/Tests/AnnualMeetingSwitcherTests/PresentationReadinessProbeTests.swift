@@ -26,7 +26,8 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         XCTAssertEqual(result, .ready("Keynote"))
         XCTAssertEqual(result.severity, .ready)
-        XCTAssertEqual(result.dotLabel, "Ready")
+        XCTAssertEqual(result.dotLabel, "就绪")
+        XCTAssertEqual(result.operatorMessage, "Keynote 已就绪。")
     }
 
     func testKeynoteMissingAppIsBlocked() {
@@ -38,7 +39,8 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         XCTAssertEqual(result, .missingApp("Keynote"))
         XCTAssertEqual(result.severity, .blocked)
-        XCTAssertTrue(result.operatorMessage.contains("Keynote"))
+        XCTAssertEqual(result.dotLabel, "不可用")
+        XCTAssertEqual(result.operatorMessage, "未安装 Keynote。")
     }
 
     func testPPTXUsesWPSOrKeynoteFallback() {
@@ -72,7 +74,7 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         let result = PresentationReadinessProbe.probe(item: item, environment: environment)
 
-        XCTAssertEqual(result, .fileBroken("File missing"))
+        XCTAssertEqual(result, .fileBroken("文件缺失。"))
         XCTAssertEqual(result.severity, .blocked)
     }
 
@@ -88,7 +90,7 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         let result = PresentationReadinessProbe.probe(item: item, environment: environment)
 
-        XCTAssertEqual(result, .fileBroken("Presentation file is invalid"))
+        XCTAssertEqual(result, .fileBroken("演示文件缺失或损坏。"))
         XCTAssertEqual(result.severity, .blocked)
     }
 
@@ -114,7 +116,7 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         XCTAssertEqual(
             PresentationReadinessProbe.probe(item: item, environment: environment),
-            .fileBroken("Presentation file is invalid")
+            .fileBroken("演示文件缺失或损坏。")
         )
 
         try Data("valid".utf8).write(to: url)
@@ -135,49 +137,51 @@ final class PresentationReadinessProbeTests: XCTestCase {
 
         XCTAssertEqual(result, .permissionDenied("Keynote"))
         XCTAssertEqual(result.severity, .warning)
-        XCTAssertTrue(result.operatorMessage.contains("Automation"))
+        XCTAssertEqual(result.dotLabel, "需检查")
+        XCTAssertEqual(result.operatorMessage, "Keynote 自动化权限被拒绝，请在系统设置中允许。")
     }
 
-    func testSummaryCountsReadyWarningsAndBlockedPresentationItems() {
-        let ready = ProgramItem(title: "Ready", sourceURL: URL(fileURLWithPath: "/tmp/ready.key"))
-        let warning = ProgramItem(title: "Warn", sourceURL: URL(fileURLWithPath: "/tmp/warn.key"))
-        let blocked = ProgramItem(title: "Blocked", sourceURL: URL(fileURLWithPath: "/tmp/blocked.pptx"))
-        let media = ProgramItem(title: "Video", sourceURL: URL(fileURLWithPath: "/tmp/video.mp4"))
-        let environment = PresentationReadinessEnvironment { item in
-            switch item.title {
-            case "Ready":
-                return .ready("Keynote")
-            case "Warn":
-                return .permissionDenied("Keynote")
-            case "Blocked":
-                return .missingApp("WPS Office / Keynote")
-            default:
-                return .notPresentation
-            }
+    func testReadinessUserFacingCopyIsChinese() {
+        let ready = PresentationReadinessResult.ready("Keynote")
+        let missingApp = PresentationReadinessResult.missingApp("WPS Office / Keynote")
+        let denied = PresentationReadinessResult.permissionDenied("Keynote")
+        let unknown = PresentationReadinessResult.unknown("Keynote 自动化权限未确认。")
+
+        XCTAssertEqual(ready.dotLabel, "就绪")
+        XCTAssertEqual(missingApp.dotLabel, "不可用")
+        XCTAssertEqual(denied.dotLabel, "需检查")
+        XCTAssertEqual(unknown.dotLabel, "需检查")
+
+        for result in [ready, missingApp, denied, unknown] {
+            XCTAssertFalse(result.operatorMessage.contains("Ready"))
+            XCTAssertFalse(result.operatorMessage.contains("Review"))
+            XCTAssertFalse(result.operatorMessage.contains("Blocked"))
+            XCTAssertFalse(result.operatorMessage.localizedStandardContains("automation permission"))
+            XCTAssertFalse(result.operatorMessage.localizedStandardContains("is not installed"))
         }
-
-        let summary = PresentationReadinessSummary.make(
-            items: [ready, warning, blocked, media],
-            environment: environment
-        )
-
-        XCTAssertEqual(summary.readyCount, 1)
-        XCTAssertEqual(summary.warningCount, 1)
-        XCTAssertEqual(summary.blockedCount, 1)
-        XCTAssertEqual(summary.displayText, "1 ready · 1 warn · 1 blocked")
-        XCTAssertEqual(summary.statusKind, .fail)
     }
 
-    func testRunQueueAndLiveRailsExposeReadinessIndicators() throws {
+    func testRunQueueAndLiveRailsExposeReadinessIndicatorsWithoutLeftSummary() throws {
         let runQueueSource = try sourceText("Views/RunQueueView.swift")
         let leftPanelSource = try sourceText("Views/LeftPanel.swift")
         let liveModeSource = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(runQueueSource.contains("PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))"))
-        XCTAssertTrue(leftPanelSource.contains("PresentationReadinessSummary.make(items: viewModel.programItems)"))
+        XCTAssertFalse(leftPanelSource.contains("PresentationReadinessSummary"))
+        XCTAssertFalse(leftPanelSource.contains("presentationReadinessSummaryRow"))
         XCTAssertTrue(liveModeSource.contains("PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))"))
         XCTAssertTrue(liveModeSource.contains("switchToProgramAfterReadinessConfirmation(item)"))
         XCTAssertTrue(leftPanelSource.contains("switchToProgramAfterReadinessConfirmation(item)"))
+    }
+
+    func testProductionReadinessSourceDoesNotKeepDeadSummaryModelOrEnglishStatusCopy() throws {
+        let source = try sourceText("Engines/PresentationReadinessProbe.swift")
+
+        XCTAssertFalse(source.contains("struct PresentationReadinessSummary"))
+        XCTAssertFalse(source.contains("return \"Ready\""))
+        XCTAssertFalse(source.contains("return \"Review\""))
+        XCTAssertFalse(source.contains("return \"Blocked\""))
+        XCTAssertFalse(source.localizedStandardContains("automation permission is not confirmed"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

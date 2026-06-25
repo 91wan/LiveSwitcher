@@ -15,7 +15,6 @@ struct LeftPanel: View {
         VStack(spacing: 10) {
             headerRow
             autoPlayOptionRow
-            presentationReadinessSummaryRow
             agendaControlRow
 
             dropZone
@@ -125,35 +124,6 @@ struct LeftPanel: View {
         .accessibilityLabel("自动续播下一项")
     }
 
-    @ViewBuilder
-    private var presentationReadinessSummaryRow: some View {
-        let summary = PresentationReadinessSummary.make(items: viewModel.programItems)
-        if summary.hasPresentationItems {
-            HStack(spacing: 7) {
-                Image(systemName: "rectangle.on.rectangle.angled")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .foregroundStyle(StudioTheme.color(for: summary.statusKind))
-                Text("演示就绪")
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-                StatusBadge(summary.displayText, kind: summary.statusKind)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                    .fill(StudioTheme.Surface.raised.opacity(0.72))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                    .stroke(StudioTheme.borderSubtle, lineWidth: 1)
-            )
-            .help("切换前检查 PPTX / Keynote 就绪状态。")
-        }
-    }
-
     // MARK: - 标题行
 
     private var headerRow: some View {
@@ -211,16 +181,11 @@ struct LeftPanel: View {
                 }
             }
 
-            Text("拖入文件")
+            Text("拖入文件，或使用上方按钮添加")
                 .font(StudioTheme.caption())
                 .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .center)
-
-            Text("或使用上方按钮添加")
-                .font(StudioTheme.TypeScale.label.weight(.medium))
-                .foregroundStyle(StudioTheme.textTertiary.opacity(0.82))
-                .lineLimit(1)
+                .minimumScaleFactor(0.78)
                 .frame(maxWidth: .infinity, alignment: .center)
         }
         .padding(10)

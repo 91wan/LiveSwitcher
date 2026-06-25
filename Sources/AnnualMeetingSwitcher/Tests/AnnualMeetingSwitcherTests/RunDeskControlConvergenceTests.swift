@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import LiveSwitcher
 
@@ -59,8 +60,38 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertEqual(source.components(separatedBy: "addSourceButton(title:").count - 1, 4)
         XCTAssertTrue(source.contains(".focusable(false)"))
         XCTAssertFalse(source.contains("EmptyStateView("))
-        XCTAssertTrue(source.contains("或使用上方按钮添加"))
+        XCTAssertTrue(source.contains("Text(\"拖入文件，或使用上方按钮添加\")"))
+        XCTAssertFalse(source.contains("Text(\"拖入文件\")"))
+        XCTAssertFalse(source.contains("Text(\"或使用上方按钮添加\")"))
+        XCTAssertTrue(source.contains(".minimumScaleFactor(0.78)"))
         XCTAssertTrue(source.contains("queueFooter"))
+    }
+
+    func testProgramMonitorPreviewDeckIsExplicitlyCenteredWithoutChangingCanvas() throws {
+        let source = try sourceText("Views/ProgramMonitorView.swift")
+
+        XCTAssertTrue(source.contains("previewDeckFrame"))
+        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity, alignment: .center)"))
+        XCTAssertTrue(source.contains(".aspectRatio(ProgramMonitorPreviewDeckLayout.aspectRatio, contentMode: .fit)"))
+        XCTAssertTrue(source.contains("static let aspectRatio: CGFloat = 16.0 / 9.0"))
+        XCTAssertTrue(source.contains("ProgramMonitorOverlayCanvas.logicalSize"))
+        XCTAssertTrue(source.contains("ActiveProgramOverlayLayer("))
+        XCTAssertFalse(source.contains(".scaledToFill()"))
+    }
+
+    func testProgramMonitorPreviewDeckKeepsSixteenNineAtSetupWidths() {
+        let setupWidths: [CGFloat] = [800, 1_200, 1_600]
+
+        for containerWidth in setupWidths {
+            let layout = ProgramMonitorPreviewDeckLayout.make(
+                containerWidth: containerWidth,
+                maxHeight: 342
+            )
+
+            XCTAssertEqual(layout.size.width / layout.size.height, 16.0 / 9.0, accuracy: 0.001)
+            XCTAssertLessThanOrEqual(layout.size.width, containerWidth)
+            XCTAssertEqual(layout.leftGutter, layout.rightGutter, accuracy: 0.001)
+        }
     }
 
     func testRunDeskRailsHaveLowEmphasisFooters() throws {
