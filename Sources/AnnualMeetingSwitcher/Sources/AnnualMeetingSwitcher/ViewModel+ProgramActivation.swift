@@ -44,6 +44,13 @@ extension SwitcherViewModel {
         switchToProgram(items[index])
     }
 
+    func programShortcutTargetIndex(forKeyCode keyCode: UInt16) -> Int? {
+        GlobalShortcutPolicy.programShortcutTargetIndex(
+            for: keyCode,
+            in: runtimeBackedProgramItemsForActivationPlanning
+        )
+    }
+
     func confirmAgendaAutoAdvance(_ prompt: AgendaAutoAdvancePrompt) {
         agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
         guard let item = runtimeBackedProgramItemsForActivationPlanning.first(where: { $0.id == prompt.itemID }) else { return }

@@ -59,11 +59,11 @@ final class GlobalShortcutSafetyTests: XCTestCase {
         eventWindow.contentView = textView
         eventWindow.makeFirstResponder(textView)
 
-        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 49))
     }
 
     @MainActor
-    func testSpaceShortcutDoesNotPassThroughFocusedNativeControls() {
+    func testSpaceShortcutPassesThroughFocusedNativeControls() {
         let eventWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
             styleMask: [.titled],
@@ -74,9 +74,9 @@ final class GlobalShortcutSafetyTests: XCTestCase {
         eventWindow.contentView = toggle
         eventWindow.makeFirstResponder(toggle)
 
-        XCTAssertFalse(
+        XCTAssertTrue(
             GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 49),
-            "Space should remain the media toggle even when a switch is focused."
+            "Space should toggle a focused native control instead of global media playback."
         )
         XCTAssertTrue(
             GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 30),
@@ -85,7 +85,7 @@ final class GlobalShortcutSafetyTests: XCTestCase {
     }
 
     @MainActor
-    func testNumberShortcutsDoNotPassThroughFocusedNativeControls() {
+    func testNumberShortcutsPassThroughFocusedNativeControls() {
         let eventWindow = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 120, height: 80),
             styleMask: [.titled],
@@ -96,14 +96,42 @@ final class GlobalShortcutSafetyTests: XCTestCase {
         eventWindow.contentView = toggle
         eventWindow.makeFirstResponder(toggle)
 
-        XCTAssertFalse(
+        XCTAssertTrue(
             GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 18),
-            "Number shortcuts should still switch programs when a switch or button is focused."
+            "Number keys should stay with focused native controls."
         )
-        XCTAssertFalse(
+        XCTAssertTrue(
             GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 25),
-            "All 1-9 program shortcuts should remain global on focused native controls."
+            "All 1-9 program shortcuts should pass through when a native control is focused."
         )
+    }
+
+    @MainActor
+    func testButtonAndSliderFocusPassThroughNonEmergencyShortcuts() {
+        let eventWindow = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 160, height: 90),
+            styleMask: [.titled],
+            backing: .buffered,
+            defer: false
+        )
+
+        let button = NSButton(title: "Toggle", target: nil, action: nil)
+        eventWindow.contentView = button
+        eventWindow.makeFirstResponder(button)
+
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 49))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 18))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 33))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 30))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 43))
+
+        let slider = NSSlider(value: 0.5, minValue: 0, maxValue: 1, target: nil, action: nil)
+        eventWindow.contentView = slider
+        eventWindow.makeFirstResponder(slider)
+
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 123))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 124))
+        XCTAssertTrue(GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: eventWindow, keyCode: 18))
     }
 
     @MainActor
@@ -127,6 +155,43 @@ final class GlobalShortcutSafetyTests: XCTestCase {
         XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldHandleEvent(monitorWindow: window, eventWindow: event.window)"))
         XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
         XCTAssertFalse(content.contains("window?.firstResponder"))
+    }
+
+    func testKeyMonitorKeepsEmergencyPanicBeforeFocusedResponderPassThrough() throws {
+        let content = try sourceText("ContentView.swift")
+        let panicRange = try XCTUnwrap(content.range(of: "GlobalShortcutPolicy.isEmergencyPanicShortcut"))
+        let passThroughRange = try XCTUnwrap(
+            content.range(of: "GlobalShortcutPolicy.shouldPassThroughFocusedResponder")
+        )
+
+        XCTAssertLessThan(
+            panicRange.lowerBound,
+            passThroughRange.lowerBound,
+            "Emergency panic must remain global even when a native control owns keyboard focus."
+        )
+    }
+
+    func testProgramNumberShortcutTargetSkipsAgendaMarkersAndOutOfRangeItems() {
+        let first = ProgramItem(title: "Opening", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4"))
+        let marker = ProgramItem.agendaMarker(title: "茶歇")
+        let second = ProgramItem(title: "Awards", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/awards.mp4"))
+        let items = [first, marker, second]
+
+        XCTAssertEqual(GlobalShortcutPolicy.programShortcutTargetIndex(for: 18, in: items), 0)
+        XCTAssertNil(
+            GlobalShortcutPolicy.programShortcutTargetIndex(for: 19, in: items),
+            "Number shortcut targeting an agenda marker should pass the event through instead of consuming it."
+        )
+        XCTAssertEqual(GlobalShortcutPolicy.programShortcutTargetIndex(for: 20, in: items), 2)
+        XCTAssertNil(GlobalShortcutPolicy.programShortcutTargetIndex(for: 21, in: items))
+        XCTAssertNil(GlobalShortcutPolicy.programShortcutTargetIndex(for: 49, in: items))
+    }
+
+    func testKeyMonitorOnlyConsumesNumberShortcutsForPlayableTargets() throws {
+        let content = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(content.contains("vm.programShortcutTargetIndex(forKeyCode: event.keyCode)"))
+        XCTAssertFalse(content.contains("vm.switchToProgram(at: idx - 1)"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
