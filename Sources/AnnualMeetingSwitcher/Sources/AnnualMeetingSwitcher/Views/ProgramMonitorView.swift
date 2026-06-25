@@ -275,7 +275,6 @@ struct ProgramMonitorView: View {
         VStack(spacing: 10) {
             if !isLiveMode {
                 wallpaperTrayCard
-                CornerLogoCard()
             }
         }
         .padding(.horizontal, 12)

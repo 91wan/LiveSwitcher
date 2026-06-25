@@ -107,9 +107,11 @@ final class CornerLogoModelTests: XCTestCase {
 
     func testSetupRunDeskExposesCornerLogoControls() throws {
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let opsPanel = try sourceText("Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift")
         let card = try sourceText("Sources/AnnualMeetingSwitcher/Views/CornerLogoCard.swift")
 
-        XCTAssertTrue(monitor.contains("CornerLogoCard"))
+        XCTAssertFalse(monitor.contains("CornerLogoCard"))
+        XCTAssertTrue(opsPanel.contains("CornerLogoCard()"))
         XCTAssertTrue(card.contains("Text(\"品牌标识\")"))
         XCTAssertFalse(card.contains("Text(\"角标 Logo\")"))
         XCTAssertTrue(card.contains("导入 Logo"))

@@ -195,11 +195,11 @@ struct ContentView: View {
     private var primaryNavigationBar: some View {
         HStack(spacing: 16) {
             Text(chromeTitle)
-                .font(StudioTheme.TypeScale.heading.weight(.black))
+                .font(StudioTheme.TypeScale.title.weight(.black))
                 .foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1)
                 .truncationMode(.tail)
-                .frame(minWidth: 190, idealWidth: 240, maxWidth: 280, alignment: .leading)
+                .frame(minWidth: 220, idealWidth: 280, maxWidth: 340, alignment: .leading)
                 .help(chromeTitle)
 
             Spacer(minLength: 0)
