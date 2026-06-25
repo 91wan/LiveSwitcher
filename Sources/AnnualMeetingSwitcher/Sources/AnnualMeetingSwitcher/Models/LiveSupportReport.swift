@@ -156,8 +156,10 @@ enum LiveSupportRedactor {
 
     private static func safeLine(_ text: String) -> String {
         redactSensitiveMarkerTokens(in:
-            redactFilenameTokens(in:
-                redactPathTokens(in: text)
+            redactBrandingTokens(in:
+                redactFilenameTokens(in:
+                    redactPathTokens(in: text)
+                )
             )
         )
     }
@@ -195,6 +197,11 @@ enum LiveSupportRedactor {
         text
             .replacingOccurrences(of: "ditu" + "liveswitcher", with: "[identifier redacted]", options: .caseInsensitive)
             .replacingOccurrences(of: "com." + "didu", with: "[identifier redacted]", options: .caseInsensitive)
+    }
+
+    private static func redactBrandingTokens(in text: String) -> String {
+        let brandingPattern = #"(?i)\b(company|brand|branding|companyName|displayName)=[^\s,;)\]}]+"#
+        return replaceMatches(in: text, pattern: brandingPattern, with: "$1=[brand redacted]")
     }
 
     private static var protectedExtensionPattern: String {

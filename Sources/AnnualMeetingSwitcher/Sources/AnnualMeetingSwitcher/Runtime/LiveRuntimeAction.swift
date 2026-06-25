@@ -61,7 +61,9 @@ enum LiveRuntimeAction: Equatable {
     case operatorSetConsoleMode(ConsoleMode)
     case operatorSetThemeOverride(ThemeOverride)
     case operatorSetActiveWallpaperURL(URL?)
+    case operatorSetCompanyDisplayName(String)
     case operatorSetCornerLogoURL(URL?)
+    case operatorSetCornerLogoVisible(Bool)
     case operatorSetAutoPlayNextVideoOnEnd(Bool)
     case operatorSetAutoAdvanceAtScheduledTime(Bool)
     case operatorSetShowAgendaTimeline(Bool)
@@ -152,7 +154,9 @@ extension LiveRuntimeAction {
         case .operatorSetConsoleMode: return "operatorSetConsoleMode"
         case .operatorSetThemeOverride: return "operatorSetThemeOverride"
         case .operatorSetActiveWallpaperURL: return "operatorSetActiveWallpaperURL"
+        case .operatorSetCompanyDisplayName: return "operatorSetCompanyDisplayName"
         case .operatorSetCornerLogoURL: return "operatorSetCornerLogoURL"
+        case .operatorSetCornerLogoVisible: return "operatorSetCornerLogoVisible"
         case .operatorSetAutoPlayNextVideoOnEnd: return "operatorSetAutoPlayNextVideoOnEnd"
         case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
         case .operatorSetShowAgendaTimeline: return "operatorSetShowAgendaTimeline"

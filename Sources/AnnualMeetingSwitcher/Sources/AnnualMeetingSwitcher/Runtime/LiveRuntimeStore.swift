@@ -96,7 +96,9 @@ final class LiveRuntimeStore {
             nextState.preferences = LiveRuntimePreferenceState(
                 themeOverride: persistentState.themeOverride,
                 activeWallpaperURL: persistentState.activeWallpaperURL,
+                companyDisplayName: persistentState.companyDisplayName,
                 cornerLogoURL: persistentState.cornerLogoURL,
+                isCornerLogoVisible: persistentState.isCornerLogoVisible,
                 autoPlayNextVideoOnEnd: persistentState.autoPlayNextVideoOnEnd,
                 autoAdvanceAtScheduledTime: persistentState.autoAdvanceAtScheduledTime,
                 showAgendaTimeline: persistentState.showAgendaTimeline,
@@ -114,7 +116,7 @@ final class LiveRuntimeStore {
         state = nextState
     }
 
-    private static func summary(for state: LiveRuntimeState) -> String {
+    private nonisolated static func summary(for state: LiveRuntimeState) -> String {
         let programSummary: String
         if let currentID = state.program.currentID {
             programSummary = state.program.currentItem == nil
@@ -139,8 +141,13 @@ final class LiveRuntimeStore {
             "autoNext=\(state.preferences.autoPlayNextVideoOnEnd)",
             "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)",
             "agendaTimeline=\(state.preferences.showAgendaTimeline)",
+            "logoVisible=\(state.preferences.isCornerLogoVisible)",
             "cornerLogo=\(state.preferences.cornerLogoPosition.rawValue)"
         ].joined(separator: ",")
+    }
+
+    nonisolated static func testSummary(for state: LiveRuntimeState) -> String {
+        summary(for: state)
     }
 }
 

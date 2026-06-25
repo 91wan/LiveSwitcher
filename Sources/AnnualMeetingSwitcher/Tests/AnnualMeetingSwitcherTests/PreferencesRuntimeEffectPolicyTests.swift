@@ -10,6 +10,10 @@ final class PreferencesRuntimeEffectPolicyTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.saveThemeOverride(.dark).requiredBridgeDomain, .persistence)
     }
 
+    func testSaveCompanyDisplayNameRequiresPersistence() {
+        XCTAssertEqual(LiveRuntimeEffect.saveCompanyDisplayName("示例科技").requiredBridgeDomain, .persistence)
+    }
+
     func testSaveAutoPlayNextVideoRequiresPersistence() {
         XCTAssertEqual(LiveRuntimeEffect.saveAutoPlayNextVideoOnEnd(true).requiredBridgeDomain, .persistence)
     }
@@ -24,5 +28,9 @@ final class PreferencesRuntimeEffectPolicyTests: XCTestCase {
 
     func testSaveCornerLogoPositionRequiresPersistence() {
         XCTAssertEqual(LiveRuntimeEffect.saveCornerLogoPosition(.bottomLeft).requiredBridgeDomain, .persistence)
+    }
+
+    func testSaveCornerLogoVisibleRequiresPersistence() {
+        XCTAssertEqual(LiveRuntimeEffect.saveCornerLogoVisible(true).requiredBridgeDomain, .persistence)
     }
 }

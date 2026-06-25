@@ -295,6 +295,7 @@ private final class PersistencePortSpy: PersistencePort {
 
     func saveConsoleMode(_ mode: ConsoleMode) {}
     func saveThemeOverride(_ theme: ThemeOverride) {}
+    func saveCompanyDisplayName(_ displayName: String) {}
 
     func saveAudioStrategy(_ strategy: AudioStrategy) {
         savedAudioStrategies.append(strategy)
@@ -311,6 +312,7 @@ private final class PersistencePortSpy: PersistencePort {
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {}
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {}
     func saveShowAgendaTimeline(_ isEnabled: Bool) {}
+    func saveCornerLogoVisible(_ isVisible: Bool) {}
     func saveCornerLogoPosition(_ position: CornerLogoPosition) {}
 }
 

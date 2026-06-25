@@ -17,11 +17,13 @@ final class RuntimeEffectDomainPolicyTests: XCTestCase {
         [
             LiveRuntimeEffect.saveConsoleMode(.live),
             .saveThemeOverride(.dark),
+            .saveCompanyDisplayName("示例科技"),
             .saveAudioStrategy(.followSource),
             .saveSpeakerMode(true),
             .saveAutoPlayNextVideoOnEnd(true),
             .saveAutoAdvanceAtScheduledTime(true),
             .saveShowAgendaTimeline(true),
+            .saveCornerLogoVisible(true),
             .saveCornerLogoPosition(.bottomLeft),
             .savePersistentState
         ].forEach { effect in
@@ -116,6 +118,12 @@ final class RuntimeEffectDomainPolicyTests: XCTestCase {
         )
 
         XCTAssertEqual(effect.redactedForRecording, .runAppleScript(script: "<redacted>", action: "keynote.open"))
+    }
+
+    func testSaveCompanyDisplayNameRedactsNameForRecording() {
+        let effect = LiveRuntimeEffect.saveCompanyDisplayName("机密客户甲有限公司")
+
+        XCTAssertEqual(effect.redactedForRecording, .saveCompanyDisplayName("<redacted>"))
     }
 
     func testNonAutomationEffectsRecordAsThemselves() {

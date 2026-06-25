@@ -11,6 +11,7 @@ struct OutputDisplayState: Equatable {
     var isPanicMode: Bool
     var isFadeToBlackActive: Bool
     var cornerLogoPosition: CornerLogoPosition
+    var isCornerLogoVisible: Bool
 
     static func make(
         currentHTMLURL: URL?,
@@ -22,7 +23,8 @@ struct OutputDisplayState: Equatable {
         lowerThirdOrganization: String,
         isPanicMode: Bool,
         isFadeToBlackActive: Bool,
-        cornerLogoPosition: CornerLogoPosition = .topRight
+        cornerLogoPosition: CornerLogoPosition = .topRight,
+        isCornerLogoVisible: Bool = false
     ) -> OutputDisplayState {
         OutputDisplayState(
             currentHTMLURL: currentHTMLURL,
@@ -34,7 +36,8 @@ struct OutputDisplayState: Equatable {
             lowerThirdOrganization: lowerThirdOrganization,
             isPanicMode: isPanicMode,
             isFadeToBlackActive: isFadeToBlackActive,
-            cornerLogoPosition: cornerLogoPosition
+            cornerLogoPosition: cornerLogoPosition,
+            isCornerLogoVisible: isCornerLogoVisible
         )
     }
 
@@ -50,7 +53,12 @@ struct OutputDisplayState: Equatable {
             lowerThirdOrganization: viewModel.lowerThirdOrganization,
             isPanicMode: viewModel.isPanicMode,
             isFadeToBlackActive: viewModel.isFadeToBlackActive,
-            cornerLogoPosition: viewModel.cornerLogoPosition
+            cornerLogoPosition: viewModel.cornerLogoPosition,
+            isCornerLogoVisible: viewModel.isCornerLogoVisible
         )
+    }
+
+    func shouldRenderCornerLogo(hasDecodedImage: Bool) -> Bool {
+        isCornerLogoVisible && hasDecodedImage
     }
 }

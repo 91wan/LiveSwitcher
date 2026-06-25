@@ -9,11 +9,23 @@ final class AppLaunchPolicyTests: XCTestCase {
         XCTAssertTrue(source.contains("NSApplication.shared.setActivationPolicy(.regular)"))
     }
 
+    func testSwiftPMEntryPointInstallsLaunchCoordinator() throws {
+        let source = try sourceText("main.swift")
+
+        XCTAssertTrue(source.contains("private let liveSwitcherLaunchCoordinator = LiveSwitcherLaunchCoordinator()"))
+        XCTAssertTrue(source.contains("liveSwitcherLaunchCoordinator.install()"))
+        XCTAssertLessThan(
+            source.range(of: "liveSwitcherLaunchCoordinator.install()")!.lowerBound,
+            source.range(of: "LiveSwitcherApp.main()")!.lowerBound
+        )
+    }
+
     func testAppInstallsMainWindowFallbackForRestorationFailures() throws {
         let source = try sourceText("App.swift")
 
-        XCTAssertTrue(source.contains("@NSApplicationDelegateAdaptor(LiveSwitcherAppDelegate.self)"))
-        XCTAssertTrue(source.contains("applicationShouldHandleReopen"))
+        XCTAssertTrue(source.contains("NSApplication.didFinishLaunchingNotification"))
+        XCTAssertTrue(source.contains("NSApplication.didBecomeActiveNotification"))
+        XCTAssertTrue(source.contains("ensureMainWindow(shouldScheduleDelayedCheck:"))
         XCTAssertTrue(source.contains("ensureMainWindowIfNeeded"))
         XCTAssertTrue(source.contains("isMainConsoleWindow"))
         XCTAssertTrue(source.contains("mainWindowOrigin(for: window)"))
@@ -28,13 +40,17 @@ final class AppLaunchPolicyTests: XCTestCase {
             .count - 1
 
         XCTAssertEqual(delayedFallbackCount, 1)
+        XCTAssertTrue(source.contains("Self.ensureMainWindowIfNeeded(viewModel: Self.sharedViewModel, activate: true)"))
+        XCTAssertTrue(source.contains("Self.scheduleMainWindowFallback(viewModel: Self.sharedViewModel, delayNanoseconds: 700_000_000)"))
         XCTAssertFalse(source.contains("900_000_000"))
     }
 
     func testFallbackViewModelReferenceIsStrongUntilWindowExists() throws {
         let source = try sourceText("App.swift")
 
+        XCTAssertTrue(source.contains("LiveSwitcherLaunchCoordinator.sharedViewModel = viewModel"))
         XCTAssertTrue(source.contains("static var sharedViewModel: SwitcherViewModel?"))
+        XCTAssertTrue(source.contains("@MainActor\n    private static func makeViewModel() -> SwitcherViewModel"))
         XCTAssertFalse(source.contains("static weak var sharedViewModel"))
     }
 
@@ -43,7 +59,7 @@ final class AppLaunchPolicyTests: XCTestCase {
 
         XCTAssertTrue(source.contains("if let existingMainWindow = NSApp.windows.first(where: isMainConsoleWindow)"))
         XCTAssertTrue(source.contains("bringMainWindowToFront(existingMainWindow, activate: activate)"))
-        XCTAssertTrue(source.contains("if isUsablyVisibleMainWindow(existingMainWindow)"))
+        XCTAssertTrue(source.contains("if origin == .fallback, isUsablyVisibleMainWindow(existingMainWindow)"))
         XCTAssertTrue(source.contains("mainWindowOrigin(for: existingMainWindow)"))
         XCTAssertTrue(source.contains("MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: origin)"))
         XCTAssertTrue(source.contains("window.collectionBehavior.insert(.moveToActiveSpace)"))
@@ -77,9 +93,9 @@ final class AppLaunchPolicyTests: XCTestCase {
         )
     }
 
-    func testOnlyFallbackMainWindowMayBeClosedAfterReorderFails() {
-        XCTAssertFalse(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .windowGroup))
-        XCTAssertFalse(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .legacyTitleMatch))
+    func testAnyUnusableMainWindowMayBeClosedAfterReorderFails() {
+        XCTAssertTrue(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .windowGroup))
+        XCTAssertTrue(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .legacyTitleMatch))
         XCTAssertTrue(MainWindowFallbackPolicy.shouldCloseUnusableMainWindow(origin: .fallback))
     }
 

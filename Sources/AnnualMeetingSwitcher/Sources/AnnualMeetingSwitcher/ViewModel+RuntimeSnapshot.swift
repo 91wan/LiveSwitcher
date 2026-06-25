@@ -175,7 +175,9 @@ extension SwitcherViewModel {
         state.mode = consoleMode
         state.preferences.themeOverride = themeOverride
         state.preferences.activeWallpaperURL = activeWallpaperURL
+        state.preferences.companyDisplayName = companyDisplayName
         state.preferences.cornerLogoURL = cornerLogoURL
+        state.preferences.isCornerLogoVisible = isCornerLogoVisible
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
         state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
         state.preferences.showAgendaTimeline = showAgendaTimeline

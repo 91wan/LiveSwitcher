@@ -191,6 +191,8 @@ final class LiveRuntimeEffectRunner {
             persistence?.saveConsoleMode(mode)
         case .saveThemeOverride(let theme):
             persistence?.saveThemeOverride(theme)
+        case .saveCompanyDisplayName(let displayName):
+            persistence?.saveCompanyDisplayName(displayName)
         case .saveAudioStrategy(let strategy):
             persistence?.saveAudioStrategy(strategy)
         case .saveSpeakerMode(let isEnabled):
@@ -203,6 +205,8 @@ final class LiveRuntimeEffectRunner {
             persistence?.saveAutoAdvanceAtScheduledTime(isEnabled)
         case .saveShowAgendaTimeline(let isEnabled):
             persistence?.saveShowAgendaTimeline(isEnabled)
+        case .saveCornerLogoVisible(let isVisible):
+            persistence?.saveCornerLogoVisible(isVisible)
         case .saveCornerLogoPosition(let position):
             persistence?.saveCornerLogoPosition(position)
         case .savePersistentState:

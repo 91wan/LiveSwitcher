@@ -275,12 +275,14 @@ private final class DispatchPersistencePortSpy: PersistencePort {
     func save() { calls.append("save") }
     func saveConsoleMode(_ mode: ConsoleMode) { calls.append("console:\(mode.rawValue)") }
     func saveThemeOverride(_ theme: ThemeOverride) { calls.append("theme:\(theme.rawValue)") }
+    func saveCompanyDisplayName(_ displayName: String) { calls.append("companyName:<redacted>") }
     func saveAudioStrategy(_ strategy: AudioStrategy) { calls.append("audio:\(strategy.rawValue)") }
     func saveSpeakerMode(_ isEnabled: Bool) { calls.append("speaker:\(isEnabled)") }
     func saveBGMPlayMode(_ playMode: BGMPlayMode) { calls.append("bgmPlayMode:\(playMode.rawValue)") }
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) { calls.append("autoPlay:\(isEnabled)") }
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) { calls.append("autoAdvance:\(isEnabled)") }
     func saveShowAgendaTimeline(_ isEnabled: Bool) { calls.append("agenda:\(isEnabled)") }
+    func saveCornerLogoVisible(_ isVisible: Bool) { calls.append("logoVisible:\(isVisible)") }
     func saveCornerLogoPosition(_ position: CornerLogoPosition) { calls.append("logoPosition:\(position.rawValue)") }
 }
 

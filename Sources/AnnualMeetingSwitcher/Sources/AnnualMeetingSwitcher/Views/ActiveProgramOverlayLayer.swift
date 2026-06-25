@@ -7,6 +7,7 @@ struct ActiveProgramOverlayLayer: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let isCornerLogoRenderable = displayState.shouldRenderCornerLogo(hasDecodedImage: cornerLogoImage != nil)
             let plan = OutputOverlayLayoutPlan.make(
                 canvasSize: geometry.size,
                 isTickerActive: displayState.isTickerActive,
@@ -15,7 +16,7 @@ struct ActiveProgramOverlayLayer: View {
                 hasLowerThirdOrganization: !displayState.lowerThirdOrganization
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                     .isEmpty,
-                isLogoReady: cornerLogoImage != nil,
+                isLogoReady: isCornerLogoRenderable,
                 logoPosition: displayState.cornerLogoPosition
             )
             let lowerThirdMetrics = LowerThirdTypographyMetrics.metrics(
@@ -53,7 +54,7 @@ struct ActiveProgramOverlayLayer: View {
                     .zIndex(OutputLayerZIndex.lowerThird)
                 }
 
-                if let logoFrame = plan.logoFrame {
+                if isCornerLogoRenderable, let logoFrame = plan.logoFrame {
                     OutputCornerLogoLayer(image: cornerLogoImage)
                         .frame(width: logoFrame.width, height: logoFrame.height)
                         .position(x: logoFrame.midX, y: logoFrame.midY)

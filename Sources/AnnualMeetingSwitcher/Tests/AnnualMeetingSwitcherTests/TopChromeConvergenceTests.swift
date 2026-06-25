@@ -14,7 +14,7 @@ final class TopChromeConvergenceTests: XCTestCase {
         XCTAssertFalse(source.contains("LiveStatusStrip("))
         XCTAssertFalse(source.contains("private struct LiveStatusStrip"))
         XCTAssertFalse(source.contains("Text(\"Run Desk\")"))
-        XCTAssertTrue(source.contains("selectedMainTab.chromeTitle"))
+        XCTAssertTrue(source.contains("ConsoleBrandingModel.title"))
     }
 
     func testProgramMonitorUsesCompactInlineStatusInsteadOfCurrentNextCards() throws {

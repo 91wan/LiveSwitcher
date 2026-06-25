@@ -362,11 +362,19 @@ enum LiveRuntimeReducer {
             else { break }
             PreferencesRuntimeReducer.setActiveWallpaperURL(url, state: &state, effects: &effects)
 
+        case .operatorSetCompanyDisplayName(let displayName):
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setCompanyDisplayName(displayName, state: &state, effects: &effects)
+
         case .operatorSetCornerLogoURL(let url):
             guard isRuntimeOwned(.persistence, in: bridgeMode),
                   isRuntimeOwned(.imageAssets, in: bridgeMode)
             else { break }
             PreferencesRuntimeReducer.setCornerLogoURL(url, state: &state, effects: &effects)
+
+        case .operatorSetCornerLogoVisible(let isVisible):
+            guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
+            PreferencesRuntimeReducer.setCornerLogoVisible(isVisible, state: &state, effects: &effects)
 
         case .operatorSetAutoPlayNextVideoOnEnd(let isEnabled):
             guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }

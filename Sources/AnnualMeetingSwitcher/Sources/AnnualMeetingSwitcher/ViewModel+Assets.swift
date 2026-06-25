@@ -19,8 +19,9 @@ extension SwitcherViewModel {
     func loadCornerLogoImage(from url: URL?) {
         cleanupBag.cornerLogoImageLoadTask?.cancel()
         guard let url else {
+            isCornerLogoVisible = false
             cornerLogoImage = nil
-            cornerLogoLoadPhase = .off
+            cornerLogoLoadPhase = .empty
             return
         }
 
@@ -74,10 +75,14 @@ extension SwitcherViewModel {
 
         switch result {
         case .success(let image):
+            let hadCommittedLogo = cornerLogoURL != nil
             cornerLogoImage = image
             cornerLogoLoadPhase = .ready(activeURL: url)
             if cornerLogoURL != url {
                 cornerLogoURL = url
+            }
+            if !hadCommittedLogo {
+                isCornerLogoVisible = true
             }
             if saveOnSuccess {
                 saveData()
@@ -128,9 +133,10 @@ extension SwitcherViewModel {
 
     func removeCornerLogo() {
         cleanupBag.cornerLogoImageLoadTask?.cancel()
+        isCornerLogoVisible = false
         cornerLogoURL = nil
         cornerLogoImage = nil
-        cornerLogoLoadPhase = .off
+        cornerLogoLoadPhase = .empty
         saveData()
     }
 

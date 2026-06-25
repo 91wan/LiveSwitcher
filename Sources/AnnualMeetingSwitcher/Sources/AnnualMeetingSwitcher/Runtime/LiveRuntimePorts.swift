@@ -76,12 +76,14 @@ protocol PersistencePort {
     func save()
     func saveConsoleMode(_ mode: ConsoleMode)
     func saveThemeOverride(_ theme: ThemeOverride)
+    func saveCompanyDisplayName(_ displayName: String)
     func saveAudioStrategy(_ strategy: AudioStrategy)
     func saveSpeakerMode(_ isEnabled: Bool)
     func saveBGMPlayMode(_ playMode: BGMPlayMode)
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool)
     func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool)
     func saveShowAgendaTimeline(_ isEnabled: Bool)
+    func saveCornerLogoVisible(_ isVisible: Bool)
     func saveCornerLogoPosition(_ position: CornerLogoPosition)
 }
 

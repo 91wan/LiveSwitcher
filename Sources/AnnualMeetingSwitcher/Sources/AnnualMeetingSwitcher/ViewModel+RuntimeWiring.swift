@@ -160,6 +160,9 @@ extension SwitcherViewModel {
         ports.persistencePort.saveThemeOverrideHandler = { [weak self] theme in
             self?.persistThemeOverrideFromRuntime(theme)
         }
+        ports.persistencePort.saveCompanyDisplayNameHandler = { [weak self] displayName in
+            self?.persistCompanyDisplayNameFromRuntime(displayName)
+        }
         ports.persistencePort.saveAudioStrategyHandler = { [weak self] strategy in
             self?.persistAudioStrategyFromRuntime(strategy)
         }
@@ -177,6 +180,9 @@ extension SwitcherViewModel {
         }
         ports.persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
             self?.persistShowAgendaTimelineFromRuntime(isEnabled)
+        }
+        ports.persistencePort.saveCornerLogoVisibleHandler = { [weak self] isVisible in
+            self?.persistCornerLogoVisibleFromRuntime(isVisible)
         }
         ports.persistencePort.saveCornerLogoPositionHandler = { [weak self] position in
             self?.persistCornerLogoPositionFromRuntime(position)
