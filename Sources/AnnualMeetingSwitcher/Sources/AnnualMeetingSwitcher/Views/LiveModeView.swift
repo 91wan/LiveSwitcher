@@ -587,8 +587,7 @@ struct LiveQuickRail: View {
                     selectedID: viewModel.overlayComposerState.selectedLowerThirdPresetID,
                     isLive: viewModel.isLowerThirdVisible
                 ),
-                systemImage: OverlayComposerKind.lowerThird.systemImage,
-                setupKind: .lowerThird
+                systemImage: OverlayComposerKind.lowerThird.systemImage
             ) {
                 ForEach(viewModel.lowerThirdPresets) { preset in
                     Button {
@@ -615,8 +614,7 @@ struct LiveQuickRail: View {
                     selectedID: viewModel.overlayComposerState.selectedCountdownPresetID,
                     isLive: viewModel.isCountdownActive
                 ),
-                systemImage: OverlayComposerKind.countdown.systemImage,
-                setupKind: .countdown
+                systemImage: OverlayComposerKind.countdown.systemImage
             ) {
                 ForEach(viewModel.countdownPresets) { preset in
                     Button {
@@ -643,8 +641,7 @@ struct LiveQuickRail: View {
                     selectedID: viewModel.overlayComposerState.selectedTickerPresetID,
                     isLive: viewModel.isTickerActive
                 ),
-                systemImage: OverlayComposerKind.ticker.systemImage,
-                setupKind: .ticker
+                systemImage: OverlayComposerKind.ticker.systemImage
             ) {
                 ForEach(viewModel.tickerPresets) { preset in
                     Button {
@@ -670,7 +667,6 @@ struct LiveQuickRail: View {
     private func compactOverlayRow<MenuContent: View>(
         model: LiveOverlayRailRowModel,
         systemImage: String,
-        setupKind: OverlayComposerKind,
         @ViewBuilder menuContent: () -> MenuContent,
         onToggle: @escaping () -> Void
     ) -> some View {
@@ -678,7 +674,6 @@ struct LiveQuickRail: View {
             overlayPresetMenu(
                 model: model,
                 systemImage: systemImage,
-                setupKind: setupKind,
                 menuContent: menuContent
             )
             .frame(maxWidth: .infinity)
@@ -705,21 +700,21 @@ struct LiveQuickRail: View {
     private func overlayPresetMenu<MenuContent: View>(
         model: LiveOverlayRailRowModel,
         systemImage: String,
-        setupKind: OverlayComposerKind,
         @ViewBuilder menuContent: () -> MenuContent
     ) -> some View {
-        if model.presetLabel == "+ 新建预设" {
+        switch model.presetInteraction {
+        case .create(let kind):
             Button {
-                openOverlaySetup(setupKind)
+                openOverlaySetup(kind)
             } label: {
                 overlayPresetLabel(model: model, systemImage: systemImage, showsMenuIndicator: false)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
-            .help("到叠层字幕页面新建\(model.title)预设。")
-            .accessibilityLabel("\(model.title)预设")
-            .accessibilityHint("还没有保存预设。打开叠层字幕页面。")
-        } else {
+            .help("到叠层字幕页面新建\(model.title)。")
+            .accessibilityLabel(model.presetLabel)
+            .accessibilityHint("还没有保存\(model.title)预设。打开叠层字幕页面新建\(model.title)。")
+        case .choose:
             Menu {
                 menuContent()
             } label: {

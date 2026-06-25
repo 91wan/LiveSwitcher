@@ -106,7 +106,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
 
         XCTAssertTrue(source.contains("lowerThirdPresetShelf"))
         XCTAssertTrue(source.contains("保存预设"))
-        XCTAssertTrue(source.contains("新建预设"))
+        XCTAssertTrue(source.contains("新建人名条"))
         XCTAssertTrue(source.contains("删除预设"))
         XCTAssertTrue(source.contains("导入..."))
         XCTAssertTrue(source.contains("导出..."))
@@ -131,7 +131,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
 
         XCTAssertTrue(source.contains("countdownPresetShelf"))
         XCTAssertTrue(source.contains("保存倒计时预设"))
-        XCTAssertTrue(source.contains("新建倒计时预设"))
+        XCTAssertTrue(source.contains("新建倒计时"))
         XCTAssertTrue(source.contains("删除倒计时预设"))
         XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.saveCountdownPresetFromDraft()"))
@@ -142,7 +142,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
 
         XCTAssertTrue(source.contains("tickerPresetShelf"))
         XCTAssertTrue(source.contains("保存游动字幕预设"))
-        XCTAssertTrue(source.contains("新建游动字幕预设"))
+        XCTAssertTrue(source.contains("新建游动字幕"))
         XCTAssertTrue(source.contains("删除游动字幕预设"))
         XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
         XCTAssertTrue(source.contains("viewModel.saveTickerPresetFromDraft()"))

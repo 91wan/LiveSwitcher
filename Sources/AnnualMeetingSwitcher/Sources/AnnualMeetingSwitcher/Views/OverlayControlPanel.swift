@@ -200,7 +200,7 @@ struct OverlayControlPanel: View {
                     Button {
                         viewModel.clearLowerThirdPresetDraft()
                     } label: {
-                        Label("新建预设", systemImage: "plus")
+                        Label("新建人名条", systemImage: "plus")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -490,7 +490,7 @@ struct OverlayControlPanel: View {
                 Button {
                     viewModel.clearCountdownPresetDraft()
                 } label: {
-                    Label("新建倒计时预设", systemImage: "plus")
+                    Label("新建倒计时", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -672,7 +672,7 @@ struct OverlayControlPanel: View {
                 Button {
                     viewModel.clearTickerPresetDraft()
                 } label: {
-                    Label("新建游动字幕预设", systemImage: "plus")
+                    Label("新建游动字幕", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
