@@ -7,6 +7,9 @@ import UniformTypeIdentifiers
 struct LeftPanel: View {
     @Environment(SwitcherViewModel.self) var viewModel
     @State private var isDraggingOver = false
+    @State private var draggedProgramItemID: UUID?
+    @State private var programQueueRowFrames: [UUID: CGRect] = [:]
+    @State private var programQueueDropPreview: ProgramQueueDropPreview?
 
     var body: some View {
         VStack(spacing: 10) {
@@ -287,22 +290,29 @@ struct LeftPanel: View {
                                 scheduledDuration: duration
                             )
                         },
-                        onDelete: { viewModel.removeProgramItem(withID: item.id) }
+                        onDelete: { viewModel.removeProgramItem(withID: item.id) },
+                        manualDropPlacement: programQueueDropPreview?.targetID == item.id ? programQueueDropPreview?.placement : nil,
+                        onHandleDragChanged: { location in
+                            updateProgramQueueDrag(draggedID: item.id, location: location)
+                        },
+                        onHandleDragEnded: { location in
+                            finishProgramQueueDrag(draggedID: item.id, location: location)
+                        }
                     )
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityHint("拖拽调整顺序。")
+                    .accessibilityHint("点击切换节目；拖拽左侧手柄调整顺序。")
                     .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
                 }
-                .onMove { from, to in
-                    viewModel.moveProgramItems(from: from, to: to)
-                }
                 .onDelete { indexSet in
-                    indexSet.forEach { viewModel.removeProgramItem(withID: viewModel.programItems[$0].id) }
+                    viewModel.removeProgramItems(at: indexSet)
                 }
             }
             .listStyle(.plain)
+            .onPreferenceChange(ProgramQueueRowFramePreferenceKey.self) { frames in
+                programQueueRowFrames = frames
+            }
             .frame(maxHeight: .infinity)
             .scrollContentBackground(.hidden)
             .background(StudioTheme.Surface.base.opacity(StudioTheme.Surface.Opacity.medium))
@@ -332,6 +342,50 @@ struct LeftPanel: View {
             return .current
         }
         return index == nextPlayableIndex ? .next : .queued
+    }
+
+    private func updateProgramQueueDrag(draggedID: UUID, location: CGPoint) {
+        draggedProgramItemID = draggedID
+        programQueueDropPreview = programQueueDropTarget(at: location.y, excluding: draggedID)
+    }
+
+    private func finishProgramQueueDrag(draggedID: UUID, location: CGPoint) {
+        defer {
+            draggedProgramItemID = nil
+            programQueueDropPreview = nil
+        }
+        guard let target = programQueueDropTarget(at: location.y, excluding: draggedID) else {
+            return
+        }
+        _ = viewModel.moveProgramItem(
+            draggedID: draggedID,
+            targetID: target.targetID,
+            placement: target.placement
+        )
+    }
+
+    private func programQueueDropTarget(at globalY: CGFloat, excluding draggedID: UUID) -> ProgramQueueDropPreview? {
+        let candidates = viewModel.programItems.compactMap { item -> (id: UUID, frame: CGRect)? in
+            guard item.id != draggedID, let frame = programQueueRowFrames[item.id] else {
+                return nil
+            }
+            return (item.id, frame)
+        }
+        guard let target = candidates.min(by: { lhs, rhs in
+            distance(from: globalY, to: lhs.frame) < distance(from: globalY, to: rhs.frame)
+        }) else {
+            return nil
+        }
+        return ProgramQueueDropPreview(
+            targetID: target.id,
+            placement: globalY < target.frame.midY ? .before : .after
+        )
+    }
+
+    private func distance(from globalY: CGFloat, to frame: CGRect) -> CGFloat {
+        if globalY < frame.minY { return frame.minY - globalY }
+        if globalY > frame.maxY { return globalY - frame.maxY }
+        return 0
     }
     // MARK: - 文件选择
 
