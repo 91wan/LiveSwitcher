@@ -14,7 +14,7 @@ final class ProgramQueueRowModelTests: XCTestCase {
 
         XCTAssertEqual(model.controlStyle, .media)
         XCTAssertTrue(model.showsProgressSlider)
-        XCTAssertEqual(model.queueBadgeText, "直播")
+        XCTAssertEqual(model.queueBadgeText, "1")
         XCTAssertEqual(model.stateBadgeText, "直播")
         XCTAssertEqual(model.controlRailLabel, "直播主控")
     }
@@ -56,7 +56,7 @@ final class ProgramQueueRowModelTests: XCTestCase {
         }
     }
 
-    func testCurrentBadgeDoesNotSayLiveWhenNotBroadcasting() {
+    func testCurrentQueueBadgeUsesNumberWhileStateBadgeShowsPreview() {
         let item = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4"))
         let model = ProgramQueueRowModel(
             item: item,
@@ -66,16 +66,21 @@ final class ProgramQueueRowModelTests: XCTestCase {
             isPlaying: false
         )
 
-        XCTAssertEqual(model.queueBadgeText, "预览")
+        XCTAssertEqual(model.queueBadgeText, "1")
         XCTAssertEqual(model.stateBadgeText, "预览")
-        XCTAssertFalse(model.queueBadgeText.contains("直播"))
+        XCTAssertFalse(model.queueBadgeText.contains("预览"))
         XCTAssertFalse(model.queueBadgeText.contains("直播"))
     }
 
-    func testNextAndQueuedBadgesAreUnambiguous() {
+    func testNextAndQueuedQueueBadgesUseNumbers() {
         let item = ProgramItem(title: "Opening", subtitle: "MP4", sourceURL: URL(fileURLWithPath: "/tmp/opening.mp4"))
+        let next = ProgramQueueRowModel(item: item, queuePosition: 2, queueRole: .next, isBroadcasting: false, isPlaying: false)
+        let queued = ProgramQueueRowModel(item: item, queuePosition: 3, queueRole: .queued, isBroadcasting: false, isPlaying: false)
 
-        XCTAssertEqual(ProgramQueueRowModel(item: item, queuePosition: 2, queueRole: .next, isBroadcasting: false, isPlaying: false).queueBadgeText, "下一项")
-        XCTAssertEqual(ProgramQueueRowModel(item: item, queuePosition: 3, queueRole: .queued, isBroadcasting: false, isPlaying: false).queueBadgeText, "3")
+        XCTAssertEqual(next.queueBadgeText, "2")
+        XCTAssertEqual(next.stateBadgeText, "下一项")
+        XCTAssertFalse(next.queueBadgeText.contains("下一项"))
+        XCTAssertEqual(queued.queueBadgeText, "3")
+        XCTAssertNil(queued.stateBadgeText)
     }
 }

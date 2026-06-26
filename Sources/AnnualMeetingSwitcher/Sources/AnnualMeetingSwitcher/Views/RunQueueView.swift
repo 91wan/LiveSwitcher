@@ -345,15 +345,12 @@ struct SignalSourceRow: View {
     }
 
     private var queueBadge: some View {
-        Text(queueBadgeText)
-            .font(StudioTheme.TypeScale.label)
-            .foregroundStyle(queueBadgeForeground)
-            .frame(minWidth: 28)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusS, style: .continuous)
-                    .fill(queueBadgeBackground)
-            )
+        ProgramQueueNumberBadge(
+            text: queueBadgeText,
+            kind: .setup,
+            foreground: queueBadgeForeground,
+            background: queueBadgeBackground
+        )
     }
 
     private var statusText: String {

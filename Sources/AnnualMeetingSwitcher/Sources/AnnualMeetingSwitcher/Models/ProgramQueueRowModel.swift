@@ -40,20 +40,13 @@ struct ProgramQueueRowModel: Equatable {
     }
 
     var queueBadgeText: String {
-        switch queueRole {
-        case .current:
-            return isBroadcasting ? "直播" : "预览"
-        case .next:
-            return "下一项"
-        case .queued:
-            return "\(queuePosition)"
-        }
+        "\(queuePosition)"
     }
 
     var stateBadgeText: String? {
         switch queueRole {
         case .current:
-            return queueBadgeText
+            return isBroadcasting ? "直播" : "预览"
         case .next:
             return "下一项"
         case .queued:

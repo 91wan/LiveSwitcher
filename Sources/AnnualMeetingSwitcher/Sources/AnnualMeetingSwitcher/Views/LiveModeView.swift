@@ -224,6 +224,13 @@ private struct LiveSourceRailMarkerCueRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 7) {
+                ProgramQueueNumberBadge(
+                    text: ProgramQueueNumberBadgeMetrics.displayText(for: queuePosition),
+                    kind: .marker,
+                    foreground: StudioTheme.Tone.warn,
+                    background: StudioTheme.Tone.warn.opacity(0.14)
+                )
+
                 Image(systemName: "mappin.and.ellipse")
                     .font(StudioTheme.TypeScale.caption.weight(.bold))
                     .foregroundStyle(StudioTheme.Tone.warn)
@@ -236,7 +243,7 @@ private struct LiveSourceRailMarkerCueRow: View {
                             .fill(StudioTheme.Tone.warn.opacity(0.12))
                     )
 
-                Text("标记 \(queuePosition)")
+                Text("标记")
                     .font(StudioTheme.TypeScale.label.weight(.semibold))
                     .foregroundStyle(StudioTheme.Tone.warn)
                     .lineLimit(1)
@@ -296,29 +303,36 @@ private struct LiveSourceRailRow: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 7) {
-                ProgramThumbnailView(
-                    sourceURL: item.sourceURL,
-                    kind: item.sourceKind,
-                    isVideo: item.isVideoMedia,
-                    displaySize: LiveModeLayoutMetrics.railThumbnailSize
-                )
-                .frame(maxWidth: .infinity)
+                HStack(alignment: .center, spacing: 7) {
+                    ProgramQueueNumberBadge(
+                        text: labelModel.numberText,
+                        kind: .live,
+                        foreground: numberBadgeForeground,
+                        background: numberBadgeBackground
+                    )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(labelModel.text)
-                            .font(StudioTheme.TypeScale.label)
-                            .foregroundStyle(statusColor)
-                            .lineLimit(1)
-                        Spacer(minLength: 0)
-                        PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
-                    }
-                    Text(item.title)
-                        .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
+                    ProgramThumbnailView(
+                        sourceURL: item.sourceURL,
+                        kind: item.sourceKind,
+                        isVideo: item.isVideoMedia,
+                        displaySize: LiveModeLayoutMetrics.railThumbnailSize
+                    )
+                    .frame(maxWidth: .infinity)
+
+                    PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
                 }
+
+                Text(labelModel.detailText)
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
+                    .foregroundStyle(statusColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Text(item.title)
+                    .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
             }
             .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -340,6 +354,28 @@ private struct LiveSourceRailRow: View {
             return StudioTheme.Tone.warn
         case .queued:
             return StudioTheme.Tone.idle
+        }
+    }
+
+    private var numberBadgeForeground: Color {
+        switch queueRole {
+        case .current:
+            return .white
+        case .next:
+            return StudioTheme.Tone.warn
+        case .queued:
+            return StudioTheme.textSecondary
+        }
+    }
+
+    private var numberBadgeBackground: Color {
+        switch queueRole {
+        case .current:
+            return statusColor
+        case .next:
+            return StudioTheme.Tone.warn.opacity(0.14)
+        case .queued:
+            return StudioTheme.Surface.raised
         }
     }
 
