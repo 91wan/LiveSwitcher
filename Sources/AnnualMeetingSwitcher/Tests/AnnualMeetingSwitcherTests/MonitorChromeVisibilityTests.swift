@@ -118,10 +118,13 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
         XCTAssertTrue(source.contains("@State private var isHoveringPreviewDeck"))
+        XCTAssertTrue(source.contains("private var monitorOutputDisplayState: OutputDisplayState"))
+        XCTAssertTrue(source.contains("OutputDisplayState.make(from: viewModel)"))
         XCTAssertTrue(source.contains("MonitorChromeVisibility.make("))
         XCTAssertTrue(source.contains("isTickerActive: viewModel.isTickerActive"))
-        XCTAssertTrue(source.contains("isFadeToBlackActive: viewModel.isFadeToBlackActive"))
-        XCTAssertTrue(source.contains("isPanicMode: viewModel.isPanicMode"))
+        XCTAssertTrue(source.contains("isFadeToBlackActive: monitorOutputDisplayState.isFadeToBlackActive"))
+        XCTAssertTrue(source.contains("isPanicMode: monitorOutputDisplayState.isPanicMode"))
+        XCTAssertFalse(source.contains("isPanicMode: viewModel.isPanicMode"))
         XCTAssertTrue(source.contains(".onHover { hovering in"))
         XCTAssertTrue(source.contains("compactLiveIndicator"))
     }
