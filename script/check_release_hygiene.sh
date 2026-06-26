@@ -70,17 +70,18 @@ require_file VERSION
 
 CURRENT_VERSION="$(tr -d '[:space:]' < VERSION)"
 CURRENT_TAG="v$CURRENT_VERSION"
+CURRENT_README_SCREENSHOT="docs/assets/readme/live-console-v$CURRENT_VERSION.png"
 
 require_file README.md
 require_file README_ZH.md
-require_file docs/assets/readme/preview-switch.png
-require_file docs/assets/readme/audio-mixer.png
-require_file docs/assets/readme/overlays.png
+require_file "$CURRENT_README_SCREENSHOT"
 require_file script/check_workspace_guard.sh
 require_file script/test_workspace_guard.sh
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
 require_file "docs/qa/workspace-guard-v$CURRENT_VERSION.md"
 require_package_manifest_sync
+require_literal_in_file README.md "$CURRENT_README_SCREENSHOT" "current README screenshot"
+require_literal_in_file README_ZH.md "$CURRENT_README_SCREENSHOT" "current README screenshot"
 
 PREVIOUS_VERSION="$(derive_previous_version)" \
   || fail "could not derive previous release version before $CURRENT_VERSION"

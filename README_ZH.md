@@ -22,10 +22,6 @@
 
 _当前 v0.5.0 控制台，使用脱敏 demo 数据。_
 
-| Run Desk / 导播台 | Audio / BGM Library | Overlays / Overlay Composer |
-| --- | --- | --- |
-| ![Run Desk 导播台](docs/assets/readme/preview-switch.png) | ![Audio 页面与 BGM Library](docs/assets/readme/audio-mixer.png) | ![Overlays 与 Overlay Composer](docs/assets/readme/overlays.png) |
-
 ## 项目说明
 
 LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和外接屏切换能力收在一个 macOS App 里，目标是让小型活动现场更稳、更直观。

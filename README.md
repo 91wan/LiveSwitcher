@@ -22,10 +22,6 @@ English | [中文](README_ZH.md) | [Install](#install) | [FAQ](#faq)
 
 _Current v0.5.0 console shown with demo data._
 
-| Run Desk | Audio / BGM Library | Overlays / Overlay Composer |
-| --- | --- | --- |
-| ![Run Desk](docs/assets/readme/preview-switch.png) | ![Audio and BGM Library](docs/assets/readme/audio-mixer.png) | ![Overlays and Overlay Composer](docs/assets/readme/overlays.png) |
-
 ## What It Does
 
 LiveSwitcher combines the tools usually spread across a playlist, a presentation app, a music player, and a display switcher into one focused macOS app.
