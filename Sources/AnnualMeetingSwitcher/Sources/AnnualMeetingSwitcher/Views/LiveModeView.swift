@@ -303,39 +303,36 @@ private struct LiveSourceRailRow: View {
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 7) {
-                ProgramThumbnailView(
-                    sourceURL: item.sourceURL,
-                    kind: item.sourceKind,
-                    isVideo: item.isVideoMedia,
-                    displaySize: LiveModeLayoutMetrics.railThumbnailSize
-                )
-                .frame(maxWidth: .infinity)
+                HStack(alignment: .center, spacing: 7) {
+                    ProgramQueueNumberBadge(
+                        text: labelModel.numberText,
+                        kind: .live,
+                        foreground: numberBadgeForeground,
+                        background: numberBadgeBackground
+                    )
 
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 7) {
-                        ProgramQueueNumberBadge(
-                            text: labelModel.numberText,
-                            kind: .live,
-                            foreground: numberBadgeForeground,
-                            background: numberBadgeBackground
-                        )
+                    ProgramThumbnailView(
+                        sourceURL: item.sourceURL,
+                        kind: item.sourceKind,
+                        isVideo: item.isVideoMedia,
+                        displaySize: LiveModeLayoutMetrics.railThumbnailSize
+                    )
+                    .frame(maxWidth: .infinity)
 
-                        Text(labelModel.detailText)
-                            .font(StudioTheme.TypeScale.label.weight(.semibold))
-                            .foregroundStyle(statusColor)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
-                            .layoutPriority(1)
-
-                        Spacer(minLength: 0)
-                        PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
-                    }
-                    Text(item.title)
-                        .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .lineLimit(2)
-                        .truncationMode(.middle)
+                    PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))
                 }
+
+                Text(labelModel.detailText)
+                    .font(StudioTheme.TypeScale.label.weight(.semibold))
+                    .foregroundStyle(statusColor)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+
+                Text(item.title)
+                    .font(StudioTheme.TypeScale.caption.weight(isSelected ? .black : .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .lineLimit(2)
+                    .truncationMode(.middle)
             }
             .padding(8)
             .frame(maxWidth: .infinity, alignment: .leading)

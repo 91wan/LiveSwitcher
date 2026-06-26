@@ -43,6 +43,40 @@ final class ProgramQueueNumberBadgeTests: XCTestCase {
         XCTAssertTrue(liveSource.contains("Text(item.title)"))
     }
 
+    func testLiveSourceRowAlignsNumberBadgeWithThumbnailCenter() throws {
+        let liveSource = try sourceText("Views/LiveModeView.swift")
+        let rowSource = try sourceBlock(
+            named: "private struct LiveSourceRailRow",
+            endingBefore: "    private var statusColor",
+            in: liveSource
+        )
+
+        XCTAssertTrue(rowSource.contains("HStack(alignment: .center, spacing: 7)"))
+        XCTAssertLessThan(
+            try offset(of: "ProgramQueueNumberBadge(", in: rowSource),
+            try offset(of: "ProgramThumbnailView(", in: rowSource)
+        )
+        XCTAssertLessThan(
+            try offset(of: "ProgramThumbnailView(", in: rowSource),
+            try offset(of: "Text(labelModel.detailText)", in: rowSource)
+        )
+    }
+
+    private func sourceBlock(named startMarker: String, endingBefore endMarker: String, in source: String) throws -> String {
+        guard let start = source.range(of: startMarker)?.lowerBound,
+              let end = source.range(of: endMarker, range: start..<source.endIndex)?.lowerBound else {
+            throw XCTSkip("Could not locate source block \(startMarker)")
+        }
+        return String(source[start..<end])
+    }
+
+    private func offset(of needle: String, in source: String) throws -> Int {
+        guard let range = source.range(of: needle) else {
+            throw XCTSkip("Could not locate \(needle)")
+        }
+        return source.distance(from: source.startIndex, to: range.lowerBound)
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
