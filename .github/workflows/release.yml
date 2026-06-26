@@ -29,48 +29,70 @@ jobs:
             exit 1
           fi
           echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "RELEASE_NOTES_PATH=docs/qa/release-hygiene-v$VERSION.md" >> "$GITHUB_OUTPUT"
+          echo "ZIP_NAME=LiveSwitcher-macOS-${GITHUB_REF_NAME}.zip" >> "$GITHUB_OUTPUT"
+          echo "CHECKSUM_NAME=LiveSwitcher-macOS-${GITHUB_REF_NAME}.zip.sha256" >> "$GITHUB_OUTPUT"
 
       - name: Verify Tag Points At Origin Main
         run: |
           git fetch --quiet origin main
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
 
+      - name: Test
+        run: |
+          swift test
+          swift test --package-path Sources/AnnualMeetingSwitcher
+          git diff --check
+
       - name: Workspace Guard
-        run: ./script/check_workspace_guard.sh --dev
+        run: |
+          ./script/check_workspace_guard.sh --dev
+          ./script/test_workspace_guard.sh
 
       - name: Release Hygiene
-        run: ./script/check_release_hygiene.sh
+        run: |
+          ./script/check_release_hygiene.sh
+          PATH=/usr/bin:/bin:/usr/sbin:/sbin ./script/check_release_hygiene.sh
 
       - name: Package App Bundle
         run: |
           bash Sources/AnnualMeetingSwitcher/build_v33.sh
           APP_BUNDLE="dist/LiveSwitcher.app"
-          ZIP_NAME="LiveSwitcher-macOS-${{ github.ref_name }}.zip"
+          ZIP_NAME="${{ steps.version.outputs.ZIP_NAME }}"
+          CHECKSUM_NAME="${{ steps.version.outputs.CHECKSUM_NAME }}"
 
           if [ ! -x "$APP_BUNDLE/Contents/MacOS/LiveSwitcher" ]; then
             echo "error: packaged app not found at $APP_BUNDLE" >&2
             exit 1
           fi
+          plutil -lint "$APP_BUNDLE/Contents/Info.plist"
           codesign --verify --deep --strict "$APP_BUNDLE"
-          (cd dist && zip -r "../$ZIP_NAME" LiveSwitcher.app)
+          test "$(plutil -extract CFBundleShortVersionString raw "$APP_BUNDLE/Contents/Info.plist")" = "${{ steps.version.outputs.VERSION }}"
+
+          ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_NAME"
+          shasum -a 256 "$ZIP_NAME" > "$CHECKSUM_NAME"
+
+          VERIFY_DIR="$(mktemp -d)"
+          trap 'rm -rf "$VERIFY_DIR"' EXIT
+          ditto -x -k "$ZIP_NAME" "$VERIFY_DIR"
+          test -x "$VERIFY_DIR/LiveSwitcher.app/Contents/MacOS/LiveSwitcher"
+          plutil -lint "$VERIFY_DIR/LiveSwitcher.app/Contents/Info.plist"
+          codesign --verify --deep --strict "$VERIFY_DIR/LiveSwitcher.app"
+          test "$(plutil -extract CFBundleShortVersionString raw "$VERIFY_DIR/LiveSwitcher.app/Contents/Info.plist")" = "${{ steps.version.outputs.VERSION }}"
+
           ls -lh "$ZIP_NAME"
+          cat "$CHECKSUM_NAME"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: "LiveSwitcher ${{ github.ref_name }}"
-          body: |
-            ## LiveSwitcher ${{ github.ref_name }}
-
-            Public source-available macOS build.
-
-            ### Install
-            Download `LiveSwitcher-macOS-${{ github.ref_name }}.zip`, unzip it, and move `LiveSwitcher.app` to `/Applications`.
-
-            The app is ad-hoc signed and not notarized. macOS may require opening it from System Settings → Privacy & Security → Open Anyway.
-          files: LiveSwitcher-macOS-${{ github.ref_name }}.zip
-          draft: false
+          body_path: ${{ steps.version.outputs.RELEASE_NOTES_PATH }}
+          files: |
+            ${{ steps.version.outputs.ZIP_NAME }}
+            ${{ steps.version.outputs.CHECKSUM_NAME }}
+          draft: true
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -18,6 +18,10 @@ English | [中文](README_ZH.md) | [Install](#install) | [FAQ](#faq)
 
 ## Screenshots
 
+![LiveSwitcher v0.5.0 console](docs/assets/readme/live-console-v0.5.0.png)
+
+_Current v0.5.0 console shown with demo data._
+
 | Run Desk | Audio / BGM Library | Overlays / Overlay Composer |
 | --- | --- | --- |
 | ![Run Desk](docs/assets/readme/preview-switch.png) | ![Audio and BGM Library](docs/assets/readme/audio-mixer.png) | ![Overlays and Overlay Composer](docs/assets/readme/overlays.png) |
@@ -40,7 +44,14 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.4.0.zip
+LiveSwitcher-macOS-v0.5.0.zip
+LiveSwitcher-macOS-v0.5.0.zip.sha256
+```
+
+Verify the checksum before opening the app:
+
+```bash
+shasum -a 256 -c LiveSwitcher-macOS-v0.5.0.zip.sha256
 ```
 
 Important: the public build is source-available, ad-hoc signed, and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally. A notarized build will require Apple Developer ID signing credentials and notarytool secrets.
@@ -55,16 +66,18 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.4.0
+## What's New in v0.5.0
 
-- Audio routing now has a dedicated pure engine for master/media/BGM/speaker/panic/takeover decisions.
-- Projection safety now has a service boundary for external-display detection and fail-closed output targeting.
-- Program queue persistence and auto-next-video selection are isolated in a queue store.
-- Presentation automation scripts are centralized, keeping Keynote/WPS AppleScript path handling in one place.
+- More reliable Media and BGM switching: stale player callbacks can no longer overwrite the active program or track.
+- Safer BGM library editing: removing or reordering tracks updates live playback state immediately without ghost tracks.
+- Stronger Panic, projection, and PPT lifecycle handling for delayed audio pauses, display loss, and EventTap state.
+- Program queue, selection, activation, persistence, and audio routing now keep one authoritative live state.
+- Preflight, Safety Cockpit, and sanitized Support Reports provide a clearer release and incident workflow.
+- A canonical Release Candidate rehearsal gate now covers hardware, permissions, privacy, and long-running playback.
 
-See [`docs/qa/release-hygiene-v0.4.0.md`](docs/qa/release-hygiene-v0.4.0.md) for the v0.4.0 core state split notes.
+See [`docs/qa/release-hygiene-v0.5.0.md`](docs/qa/release-hygiene-v0.5.0.md) for the v0.5.0 release notes and trust gates.
 
-中文维护说明：`v0.4.0` 的重点不是新增现场功能，而是先把高事故风险状态从 ViewModel 中拆出可测试边界。
+中文维护说明：`v0.5.0` 的重点不是新增现场功能，而是冻结当前 runtime ownership 架构，并把发布流程收紧到可复验的候选包和 Draft Release。
 
 ## Live Preflight
 
@@ -79,8 +92,8 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 Related guides:
 
 - [Release Candidate rehearsal](docs/qa/release-candidate-rehearsal.md)
-- [v0.4.0 release hygiene](docs/qa/release-hygiene-v0.4.0.md)
-- [v0.4.0 workspace guard](docs/qa/workspace-guard-v0.4.0.md)
+- [v0.5.0 release hygiene](docs/qa/release-hygiene-v0.5.0.md)
+- [v0.5.0 workspace guard](docs/qa/workspace-guard-v0.5.0.md)
 - [Current UI verification](docs/qa/ui-current-main.md)
 - [Runtime ownership](docs/architecture/runtime-ownership.md)
 - [Live Mode simplicity rules](docs/architecture/live-mode-simplicity-rules.md)

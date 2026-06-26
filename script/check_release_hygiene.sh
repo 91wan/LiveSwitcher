@@ -28,7 +28,7 @@ derive_previous_version() {
   local version
 
   versions="$(
-    find docs/qa -maxdepth 1 -name 'release-hygiene-v*.md' -print \
+    git ls-files 'docs/qa/release-hygiene-v*.md' \
       | sed -n -E 's#.*release-hygiene-v([0-9]+)\.([0-9]+)\.([0-9]+)\.md$#\1 \2 \3#p' \
       | awk '{ printf "%09d.%09d.%09d %d.%d.%d\n", $1, $2, $3, $1, $2, $3 }' \
       | sort \
@@ -125,7 +125,7 @@ search_pattern "$local_path_pattern" . \
 
 previous_version_pattern="$(printf '%s' "$PREVIOUS_VERSION" | sed 's/[.]/\\./g')"
 search_pattern "${previous_version_pattern}|${PREVIOUS_TAG}|LiveSwitcher-macOS-${PREVIOUS_TAG}" \
-  Sources script/build_and_run.sh Sources/AnnualMeetingSwitcher/build_v33.sh .github \
+  Sources/AnnualMeetingSwitcher/Sources script/build_and_run.sh Sources/AnnualMeetingSwitcher/build_v33.sh .github \
   && fail "stale active version reference found"
 
 search_pattern "static let appVersion = \"$CURRENT_VERSION\"" Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/AppConfiguration.swift >/dev/null \
@@ -158,6 +158,20 @@ grep -Fq 'github.ref_name' .github/workflows/release.yml \
   || fail "release workflow does not verify the tag version"
 grep -Fq 'VERSION' .github/workflows/release.yml \
   || fail "release workflow does not read VERSION"
+grep -Fq 'swift test --package-path Sources/AnnualMeetingSwitcher' .github/workflows/release.yml \
+  || fail "release workflow does not run nested package tests"
+grep -Fq 'git diff --check' .github/workflows/release.yml \
+  || fail "release workflow does not run whitespace check"
+grep -Fq 'PATH=/usr/bin:/bin:/usr/sbin:/sbin ./script/check_release_hygiene.sh' .github/workflows/release.yml \
+  || fail "release workflow does not run release hygiene with system PATH"
+grep -Fq 'ditto -c -k --sequesterRsrc --keepParent "$APP_BUNDLE" "$ZIP_NAME"' .github/workflows/release.yml \
+  || fail "release workflow does not package with ditto"
+grep -Fq 'shasum -a 256 "$ZIP_NAME" > "$CHECKSUM_NAME"' .github/workflows/release.yml \
+  || fail "release workflow does not generate checksum asset"
+grep -Fq 'body_path: ${{ steps.version.outputs.RELEASE_NOTES_PATH }}' .github/workflows/release.yml \
+  || fail "release workflow does not use release notes file"
+grep -Fq 'draft: true' .github/workflows/release.yml \
+  || fail "release workflow does not create a draft release"
 
 for tcc_key in \
   NSAccessibilityUsageDescription \

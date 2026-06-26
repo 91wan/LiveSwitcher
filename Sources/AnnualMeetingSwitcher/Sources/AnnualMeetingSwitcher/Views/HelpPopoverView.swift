@@ -22,7 +22,7 @@ struct HelpPopoverView: View {
                         HelpSectionView(title: section.title, items: section.items)
                     }
 
-                    Text("版本 0.4.0 | 核心状态拆分")
+                    Text("版本 \(AppConfiguration.appVersion)")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
