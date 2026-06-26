@@ -108,7 +108,7 @@ final class BGMProgressStoreTests: XCTestCase {
     func testBGMSeekUsesFallbackDurationPolicyForAVPlayerFallbackItems() throws {
         let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
         let seekBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGM(toProgress"))
-        let beginningBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGMToBeginning"))
+        let beginningBody = try XCTUnwrap(source.functionBody(named: "seekCurrentRuntimeBGMToBeginning"))
 
         XCTAssertTrue(source.contains("private func fallbackBGMKnownDuration()"))
         XCTAssertTrue(source.contains("BGMFallbackDurationPolicy.knownDuration"))

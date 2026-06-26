@@ -628,6 +628,7 @@ final class SwitcherViewModelSmokeTests: XCTestCase {
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
         var state = viewModel.runtime.state
         state.bgm.currentID = item.id
+        state.bgm.phase = .selected
         state.bgm.duration = 90
         state.bgm.progress = 0.5
         state.bgm.currentTime = 45

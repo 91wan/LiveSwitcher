@@ -5,6 +5,7 @@ final class ViewModelCleanupBag {
     var mediaVolumeFadeTask: Task<Void, Never>?
     var bgmPlayerVolumeFadeTask: Task<Void, Never>?
     var bgmFallbackVolumeFadeTask: Task<Void, Never>?
+    var bgmReturnToStartTask: Task<Void, Never>?
     var bgmProgressTimer: Timer?
     var bgmFallbackEndObserver: NSObjectProtocol?
     var bgmFallbackFailureObserver: NSObjectProtocol?
@@ -23,6 +24,8 @@ final class ViewModelCleanupBag {
         mediaVolumeFadeTask?.cancel()
         bgmPlayerVolumeFadeTask?.cancel()
         bgmFallbackVolumeFadeTask?.cancel()
+        bgmReturnToStartTask?.cancel()
+        bgmReturnToStartTask = nil
         bgmProgressTimer?.invalidate()
         bgmProgressTimer = nil
         bgmTransitionTasks.values.forEach { $0.cancel() }

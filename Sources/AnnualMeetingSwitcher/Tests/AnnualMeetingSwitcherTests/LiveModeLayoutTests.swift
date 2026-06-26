@@ -155,7 +155,7 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("viewModel.seekBGMToBeginning()"))
-        XCTAssertTrue(source.contains("\"跳回开头\""))
+        XCTAssertTrue(source.contains("\"回到开头\""))
         XCTAssertTrue(source.contains("\"上一首\""))
         XCTAssertTrue(source.contains("\"播放 BGM\""))
         XCTAssertTrue(source.contains("\"暂停 BGM\""))

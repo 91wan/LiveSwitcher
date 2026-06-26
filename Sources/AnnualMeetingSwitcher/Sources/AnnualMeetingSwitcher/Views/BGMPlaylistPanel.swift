@@ -86,7 +86,7 @@ struct BGMPlaylistPanel: View {
         }
     }
 
-    // MARK: - BGM 五颗大媒体控制键（V20 新增"跳回开头"）
+    // MARK: - BGM 五颗大媒体控制键
 
     private var bgmControlButtons: some View {
         let diskSize: CGFloat = 32
@@ -101,7 +101,7 @@ struct BGMPlaylistPanel: View {
         return HStack(spacing: 8) {
             Spacer()
 
-            // 跳回开头（V20 新增）
+            // 回到开头
             Button(action: { viewModel.seekBGMToBeginning() }) {
                 Image(systemName: "backward.end.alt.fill")
                     .font(StudioTheme.TypeScale.title)
@@ -113,9 +113,9 @@ struct BGMPlaylistPanel: View {
             .buttonStyle(.plain)
             .disabled(!controls.canSeekToBeginning)
             .opacity(controls.canSeekToBeginning ? 1 : 0.42)
-            .help("跳回开头")
-            .accessibilityLabel("BGM 跳回开头")
-            .accessibilityHint(controls.seekDisabledReason ?? "将当前 BGM 跳回开头。")
+            .help("回到开头")
+            .accessibilityLabel("BGM 回到开头")
+            .accessibilityHint(controls.seekDisabledReason ?? "将当前 BGM 回到 00:00。")
 
             // 上一首
             Button(action: { viewModel.playPreviousBGM() }) {
