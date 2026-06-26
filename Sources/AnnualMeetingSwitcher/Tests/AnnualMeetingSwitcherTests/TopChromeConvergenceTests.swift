@@ -17,6 +17,14 @@ final class TopChromeConvergenceTests: XCTestCase {
         XCTAssertTrue(source.contains("ConsoleBrandingModel.title"))
     }
 
+    func testBrandChromeTitleUsesProminentTypography() throws {
+        let source = try sourceText("ContentView.swift")
+
+        XCTAssertTrue(source.contains(".font(StudioTheme.TypeScale.title.weight(.black))"))
+        XCTAssertTrue(source.contains(".frame(minWidth: 220, idealWidth: 280, maxWidth: 340, alignment: .leading)"))
+        XCTAssertFalse(source.contains(".font(StudioTheme.TypeScale.heading.weight(.black))"))
+    }
+
     func testProgramMonitorUsesCompactInlineStatusInsteadOfCurrentNextCards() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 

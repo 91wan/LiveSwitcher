@@ -25,6 +25,7 @@ struct LiveOpsPanel: View {
 
             outputCard
             switchToLiveCard
+            CornerLogoCard()
 
             Spacer(minLength: 0)
 

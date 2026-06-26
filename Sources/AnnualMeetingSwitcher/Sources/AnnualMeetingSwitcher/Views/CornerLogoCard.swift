@@ -67,11 +67,11 @@ struct CornerLogoCard: View {
                 .font(StudioTheme.TypeScale.label.weight(.semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
 
-            HStack(spacing: 8) {
-                TextField("公司名称", text: $companyNameDraft)
-                    .textFieldStyle(.roundedBorder)
-                    .lineLimit(1)
+            TextField("公司名称", text: $companyNameDraft)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(1)
 
+            HStack(spacing: 8) {
                 Button("应用") {
                     applyCompanyNameDraft()
                 }
@@ -87,6 +87,8 @@ struct CornerLogoCard: View {
                 .font(StudioTheme.TypeScale.caption.weight(.bold))
                 .buttonStyle(.bordered)
                 .controlSize(.small)
+
+                Spacer(minLength: 0)
             }
 
             Text(companyNameFooterText)
@@ -99,63 +101,65 @@ struct CornerLogoCard: View {
     private var logoControls: some View {
         @Bindable var viewModel = viewModel
 
-        return HStack(alignment: .top, spacing: 10) {
-            logoPreview
-            VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .center, spacing: 10) {
+                logoPreview
                 Toggle("显示 Logo", isOn: $viewModel.isCornerLogoVisible)
                     .toggleStyle(.switch)
                     .controlSize(.small)
                     .font(StudioTheme.TypeScale.caption.weight(.semibold))
                     .disabled(!hasLogo)
-
-                Picker("位置", selection: $viewModel.cornerLogoPosition) {
-                    ForEach(CornerLogoPosition.allCases, id: \.self) { position in
-                        Text(position.displayName)
-                            .tag(position)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .disabled(!hasLogo)
-                .help("选择 Logo 显示角落")
-
-                HStack(spacing: 8) {
-                    Button {
-                        CornerLogoImportService.presentPicker(viewModel: self.viewModel)
-                    } label: {
-                        Label("导入 Logo...", systemImage: "photo.badge.plus")
-                            .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-
-                    Button("移除") {
-                        self.viewModel.removeCornerLogo()
-                    }
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .disabled(viewModel.cornerLogoLoadPhase == .empty)
-                }
-
-                if case .failed(let candidateURL, _) = viewModel.cornerLogoLoadPhase,
-                   candidateURL != nil {
-                    Button {
-                        self.viewModel.retryCornerLogoLoad()
-                    } label: {
-                        Label("重试", systemImage: "arrow.clockwise")
-                            .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                }
-
-                Text(logoStatusText)
-                    .font(StudioTheme.caption())
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+                Spacer(minLength: 0)
             }
+
+            Picker("位置", selection: $viewModel.cornerLogoPosition) {
+                ForEach(CornerLogoPosition.allCases, id: \.self) { position in
+                    Text(position.displayName)
+                        .tag(position)
+                }
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .disabled(!hasLogo)
+            .help("选择 Logo 显示角落")
+
+            HStack(spacing: 8) {
+                Button {
+                    CornerLogoImportService.presentPicker(viewModel: self.viewModel)
+                } label: {
+                    Label("导入 Logo...", systemImage: "photo.badge.plus")
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
+                        .lineLimit(1)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button("移除") {
+                    self.viewModel.removeCornerLogo()
+                }
+                .font(StudioTheme.TypeScale.caption.weight(.bold))
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(viewModel.cornerLogoLoadPhase == .empty)
+            }
+
+            if case .failed(let candidateURL, _) = viewModel.cornerLogoLoadPhase,
+               candidateURL != nil {
+                Button {
+                    self.viewModel.retryCornerLogoLoad()
+                } label: {
+                    Label("重试", systemImage: "arrow.clockwise")
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+            }
+
+            Text(logoStatusText)
+                .font(StudioTheme.caption())
+                .foregroundStyle(StudioTheme.textTertiary)
+                .lineLimit(1)
+                .truncationMode(.tail)
         }
     }
 
@@ -164,14 +168,14 @@ struct CornerLogoCard: View {
         ZStack {
             RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                 .fill(StudioTheme.Surface.raised)
-                .frame(width: 86, height: 54)
+                .frame(width: 72, height: 44)
 
             if let image = viewModel.cornerLogoImage {
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .padding(7)
-                    .frame(width: 86, height: 54)
+                    .padding(6)
+                    .frame(width: 72, height: 44)
             } else {
                 VStack(spacing: 3) {
                     Image(systemName: "building.2.crop.circle")
@@ -181,7 +185,7 @@ struct CornerLogoCard: View {
                         .font(StudioTheme.TypeScale.label.weight(.semibold))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
-                .frame(width: 86, height: 54)
+                .frame(width: 72, height: 44)
             }
         }
         .accessibilityLabel(cornerLogoAccessibilityLabel)

@@ -252,6 +252,24 @@ final class BrandingSettingsTests: XCTestCase {
         XCTAssertFalse(card.contains("StatusBadge(\"关闭\""))
     }
 
+    func testBrandingCardLivesInSetupRightColumnBelowModeControls() throws {
+        let monitor = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift"
+        )
+        let opsPanel = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift"
+        )
+
+        XCTAssertFalse(monitor.contains("CornerLogoCard()"))
+
+        let modeCard = try XCTUnwrap(opsPanel.range(of: "switchToLiveCard")?.lowerBound)
+        let brandingCard = try XCTUnwrap(opsPanel.range(of: "CornerLogoCard()")?.lowerBound)
+        let footerSpacer = try XCTUnwrap(opsPanel.range(of: "Spacer(minLength: 0)")?.lowerBound)
+
+        XCTAssertLessThan(modeCard, brandingCard)
+        XCTAssertLessThan(brandingCard, footerSpacer)
+    }
+
     private func makeDefaults() throws -> UserDefaults {
         let suiteName = "BrandingSettingsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
