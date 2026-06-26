@@ -27,6 +27,15 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertTrue(source.contains(".accessibilityLabel(\"紧急切黑已启用\")"))
     }
 
+    func testActiveProgramOverlayMountsPanicBlackoutWithoutFadeTransition() throws {
+        let source = try String(contentsOf: sourceURL("Views/ActiveProgramOverlayLayer.swift"), encoding: .utf8)
+        let panicBlock = try XCTUnwrap(source.balancedBlock(after: "if displayState.isPanicMode"))
+
+        XCTAssertTrue(panicBlock.contains("PanicLayer()"))
+        XCTAssertFalse(panicBlock.contains(".transition(.opacity)"))
+        XCTAssertTrue(panicBlock.contains("transaction.animation = nil"))
+    }
+
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
         let source = try String(contentsOf: sourceURL("Views/LowerThirdOverlay.swift"), encoding: .utf8)
 

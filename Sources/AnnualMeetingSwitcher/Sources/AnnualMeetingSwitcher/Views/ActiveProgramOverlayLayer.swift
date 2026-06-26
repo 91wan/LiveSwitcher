@@ -71,7 +71,9 @@ struct ActiveProgramOverlayLayer: View {
 
                 if displayState.isPanicMode {
                     PanicLayer()
-                        .transition(.opacity)
+                        .transaction { transaction in
+                            transaction.animation = nil
+                        }
                         .zIndex(OutputLayerZIndex.panic)
                 }
             }

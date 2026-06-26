@@ -71,11 +71,11 @@ struct ProgramMonitorView: View {
                 .opacity(monitorChromeVisibility.inlineChromeOpacity)
                 .allowsHitTesting(monitorChromeVisibility.inlineChromeAllowsHitTesting)
         }
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .center) {
             if blackoutStatusModel.kind != .none {
                 blackoutStatusOverlay
                     .opacity(monitorChromeVisibility.inlineChromeOpacity)
-                    .padding(12)
+                    .allowsHitTesting(false)
             }
         }
         .overlay(alignment: .bottomTrailing) {
@@ -146,29 +146,29 @@ struct ProgramMonitorView: View {
     private var blackoutStatusOverlay: some View {
         let model = blackoutStatusModel
 
-        return HStack(alignment: .center, spacing: 8) {
+        return VStack(alignment: .center, spacing: 7) {
             Image(systemName: model.kind == .panic ? "exclamationmark.triangle.fill" : "moon.fill")
-                .font(StudioTheme.TypeScale.caption.weight(.black))
+                .font(StudioTheme.TypeScale.title.weight(.black))
                 .foregroundStyle(StudioTheme.color(for: model.statusKind))
                 .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(model.title)
-                    .font(StudioTheme.TypeScale.caption.weight(.black))
-                    .foregroundStyle(StudioTheme.monitorText)
+            Text(model.title)
+                .font(StudioTheme.TypeScale.title.weight(.black))
+                .foregroundStyle(StudioTheme.monitorText)
+                .lineLimit(1)
+            if let subtitle = model.subtitle {
+                Text(subtitle)
+                    .font(StudioTheme.TypeScale.heading.weight(.semibold))
+                    .foregroundStyle(StudioTheme.monitorText.opacity(0.72))
                     .lineLimit(1)
-                if let subtitle = model.subtitle {
-                    Text(subtitle)
-                        .font(StudioTheme.TypeScale.label.weight(.semibold))
-                        .foregroundStyle(StudioTheme.monitorText.opacity(0.72))
-                        .lineLimit(1)
-                }
             }
         }
-        .padding(.horizontal, 11)
-        .padding(.vertical, 8)
-        .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .frame(minWidth: 220)
+        .background(StudioTheme.monitorOverlayFill, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
         .overlay(
-            Capsule(style: .continuous)
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
                 .stroke(StudioTheme.color(for: model.statusKind).opacity(0.78), lineWidth: 1)
         )
         .accessibilityElement(children: .ignore)
