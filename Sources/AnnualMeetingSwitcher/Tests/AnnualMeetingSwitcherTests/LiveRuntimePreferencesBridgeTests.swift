@@ -11,7 +11,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         )
         let scheduledAdvance = LiveRuntimeReducer.reduce(
             state: LiveRuntimeState(),
-            action: .operatorSetAutoAdvanceAtScheduledTime(true),
+            action: .operatorSetAgendaTimeReminderEnabled(true),
             environment: .fullRuntimeForTests(now: Date(timeIntervalSince1970: 100))
         )
         let agendaTimeline = LiveRuntimeReducer.reduce(
@@ -49,8 +49,8 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
 
         XCTAssertTrue(autoPlay.state.preferences.autoPlayNextVideoOnEnd)
         XCTAssertTrue(autoPlay.effects.contains(.saveAutoPlayNextVideoOnEnd(true)))
-        XCTAssertTrue(scheduledAdvance.state.preferences.autoAdvanceAtScheduledTime)
-        XCTAssertTrue(scheduledAdvance.effects.contains(.saveAutoAdvanceAtScheduledTime(true)))
+        XCTAssertTrue(scheduledAdvance.state.preferences.isAgendaTimeReminderEnabled)
+        XCTAssertTrue(scheduledAdvance.effects.contains(.saveAgendaTimeReminderEnabled(true)))
         XCTAssertTrue(agendaTimeline.state.preferences.showAgendaTimeline)
         XCTAssertTrue(agendaTimeline.effects.contains(.saveShowAgendaTimeline(true)))
         XCTAssertEqual(logoPosition.state.preferences.cornerLogoPosition, .bottomLeft)
@@ -72,7 +72,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         runner.run(
             [
                 .saveAutoPlayNextVideoOnEnd(true),
-                .saveAutoAdvanceAtScheduledTime(false),
+                .saveAgendaTimeReminderEnabled(false),
                 .saveShowAgendaTimeline(true),
                 .saveCornerLogoPosition(.bottomRight),
                 .saveConsoleMode(.live),
@@ -85,7 +85,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         )
 
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
-        XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [false])
+        XCTAssertEqual(persistence.savedAgendaTimeReminderEnabled, [false])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
         XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomRight])
         XCTAssertEqual(persistence.savedConsoleModes, [.live])
@@ -111,7 +111,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         )
 
         viewModel.autoPlayNextVideoOnEnd = true
-        viewModel.autoAdvanceAtScheduledTime = true
+        viewModel.isAgendaTimeReminderEnabled = true
         viewModel.showAgendaTimeline = true
         viewModel.cornerLogoPosition = .bottomLeft
         viewModel.consoleMode = .live
@@ -119,21 +119,21 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
         viewModel.companyDisplayName = "示例科技"
 
         XCTAssertTrue(runtime.state.preferences.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(runtime.state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertTrue(runtime.state.preferences.showAgendaTimeline)
         XCTAssertEqual(runtime.state.preferences.cornerLogoPosition, .bottomLeft)
         XCTAssertEqual(runtime.state.mode, .live)
         XCTAssertEqual(runtime.state.preferences.themeOverride, .system)
         XCTAssertEqual(runtime.state.preferences.companyDisplayName, "示例科技")
         XCTAssertEqual(persistence.savedAutoPlayNextVideoOnEnd, [true])
-        XCTAssertEqual(persistence.savedAutoAdvanceAtScheduledTime, [true])
+        XCTAssertEqual(persistence.savedAgendaTimeReminderEnabled, [true])
         XCTAssertEqual(persistence.savedShowAgendaTimeline, [true])
         XCTAssertEqual(persistence.savedCornerLogoPositions, [.bottomLeft])
         XCTAssertEqual(persistence.savedConsoleModes, [.live])
         XCTAssertEqual(persistence.savedThemeOverrides, [.system])
         XCTAssertEqual(persistence.savedCompanyDisplayNames, ["示例科技"])
         XCTAssertNil(defaults.object(forKey: "autoPlayNextVideoOnEnd"))
-        XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
+        XCTAssertNil(defaults.object(forKey: "agendaReminderEnabled"))
         XCTAssertNil(defaults.object(forKey: "showAgendaTimeline"))
         XCTAssertNil(defaults.object(forKey: "cornerLogo_position"))
         XCTAssertNil(defaults.object(forKey: "consoleMode"))
@@ -144,7 +144,7 @@ final class LiveRuntimePreferencesBridgeTests: XCTestCase {
 private final class PreferencePersistencePortSpy: PersistencePort {
     private(set) var saveCount = 0
     private(set) var savedAutoPlayNextVideoOnEnd: [Bool] = []
-    private(set) var savedAutoAdvanceAtScheduledTime: [Bool] = []
+    private(set) var savedAgendaTimeReminderEnabled: [Bool] = []
     private(set) var savedShowAgendaTimeline: [Bool] = []
     private(set) var savedCornerLogoPositions: [CornerLogoPosition] = []
     private(set) var savedConsoleModes: [ConsoleMode] = []
@@ -160,8 +160,8 @@ private final class PreferencePersistencePortSpy: PersistencePort {
         savedAutoPlayNextVideoOnEnd.append(isEnabled)
     }
 
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
-        savedAutoAdvanceAtScheduledTime.append(isEnabled)
+    func saveAgendaTimeReminderEnabled(_ isEnabled: Bool) {
+        savedAgendaTimeReminderEnabled.append(isEnabled)
     }
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {

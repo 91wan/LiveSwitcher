@@ -101,14 +101,14 @@ final class PreferencesRuntimeReducerBehaviorTests: XCTestCase {
         XCTAssertEqual(effects, [.saveAutoPlayNextVideoOnEnd(true)])
     }
 
-    func testSetAutoAdvanceUpdatesStateAndEmitsSave() {
+    func testSetAgendaTimeReminderUpdatesStateAndEmitsSave() {
         var state = LiveRuntimeState()
         var effects: [LiveRuntimeEffect] = []
 
-        PreferencesRuntimeReducer.setAutoAdvanceAtScheduledTime(true, state: &state, effects: &effects)
+        PreferencesRuntimeReducer.setAgendaTimeReminderEnabled(true, state: &state, effects: &effects)
 
-        XCTAssertTrue(state.preferences.autoAdvanceAtScheduledTime)
-        XCTAssertEqual(effects, [.saveAutoAdvanceAtScheduledTime(true)])
+        XCTAssertTrue(state.preferences.isAgendaTimeReminderEnabled)
+        XCTAssertEqual(effects, [.saveAgendaTimeReminderEnabled(true)])
     }
 
     func testSetShowAgendaTimelineUpdatesStateAndEmitsSave() {

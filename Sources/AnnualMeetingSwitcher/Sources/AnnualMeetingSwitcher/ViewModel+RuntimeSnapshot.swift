@@ -179,7 +179,7 @@ extension SwitcherViewModel {
         state.preferences.cornerLogoURL = cornerLogoURL
         state.preferences.isCornerLogoVisible = isCornerLogoVisible
         state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd
-        state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime
+        state.preferences.isAgendaTimeReminderEnabled = isAgendaTimeReminderEnabled
         state.preferences.showAgendaTimeline = showAgendaTimeline
         state.preferences.cornerLogoPosition = cornerLogoPosition
     }

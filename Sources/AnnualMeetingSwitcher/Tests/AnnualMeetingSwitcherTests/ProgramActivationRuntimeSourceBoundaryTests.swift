@@ -167,12 +167,13 @@ final class ProgramActivationRuntimeSourceBoundaryTests: XCTestCase {
         XCTAssertNil(recordedActivationPlan(in: viewModel))
     }
 
-    func testConfirmAgendaAutoAdvanceUsesRuntimeQueueWhenProgramQueueOwned() throws {
+    func testAgendaReminderActionUsesRuntimeQueueWhenProgramQueueOwned() throws {
         let item = mediaItem("Runtime Prompt")
-        let prompt = AgendaAutoAdvancePrompt(
+        let prompt = AgendaReminderPrompt(
             itemID: item.id,
             title: item.title,
-            scheduledStartAt: Date(timeIntervalSince1970: 100)
+            scheduledStartAt: Date(timeIntervalSince1970: 100),
+            kind: .playableProgram
         )
         let viewModel = makeViewModel(
             bridgeMode: .programActivationOwned,
@@ -180,14 +181,37 @@ final class ProgramActivationRuntimeSourceBoundaryTests: XCTestCase {
             facadeItems: []
         )
 
-        viewModel.confirmAgendaAutoAdvance(prompt)
+        viewModel.handleAgendaReminderAction(prompt)
 
         let plan = try XCTUnwrap(recordedActivationPlan(in: viewModel))
         XCTAssertEqual(plan.item, item)
-        XCTAssertTrue(viewModel.agendaAutoAdvancePromptedItemIDs.contains(item.id))
+        XCTAssertTrue(viewModel.agendaReminderAcknowledgedItemIDs.contains(item.id))
     }
 
-    func testConfirmAgendaAutoAdvanceUsesFacadeQueueBeforeProgramQueueOwnership() throws {
+    func testAgendaReminderMarkerActionAcknowledgesWithoutSwitching() {
+        let marker = ProgramItem.agendaMarker(
+            title: "Tea Break",
+            scheduledStartAt: Date(timeIntervalSince1970: 100)
+        )
+        let prompt = AgendaReminderPrompt(
+            itemID: marker.id,
+            title: marker.title,
+            scheduledStartAt: Date(timeIntervalSince1970: 100),
+            kind: .marker
+        )
+        let viewModel = makeViewModel(
+            bridgeMode: .programActivationOwned,
+            runtimeItems: [marker],
+            facadeItems: []
+        )
+
+        viewModel.handleAgendaReminderAction(prompt)
+
+        XCTAssertTrue(viewModel.agendaReminderAcknowledgedItemIDs.contains(marker.id))
+        XCTAssertNil(recordedActivationPlan(in: viewModel))
+    }
+
+    func testAgendaReminderActionUsesFacadeQueueBeforeProgramQueueOwnership() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivation.swift"
         )
@@ -195,12 +219,13 @@ final class ProgramActivationRuntimeSourceBoundaryTests: XCTestCase {
         XCTAssertTrue(source.contains(": programItems"))
     }
 
-    func testConfirmAgendaAutoAdvanceStillRecordsPromptedIDWhenRuntimeItemMissing() {
+    func testAgendaReminderActionStillRecordsAcknowledgedIDWhenRuntimeItemMissing() {
         let missingID = UUID()
-        let prompt = AgendaAutoAdvancePrompt(
+        let prompt = AgendaReminderPrompt(
             itemID: missingID,
             title: "Missing",
-            scheduledStartAt: Date(timeIntervalSince1970: 100)
+            scheduledStartAt: Date(timeIntervalSince1970: 100),
+            kind: .playableProgram
         )
         let viewModel = makeViewModel(
             bridgeMode: .programActivationOwned,
@@ -208,9 +233,9 @@ final class ProgramActivationRuntimeSourceBoundaryTests: XCTestCase {
             facadeItems: []
         )
 
-        viewModel.confirmAgendaAutoAdvance(prompt)
+        viewModel.handleAgendaReminderAction(prompt)
 
-        XCTAssertTrue(viewModel.agendaAutoAdvancePromptedItemIDs.contains(missingID))
+        XCTAssertTrue(viewModel.agendaReminderAcknowledgedItemIDs.contains(missingID))
         XCTAssertNil(recordedActivationPlan(in: viewModel))
     }
 
@@ -249,4 +274,3 @@ final class ProgramActivationRuntimeSourceBoundaryTests: XCTestCase {
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .programItemFileMissing })
     }
 }
-

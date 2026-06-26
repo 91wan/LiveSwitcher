@@ -16,7 +16,7 @@ struct SwitcherPersistentState: Equatable {
     var cornerLogoPosition: CornerLogoPosition = .topRight
 
     var autoPlayNextVideoOnEnd: Bool = false
-    var autoAdvanceAtScheduledTime: Bool = false
+    var isAgendaTimeReminderEnabled: Bool = false
     var showAgendaTimeline: Bool = false
     var consoleMode: ConsoleMode = .setup
     var themeOverride: ThemeOverride = .dark

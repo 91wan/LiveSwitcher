@@ -25,7 +25,7 @@ final class PersistencePortContractTests: XCTestCase {
             "func saveSpeakerMode(_ isEnabled: Bool)",
             "func saveBGMPlayMode(_ playMode: BGMPlayMode)",
             "func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool)",
-            "func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool)",
+            "func saveAgendaTimeReminderEnabled(_ isEnabled: Bool)",
             "func saveShowAgendaTimeline(_ isEnabled: Bool)",
             "func saveCornerLogoVisible(_ isVisible: Bool)",
             "func saveCornerLogoPosition(_ position: CornerLogoPosition)"
@@ -46,7 +46,7 @@ final class PersistencePortContractTests: XCTestCase {
         port.saveSpeakerModeHandler = { specificEvents.append("speaker:\($0)") }
         port.saveBGMPlayModeHandler = { specificEvents.append("bgm:\($0.rawValue)") }
         port.saveAutoPlayNextVideoOnEndHandler = { specificEvents.append("autoNext:\($0)") }
-        port.saveAutoAdvanceAtScheduledTimeHandler = { specificEvents.append("autoAdvance:\($0)") }
+        port.saveAgendaTimeReminderEnabledHandler = { specificEvents.append("agendaReminder:\($0)") }
         port.saveShowAgendaTimelineHandler = { specificEvents.append("timeline:\($0)") }
         port.saveCornerLogoVisibleHandler = { specificEvents.append("logoVisible:\($0)") }
         port.saveCornerLogoPositionHandler = { specificEvents.append("corner:\($0.rawValue)") }
@@ -58,7 +58,7 @@ final class PersistencePortContractTests: XCTestCase {
         port.saveSpeakerMode(true)
         port.saveBGMPlayMode(.sequential)
         port.saveAutoPlayNextVideoOnEnd(true)
-        port.saveAutoAdvanceAtScheduledTime(true)
+        port.saveAgendaTimeReminderEnabled(true)
         port.saveShowAgendaTimeline(true)
         port.saveCornerLogoVisible(true)
         port.saveCornerLogoPosition(.bottomLeft)

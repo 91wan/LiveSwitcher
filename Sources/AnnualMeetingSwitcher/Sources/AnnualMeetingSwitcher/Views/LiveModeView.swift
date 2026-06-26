@@ -8,21 +8,16 @@ struct LiveModeView: View {
     var body: some View {
         GeometryReader { proxy in
             let verticalInsets = LiveModeLayoutMetrics.contentTopPadding + LiveModeLayoutMetrics.contentBottomPadding
-            let agendaPrompt = viewModel.agendaAutoAdvancePrompt()
-            let promptHeight: CGFloat = agendaPrompt == nil ? 0 : 46
+            let promptHeight: CGFloat = viewModel.isAgendaTimeReminderEnabled ? 46 : 0
             let mainHeight = max(
                 0,
                 proxy.size.height - verticalInsets - LiveModeLayoutMetrics.footerHeight - 8 - promptHeight
             )
 
             VStack(spacing: 8) {
-                if let prompt = agendaPrompt {
-                    AgendaAutoAdvancePromptBanner(
-                        prompt: prompt,
-                        onTake: { viewModel.confirmAgendaAutoAdvance(prompt) },
-                        onDismiss: { viewModel.dismissAgendaAutoAdvancePrompt(prompt) }
-                    )
-                    .frame(height: 38)
+                if viewModel.isAgendaTimeReminderEnabled {
+                    AgendaReminderHost()
+                        .frame(height: 38)
                 }
 
                 HStack(alignment: .top, spacing: LiveModeLayoutMetrics.mainColumnSpacing) {
@@ -59,8 +54,27 @@ struct LiveModeView: View {
     }
 }
 
-private struct AgendaAutoAdvancePromptBanner: View {
-    let prompt: AgendaAutoAdvancePrompt
+@MainActor
+private struct AgendaReminderHost: View {
+    @Environment(SwitcherViewModel.self) private var viewModel
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 5)) { context in
+            if let prompt = viewModel.agendaReminderPrompt(now: context.date) {
+                AgendaReminderPromptBanner(
+                    prompt: prompt,
+                    onTake: { viewModel.handleAgendaReminderAction(prompt) },
+                    onDismiss: { viewModel.acknowledgeAgendaReminder(prompt) }
+                )
+            } else {
+                Color.clear.accessibilityHidden(true)
+            }
+        }
+    }
+}
+
+private struct AgendaReminderPromptBanner: View {
+    let prompt: AgendaReminderPrompt
     let onTake: () -> Void
     let onDismiss: () -> Void
 
@@ -75,19 +89,29 @@ private struct AgendaAutoAdvancePromptBanner: View {
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 0)
-            Button("切换") {
-                onTake()
+            if prompt.kind == .playableProgram {
+                Button("切换") {
+                    onTake()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(StudioTheme.Action.primary)
+                .focusable(false)
+                Button("忽略") {
+                    onDismiss()
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .focusable(false)
+            } else {
+                Button("知道了") {
+                    onDismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .tint(StudioTheme.Tone.warn)
+                .focusable(false)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.small)
-            .tint(StudioTheme.Action.primary)
-            .focusable(false)
-            Button("忽略") {
-                onDismiss()
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.small)
-            .focusable(false)
         }
         .padding(.horizontal, 12)
         .background(StudioTheme.Tone.warn.opacity(0.11), in: Capsule(style: .continuous))

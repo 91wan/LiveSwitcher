@@ -380,9 +380,9 @@ enum LiveRuntimeReducer {
             guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
             PreferencesRuntimeReducer.setAutoPlayNextVideoOnEnd(isEnabled, state: &state, effects: &effects)
 
-        case .operatorSetAutoAdvanceAtScheduledTime(let isEnabled):
+        case .operatorSetAgendaTimeReminderEnabled(let isEnabled):
             guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }
-            PreferencesRuntimeReducer.setAutoAdvanceAtScheduledTime(isEnabled, state: &state, effects: &effects)
+            PreferencesRuntimeReducer.setAgendaTimeReminderEnabled(isEnabled, state: &state, effects: &effects)
 
         case .operatorSetShowAgendaTimeline(let isEnabled):
             guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }

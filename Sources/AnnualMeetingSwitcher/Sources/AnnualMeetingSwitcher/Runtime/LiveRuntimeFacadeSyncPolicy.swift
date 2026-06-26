@@ -35,7 +35,7 @@ enum LiveRuntimeFacadeSyncPolicy {
              .operatorSetActiveWallpaperURL,
              .operatorSetCornerLogoURL,
              .operatorSetAutoPlayNextVideoOnEnd,
-             .operatorSetAutoAdvanceAtScheduledTime,
+             .operatorSetAgendaTimeReminderEnabled,
              .operatorSetShowAgendaTimeline,
              .operatorSetCornerLogoPosition,
              .mediaLoaded,

@@ -39,10 +39,10 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
         XCTAssertTrue(source.contains(": currentProgramItem"))
     }
 
-    func testProgramQueueViewModelUsesRuntimeAutoAdvancePreferenceWhenPersistenceOwned() throws {
+    func testProgramQueueViewModelUsesRuntimeAgendaReminderPreferenceWhenPersistenceOwned() throws {
         let source = try programQueueSource()
 
-        XCTAssertTrue(source.contains("? runtime.state.preferences.autoAdvanceAtScheduledTime"))
+        XCTAssertTrue(source.contains("? runtime.state.preferences.isAgendaTimeReminderEnabled"))
     }
 
     func testProgramQueueViewModelSourceHelpersExist() throws {
@@ -50,7 +50,7 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
 
         XCTAssertTrue(source.contains("runtimeBackedProgramItemsForProgramQueueViewModel"))
         XCTAssertTrue(source.contains("runtimeBackedCurrentProgramForProgramQueueViewModel"))
-        XCTAssertTrue(source.contains("runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel"))
+        XCTAssertTrue(source.contains("runtimeBackedAgendaTimeReminderEnabledForProgramQueueViewModel"))
         XCTAssertTrue(source.contains("runtimeBackedProgramItemForProgramQueueViewModel"))
     }
 
@@ -340,16 +340,16 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
         bridgeMode: LiveRuntimeBridgeMode,
         runtimeItems: [ProgramItem],
         runtimeCurrent: ProgramItem? = nil,
-        runtimeAutoAdvance: Bool = false,
+        runtimeAgendaReminder: Bool = false,
         facadeItems: [ProgramItem],
         facadeCurrent: ProgramItem? = nil,
-        facadeAutoAdvance: Bool = false
+        facadeAgendaReminder: Bool = false
     ) -> SwitcherViewModel {
         var state = LiveRuntimeState()
         state.program.items = runtimeItems
         state.program.currentID = runtimeCurrent?.id
         state.program.currentSwitchedAt = runtimeCurrent == nil ? nil : Date(timeIntervalSince1970: 100)
-        state.preferences.autoAdvanceAtScheduledTime = runtimeAutoAdvance
+        state.preferences.isAgendaTimeReminderEnabled = runtimeAgendaReminder
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
@@ -370,7 +370,7 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
             facadeCurrent,
             switchedAt: facadeCurrent == nil ? nil : Date(timeIntervalSince1970: 10)
         )
-        viewModel.autoAdvanceAtScheduledTime = facadeAutoAdvance
+        viewModel.isAgendaTimeReminderEnabled = facadeAgendaReminder
         viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         return viewModel
     }

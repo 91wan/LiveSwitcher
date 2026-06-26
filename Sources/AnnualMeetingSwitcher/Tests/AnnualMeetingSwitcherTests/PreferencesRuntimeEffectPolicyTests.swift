@@ -18,8 +18,8 @@ final class PreferencesRuntimeEffectPolicyTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.saveAutoPlayNextVideoOnEnd(true).requiredBridgeDomain, .persistence)
     }
 
-    func testSaveAutoAdvanceRequiresPersistence() {
-        XCTAssertEqual(LiveRuntimeEffect.saveAutoAdvanceAtScheduledTime(true).requiredBridgeDomain, .persistence)
+    func testSaveAgendaTimeReminderRequiresPersistence() {
+        XCTAssertEqual(LiveRuntimeEffect.saveAgendaTimeReminderEnabled(true).requiredBridgeDomain, .persistence)
     }
 
     func testSaveShowAgendaTimelineRequiresPersistence() {

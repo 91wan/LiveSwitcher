@@ -28,11 +28,11 @@ extension SwitcherViewModel {
         }
 
         let alert = NSAlert()
-        alert.messageText = "Presentation is not ready"
-        alert.informativeText = "\(readiness.operatorMessage)\n\nContinue anyway?"
+        alert.messageText = "演示尚未就绪"
+        alert.informativeText = "\(readiness.operatorMessage)\n\n仍要继续吗？"
         alert.alertStyle = .warning
-        alert.addButton(withTitle: "Continue")
-        alert.addButton(withTitle: "Cancel")
+        alert.addButton(withTitle: "继续")
+        alert.addButton(withTitle: "取消")
 
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         switchToProgram(activationItem)
@@ -51,8 +51,9 @@ extension SwitcherViewModel {
         )
     }
 
-    func confirmAgendaAutoAdvance(_ prompt: AgendaAutoAdvancePrompt) {
-        agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
+    func handleAgendaReminderAction(_ prompt: AgendaReminderPrompt) {
+        agendaReminderAcknowledgedItemIDs.insert(prompt.itemID)
+        guard prompt.kind == .playableProgram else { return }
         guard let item = runtimeBackedProgramItemsForActivationPlanning.first(where: { $0.id == prompt.itemID }) else { return }
         switchToProgramAfterReadinessConfirmation(item)
     }

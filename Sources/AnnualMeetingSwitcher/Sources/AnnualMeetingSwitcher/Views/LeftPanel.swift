@@ -75,15 +75,23 @@ struct LeftPanel: View {
 
             Spacer(minLength: 0)
 
-            Toggle(isOn: $viewModel.autoAdvanceAtScheduledTime) {
-                Image(systemName: "clock.badge.checkmark")
-                    .font(StudioTheme.TypeScale.caption.weight(.bold))
-                    .foregroundStyle(StudioTheme.textSecondary)
+            Toggle(isOn: $viewModel.isAgendaTimeReminderEnabled) {
+                HStack(spacing: 5) {
+                    Image(systemName: "clock.badge.checkmark")
+                        .font(StudioTheme.TypeScale.caption.weight(.bold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text("到点提醒")
+                        .font(StudioTheme.TypeScale.label.weight(.semibold))
+                        .foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
+                }
             }
-            .labelsHidden()
             .toggleStyle(.switch)
             .controlSize(.small)
-            .help("下一项到达计划开始时间时提示；不会自动切换。")
+            .help("计划项到达开始时间时提示；不会自动切换。")
+            .accessibilityLabel("到点提醒")
+            .accessibilityHint("计划项到达开始时间时只显示提醒，不会自动切换。")
 
             Button {
                 isAgendaMarkerPopoverPresented = true

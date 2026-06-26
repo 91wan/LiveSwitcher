@@ -28,7 +28,7 @@ extension LiveRuntimeEffect {
              .saveSpeakerMode,
              .saveBGMPlayMode,
              .saveAutoPlayNextVideoOnEnd,
-             .saveAutoAdvanceAtScheduledTime,
+             .saveAgendaTimeReminderEnabled,
              .saveShowAgendaTimeline,
              .saveCornerLogoVisible,
              .saveCornerLogoPosition,

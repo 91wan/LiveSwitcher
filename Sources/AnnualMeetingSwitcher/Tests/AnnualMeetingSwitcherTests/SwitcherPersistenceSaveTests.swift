@@ -135,12 +135,14 @@ final class SwitcherPersistenceSaveTests: XCTestCase {
         XCTAssertTrue(defaults.bool(forKey: "autoPlayNextVideoOnEnd"))
     }
 
-    func testSaveAutoAdvanceAtScheduledTimeWritesLegacyKey() throws {
+    func testSaveAgendaReminderEnabledWritesNewKeyAndRemovesLegacyKey() throws {
         let defaults = try makeDefaults()
+        defaults.set(false, forKey: "autoAdvanceAtScheduledTime")
 
-        SwitcherPersistenceStore(userDefaults: defaults).saveAutoAdvanceAtScheduledTime(true)
+        SwitcherPersistenceStore(userDefaults: defaults).saveAgendaReminderEnabled(true)
 
-        XCTAssertTrue(defaults.bool(forKey: "autoAdvanceAtScheduledTime"))
+        XCTAssertTrue(defaults.bool(forKey: "agendaReminderEnabled"))
+        XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
     }
 
     func testSaveShowAgendaTimelineWritesLegacyKey() throws {

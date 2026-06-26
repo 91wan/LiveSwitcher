@@ -100,7 +100,7 @@ final class LiveRuntimeStore {
                 cornerLogoURL: persistentState.cornerLogoURL,
                 isCornerLogoVisible: persistentState.isCornerLogoVisible,
                 autoPlayNextVideoOnEnd: persistentState.autoPlayNextVideoOnEnd,
-                autoAdvanceAtScheduledTime: persistentState.autoAdvanceAtScheduledTime,
+                isAgendaTimeReminderEnabled: persistentState.isAgendaTimeReminderEnabled,
                 showAgendaTimeline: persistentState.showAgendaTimeline,
                 cornerLogoPosition: persistentState.cornerLogoPosition
             )
@@ -139,7 +139,7 @@ final class LiveRuntimeStore {
             "pptActive=\(state.ppt.isEventTapActive)",
             "theme=\(state.preferences.themeOverride.rawValue)",
             "autoNext=\(state.preferences.autoPlayNextVideoOnEnd)",
-            "autoAdvance=\(state.preferences.autoAdvanceAtScheduledTime)",
+            "agendaReminder=\(state.preferences.isAgendaTimeReminderEnabled)",
             "agendaTimeline=\(state.preferences.showAgendaTimeline)",
             "logoVisible=\(state.preferences.isCornerLogoVisible)",
             "cornerLogo=\(state.preferences.cornerLogoPosition.rawValue)"

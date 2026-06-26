@@ -18,7 +18,7 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
             "func switchToProgram(",
             "func switchToProgramAfterReadinessConfirmation(",
             "func switchToProgram(at index: Int)",
-            "func confirmAgendaAutoAdvance(",
+            "func handleAgendaReminderAction(",
             "programSourceIsAvailable"
         ] {
             XCTAssertTrue(source.contains(required), required)
@@ -35,8 +35,8 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
             "func updateProgramItemSchedule(",
             "func removeProgramItem(",
             "func moveProgramItems(",
-            "func agendaAutoAdvancePrompt(",
-            "func dismissAgendaAutoAdvancePrompt("
+            "func agendaReminderPrompt(",
+            "func acknowledgeAgendaReminder("
         ] {
             XCTAssertTrue(source.contains(allowed), allowed)
         }
@@ -86,9 +86,9 @@ final class ViewModelProgramActivationExtractionTests: XCTestCase {
         XCTAssertTrue(try activationRuntimeBridgeSource().contains("executeProgramActivationPlanFromRuntime"))
     }
 
-    func testConfirmAgendaAutoAdvanceLivesWithActivationOrchestration() throws {
-        XCTAssertFalse(try programQueueSource().contains("func confirmAgendaAutoAdvance("))
-        XCTAssertTrue(try activationSource().contains("func confirmAgendaAutoAdvance("))
+    func testAgendaReminderActionLivesWithActivationOrchestration() throws {
+        XCTAssertFalse(try programQueueSource().contains("func handleAgendaReminderAction("))
+        XCTAssertTrue(try activationSource().contains("func handleAgendaReminderAction("))
     }
 
     private var activationSnippets: [String] {

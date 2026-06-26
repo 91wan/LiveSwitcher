@@ -48,7 +48,7 @@ enum LiveRuntimeEffect: Equatable {
     case saveSpeakerMode(Bool)
     case saveBGMPlayMode(BGMPlayMode)
     case saveAutoPlayNextVideoOnEnd(Bool)
-    case saveAutoAdvanceAtScheduledTime(Bool)
+    case saveAgendaTimeReminderEnabled(Bool)
     case saveShowAgendaTimeline(Bool)
     case saveCornerLogoVisible(Bool)
     case saveCornerLogoPosition(CornerLogoPosition)

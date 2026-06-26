@@ -31,7 +31,7 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
         XCTAssertFalse(source.contains("func persistSpeakerModeFromRuntime("))
         XCTAssertFalse(source.contains("func persistBGMPlayModeFromRuntime("))
         XCTAssertFalse(source.contains("func persistAutoPlayNextVideoOnEndFromRuntime("))
-        XCTAssertFalse(source.contains("func persistAutoAdvanceAtScheduledTimeFromRuntime("))
+        XCTAssertFalse(source.contains("func persistAgendaTimeReminderEnabledFromRuntime("))
         XCTAssertFalse(source.contains("func persistShowAgendaTimelineFromRuntime("))
         XCTAssertFalse(source.contains("func persistCornerLogoPositionFromRuntime("))
     }

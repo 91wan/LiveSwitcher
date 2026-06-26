@@ -13,7 +13,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
             cornerLogoURL: URL(fileURLWithPath: "/tmp/loaded-logo.png"),
             cornerLogoPosition: .bottomRight,
             autoPlayNextVideoOnEnd: true,
-            autoAdvanceAtScheduledTime: true,
+            isAgendaTimeReminderEnabled: true,
             showAgendaTimeline: true,
             consoleMode: .live,
             themeOverride: .light
@@ -30,7 +30,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.preferences.activeWallpaperURL, state.activeWallpaperURL)
         XCTAssertEqual(viewModel.runtime.state.preferences.cornerLogoURL, state.cornerLogoURL)
         XCTAssertTrue(viewModel.runtime.state.preferences.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(viewModel.runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.runtime.state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertTrue(viewModel.runtime.state.preferences.showAgendaTimeline)
         XCTAssertEqual(viewModel.runtime.state.preferences.cornerLogoPosition, .bottomRight)
         XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
@@ -42,7 +42,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
                  .saveConsoleMode,
                  .saveThemeOverride,
                  .saveAutoPlayNextVideoOnEnd,
-                 .saveAutoAdvanceAtScheduledTime,
+                 .saveAgendaTimeReminderEnabled,
                  .saveShowAgendaTimeline,
                  .saveCornerLogoPosition:
                 return true
@@ -79,7 +79,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
             cornerLogoURL: URL(fileURLWithPath: "/tmp/facade-logo.png"),
             cornerLogoPosition: .bottomLeft,
             autoPlayNextVideoOnEnd: true,
-            autoAdvanceAtScheduledTime: true,
+            isAgendaTimeReminderEnabled: true,
             showAgendaTimeline: true,
             consoleMode: .live,
             themeOverride: .system
@@ -96,7 +96,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         XCTAssertEqual(viewModel.cornerLogoURL, state.cornerLogoURL)
         XCTAssertEqual(viewModel.cornerLogoPosition, .bottomLeft)
         XCTAssertTrue(viewModel.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(viewModel.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.isAgendaTimeReminderEnabled)
         XCTAssertTrue(viewModel.showAgendaTimeline)
         XCTAssertEqual(viewModel.consoleMode, .live)
         XCTAssertEqual(viewModel.themeOverride, .system)
@@ -205,7 +205,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
             activeWallpaperURL: wallpaperURL,
             cornerLogoPosition: .bottomLeft,
             autoPlayNextVideoOnEnd: true,
-            autoAdvanceAtScheduledTime: true,
+            isAgendaTimeReminderEnabled: true,
             showAgendaTimeline: true,
             consoleMode: .live,
             themeOverride: .system
@@ -216,7 +216,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.preferences.activeWallpaperURL, wallpaperURL)
         XCTAssertEqual(viewModel.runtime.state.preferences.cornerLogoPosition, .bottomLeft)
         XCTAssertTrue(viewModel.runtime.state.preferences.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(viewModel.runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.runtime.state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertTrue(viewModel.runtime.state.preferences.showAgendaTimeline)
     }
 
@@ -441,7 +441,7 @@ final class PersistentStateRuntimeLoadBoundaryTests: XCTestCase {
                  .saveConsoleMode,
                  .saveThemeOverride,
                  .saveAutoPlayNextVideoOnEnd,
-                 .saveAutoAdvanceAtScheduledTime,
+                 .saveAgendaTimeReminderEnabled,
                  .saveShowAgendaTimeline,
                  .saveCornerLogoPosition:
                 return true

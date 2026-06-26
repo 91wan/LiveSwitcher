@@ -279,7 +279,7 @@ final class PersistentLoadRuntimePreservationTests: XCTestCase {
             cornerLogoURL: URL(fileURLWithPath: "/tmp/persistent-logo.png"),
             cornerLogoPosition: .bottomRight,
             autoPlayNextVideoOnEnd: true,
-            autoAdvanceAtScheduledTime: true,
+            isAgendaTimeReminderEnabled: true,
             showAgendaTimeline: true,
             consoleMode: .live,
             themeOverride: .light

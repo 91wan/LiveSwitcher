@@ -251,7 +251,7 @@ struct LiveRuntimePreferenceState: Equatable {
     var cornerLogoURL: URL?
     var isCornerLogoVisible = false
     var autoPlayNextVideoOnEnd = false
-    var autoAdvanceAtScheduledTime = false
+    var isAgendaTimeReminderEnabled = false
     var showAgendaTimeline = false
     var cornerLogoPosition: CornerLogoPosition = .topRight
 }

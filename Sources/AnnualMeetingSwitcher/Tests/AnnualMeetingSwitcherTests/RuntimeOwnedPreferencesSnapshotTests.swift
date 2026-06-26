@@ -63,16 +63,16 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.state.preferences.autoPlayNextVideoOnEnd)
     }
 
-    func testPersistenceOwnedSnapshotPreservesRuntimeAutoAdvanceAtScheduledTime() {
+    func testPersistenceOwnedSnapshotPreservesRuntimeAgendaTimeReminderEnabled() {
         var state = runtimePreferencesState()
-        state.preferences.autoAdvanceAtScheduledTime = true
+        state.preferences.isAgendaTimeReminderEnabled = true
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .audioOwned) { viewModel in
-            viewModel.autoAdvanceAtScheduledTime = false
+            viewModel.isAgendaTimeReminderEnabled = false
         }
 
         viewModel.syncRuntimeStateFromFacade(clearActionLog: false)
 
-        XCTAssertTrue(viewModel.runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.runtime.state.preferences.isAgendaTimeReminderEnabled)
     }
 
     func testPersistenceOwnedSnapshotPreservesRuntimeShowAgendaTimeline() {
@@ -106,7 +106,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
         state.preferences.activeWallpaperURL = runtimeWallpaperURL
         state.preferences.cornerLogoURL = runtimeLogoURL
         state.preferences.autoPlayNextVideoOnEnd = true
-        state.preferences.autoAdvanceAtScheduledTime = true
+        state.preferences.isAgendaTimeReminderEnabled = true
         state.preferences.showAgendaTimeline = false
         state.preferences.cornerLogoPosition = .bottomLeft
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .audioOwned) { viewModel in
@@ -115,7 +115,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
             viewModel.activeWallpaperURL = facadeWallpaperURL
             viewModel.cornerLogoURL = facadeLogoURL
             viewModel.autoPlayNextVideoOnEnd = false
-            viewModel.autoAdvanceAtScheduledTime = false
+            viewModel.isAgendaTimeReminderEnabled = false
             viewModel.showAgendaTimeline = true
             viewModel.cornerLogoPosition = .topRight
         }
@@ -144,7 +144,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
             viewModel.activeWallpaperURL = facadeWallpaperURL
             viewModel.cornerLogoURL = facadeLogoURL
             viewModel.autoPlayNextVideoOnEnd = true
-            viewModel.autoAdvanceAtScheduledTime = true
+            viewModel.isAgendaTimeReminderEnabled = true
             viewModel.showAgendaTimeline = false
             viewModel.cornerLogoPosition = .bottomRight
         }
@@ -155,7 +155,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
         XCTAssertEqual(viewModel.runtime.state.preferences.activeWallpaperURL, facadeWallpaperURL)
         XCTAssertEqual(viewModel.runtime.state.preferences.cornerLogoURL, facadeLogoURL)
         XCTAssertTrue(viewModel.runtime.state.preferences.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(viewModel.runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.runtime.state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertFalse(viewModel.runtime.state.preferences.showAgendaTimeline)
         XCTAssertEqual(viewModel.runtime.state.preferences.cornerLogoPosition, .bottomRight)
     }
@@ -175,7 +175,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
             "state.preferences.activeWallpaperURL = activeWallpaperURL",
             "state.preferences.cornerLogoURL = cornerLogoURL",
             "state.preferences.autoPlayNextVideoOnEnd = autoPlayNextVideoOnEnd",
-            "state.preferences.autoAdvanceAtScheduledTime = autoAdvanceAtScheduledTime",
+            "state.preferences.isAgendaTimeReminderEnabled = isAgendaTimeReminderEnabled",
             "state.preferences.showAgendaTimeline = showAgendaTimeline",
             "state.preferences.cornerLogoPosition = cornerLogoPosition"
         ].forEach { directWrite in
@@ -210,7 +210,7 @@ final class RuntimeOwnedPreferencesSnapshotTests: XCTestCase {
         state.preferences.activeWallpaperURL = URL(fileURLWithPath: "/tmp/runtime-existing-wallpaper.png")
         state.preferences.cornerLogoURL = URL(fileURLWithPath: "/tmp/runtime-existing-logo.png")
         state.preferences.autoPlayNextVideoOnEnd = false
-        state.preferences.autoAdvanceAtScheduledTime = false
+        state.preferences.isAgendaTimeReminderEnabled = false
         state.preferences.showAgendaTimeline = true
         state.preferences.cornerLogoPosition = .topLeft
         return state

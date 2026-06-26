@@ -278,7 +278,7 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertFalse(source.contains("func switchToProgram("))
         XCTAssertFalse(source.contains("func addProgramItem("))
         XCTAssertFalse(source.contains("func removeProgramItem("))
-        XCTAssertFalse(source.contains("func agendaAutoAdvancePrompt("))
+        XCTAssertFalse(source.contains("func agendaReminderPrompt("))
     }
 
     func testMainViewModelDoesNotOwnPresentationAutomationMethodBodies() throws {

@@ -185,10 +185,10 @@ final class SwitcherViewModel {
             dispatchRuntimeFacadeAction(.operatorSetAutoPlayNextVideoOnEnd(autoPlayNextVideoOnEnd))
         }
     }
-    var autoAdvanceAtScheduledTime: Bool = false {
+    var isAgendaTimeReminderEnabled: Bool = false {
         didSet {
-            guard oldValue != autoAdvanceAtScheduledTime else { return }
-            dispatchRuntimeFacadeAction(.operatorSetAutoAdvanceAtScheduledTime(autoAdvanceAtScheduledTime))
+            guard oldValue != isAgendaTimeReminderEnabled else { return }
+            dispatchRuntimeFacadeAction(.operatorSetAgendaTimeReminderEnabled(isAgendaTimeReminderEnabled))
         }
     }
 
@@ -259,7 +259,7 @@ final class SwitcherViewModel {
     @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
     @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
-    var agendaAutoAdvancePromptedItemIDs = Set<UUID>()
+    var agendaReminderAcknowledgedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
     /// 翻页笔拦截开关（开启时全局拦截 PageUp/Down/左右箭头并转发给 WPS）

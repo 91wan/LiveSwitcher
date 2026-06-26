@@ -175,8 +175,8 @@ extension SwitcherViewModel {
         ports.persistencePort.saveAutoPlayNextVideoOnEndHandler = { [weak self] isEnabled in
             self?.persistAutoPlayNextVideoOnEndFromRuntime(isEnabled)
         }
-        ports.persistencePort.saveAutoAdvanceAtScheduledTimeHandler = { [weak self] isEnabled in
-            self?.persistAutoAdvanceAtScheduledTimeFromRuntime(isEnabled)
+        ports.persistencePort.saveAgendaTimeReminderEnabledHandler = { [weak self] isEnabled in
+            self?.persistAgendaTimeReminderEnabledFromRuntime(isEnabled)
         }
         ports.persistencePort.saveShowAgendaTimelineHandler = { [weak self] isEnabled in
             self?.persistShowAgendaTimelineFromRuntime(isEnabled)

@@ -118,8 +118,13 @@ struct SwitcherPersistenceStore {
         userDefaults.set(isEnabled, forKey: SwitcherPersistenceKeys.autoPlayNextVideoOnEnd)
     }
 
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
-        userDefaults.set(isEnabled, forKey: SwitcherPersistenceKeys.autoAdvanceAtScheduledTime)
+    func saveAgendaReminderEnabled(_ isEnabled: Bool) {
+        userDefaults.set(isEnabled, forKey: SwitcherPersistenceKeys.agendaReminderEnabled)
+        userDefaults.removeObject(forKey: SwitcherPersistenceKeys.legacyAutoAdvanceAtScheduledTime)
+    }
+
+    func saveAgendaTimeReminderEnabled(_ isEnabled: Bool) {
+        saveAgendaReminderEnabled(isEnabled)
     }
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {
@@ -261,8 +266,12 @@ struct SwitcherPersistenceStore {
         if userDefaults.object(forKey: SwitcherPersistenceKeys.autoPlayNextVideoOnEnd) != nil {
             state.autoPlayNextVideoOnEnd = userDefaults.bool(forKey: SwitcherPersistenceKeys.autoPlayNextVideoOnEnd)
         }
-        if userDefaults.object(forKey: SwitcherPersistenceKeys.autoAdvanceAtScheduledTime) != nil {
-            state.autoAdvanceAtScheduledTime = userDefaults.bool(forKey: SwitcherPersistenceKeys.autoAdvanceAtScheduledTime)
+        if userDefaults.object(forKey: SwitcherPersistenceKeys.agendaReminderEnabled) != nil {
+            state.isAgendaTimeReminderEnabled = userDefaults.bool(forKey: SwitcherPersistenceKeys.agendaReminderEnabled)
+        } else if userDefaults.object(forKey: SwitcherPersistenceKeys.legacyAutoAdvanceAtScheduledTime) != nil {
+            let migratedValue = userDefaults.bool(forKey: SwitcherPersistenceKeys.legacyAutoAdvanceAtScheduledTime)
+            state.isAgendaTimeReminderEnabled = migratedValue
+            saveAgendaReminderEnabled(migratedValue)
         }
         if userDefaults.object(forKey: SwitcherPersistenceKeys.showAgendaTimeline) != nil {
             state.showAgendaTimeline = userDefaults.bool(forKey: SwitcherPersistenceKeys.showAgendaTimeline)

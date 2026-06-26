@@ -35,7 +35,7 @@ Forbidden configuration surfaces stay outside Live Mode:
 - Editing BGM library metadata
 - Editing overlay preset definitions
 - Editing automation settings
-- Editing auto-advance or auto-next preferences
+- Editing agenda reminder or auto-next preferences
 - Editing release, build, debug, or developer settings
 
 WPS fallback branching remains a ViewModel-owned automation detail, not a Live Mode control.

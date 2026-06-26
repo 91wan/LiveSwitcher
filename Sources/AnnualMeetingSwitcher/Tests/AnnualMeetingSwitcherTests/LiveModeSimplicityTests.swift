@@ -26,7 +26,7 @@ final class LiveModeSimplicityTests: XCTestCase {
         XCTAssertFalse(source.contains("addProgramItem("))
         XCTAssertFalse(source.contains("addBGM"))
         XCTAssertFalse(source.contains("autoPlayNextVideoOnEnd"))
-        XCTAssertFalse(source.contains("autoAdvanceAtScheduledTime"))
+        XCTAssertFalse(source.contains("agendaReminderEnabled"))
     }
 
     func testLiveModeKeepsCoreOperatorActionsVisible() throws {

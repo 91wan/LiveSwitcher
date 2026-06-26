@@ -65,7 +65,7 @@ enum LiveRuntimeAction: Equatable {
     case operatorSetCornerLogoURL(URL?)
     case operatorSetCornerLogoVisible(Bool)
     case operatorSetAutoPlayNextVideoOnEnd(Bool)
-    case operatorSetAutoAdvanceAtScheduledTime(Bool)
+    case operatorSetAgendaTimeReminderEnabled(Bool)
     case operatorSetShowAgendaTimeline(Bool)
     case operatorSetCornerLogoPosition(CornerLogoPosition)
     case operatorAddedProgramItems([ProgramItem])
@@ -159,7 +159,7 @@ extension LiveRuntimeAction {
         case .operatorSetCornerLogoURL: return "operatorSetCornerLogoURL"
         case .operatorSetCornerLogoVisible: return "operatorSetCornerLogoVisible"
         case .operatorSetAutoPlayNextVideoOnEnd: return "operatorSetAutoPlayNextVideoOnEnd"
-        case .operatorSetAutoAdvanceAtScheduledTime: return "operatorSetAutoAdvanceAtScheduledTime"
+        case .operatorSetAgendaTimeReminderEnabled: return "operatorSetAgendaTimeReminderEnabled"
         case .operatorSetShowAgendaTimeline: return "operatorSetShowAgendaTimeline"
         case .operatorSetCornerLogoPosition: return "operatorSetCornerLogoPosition"
         case .operatorAddedProgramItems: return "operatorAddedProgramItems"

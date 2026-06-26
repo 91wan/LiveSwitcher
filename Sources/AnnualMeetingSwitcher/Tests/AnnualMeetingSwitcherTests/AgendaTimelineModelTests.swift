@@ -60,7 +60,7 @@ final class AgendaTimelineModelTests: XCTestCase {
         XCTAssertFalse(marker.supportsSeeking)
     }
 
-    func testScheduleStatusOnScheduleBehindAndAhead() {
+    func testScheduleStatusLocalizesPaceStates() {
         let item = ProgramItem(title: "Awards", scheduledStartAt: date(hour: 9, minute: 0), scheduledDuration: 30 * 60)
 
         let onSchedule = AgendaScheduleStatusModel.make(
@@ -68,7 +68,7 @@ final class AgendaTimelineModelTests: XCTestCase {
             switchedAt: date(hour: 9, minute: 0),
             now: date(hour: 9, minute: 7, second: 20)
         )
-        XCTAssertEqual(onSchedule.text, "On schedule")
+        XCTAssertEqual(onSchedule.text, "准点")
         XCTAssertEqual(onSchedule.kind, .ready)
 
         let behind = AgendaScheduleStatusModel.make(
@@ -76,7 +76,7 @@ final class AgendaTimelineModelTests: XCTestCase {
             switchedAt: date(hour: 9, minute: 5),
             now: date(hour: 9, minute: 10)
         )
-        XCTAssertEqual(behind.text, "Behind by 5 min")
+        XCTAssertEqual(behind.text, "落后 5 分钟")
         XCTAssertEqual(behind.kind, .warn)
 
         let ahead = AgendaScheduleStatusModel.make(
@@ -84,7 +84,7 @@ final class AgendaTimelineModelTests: XCTestCase {
             switchedAt: date(hour: 8, minute: 57),
             now: date(hour: 9, minute: 8)
         )
-        XCTAssertEqual(ahead.text, "Ahead 3 min")
+        XCTAssertEqual(ahead.text, "提前 3 分钟")
         XCTAssertEqual(ahead.kind, .ready)
     }
 
@@ -92,31 +92,31 @@ final class AgendaTimelineModelTests: XCTestCase {
         let current = ProgramItem(id: UUID(), title: "Opening", scheduledStartAt: date(hour: 9, minute: 0), scheduledDuration: 15 * 60)
         let next = ProgramItem(id: UUID(), title: "CEO Speech", scheduledStartAt: date(hour: 9, minute: 15), scheduledDuration: 20 * 60)
 
-        XCTAssertNil(AgendaAutoAdvanceModel.prompt(
+        XCTAssertNil(AgendaReminderModel.prompt(
             isEnabled: false,
             programItems: [current, next],
             currentProgramItem: current,
             now: date(hour: 9, minute: 15),
-            promptedItemIDs: []
+            acknowledgedItemIDs: []
         ))
 
-        let prompt = AgendaAutoAdvanceModel.prompt(
+        let prompt = AgendaReminderModel.prompt(
             isEnabled: true,
             programItems: [current, next],
             currentProgramItem: current,
             now: date(hour: 9, minute: 15),
-            promptedItemIDs: []
+            acknowledgedItemIDs: []
         )
         XCTAssertEqual(prompt?.itemID, next.id)
         XCTAssertEqual(prompt?.title, "CEO Speech")
-        XCTAssertEqual(prompt?.message, "Scheduled time reached. Switch to CEO Speech?")
+        XCTAssertEqual(prompt?.message, "已到计划时间：CEO Speech")
 
-        XCTAssertNil(AgendaAutoAdvanceModel.prompt(
+        XCTAssertNil(AgendaReminderModel.prompt(
             isEnabled: true,
             programItems: [current, next],
             currentProgramItem: current,
             now: date(hour: 9, minute: 15),
-            promptedItemIDs: [next.id]
+            acknowledgedItemIDs: [next.id]
         ))
     }
 
@@ -125,16 +125,68 @@ final class AgendaTimelineModelTests: XCTestCase {
         let marker = ProgramItem.agendaMarker(title: "Transition", scheduledStartAt: date(hour: 9, minute: 15))
         let next = ProgramItem(id: UUID(), title: "CEO Speech", scheduledStartAt: date(hour: 9, minute: 20), scheduledDuration: 20 * 60)
 
-        let prompt = AgendaAutoAdvanceModel.prompt(
+        let prompt = AgendaReminderModel.prompt(
             isEnabled: true,
             programItems: [current, marker, next],
             currentProgramItem: current,
             now: date(hour: 9, minute: 20),
-            promptedItemIDs: []
+            acknowledgedItemIDs: []
         )
 
-        XCTAssertEqual(prompt?.itemID, next.id)
-        XCTAssertEqual(prompt?.title, "CEO Speech")
+        XCTAssertEqual(prompt?.itemID, marker.id)
+        XCTAssertEqual(prompt?.title, "Transition")
+        XCTAssertEqual(prompt?.kind, .marker)
+    }
+
+    func testAgendaReminderPromptsFirstScheduledItemWhenThereIsNoCurrentProgram() {
+        let opening = ProgramItem(id: UUID(), title: "年会开场", scheduledStartAt: date(hour: 9, minute: 0), scheduledDuration: 15 * 60)
+        let next = ProgramItem(id: UUID(), title: "领导致辞", scheduledStartAt: date(hour: 9, minute: 20), scheduledDuration: 20 * 60)
+
+        let prompt = AgendaReminderModel.prompt(
+            isEnabled: true,
+            programItems: [opening, next],
+            currentProgramItem: nil,
+            now: date(hour: 9, minute: 1),
+            acknowledgedItemIDs: []
+        )
+
+        XCTAssertEqual(prompt?.itemID, opening.id)
+        XCTAssertEqual(prompt?.kind, .playableProgram)
+        XCTAssertEqual(prompt?.message, "已到计划时间：年会开场")
+    }
+
+    func testAgendaReminderIncludesMarkersWithoutSwitchAction() {
+        let opening = ProgramItem(id: UUID(), title: "年会开场", scheduledStartAt: date(hour: 9, minute: 0), scheduledDuration: 15 * 60)
+        let marker = ProgramItem.agendaMarker(title: "茶歇", scheduledStartAt: date(hour: 9, minute: 15))
+        let next = ProgramItem(id: UUID(), title: "抽奖", scheduledStartAt: date(hour: 9, minute: 20), scheduledDuration: 10 * 60)
+
+        let prompt = AgendaReminderModel.prompt(
+            isEnabled: true,
+            programItems: [opening, marker, next],
+            currentProgramItem: opening,
+            now: date(hour: 9, minute: 16),
+            acknowledgedItemIDs: []
+        )
+
+        XCTAssertEqual(prompt?.itemID, marker.id)
+        XCTAssertEqual(prompt?.kind, .marker)
+        XCTAssertEqual(prompt?.message, "议程提醒：茶歇")
+    }
+
+    func testAgendaReminderChoosesEarliestOverdueUnacknowledgedItem() {
+        let current = ProgramItem(id: UUID(), title: "开场", scheduledStartAt: date(hour: 9, minute: 0), scheduledDuration: 5 * 60)
+        let firstOverdue = ProgramItem(id: UUID(), title: "第一项", scheduledStartAt: date(hour: 9, minute: 5), scheduledDuration: 5 * 60)
+        let secondOverdue = ProgramItem(id: UUID(), title: "第二项", scheduledStartAt: date(hour: 9, minute: 6), scheduledDuration: 5 * 60)
+
+        let prompt = AgendaReminderModel.prompt(
+            isEnabled: true,
+            programItems: [current, secondOverdue, firstOverdue],
+            currentProgramItem: current,
+            now: date(hour: 9, minute: 10),
+            acknowledgedItemIDs: [secondOverdue.id]
+        )
+
+        XCTAssertEqual(prompt?.itemID, firstOverdue.id)
     }
 
     func testLiveCutBusSkipsNonPlayableAgendaMarkers() {
@@ -190,7 +242,7 @@ final class AgendaTimelineModelTests: XCTestCase {
             )
         )
         writer.showAgendaTimeline = true
-        writer.autoAdvanceAtScheduledTime = true
+        writer.isAgendaTimeReminderEnabled = true
         writer.saveData()
 
         let restored = SwitcherViewModel(loadPersistedData: true, enableSystemVolumeObserver: false, userDefaults: defaults)
@@ -202,7 +254,7 @@ final class AgendaTimelineModelTests: XCTestCase {
         XCTAssertEqual(restored.programItems[1].scheduledStartAt, markerStart)
         XCTAssertEqual(restored.programItems[1].scheduledDuration, 10 * 60)
         XCTAssertTrue(restored.showAgendaTimeline)
-        XCTAssertTrue(restored.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(restored.isAgendaTimeReminderEnabled)
     }
 
     func testLiveRuntimeStatusIncludesAgendaScheduleChip() {
@@ -222,7 +274,7 @@ final class AgendaTimelineModelTests: XCTestCase {
 
         let model = LiveRuntimeStatusModel.make(checks: [], snapshot: snapshot)
 
-        XCTAssertTrue(model.chips.contains { $0.text == "Behind by 5 min" && $0.kind == .warn })
+        XCTAssertTrue(model.chips.contains { $0.text == "落后 5 分钟" && $0.kind == .warn })
     }
 
     func testRunQueueSourcesExposeAgendaTimelineUIHooks() throws {
@@ -232,11 +284,12 @@ final class AgendaTimelineModelTests: XCTestCase {
 
         XCTAssertTrue(leftPanel.contains("AgendaTimelineView"))
         XCTAssertTrue(leftPanel.contains("showAgendaTimeline"))
-        XCTAssertTrue(leftPanel.contains("autoAdvanceAtScheduledTime"))
+        XCTAssertTrue(leftPanel.contains("到点提醒"))
         XCTAssertTrue(leftPanel.contains("addAgendaMarker"))
         XCTAssertTrue(runQueue.contains("AgendaScheduleEditorPopover"))
         XCTAssertTrue(runQueue.contains("scheduledTimeText"))
-        XCTAssertTrue(liveMode.contains("agendaAutoAdvancePrompt()"))
+        XCTAssertTrue(liveMode.contains("AgendaReminderHost"))
+        XCTAssertTrue(liveMode.contains("TimelineView(.periodic"))
     }
 
     private func date(hour: Int, minute: Int, second: Int = 0) -> Date {

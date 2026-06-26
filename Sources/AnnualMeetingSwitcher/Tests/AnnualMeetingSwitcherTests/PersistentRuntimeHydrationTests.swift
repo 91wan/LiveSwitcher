@@ -103,7 +103,7 @@ final class PersistentRuntimeHydrationTests: XCTestCase {
             cornerLogoURL: URL(fileURLWithPath: "/tmp/hydrated-logo.png"),
             cornerLogoPosition: .bottomRight,
             autoPlayNextVideoOnEnd: true,
-            autoAdvanceAtScheduledTime: true,
+            isAgendaTimeReminderEnabled: true,
             showAgendaTimeline: true,
             consoleMode: .live,
             themeOverride: .light
@@ -116,7 +116,7 @@ final class PersistentRuntimeHydrationTests: XCTestCase {
         XCTAssertEqual(runtime.state.preferences.cornerLogoURL, URL(fileURLWithPath: "/tmp/hydrated-logo.png"))
         XCTAssertEqual(runtime.state.preferences.cornerLogoPosition, .bottomRight)
         XCTAssertTrue(runtime.state.preferences.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(runtime.state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertTrue(runtime.state.preferences.showAgendaTimeline)
         XCTAssertTrue(runtime.actionLog.isEmpty)
         XCTAssertTrue(runtime.recordedEffects.isEmpty)
