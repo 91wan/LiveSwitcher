@@ -6,5 +6,6 @@ struct PanicLayer: View {
     var body: some View {
         Color.black
             .ignoresSafeArea()
+            .accessibilityLabel("紧急切黑已启用")
     }
 }

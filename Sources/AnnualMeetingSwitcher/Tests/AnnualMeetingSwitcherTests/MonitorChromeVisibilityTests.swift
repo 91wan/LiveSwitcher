@@ -82,12 +82,46 @@ final class MonitorChromeVisibilityTests: XCTestCase {
         XCTAssertFalse(hovered.showsCompactLiveIndicator)
     }
 
+    func testFadeToBlackForcesInlineChromeVisibleOverTickerAndPlayback() {
+        let model = MonitorChromeVisibility.make(
+            isPlaying: true,
+            isHovering: false,
+            isBroadcasting: true,
+            isTickerActive: true,
+            isFadeToBlackActive: true,
+            isPanicMode: false
+        )
+
+        XCTAssertEqual(model.inlineChromeOpacity, 1)
+        XCTAssertTrue(model.inlineChromeAllowsHitTesting)
+        XCTAssertFalse(model.showsCompactLiveIndicator)
+        XCTAssertEqual(model.compactLiveIndicatorOpacity, 0)
+    }
+
+    func testPanicForcesInlineChromeVisibleOverTickerAndPlayback() {
+        let model = MonitorChromeVisibility.make(
+            isPlaying: true,
+            isHovering: false,
+            isBroadcasting: true,
+            isTickerActive: true,
+            isFadeToBlackActive: false,
+            isPanicMode: true
+        )
+
+        XCTAssertEqual(model.inlineChromeOpacity, 1)
+        XCTAssertTrue(model.inlineChromeAllowsHitTesting)
+        XCTAssertFalse(model.showsCompactLiveIndicator)
+        XCTAssertEqual(model.compactLiveIndicatorOpacity, 0)
+    }
+
     func testProgramMonitorViewUsesVisibilityModelAndHoverState() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
         XCTAssertTrue(source.contains("@State private var isHoveringPreviewDeck"))
         XCTAssertTrue(source.contains("MonitorChromeVisibility.make("))
         XCTAssertTrue(source.contains("isTickerActive: viewModel.isTickerActive"))
+        XCTAssertTrue(source.contains("isFadeToBlackActive: viewModel.isFadeToBlackActive"))
+        XCTAssertTrue(source.contains("isPanicMode: viewModel.isPanicMode"))
         XCTAssertTrue(source.contains(".onHover { hovering in"))
         XCTAssertTrue(source.contains("compactLiveIndicator"))
     }

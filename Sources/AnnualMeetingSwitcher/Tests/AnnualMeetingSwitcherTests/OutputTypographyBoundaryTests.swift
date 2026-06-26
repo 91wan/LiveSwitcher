@@ -24,6 +24,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertFalse(source.contains(".font(.system(size:"))
         XCTAssertFalse(source.contains("foregroundColor("))
         XCTAssertTrue(source.contains("Color.black"))
+        XCTAssertTrue(source.contains(".accessibilityLabel(\"紧急切黑已启用\")"))
     }
 
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
