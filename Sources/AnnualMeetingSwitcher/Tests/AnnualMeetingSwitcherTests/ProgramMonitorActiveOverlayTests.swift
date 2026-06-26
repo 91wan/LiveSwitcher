@@ -27,8 +27,10 @@ final class ProgramMonitorActiveOverlayTests: XCTestCase {
 
         XCTAssertTrue(monitor.contains("blackoutStatusOverlay"))
         XCTAssertTrue(monitor.contains("ProgramMonitorBlackoutStatusModel.make("))
-        XCTAssertTrue(monitor.contains("isFadeToBlackActive: viewModel.isFadeToBlackActive"))
-        XCTAssertTrue(monitor.contains("isPanicMode: viewModel.isPanicMode"))
+        XCTAssertTrue(monitor.contains("private var monitorOutputDisplayState: OutputDisplayState"))
+        XCTAssertTrue(monitor.contains("isFadeToBlackActive: monitorOutputDisplayState.isFadeToBlackActive"))
+        XCTAssertTrue(monitor.contains("isPanicMode: monitorOutputDisplayState.isPanicMode"))
+        XCTAssertFalse(monitor.contains("isPanicMode: viewModel.isPanicMode"))
         XCTAssertTrue(monitor.contains("monitorAccessibilityLabel"))
 
         XCTAssertFalse(output.contains("ProgramMonitorBlackoutStatusModel"))

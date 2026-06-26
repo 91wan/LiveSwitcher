@@ -276,11 +276,14 @@ final class ProjectionRuntimeFacadeSyncTests: XCTestCase {
             effectRunner: .recording(),
             environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
-        return SwitcherViewModel(
+        let viewModel = SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        viewModel.externalScreenProvider = { nil }
+        runtime.replaceStateForFacadeSync(runtimeState, clearActionLog: true)
+        return viewModel
     }
 
     private func projectionFacadeSyncBody() throws -> String {

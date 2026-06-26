@@ -268,6 +268,8 @@ final class PersistentLoadRuntimePreservationTests: XCTestCase {
             enableSystemVolumeObserver: false,
             runtime: runtime
         )
+        viewModel.externalScreenProvider = { nil }
+        runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true, dispatchAudioInputsChanged: false)
 
         let persistentState = SwitcherPersistentState(

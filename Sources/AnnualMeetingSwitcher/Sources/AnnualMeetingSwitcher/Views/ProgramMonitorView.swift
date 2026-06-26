@@ -101,7 +101,7 @@ struct ProgramMonitorView: View {
 
     private func monitorActiveOverlayLayer(in monitorSize: CGSize) -> some View {
         let logicalSize = ProgramMonitorOverlayCanvas.logicalSize
-        let displayState = OutputDisplayState.make(from: viewModel)
+        let displayState = monitorOutputDisplayState
         let scale = min(
             safeScale(monitorSize.width, logicalSize.width),
             safeScale(monitorSize.height, logicalSize.height)
@@ -297,21 +297,25 @@ struct ProgramMonitorView: View {
         return "主输出状态。当前 \(current.accessibilityLabel)。下一项 \(next.accessibilityLabel)。"
     }
 
+    private var monitorOutputDisplayState: OutputDisplayState {
+        OutputDisplayState.make(from: viewModel)
+    }
+
     private var monitorChromeVisibility: MonitorChromeVisibility {
         MonitorChromeVisibility.make(
             isPlaying: isMediaPlaybackActive,
             isHovering: isHoveringPreviewDeck,
             isBroadcasting: viewModel.isBroadcasting,
             isTickerActive: viewModel.isTickerActive,
-            isFadeToBlackActive: viewModel.isFadeToBlackActive,
-            isPanicMode: viewModel.isPanicMode
+            isFadeToBlackActive: monitorOutputDisplayState.isFadeToBlackActive,
+            isPanicMode: monitorOutputDisplayState.isPanicMode
         )
     }
 
     private var blackoutStatusModel: ProgramMonitorBlackoutStatusModel {
         ProgramMonitorBlackoutStatusModel.make(
-            isFadeToBlackActive: viewModel.isFadeToBlackActive,
-            isPanicMode: viewModel.isPanicMode
+            isFadeToBlackActive: monitorOutputDisplayState.isFadeToBlackActive,
+            isPanicMode: monitorOutputDisplayState.isPanicMode
         )
     }
 
