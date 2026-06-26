@@ -6,32 +6,32 @@ struct LiveOpsPanel: View {
     let onSwitchToLive: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("现场控制")
-                        .font(StudioTheme.title())
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text("准备阶段")
-                        .font(StudioTheme.caption())
-                        .foregroundStyle(StudioTheme.textSecondary)
+        SetupSideRailChrome(
+            scrollsContent: true,
+            footer: { runtimeFooter }
+        ) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("现场控制")
+                            .font(StudioTheme.title())
+                            .foregroundStyle(StudioTheme.textPrimary)
+                        Text("准备阶段")
+                            .font(StudioTheme.caption())
+                            .foregroundStyle(StudioTheme.textSecondary)
+                    }
+                    Spacer()
+                    if viewModel.isPanicMode {
+                        StatusBadge("紧急切黑", kind: .fail)
+                    }
                 }
-                Spacer()
-                if viewModel.isPanicMode {
-                    StatusBadge("紧急切黑", kind: .fail)
-                }
+                .padding(.horizontal, 4)
+
+                outputCard
+                switchToLiveCard
+                CornerLogoCard()
             }
-            .padding(.horizontal, 4)
-
-            outputCard
-            switchToLiveCard
-            CornerLogoCard()
-
-            Spacer(minLength: 0)
-
-            runtimeFooter
         }
-        .frame(maxHeight: .infinity)
     }
 
     private var outputCard: some View {
@@ -142,12 +142,9 @@ struct LiveOpsPanel: View {
     }
 
     private var runtimeFooter: some View {
-        Text("v\(AppConfiguration.appVersion) · \(HostSystemSummary.shortVersionString)")
-            .font(StudioTheme.caption())
-            .foregroundStyle(StudioTheme.textTertiary)
-            .lineLimit(1)
-            .truncationMode(.tail)
-            .padding(.horizontal, 4)
-            .accessibilityLabel("LiveSwitcher 版本 \(AppConfiguration.appVersion)。\(HostSystemSummary.shortVersionString)。")
+        SetupSideRailFooter(
+            text: "v\(AppConfiguration.appVersion) · \(HostSystemSummary.shortVersionString)",
+            accessibilityLabel: "LiveSwitcher 版本 \(AppConfiguration.appVersion)。\(HostSystemSummary.shortVersionString)。"
+        )
     }
 }

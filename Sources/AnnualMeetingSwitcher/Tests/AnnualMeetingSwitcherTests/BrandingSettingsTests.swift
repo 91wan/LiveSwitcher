@@ -264,10 +264,13 @@ final class BrandingSettingsTests: XCTestCase {
 
         let modeCard = try XCTUnwrap(opsPanel.range(of: "switchToLiveCard")?.lowerBound)
         let brandingCard = try XCTUnwrap(opsPanel.range(of: "CornerLogoCard()")?.lowerBound)
-        let footerSpacer = try XCTUnwrap(opsPanel.range(of: "Spacer(minLength: 0)")?.lowerBound)
+        let footer = try XCTUnwrap(
+            opsPanel.range(of: "runtimeFooter", range: brandingCard..<opsPanel.endIndex)?.lowerBound
+        )
 
+        XCTAssertTrue(opsPanel.contains("scrollsContent: true"))
         XCTAssertLessThan(modeCard, brandingCard)
-        XCTAssertLessThan(brandingCard, footerSpacer)
+        XCTAssertLessThan(brandingCard, footer)
     }
 
     private func makeDefaults() throws -> UserDefaults {
