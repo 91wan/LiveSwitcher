@@ -293,10 +293,16 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
         XCTAssertTrue(runbook.contains("Latest operator smoke note:"))
         XCTAssertTrue(runbook.contains("Operator approved merging the current numbered-badge and BGM return-to-start PRs"))
         XCTAssertTrue(runbook.contains("Operator manually tested and approved the live-ops rail chrome and blackout monitor status PRs"))
+        XCTAssertTrue(runbook.contains("Operator confirmed manual test acceptance in Codex thread for the current production app"))
         XCTAssertTrue(runbook.contains("No detailed hardware matrix row results"))
 
         for scenario in operatorAcceptedHumanScenarios {
             XCTAssertTrue(runbook.contains("| \(scenario) | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |"), scenario)
+            XCTAssertFalse(runbook.contains("| \(scenario) | NOT RUN |"), scenario)
+        }
+
+        for scenario in stableAcceptedScenarios {
+            XCTAssertTrue(runbook.contains("| \(scenario) | PASS |"), scenario)
             XCTAssertFalse(runbook.contains("| \(scenario) | NOT RUN |"), scenario)
         }
 
@@ -394,10 +400,15 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
             "BGM 静音/主持人模式回到开头无异常",
             "快速连续回到开头不串音",
             "BGM 切歌中回到开头不拉高旧歌",
+            "Stable 60-minute soak"
+        ]
+    }
+
+    private var stableAcceptedScenarios: [String] {
+        [
             "Stable final automated gates",
             "Stable final app hash recorded",
-            "Stable final human acceptance recorded",
-            "Stable 60-minute soak"
+            "Stable final human acceptance recorded"
         ]
     }
 
