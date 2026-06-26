@@ -13,42 +13,40 @@ struct LeftPanel: View {
     @State private var isAgendaMarkerPopoverPresented = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            headerRow
-            autoPlayOptionRow
-            agendaControlRow
+        SetupSideRailChrome(
+            footer: { queueFooter }
+        ) {
+            VStack(spacing: SetupSideRailLayoutMetrics.contentSpacing) {
+                headerRow
+                autoPlayOptionRow
+                agendaControlRow
 
-            dropZone
+                dropZone
 
-            if viewModel.showAgendaTimeline {
-                AgendaTimelineView(
-                    items: viewModel.programItems,
-                    currentItemID: viewModel.currentProgramItem?.id,
-                    isBroadcasting: viewModel.isBroadcasting,
-                    onSelect: { item in viewModel.switchToProgramAfterReadinessConfirmation(item) },
-                    onUpdateSchedule: { item, start, duration in
-                        viewModel.updateProgramItemSchedule(
-                            id: item.id,
-                            scheduledStartAt: start,
-                            scheduledDuration: duration
-                        )
-                    },
-                    onUpdateAgendaMarker: { item, input in
-                        viewModel.updateAgendaMarker(id: item.id, input: input)
-                    },
-                    onDelete: { item in viewModel.removeProgramItem(withID: item.id) }
-                )
-            } else {
-                sourceList
+                if viewModel.showAgendaTimeline {
+                    AgendaTimelineView(
+                        items: viewModel.programItems,
+                        currentItemID: viewModel.currentProgramItem?.id,
+                        isBroadcasting: viewModel.isBroadcasting,
+                        onSelect: { item in viewModel.switchToProgramAfterReadinessConfirmation(item) },
+                        onUpdateSchedule: { item, start, duration in
+                            viewModel.updateProgramItemSchedule(
+                                id: item.id,
+                                scheduledStartAt: start,
+                                scheduledDuration: duration
+                            )
+                        },
+                        onUpdateAgendaMarker: { item, input in
+                            viewModel.updateAgendaMarker(id: item.id, input: input)
+                        },
+                        onDelete: { item in viewModel.removeProgramItem(withID: item.id) }
+                    )
+                } else {
+                    sourceList
+                }
             }
-
-            Spacer(minLength: 0)
-
-            queueFooter
+            .frame(maxHeight: .infinity, alignment: .top)
         }
-        .padding(16)
-        .frame(width: StudioTheme.directorRailWidth)
-        .studioCard(cornerRadius: 28)
     }
 
     private var agendaControlRow: some View {
@@ -331,14 +329,11 @@ struct LeftPanel: View {
     private var queueFooter: some View {
         let currentTitle = viewModel.currentProgramItem?.title ?? "未选中"
 
-        return Text("共 \(viewModel.programItems.count) 个节目 · \(currentTitle)")
-            .font(StudioTheme.caption())
-            .foregroundStyle(StudioTheme.textTertiary)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 4)
-            .accessibilityLabel("节目单底部。\(viewModel.programItems.count) 个节目。当前 \(currentTitle)。")
+        return SetupSideRailFooter(
+            text: "共 \(viewModel.programItems.count) 个节目 · \(currentTitle)",
+            accessibilityLabel: "节目单底部。\(viewModel.programItems.count) 个节目。当前 \(currentTitle)。",
+            truncationMode: .middle
+        )
     }
 
     private func queueRole(for index: Int, currentIndex: Int?, nextPlayableIndex: Int?) -> QueueRole {

@@ -41,6 +41,38 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
         XCTAssertTrue(source.contains("StudioTheme.Tone.muted.opacity(0.18)"))
     }
 
+    func testSetupRailsShareChromeMetricsAndFooterStyle() throws {
+        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let liveOps = try sourceText("Views/LiveOpsPanel.swift")
+        let chrome = try sourceText("Views/SetupSideRailChrome.swift")
+
+        XCTAssertTrue(chrome.contains("struct SetupSideRailChrome"))
+        XCTAssertTrue(chrome.contains("struct SetupSideRailFooter"))
+        XCTAssertTrue(chrome.contains("enum SetupSideRailLayoutMetrics"))
+        XCTAssertTrue(chrome.contains("static let cornerRadius: CGFloat = 28"))
+        XCTAssertTrue(chrome.contains("static let padding: CGFloat = 16"))
+        XCTAssertTrue(chrome.contains("static let width = StudioTheme.directorRailWidth"))
+        XCTAssertTrue(chrome.contains(".studioCard(cornerRadius: SetupSideRailLayoutMetrics.cornerRadius)"))
+
+        XCTAssertTrue(leftPanel.contains("SetupSideRailChrome"))
+        XCTAssertTrue(liveOps.contains("SetupSideRailChrome"))
+        XCTAssertTrue(leftPanel.contains("SetupSideRailFooter"))
+        XCTAssertTrue(liveOps.contains("SetupSideRailFooter"))
+        XCTAssertFalse(leftPanel.contains(".studioCard(cornerRadius: 28)"))
+    }
+
+    func testLiveOpsRailKeepsFooterPinnedAndContentScrollable() throws {
+        let liveOps = try sourceText("Views/LiveOpsPanel.swift")
+        let monitor = try sourceText("Views/ProgramMonitorView.swift")
+
+        XCTAssertTrue(liveOps.contains("scrollsContent: true"))
+        XCTAssertTrue(liveOps.contains("CornerLogoCard()"))
+        XCTAssertTrue(liveOps.contains("runtimeFooter"))
+        XCTAssertTrue(liveOps.contains("进入现场"))
+        XCTAssertTrue(liveOps.contains("handleSafeBroadcastToggle"))
+        XCTAssertFalse(monitor.contains("CornerLogoCard()"))
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
