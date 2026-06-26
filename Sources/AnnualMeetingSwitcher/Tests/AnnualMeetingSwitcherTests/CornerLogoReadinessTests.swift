@@ -19,7 +19,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         XCTAssertTrue(viewModel.setCornerLogo(url: newURL))
-        await loader.waitForRequestCount(1)
+        await loader.waitForRequest(url: newURL)
 
         XCTAssertEqual(viewModel.cornerLogoURL, oldURL)
         XCTAssertTrue(viewModel.cornerLogoImage === oldImage)
@@ -49,7 +49,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
 
         XCTAssertTrue(viewModel.setCornerLogo(url: brokenURL))
-        await loader.waitForRequestCount(1)
+        await loader.waitForRequest(url: brokenURL)
         loader.complete(url: brokenURL, with: .failure(.decodeFailed))
         await waitForLogoFailure(viewModel)
 
@@ -70,9 +70,9 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.cornerLogoImageLoader = loader.load
 
         XCTAssertTrue(viewModel.setCornerLogo(url: firstURL))
-        await loader.waitForRequestCount(1)
+        await loader.waitForRequest(url: firstURL)
         XCTAssertTrue(viewModel.setCornerLogo(url: secondURL))
-        await loader.waitForRequestCount(2)
+        await loader.waitForRequest(url: secondURL)
 
         loader.complete(url: firstURL, with: .success(firstImage))
         await Task.yield()
@@ -97,7 +97,7 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.cornerLogoImageLoader = loader.load
 
         XCTAssertTrue(viewModel.setCornerLogo(url: url))
-        await loader.waitForRequestCount(1)
+        await loader.waitForRequest(url: url)
         viewModel.removeCornerLogo()
 
         loader.complete(url: url, with: .success(image))
@@ -116,12 +116,12 @@ final class CornerLogoReadinessTests: XCTestCase {
         viewModel.cornerLogoImageLoader = loader.load
 
         XCTAssertTrue(viewModel.setCornerLogo(url: url))
-        await loader.waitForRequestCount(1)
+        await loader.waitForRequest(url: url)
         loader.complete(url: url, with: .failure(.decodeFailed))
         await waitForLogoFailure(viewModel)
 
         viewModel.retryCornerLogoLoad()
-        await loader.waitForRequestCount(2)
+        await loader.waitForRequest(url: url, occurrence: 2)
         loader.complete(url: url, with: .success(image))
         await waitForLogoReady(viewModel, activeURL: url)
 
@@ -206,8 +206,8 @@ private final class CornerLogoLoaderProbe {
         }
     }
 
-    func waitForRequestCount(_ count: Int) async {
-        while requestedURLs.count < count {
+    func waitForRequest(url: URL, occurrence: Int = 1) async {
+        while requestedURLs.filter({ $0 == url }).count < occurrence {
             await Task.yield()
         }
     }
