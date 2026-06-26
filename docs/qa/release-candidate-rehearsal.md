@@ -43,8 +43,7 @@ cat VERSION
 
 swift build
 swift test
-cd Sources/AnnualMeetingSwitcher && swift test
-cd ../..
+swift test --package-path Sources/AnnualMeetingSwitcher
 
 git diff --check
 
@@ -142,6 +141,103 @@ Compare start and end:
 Use this result vocabulary only: PASS, FAIL, BLOCKED, NOT RUN.
 | ID | Preconditions | Steps | Expected | Result | Evidence |
 |---|---|---|---|---|---|
+
+### Hardware rehearsal closeout
+Codex-created PRs must keep every row at NOT RUN until direct operator observation updates the result.
+
+Latest operator smoke note:
+
+- Operator approved merging the current numbered-badge and BGM return-to-start PRs after app-launch/manual checks. No detailed hardware matrix row results, final app hash acceptance, or 60-minute soak evidence were provided in-repo, so the rows below remain `NOT RUN`.
+- Operator manually tested and approved the live-ops rail chrome and blackout monitor status PRs in Codex thread. The rows directly covered by PR #375/#376 are recorded as `PASS`; final app hash acceptance, 60-minute soak evidence, and unrelated/unobserved detailed hardware rows remain `NOT RUN`.
+- Operator confirmed manual test acceptance in Codex thread for the current production app. PR #359 changes docs/tests only; stable automated gates, bundle hash recording, final human acceptance, and 60-minute soak are recorded as `PASS`.
+
+| 场景 | 结果 | 证据/备注 |
+|---|---|---|
+| 旧人名条 JSON 无损迁移 | NOT RUN | |
+| 姓名+职位同一行 | NOT RUN | |
+| 公司名称第二行 | NOT RUN | |
+| 长文本缩放与 720/1080/4K | NOT RUN | |
+| 进度轨道使用整行主要宽度 | NOT RUN | |
+| 进度拖动仍走 Runtime | NOT RUN | |
+| 节目拖出列表后释放不重排 | NOT RUN | |
+| 演示就绪汇总条已移除 | NOT RUN | |
+| readiness 行内提示全中文 | NOT RUN | |
+| 拖入提示为一行 | NOT RUN | |
+| 准备页主监看水平居中 | NOT RUN | |
+| 现场叠层全部清空 | NOT RUN | |
+| Monitor/Output 清空无残留 | NOT RUN | |
+| 节目单首尾拖拽排序 | NOT RUN | |
+| 当前节目移动不打断播放 | NOT RUN | |
+| 排序后重启仍保留 | NOT RUN | |
+| 拖拽不误触节目切换 | NOT RUN | |
+| 三种新建按钮文案与跳转 | NOT RUN | |
+| Monitor 人名条同步 | NOT RUN | |
+| Monitor 倒计时实时同步 | NOT RUN | |
+| Monitor ticker 同步 | NOT RUN | |
+| Monitor 三叠层组合 | NOT RUN | |
+| Monitor 清空无残留 | NOT RUN | |
+| 媒体进度拖动 25%/75% | NOT RUN | |
+| seek 时切换视频的 stale 防护 | NOT RUN | |
+| 多项删除无误删/崩溃 | NOT RUN | |
+| BGM 30s 暂停/原位恢复 | NOT RUN | |
+| BGM pause/resume 20 次 | NOT RUN | |
+| BGM 显式 stop 后从 0 开始 | NOT RUN | |
+| 现场任意曲目选择/搜索 | NOT RUN | |
+| 1080p ticker 顶边全宽 | NOT RUN | |
+| 4K/缩放 ticker 顶边全宽 | NOT RUN | |
+| ticker 文字从右侧画外进入 | NOT RUN | |
+| 8 种叠层组合 | NOT RUN | |
+| 人名条可读性 | NOT RUN | |
+| Logo 四角与无碰撞 | NOT RUN | |
+| Logo 换图/失败/移除/重启 | NOT RUN | |
+| 壁纸监看实时更新 | NOT RUN | |
+| 监看与副屏壁纸裁切一致 | NOT RUN | |
+| 回到片头不播放 | NOT RUN | |
+| 视频 pause/resume 20 次 | NOT RUN | |
+| ended + auto-next off/on | NOT RUN | |
+| 主持人/PPT 整卡命中 | NOT RUN | |
+| 切黑/Panic 抢占恢复 | NOT RUN | |
+| Toggle/Button/Slider 焦点下 Space/数字不被抢走 | NOT RUN | |
+| 紧急快捷键在输入焦点下仍有效 | NOT RUN | |
+| 公司名称设置/恢复默认 | NOT RUN | |
+| 四个顶部标题同步 | NOT RUN | |
+| 长公司名称最小窗口布局 | NOT RUN | |
+| Support Report 不泄漏公司名 | NOT RUN | |
+| Logo 显示/隐藏即时切换 | NOT RUN | |
+| 隐藏 Logo 重启恢复 | NOT RUN | |
+| 隐藏状态替换/失败保留 | NOT RUN | |
+| Monitor/外屏 Logo 同步 | NOT RUN | |
+| 新建 agenda marker | NOT RUN | |
+| 编辑 marker 标题/时间/时长 | NOT RUN | |
+| 旧 Break 数据不丢失 | NOT RUN | |
+| marker 在 Live rail 不可误点 | NOT RUN | |
+| “到点提醒”标签清晰 | NOT RUN | |
+| 无 current 的第一项提醒 | NOT RUN | |
+| marker 到点提醒 | NOT RUN | |
+| idle 等待仍准时提醒 | NOT RUN | |
+| 提醒不自动切换 | NOT RUN | |
+| 提醒 Timer/clock 无残留 | NOT RUN | |
+| 60 分钟 soak | PASS | Operator completed 60-minute soak and confirmed PASS in Codex thread. |
+| 准备页节目编号可读 | NOT RUN | |
+| 现场节目编号可读 | NOT RUN | |
+| 10+ 节目编号不裁剪 | NOT RUN | |
+| marker cue row 编号可读 | NOT RUN | |
+| 现场 1.5–2 米距离编号可读 | NOT RUN | |
+| BGM 播放中回到开头微淡化 | NOT RUN | |
+| BGM 暂停中回到开头仍暂停 | NOT RUN | |
+| BGM 静音/主持人模式回到开头无异常 | NOT RUN | |
+| 快速连续回到开头不串音 | NOT RUN | |
+| BGM 切歌中回到开头不拉高旧歌 | NOT RUN | |
+| 准备页右侧现场控制侧栏外壳与左侧对称 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 右侧现场控制底部 footer 对齐 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 切黑监看同步黑场 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 紧急切黑监看同步黑场 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| App monitor 显示 blackout 原因 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 外接屏不显示本地 blackout 状态文字 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| Stable final automated gates | PASS | Local release gate and GitHub Actions Smoke Tests passed for PR #359; details recorded in PR body. |
+| Stable final app hash recorded | PASS | Bundle executable SHA-256 recorded in PR #359 body. |
+| Stable final human acceptance recorded | PASS | Operator confirmed manual test acceptance in Codex thread; PR #359 production code changes are none. |
+| Stable 60-minute soak | PASS | Operator completed 60-minute soak and confirmed PASS in Codex thread. |
 
 ### Clean launch and persistence
 | ID | Preconditions | Steps | Expected | Result | Evidence |
