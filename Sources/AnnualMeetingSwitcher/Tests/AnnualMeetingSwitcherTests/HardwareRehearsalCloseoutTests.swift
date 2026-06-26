@@ -290,6 +290,9 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
 
         XCTAssertTrue(runbook.contains("swift test --package-path Sources/AnnualMeetingSwitcher"))
         XCTAssertFalse(runbook.contains("cd Sources/AnnualMeetingSwitcher && swift test"))
+        XCTAssertTrue(runbook.contains("Latest operator smoke note:"))
+        XCTAssertTrue(runbook.contains("Operator approved merging the current numbered-badge and BGM return-to-start PRs"))
+        XCTAssertTrue(runbook.contains("No detailed hardware matrix row results"))
 
         for scenario in hardwareRehearsalHumanScenarios {
             XCTAssertTrue(runbook.contains("| \(scenario) | NOT RUN | |"), scenario)
@@ -363,7 +366,21 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
             "idle 等待仍准时提醒",
             "提醒不自动切换",
             "提醒 Timer/clock 无残留",
-            "60 分钟 soak"
+            "60 分钟 soak",
+            "准备页节目编号可读",
+            "现场节目编号可读",
+            "10+ 节目编号不裁剪",
+            "marker cue row 编号可读",
+            "现场 1.5–2 米距离编号可读",
+            "BGM 播放中回到开头微淡化",
+            "BGM 暂停中回到开头仍暂停",
+            "BGM 静音/主持人模式回到开头无异常",
+            "快速连续回到开头不串音",
+            "BGM 切歌中回到开头不拉高旧歌",
+            "Stable final automated gates",
+            "Stable final app hash recorded",
+            "Stable final human acceptance recorded",
+            "Stable 60-minute soak"
         ]
     }
 

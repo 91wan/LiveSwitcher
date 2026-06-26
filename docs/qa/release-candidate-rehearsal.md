@@ -145,6 +145,10 @@ Use this result vocabulary only: PASS, FAIL, BLOCKED, NOT RUN.
 ### Hardware rehearsal closeout
 Codex-created PRs must keep every row at NOT RUN until direct operator observation updates the result.
 
+Latest operator smoke note:
+
+- Operator approved merging the current numbered-badge and BGM return-to-start PRs after app-launch/manual checks. No detailed hardware matrix row results, final app hash acceptance, or 60-minute soak evidence were provided in-repo, so the rows below remain `NOT RUN`.
+
 | 场景 | 结果 | 证据/备注 |
 |---|---|---|
 | 旧人名条 JSON 无损迁移 | NOT RUN | |
@@ -212,6 +216,20 @@ Codex-created PRs must keep every row at NOT RUN until direct operator observati
 | 提醒不自动切换 | NOT RUN | |
 | 提醒 Timer/clock 无残留 | NOT RUN | |
 | 60 分钟 soak | NOT RUN | |
+| 准备页节目编号可读 | NOT RUN | |
+| 现场节目编号可读 | NOT RUN | |
+| 10+ 节目编号不裁剪 | NOT RUN | |
+| marker cue row 编号可读 | NOT RUN | |
+| 现场 1.5–2 米距离编号可读 | NOT RUN | |
+| BGM 播放中回到开头微淡化 | NOT RUN | |
+| BGM 暂停中回到开头仍暂停 | NOT RUN | |
+| BGM 静音/主持人模式回到开头无异常 | NOT RUN | |
+| 快速连续回到开头不串音 | NOT RUN | |
+| BGM 切歌中回到开头不拉高旧歌 | NOT RUN | |
+| Stable final automated gates | NOT RUN | |
+| Stable final app hash recorded | NOT RUN | |
+| Stable final human acceptance recorded | NOT RUN | |
+| Stable 60-minute soak | NOT RUN | |
 
 ### Clean launch and persistence
 | ID | Preconditions | Steps | Expected | Result | Evidence |
