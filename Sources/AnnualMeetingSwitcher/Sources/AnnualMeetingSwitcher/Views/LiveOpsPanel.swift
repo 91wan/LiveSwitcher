@@ -47,10 +47,7 @@ struct LiveOpsPanel: View {
                     Image(systemName: viewModel.isBroadcasting ? "stop.fill" : "antenna.radiowaves.left.and.right")
                         .font(StudioTheme.TypeScale.body.weight(.black))
                         .accessibilityHidden(true)
-                    Text(model.operatorLine)
-                        .font(StudioTheme.TypeScale.body.weight(.black))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
+                    ProjectionOutputOperatorLabel(model: model)
                     Spacer()
                 }
                 .foregroundStyle(outputActionForeground(model))
@@ -65,7 +62,7 @@ struct LiveOpsPanel: View {
             .focusable(false)
             .disabled(!model.isEnabled)
             .help(model.helpText)
-            .accessibilityLabel(model.title)
+            .accessibilityLabel(model.operatorLine)
             .accessibilityHint(model.subtitle)
 
             if model.statusKind == .fail, let warningTitle = model.warningTitle, let warningMessage = model.warningMessage {

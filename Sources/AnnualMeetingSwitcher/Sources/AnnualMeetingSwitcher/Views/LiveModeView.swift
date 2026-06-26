@@ -616,10 +616,7 @@ struct LiveQuickRail: View {
                     Image(systemName: model.screenSystemImage)
                         .font(StudioTheme.TypeScale.body.weight(.black))
                         .accessibilityHidden(true)
-                    Text(model.operatorLine)
-                        .font(StudioTheme.TypeScale.body.weight(.black))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.78)
+                    ProjectionOutputOperatorLabel(model: model)
                     Spacer()
                 }
                 .foregroundStyle(model.isEnabled ? .white : StudioTheme.textSecondary)
@@ -630,6 +627,8 @@ struct LiveQuickRail: View {
             .buttonStyle(.plain)
             .disabled(!model.isEnabled)
             .help(model.helpText)
+            .accessibilityLabel(model.operatorLine)
+            .accessibilityHint(model.subtitle)
         }
     }
 

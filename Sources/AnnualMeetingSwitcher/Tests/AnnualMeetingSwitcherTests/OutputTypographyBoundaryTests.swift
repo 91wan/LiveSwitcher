@@ -44,16 +44,19 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertTrue(outputView.contains("value: displayState.isFadeToBlackActive"))
     }
 
-    func testProjectionOutputButtonsUseSingleLargeOperatorLine() throws {
+    func testProjectionOutputButtonsUseSingleLineMixedScaleOperatorLabel() throws {
         let liveOps = try String(contentsOf: sourceURL("Views/LiveOpsPanel.swift"), encoding: .utf8)
         let liveMode = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+        let label = try String(contentsOf: sourceURL("Views/ProjectionOutputOperatorLabel.swift"), encoding: .utf8)
 
-        XCTAssertTrue(liveOps.contains("Text(model.operatorLine)"))
-        XCTAssertTrue(liveMode.contains("Text(model.operatorLine)"))
-        XCTAssertFalse(liveOps.contains("Text(model.screenLabel)"))
-        XCTAssertFalse(liveMode.contains("Text(model.screenLabel)"))
-        XCTAssertTrue(liveOps.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
-        XCTAssertTrue(liveMode.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
+        XCTAssertTrue(liveOps.contains("ProjectionOutputOperatorLabel(model: model)"))
+        XCTAssertTrue(liveMode.contains("ProjectionOutputOperatorLabel(model: model)"))
+        XCTAssertFalse(liveOps.contains("Text(model.operatorLine)"))
+        XCTAssertFalse(liveMode.contains("Text(model.operatorLine)"))
+        XCTAssertTrue(label.contains("Text(model.title)"))
+        XCTAssertTrue(label.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
+        XCTAssertTrue(label.contains("Text(model.screenLabel)"))
+        XCTAssertTrue(label.contains(".font(StudioTheme.TypeScale.caption.weight(.semibold))"))
     }
 
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
