@@ -36,6 +36,26 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertTrue(panicBlock.contains("transaction.animation = nil"))
     }
 
+    func testOutputViewDoesNotAnimatePanicModeAtParentLayer() throws {
+        let source = try String(contentsOf: sourceURL("Output/OutputWindowController.swift"), encoding: .utf8)
+        let outputView = try XCTUnwrap(source.balancedBlock(after: "struct OutputView: View"))
+
+        XCTAssertFalse(outputView.contains("value: displayState.isPanicMode"))
+        XCTAssertTrue(outputView.contains("value: displayState.isFadeToBlackActive"))
+    }
+
+    func testProjectionOutputButtonsUseSingleLargeOperatorLine() throws {
+        let liveOps = try String(contentsOf: sourceURL("Views/LiveOpsPanel.swift"), encoding: .utf8)
+        let liveMode = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+
+        XCTAssertTrue(liveOps.contains("Text(model.operatorLine)"))
+        XCTAssertTrue(liveMode.contains("Text(model.operatorLine)"))
+        XCTAssertFalse(liveOps.contains("Text(model.screenLabel)"))
+        XCTAssertFalse(liveMode.contains("Text(model.screenLabel)"))
+        XCTAssertTrue(liveOps.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
+        XCTAssertTrue(liveMode.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
+    }
+
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
         let source = try String(contentsOf: sourceURL("Views/LowerThirdOverlay.swift"), encoding: .utf8)
 

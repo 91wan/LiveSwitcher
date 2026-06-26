@@ -70,6 +70,25 @@ final class VideoLayerVisibilityTests: XCTestCase {
         ))
     }
 
+    func testOutputVideoLayerStaysMountedDuringPanicPauseToAvoidWallpaperFlash() throws {
+        let coordinator = AVPlayerCoordinator()
+        let url = try makeTempURL()
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        coordinator.load(url: url)
+        coordinator.play()
+        coordinator.pause()
+
+        XCTAssertTrue(coordinator.hasLoadedMedia)
+        XCTAssertFalse(coordinator.isPlaying)
+        XCTAssertTrue(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
+            sourceKind: .media,
+            hasLoadedMedia: coordinator.hasLoadedMedia,
+            isPlaying: coordinator.isPlaying,
+            isPanicMode: true
+        ))
+    }
+
     func testStopClearsLoadedMediaAndHidesVideoLayer() throws {
         let coordinator = AVPlayerCoordinator()
         let url = try makeTempURL()
@@ -396,6 +415,14 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertTrue(source.contains("sourceKind: viewModel.currentProgramItem?.sourceKind"))
         XCTAssertFalse(source.contains("sourceKind: coordinator.currentURL.map { _ in .media }"))
         XCTAssertFalse(source.contains("sourceKind: avCoordinator.currentURL.map { _ in .media }"))
+    }
+
+    func testOutputVideoPlayerReadsPanicStateWhenVisibilityUpdates() throws {
+        let source = try sourceText("Output/OutputWindowController.swift")
+
+        XCTAssertTrue(source.contains("isPanicModeProvider"))
+        XCTAssertTrue(source.contains("isPanicMode: isPanicModeProvider()"))
+        XCTAssertFalse(source.contains("private var isPanicMode = false"))
     }
 
     func testProgramMonitorDoesNotMountVideoOnlyWhilePlaying() throws {

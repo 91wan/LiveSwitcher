@@ -51,7 +51,9 @@ final class ProjectionServiceTests: XCTestCase {
             safetyNotice: nil
         )
 
-        XCTAssertEqual(model.title, "开始投射")
+        XCTAssertEqual(model.title, "点击开始投屏")
+        XCTAssertEqual(model.subtitle, "已连接副屏")
+        XCTAssertEqual(model.screenLabel, "已连接副屏")
         XCTAssertEqual(model.statusText, "待机")
         XCTAssertTrue(model.isEnabled)
     }
@@ -79,6 +81,9 @@ final class ProjectionServiceTests: XCTestCase {
 
         XCTAssertEqual(displayLost.statusText, "副屏丢失")
         XCTAssertEqual(displayLost.statusKind, .fail)
+        XCTAssertEqual(onAir.title, "点击停止投屏")
+        XCTAssertEqual(onAir.subtitle, "已连接副屏")
+        XCTAssertEqual(onAir.screenLabel, "已连接副屏")
         XCTAssertEqual(onAir.statusText, "直播")
         XCTAssertEqual(onAir.statusKind, .live)
         XCTAssertEqual(noDisplay.statusText, "警告")
@@ -87,5 +92,13 @@ final class ProjectionServiceTests: XCTestCase {
         XCTAssertEqual(standby.statusText, "待机")
         XCTAssertEqual(standby.statusKind, .idle)
         XCTAssertTrue(standby.isEnabled)
+    }
+
+    func testConnectedProjectionButtonUsesSingleLineOperatorCopy() {
+        let standby = ProjectionButtonModel.make(isBroadcasting: false, hasExternalDisplay: true, safetyNotice: nil)
+        let onAir = ProjectionButtonModel.make(isBroadcasting: true, hasExternalDisplay: true, safetyNotice: nil)
+
+        XCTAssertEqual(standby.operatorLine, "点击开始投屏  已连接副屏")
+        XCTAssertEqual(onAir.operatorLine, "点击停止投屏  已连接副屏")
     }
 }

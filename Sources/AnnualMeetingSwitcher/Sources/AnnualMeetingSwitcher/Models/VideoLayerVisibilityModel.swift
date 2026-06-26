@@ -7,7 +7,8 @@ struct VideoLayerVisibilityModel: Equatable {
     static func make(
         sourceKind: ProgramSourceKind?,
         hasLoadedMedia: Bool,
-        isPlaying: Bool
+        isPlaying: Bool,
+        isPanicMode: Bool = false
     ) -> VideoLayerVisibilityModel {
         VideoLayerVisibilityModel(
             shouldShowMonitorVideoLayer: shouldShowMonitorVideoLayer(
@@ -17,7 +18,8 @@ struct VideoLayerVisibilityModel: Equatable {
             shouldShowOutputVideoLayer: shouldShowOutputVideoLayer(
                 sourceKind: sourceKind,
                 hasLoadedMedia: hasLoadedMedia,
-                isPlaying: isPlaying
+                isPlaying: isPlaying,
+                isPanicMode: isPanicMode
             )
         )
     }
@@ -32,8 +34,9 @@ struct VideoLayerVisibilityModel: Equatable {
     static func shouldShowOutputVideoLayer(
         sourceKind: ProgramSourceKind?,
         hasLoadedMedia: Bool,
-        isPlaying: Bool
+        isPlaying: Bool,
+        isPanicMode: Bool = false
     ) -> Bool {
-        sourceKind == .media && hasLoadedMedia && isPlaying
+        sourceKind == .media && hasLoadedMedia && (isPlaying || isPanicMode)
     }
 }

@@ -47,15 +47,10 @@ struct LiveOpsPanel: View {
                     Image(systemName: viewModel.isBroadcasting ? "stop.fill" : "antenna.radiowaves.left.and.right")
                         .font(StudioTheme.TypeScale.body.weight(.black))
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(model.title)
-                            .font(StudioTheme.TypeScale.caption.weight(.black))
-                            .lineLimit(1)
-                        Text(model.screenLabel)
-                            .font(StudioTheme.TypeScale.label.weight(.semibold))
-                            .opacity(0.82)
-                            .lineLimit(1)
-                    }
+                    Text(model.operatorLine)
+                        .font(StudioTheme.TypeScale.body.weight(.black))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.78)
                     Spacer()
                 }
                 .foregroundStyle(outputActionForeground(model))

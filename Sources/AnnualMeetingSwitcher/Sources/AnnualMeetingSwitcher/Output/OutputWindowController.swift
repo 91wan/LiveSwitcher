@@ -274,7 +274,6 @@ struct OutputView: View {
         }
         .ignoresSafeArea()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(.easeInOut(duration: 0.25), value: displayState.isPanicMode)
         .animation(.easeInOut(duration: 1.0), value: displayState.isFadeToBlackActive)
         .animation(.easeInOut(duration: 0.25), value: displayState.isCountdownActive)
         .animation(.easeInOut(duration: 0.25), value: displayState.isTickerActive)
@@ -296,7 +295,8 @@ struct OutputView: View {
         // 避免 Metal 合成层"穿透" opacity 显示最后一帧。
         OutputVideoPlayerView(
             coordinator: viewModel.avCoordinator,
-            sourceKind: viewModel.currentProgramItem?.sourceKind
+            sourceKind: viewModel.currentProgramItem?.sourceKind,
+            isPanicModeProvider: { viewModel.outputPanicIsActive }
         )
 
         // HTML 大屏展示层（与视频层互斥）
@@ -319,6 +319,7 @@ import AVFoundation
 struct OutputVideoPlayerView: NSViewRepresentable {
     let coordinator: AVPlayerCoordinator
     let sourceKind: ProgramSourceKind?
+    let isPanicModeProvider: @MainActor () -> Bool
 
     func makeCoordinator() -> VisibilityCoordinator {
         VisibilityCoordinator()
@@ -330,7 +331,12 @@ struct OutputVideoPlayerView: NSViewRepresentable {
         view.controlsStyle = .none
         view.videoGravity = .resizeAspectFill
         view.autoresizingMask = [.width, .height]
-        context.coordinator.bind(avCoordinator: coordinator, sourceKind: sourceKind, to: view)
+        context.coordinator.bind(
+            avCoordinator: coordinator,
+            sourceKind: sourceKind,
+            isPanicModeProvider: isPanicModeProvider,
+            to: view
+        )
         return view
     }
 
@@ -339,6 +345,7 @@ struct OutputVideoPlayerView: NSViewRepresentable {
         nsView.videoGravity = .resizeAspectFill
         context.coordinator.update(
             sourceKind: sourceKind,
+            isPanicMode: isPanicModeProvider(),
             hasLoadedMedia: coordinator.hasLoadedMedia,
             isPlaying: coordinator.isPlaying,
             view: nsView
@@ -349,15 +356,23 @@ struct OutputVideoPlayerView: NSViewRepresentable {
     class VisibilityCoordinator {
         private var cancellable: AnyCancellable?
         private var sourceKind: ProgramSourceKind?
+        private var isPanicModeProvider: @MainActor () -> Bool = { false }
 
-        func bind(avCoordinator: AVPlayerCoordinator, sourceKind: ProgramSourceKind?, to view: AVPlayerView) {
+        func bind(
+            avCoordinator: AVPlayerCoordinator,
+            sourceKind: ProgramSourceKind?,
+            isPanicModeProvider: @escaping @MainActor () -> Bool,
+            to view: AVPlayerView
+        ) {
             self.sourceKind = sourceKind
+            self.isPanicModeProvider = isPanicModeProvider
             cancellable = Publishers.CombineLatest(avCoordinator.$hasLoadedMedia, avCoordinator.$isPlaying)
                 .receive(on: DispatchQueue.main)
                 .sink { [weak self, weak view] hasLoadedMedia, isPlaying in
                     guard let self, let view else { return }
                     self.update(
                         sourceKind: self.sourceKind,
+                        isPanicMode: self.isPanicModeProvider(),
                         hasLoadedMedia: hasLoadedMedia,
                         isPlaying: isPlaying,
                         view: view
@@ -367,6 +382,7 @@ struct OutputVideoPlayerView: NSViewRepresentable {
 
         func update(
             sourceKind: ProgramSourceKind?,
+            isPanicMode: Bool,
             hasLoadedMedia: Bool,
             isPlaying: Bool,
             view: AVPlayerView
@@ -375,7 +391,8 @@ struct OutputVideoPlayerView: NSViewRepresentable {
             view.isHidden = !VideoLayerVisibilityModel.shouldShowOutputVideoLayer(
                 sourceKind: sourceKind,
                 hasLoadedMedia: hasLoadedMedia,
-                isPlaying: isPlaying
+                isPlaying: isPlaying,
+                isPanicMode: isPanicMode
             )
         }
     }
