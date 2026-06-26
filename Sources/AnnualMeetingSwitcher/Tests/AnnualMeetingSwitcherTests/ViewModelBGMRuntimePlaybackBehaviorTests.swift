@@ -70,12 +70,69 @@ final class ViewModelBGMRuntimePlaybackBehaviorTests: XCTestCase {
 
     func testSeekRuntimeBGMToBeginningStillUpdatesProgressStore() {
         let viewModel = makeViewModel()
+        let item = bgmItem()
+        replaceRuntimeBGMState(
+            in: viewModel,
+            item: item,
+            phase: .selected,
+            generation: 5,
+            effectiveBGM: 0
+        )
 
         viewModel.bgmProgressStore.update(currentTime: 4, duration: 10)
-        viewModel.seekRuntimeBGMToBeginning(generation: viewModel.runtime.state.bgm.generation)
+        viewModel.seekRuntimeBGMToBeginning(generation: 5)
 
         XCTAssertEqual(viewModel.bgmProgress, 0, accuracy: 0.0001)
         XCTAssertEqual(viewModel.bgmCurrentTime, 0, accuracy: 0.0001)
+    }
+
+    func testAudiblePlayingSeekRuntimeBGMToBeginningUsesReturnToStartSmoothingTask() {
+        let viewModel = makeViewModel()
+        let item = bgmItem()
+        replaceRuntimeBGMState(
+            in: viewModel,
+            item: item,
+            phase: .playing,
+            generation: 5,
+            effectiveBGM: 0.35
+        )
+        viewModel.bgmFallbackPlayer.volume = 0.35
+
+        viewModel.seekRuntimeBGMToBeginning(generation: 5)
+
+        XCTAssertNotNil(viewModel.cleanupBag.bgmReturnToStartTask)
+        XCTAssertNil(viewModel.cleanupBag.bgmFallbackVolumeFadeTask)
+    }
+
+    func testMutedPlayingSeekRuntimeBGMToBeginningSeeksImmediatelyWithoutSmoothingTask() {
+        let viewModel = makeViewModel()
+        let item = bgmItem()
+        replaceRuntimeBGMState(
+            in: viewModel,
+            item: item,
+            phase: .playing,
+            generation: 5,
+            effectiveBGM: 0.35,
+            isBGMMuted: true
+        )
+        viewModel.bgmProgressStore.update(currentTime: 4, duration: 10)
+
+        viewModel.seekRuntimeBGMToBeginning(generation: 5)
+
+        XCTAssertNil(viewModel.cleanupBag.bgmReturnToStartTask)
+        XCTAssertEqual(viewModel.bgmProgress, 0, accuracy: 0.0001)
+        XCTAssertEqual(viewModel.bgmCurrentTime, 0, accuracy: 0.0001)
+    }
+
+    func testSeekRuntimeBGMToBeginningSourceUsesSmoothingPolicyAndGenerationGuards() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "seekRuntimeBGMToBeginning"))
+
+        XCTAssertTrue(body.contains("BGMReturnToStartSmoothingPolicy.plan"))
+        XCTAssertTrue(body.contains("cleanupBag.bgmReturnToStartTask?.cancel()"))
+        XCTAssertTrue(body.contains("runBGMReturnToStartFade"))
+        XCTAssertTrue(body.contains("runtime.state.bgm.generation == generation"))
+        XCTAssertTrue(body.contains("runtime.state.panic.isActive"))
     }
 
     func testSeekRuntimeBGMToProgressStillClampsProgress() {
@@ -136,5 +193,27 @@ final class ViewModelBGMRuntimePlaybackBehaviorTests: XCTestCase {
 
     private func bgmItem() -> BGMItem {
         BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/\(UUID().uuidString).mp3"))
+    }
+
+    private func replaceRuntimeBGMState(
+        in viewModel: SwitcherViewModel,
+        item: BGMItem,
+        phase: BGMPlaybackPhase,
+        generation: Int,
+        effectiveBGM: Float,
+        isBGMMuted: Bool = false
+    ) {
+        var state = LiveRuntimeState()
+        state.bgm.items = [item]
+        state.bgm.currentID = item.id
+        state.bgm.phase = phase
+        state.bgm.generation = generation
+        state.bgm.currentTime = 4
+        state.bgm.duration = 10
+        state.bgm.progress = 0.4
+        state.audio.effectiveBGM = effectiveBGM
+        state.audio.isBGMMuted = isBGMMuted
+        viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
+        viewModel.bgmProgressStore.update(currentTime: 4, duration: 10)
     }
 }

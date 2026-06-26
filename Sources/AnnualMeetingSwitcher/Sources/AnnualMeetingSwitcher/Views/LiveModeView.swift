@@ -1004,7 +1004,7 @@ struct LiveQuickRail: View {
                 .help(picker.currentTitle)
 
             HStack(spacing: 6) {
-                transportButton("gobackward", label: "跳回开头", enabled: controls.canSeekToBeginning, disabledHint: controls.seekDisabledReason) {
+                transportButton("gobackward", label: "回到开头", enabled: controls.canSeekToBeginning, disabledHint: controls.seekDisabledReason) {
                     viewModel.seekBGMToBeginning()
                 }
                 transportButton("backward.end.fill", label: "上一首", enabled: controls.canSkipPrevious, disabledHint: controls.skipDisabledReason) {

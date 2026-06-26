@@ -55,6 +55,7 @@ extension SwitcherViewModel {
         setBGMTransitionGenerationForRuntime(generation)
         let fadeDuration = liveAudioFadeDuration
 
+        cancelBGMReturnToStartSmoothing()
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
         cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         if let oldPlayer = bgmAudioPlayer {
@@ -89,6 +90,7 @@ extension SwitcherViewModel {
             setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
         }
         setBGMTransitionGenerationForRuntime(generation)
+        cancelBGMReturnToStartSmoothing()
         bgmAudioPlayer?.volume = 0
         bgmAudioPlayer?.isMeteringEnabled = true
         bgmAudioPlayer?.play()
@@ -103,6 +105,7 @@ extension SwitcherViewModel {
         guard runtime.state.bgm.generation == generation else { return }
         setBGMTransitionGenerationForRuntime(generation)
         let fadeDuration = liveAudioFadeDuration
+        cancelBGMReturnToStartSmoothing()
         fadeCurrentBGMPlayerVolume(to: 0, duration: fadeDuration, generation: generation)
         fadeCurrentBGMFallbackVolume(to: 0, duration: fadeDuration, generation: generation)
         guard fadeDuration > 0 else {
@@ -119,6 +122,7 @@ extension SwitcherViewModel {
         setBGMTransitionGenerationForRuntime(generation)
         resetBGMRealtimeMeter()
         clearBGMTakeoverIfNeeded()
+        cancelBGMReturnToStartSmoothing()
         cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
         cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
         if let player = bgmAudioPlayer {
@@ -146,6 +150,7 @@ extension SwitcherViewModel {
 
     func setRuntimeBGMVolume(_ volume: Float, fade: TimeInterval, generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
+        cancelBGMReturnToStartSmoothing()
         if bgmAudioPlayer != nil {
             fadeCurrentBGMPlayerVolume(to: volume, duration: fade, generation: generation)
         } else {
@@ -156,6 +161,60 @@ extension SwitcherViewModel {
     }
 
     func seekRuntimeBGMToBeginning(generation: Int) {
+        guard runtime.state.bgm.generation == generation else { return }
+        let plan = BGMReturnToStartSmoothingPolicy.plan(
+            phase: runtime.state.bgm.phase,
+            effectiveBGM: runtime.state.audio.effectiveBGM,
+            isMuted: runtime.state.audio.isMasterMuted || runtime.state.audio.isBGMMuted,
+            panicActive: runtime.state.panic.isActive
+        )
+        switch plan {
+        case .noOp:
+            return
+        case .immediate:
+            cleanupBag.bgmReturnToStartTask?.cancel()
+            cleanupBag.bgmReturnToStartTask = nil
+            seekCurrentRuntimeBGMToBeginning(generation: generation)
+        case .smoothed(let fadeOut, let fadeIn):
+            cleanupBag.bgmReturnToStartTask?.cancel()
+            cleanupBag.bgmPlayerVolumeFadeTask?.cancel()
+            cleanupBag.bgmFallbackVolumeFadeTask?.cancel()
+            cleanupBag.bgmPlayerVolumeFadeTask = nil
+            cleanupBag.bgmFallbackVolumeFadeTask = nil
+            let audioPlayer = bgmAudioPlayer
+            let fallbackPlayer = bgmFallbackPlayer
+            let capturedTargetVolume = runtime.state.audio.effectiveBGM
+            cleanupBag.bgmReturnToStartTask = Task { @MainActor [weak self, weak audioPlayer, weak fallbackPlayer] in
+                guard let self else { return }
+                defer {
+                    if !Task.isCancelled {
+                        self.cleanupBag.bgmReturnToStartTask = nil
+                    }
+                }
+                await self.runBGMReturnToStartFade(
+                    audioPlayer: audioPlayer,
+                    fallbackPlayer: fallbackPlayer,
+                    to: 0,
+                    duration: fadeOut,
+                    generation: generation
+                )
+                guard self.canCompleteBGMReturnToStartSmoothing(generation: generation) else { return }
+                self.seekCurrentRuntimeBGMToBeginning(generation: generation)
+                guard self.canCompleteBGMReturnToStartSmoothing(generation: generation) else { return }
+                let targetVolume = min(capturedTargetVolume, self.runtime.state.audio.effectiveBGM)
+                guard targetVolume > 0 else { return }
+                await self.runBGMReturnToStartFade(
+                    audioPlayer: audioPlayer,
+                    fallbackPlayer: fallbackPlayer,
+                    to: targetVolume,
+                    duration: fadeIn,
+                    generation: generation
+                )
+            }
+        }
+    }
+
+    private func seekCurrentRuntimeBGMToBeginning(generation: Int) {
         guard runtime.state.bgm.generation == generation else { return }
         bgmAudioPlayer?.currentTime = 0
         bgmFallbackPlayer.seek(to: .zero)
@@ -281,6 +340,55 @@ extension SwitcherViewModel {
             storedDuration: bgmDuration,
             itemDuration: bgmFallbackPlayer.currentItem?.duration.seconds
         )
+    }
+
+    private func cancelBGMReturnToStartSmoothing() {
+        cleanupBag.bgmReturnToStartTask?.cancel()
+        cleanupBag.bgmReturnToStartTask = nil
+    }
+
+    private func canCompleteBGMReturnToStartSmoothing(generation: Int) -> Bool {
+        guard runtime.state.bgm.generation == generation else { return false }
+        let plan = BGMReturnToStartSmoothingPolicy.plan(
+            phase: runtime.state.bgm.phase,
+            effectiveBGM: runtime.state.audio.effectiveBGM,
+            isMuted: runtime.state.audio.isMasterMuted || runtime.state.audio.isBGMMuted,
+            panicActive: runtime.state.panic.isActive
+        )
+        guard case .smoothed = plan else { return false }
+        return true
+    }
+
+    private func runBGMReturnToStartFade(
+        audioPlayer: AVAudioPlayer?,
+        fallbackPlayer: AVPlayer?,
+        to targetVolume: Float,
+        duration: TimeInterval,
+        generation: Int
+    ) async {
+        guard duration > 0 else {
+            guard runtime.state.bgm.generation == generation else { return }
+            audioPlayer?.volume = targetVolume
+            fallbackPlayer?.volume = targetVolume
+            return
+        }
+
+        let playerStartVolume = audioPlayer?.volume ?? targetVolume
+        let fallbackStartVolume = fallbackPlayer?.volume ?? targetVolume
+        let steps = AudioFadeStepPolicy.stepCount(duration: duration)
+        let stepDuration = UInt64((duration / Double(steps)) * 1_000_000_000)
+
+        for step in 1...steps {
+            guard !Task.isCancelled, runtime.state.bgm.generation == generation else { return }
+            let progress = Float(step) / Float(steps)
+            audioPlayer?.volume = playerStartVolume + (targetVolume - playerStartVolume) * progress
+            fallbackPlayer?.volume = fallbackStartVolume + (targetVolume - fallbackStartVolume) * progress
+            try? await Task.sleep(nanoseconds: stepDuration)
+        }
+
+        guard !Task.isCancelled, runtime.state.bgm.generation == generation else { return }
+        audioPlayer?.volume = targetVolume
+        fallbackPlayer?.volume = targetVolume
     }
 
     private func rewindBGMIfAtEndBeforeResume() {
