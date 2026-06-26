@@ -148,6 +148,7 @@ Codex-created PRs must keep every row at NOT RUN until direct operator observati
 Latest operator smoke note:
 
 - Operator approved merging the current numbered-badge and BGM return-to-start PRs after app-launch/manual checks. No detailed hardware matrix row results, final app hash acceptance, or 60-minute soak evidence were provided in-repo, so the rows below remain `NOT RUN`.
+- Operator manually tested and approved the live-ops rail chrome and blackout monitor status PRs in Codex thread. The rows directly covered by PR #375/#376 are recorded as `PASS`; final app hash acceptance, 60-minute soak evidence, and unrelated/unobserved detailed hardware rows remain `NOT RUN`.
 
 | 场景 | 结果 | 证据/备注 |
 |---|---|---|
@@ -226,6 +227,12 @@ Latest operator smoke note:
 | BGM 静音/主持人模式回到开头无异常 | NOT RUN | |
 | 快速连续回到开头不串音 | NOT RUN | |
 | BGM 切歌中回到开头不拉高旧歌 | NOT RUN | |
+| 准备页右侧现场控制侧栏外壳与左侧对称 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 右侧现场控制底部 footer 对齐 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 切黑监看同步黑场 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 紧急切黑监看同步黑场 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| App monitor 显示 blackout 原因 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
+| 外接屏不显示本地 blackout 状态文字 | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |
 | Stable final automated gates | NOT RUN | |
 | Stable final app hash recorded | NOT RUN | |
 | Stable final human acceptance recorded | NOT RUN | |

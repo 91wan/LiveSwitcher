@@ -285,22 +285,39 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
         XCTAssertEqual(autoNextViewModel.currentProgramItem?.id, next.id)
     }
 
-    func testCanonicalRunbookContainsHardwareRehearsalMatrixWithNoHumanPassClaims() throws {
+    func testCanonicalRunbookContainsHardwareRehearsalMatrixWithScopedHumanPassClaims() throws {
         let runbook = try repositorySource("docs/qa/release-candidate-rehearsal.md")
 
         XCTAssertTrue(runbook.contains("swift test --package-path Sources/AnnualMeetingSwitcher"))
         XCTAssertFalse(runbook.contains("cd Sources/AnnualMeetingSwitcher && swift test"))
         XCTAssertTrue(runbook.contains("Latest operator smoke note:"))
         XCTAssertTrue(runbook.contains("Operator approved merging the current numbered-badge and BGM return-to-start PRs"))
+        XCTAssertTrue(runbook.contains("Operator manually tested and approved the live-ops rail chrome and blackout monitor status PRs"))
         XCTAssertTrue(runbook.contains("No detailed hardware matrix row results"))
 
-        for scenario in hardwareRehearsalHumanScenarios {
+        for scenario in operatorAcceptedHumanScenarios {
+            XCTAssertTrue(runbook.contains("| \(scenario) | PASS | Operator manually tested and approved PR #375/#376 in Codex thread. |"), scenario)
+            XCTAssertFalse(runbook.contains("| \(scenario) | NOT RUN |"), scenario)
+        }
+
+        for scenario in notRunHumanScenarios {
             XCTAssertTrue(runbook.contains("| \(scenario) | NOT RUN | |"), scenario)
             XCTAssertFalse(runbook.contains("| \(scenario) | PASS |"), scenario)
         }
     }
 
-    private var hardwareRehearsalHumanScenarios: [String] {
+    private var operatorAcceptedHumanScenarios: [String] {
+        [
+            "准备页右侧现场控制侧栏外壳与左侧对称",
+            "右侧现场控制底部 footer 对齐",
+            "切黑监看同步黑场",
+            "紧急切黑监看同步黑场",
+            "App monitor 显示 blackout 原因",
+            "外接屏不显示本地 blackout 状态文字"
+        ]
+    }
+
+    private var notRunHumanScenarios: [String] {
         [
             "旧人名条 JSON 无损迁移",
             "姓名+职位同一行",
