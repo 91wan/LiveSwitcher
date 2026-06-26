@@ -10,9 +10,12 @@ struct MonitorChromeVisibility: Equatable {
         isPlaying: Bool,
         isHovering: Bool,
         isBroadcasting: Bool,
-        isTickerActive: Bool = false
+        isTickerActive: Bool = false,
+        isFadeToBlackActive: Bool = false,
+        isPanicMode: Bool = false
     ) -> MonitorChromeVisibility {
-        let inlineChromeVisible = (!isPlaying && !isTickerActive) || isHovering
+        let blackoutActive = isFadeToBlackActive || isPanicMode
+        let inlineChromeVisible = blackoutActive || (!isPlaying && !isTickerActive) || isHovering
         let showsCompactLiveIndicator = isBroadcasting && !inlineChromeVisible
 
         return MonitorChromeVisibility(

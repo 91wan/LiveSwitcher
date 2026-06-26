@@ -614,15 +614,9 @@ struct LiveQuickRail: View {
             Button(action: { viewModel.handleSafeBroadcastToggle() }) {
                 HStack(spacing: 8) {
                     Image(systemName: model.screenSystemImage)
+                        .font(StudioTheme.TypeScale.body.weight(.black))
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(model.title)
-                            .font(StudioTheme.TypeScale.caption.weight(.black))
-                            .lineLimit(1)
-                        Text(model.screenLabel)
-                            .font(StudioTheme.caption())
-                            .lineLimit(1)
-                    }
+                    ProjectionOutputOperatorLabel(model: model)
                     Spacer()
                 }
                 .foregroundStyle(model.isEnabled ? .white : StudioTheme.textSecondary)
@@ -633,6 +627,8 @@ struct LiveQuickRail: View {
             .buttonStyle(.plain)
             .disabled(!model.isEnabled)
             .help(model.helpText)
+            .accessibilityLabel(model.operatorLine)
+            .accessibilityHint(model.subtitle)
         }
     }
 

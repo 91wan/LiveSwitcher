@@ -20,6 +20,38 @@ final class ProgramMonitorActiveOverlayTests: XCTestCase {
         XCTAssertTrue(monitor.contains("cornerLogoImage: viewModel.cornerLogoImage"))
     }
 
+    func testProgramMonitorOwnsLocalBlackoutStatusChromeButOutputDoesNot() throws {
+        let output = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let layer = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
+
+        XCTAssertTrue(monitor.contains("blackoutStatusOverlay"))
+        XCTAssertTrue(monitor.contains("ProgramMonitorBlackoutStatusModel.make("))
+        XCTAssertTrue(monitor.contains("isFadeToBlackActive: viewModel.isFadeToBlackActive"))
+        XCTAssertTrue(monitor.contains("isPanicMode: viewModel.isPanicMode"))
+        XCTAssertTrue(monitor.contains("monitorAccessibilityLabel"))
+
+        XCTAssertFalse(output.contains("ProgramMonitorBlackoutStatusModel"))
+        XCTAssertFalse(output.contains("blackoutStatusOverlay"))
+        XCTAssertFalse(output.contains("切黑中"))
+        XCTAssertFalse(output.contains("紧急切黑"))
+
+        XCTAssertTrue(layer.contains("if displayState.isFadeToBlackActive"))
+        XCTAssertTrue(layer.contains("if displayState.isPanicMode"))
+        XCTAssertTrue(layer.contains("PanicLayer()"))
+    }
+
+    func testProgramMonitorCentersAndEnlargesLocalBlackoutStatusChrome() throws {
+        let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+
+        XCTAssertTrue(monitor.contains(".overlay(alignment: .center)"))
+        XCTAssertFalse(monitor.contains(".overlay(alignment: .topTrailing) {\n            if blackoutStatusModel.kind != .none"))
+        XCTAssertTrue(monitor.contains("VStack(alignment: .center"))
+        XCTAssertTrue(monitor.contains(".font(StudioTheme.TypeScale.title.weight(.black))"))
+        XCTAssertTrue(monitor.contains(".font(StudioTheme.TypeScale.heading.weight(.semibold))"))
+        XCTAssertTrue(monitor.contains(".multilineTextAlignment(.center)"))
+    }
+
     func testProgramMonitorRemovesSeparateLogoOverlayTruth() throws {
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
 

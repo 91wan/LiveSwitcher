@@ -14,6 +14,10 @@ struct ProjectionButtonModel: Equatable {
     let warningTitle: String?
     let warningMessage: String?
 
+    var operatorLine: String {
+        "\(title)  \(screenLabel)"
+    }
+
     static func make(
         isBroadcasting: Bool,
         hasExternalDisplay: Bool,
@@ -40,11 +44,11 @@ struct ProjectionButtonModel: Equatable {
             return ProjectionButtonModel(
                 hasExternalDisplay: hasExternalDisplay,
                 isBroadcasting: true,
-                title: "停止投射",
-                subtitle: "直播中 · 点击停止输出",
+                title: "点击停止投屏",
+                subtitle: "已连接副屏",
                 statusText: "直播",
                 statusKind: .live,
-                screenLabel: "外接屏幕",
+                screenLabel: "已连接副屏",
                 screenSystemImage: "display.2",
                 isEnabled: true,
                 helpText: "停止外接屏投射",
@@ -57,11 +61,11 @@ struct ProjectionButtonModel: Equatable {
             return ProjectionButtonModel(
                 hasExternalDisplay: true,
                 isBroadcasting: false,
-                title: "开始投射",
-                subtitle: "输出到外接屏",
+                title: "点击开始投屏",
+                subtitle: "已连接副屏",
                 statusText: "待机",
                 statusKind: .idle,
-                screenLabel: "外接屏幕",
+                screenLabel: "已连接副屏",
                 screenSystemImage: "display.2",
                 isEnabled: true,
                 helpText: "开始外接屏投射",

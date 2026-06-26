@@ -24,6 +24,39 @@ final class OutputTypographyBoundaryTests: XCTestCase {
         XCTAssertFalse(source.contains(".font(.system(size:"))
         XCTAssertFalse(source.contains("foregroundColor("))
         XCTAssertTrue(source.contains("Color.black"))
+        XCTAssertTrue(source.contains(".accessibilityLabel(\"紧急切黑已启用\")"))
+    }
+
+    func testActiveProgramOverlayMountsPanicBlackoutWithoutFadeTransition() throws {
+        let source = try String(contentsOf: sourceURL("Views/ActiveProgramOverlayLayer.swift"), encoding: .utf8)
+        let panicBlock = try XCTUnwrap(source.balancedBlock(after: "if displayState.isPanicMode"))
+
+        XCTAssertTrue(panicBlock.contains("PanicLayer()"))
+        XCTAssertFalse(panicBlock.contains(".transition(.opacity)"))
+        XCTAssertTrue(panicBlock.contains("transaction.animation = nil"))
+    }
+
+    func testOutputViewDoesNotAnimatePanicModeAtParentLayer() throws {
+        let source = try String(contentsOf: sourceURL("Output/OutputWindowController.swift"), encoding: .utf8)
+        let outputView = try XCTUnwrap(source.balancedBlock(after: "struct OutputView: View"))
+
+        XCTAssertFalse(outputView.contains("value: displayState.isPanicMode"))
+        XCTAssertTrue(outputView.contains("value: displayState.isFadeToBlackActive"))
+    }
+
+    func testProjectionOutputButtonsUseSingleLineMixedScaleOperatorLabel() throws {
+        let liveOps = try String(contentsOf: sourceURL("Views/LiveOpsPanel.swift"), encoding: .utf8)
+        let liveMode = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+        let label = try String(contentsOf: sourceURL("Views/ProjectionOutputOperatorLabel.swift"), encoding: .utf8)
+
+        XCTAssertTrue(liveOps.contains("ProjectionOutputOperatorLabel(model: model)"))
+        XCTAssertTrue(liveMode.contains("ProjectionOutputOperatorLabel(model: model)"))
+        XCTAssertFalse(liveOps.contains("Text(model.operatorLine)"))
+        XCTAssertFalse(liveMode.contains("Text(model.operatorLine)"))
+        XCTAssertTrue(label.contains("Text(model.title)"))
+        XCTAssertTrue(label.contains(".font(StudioTheme.TypeScale.body.weight(.black))"))
+        XCTAssertTrue(label.contains("Text(model.screenLabel)"))
+        XCTAssertTrue(label.contains(".font(StudioTheme.TypeScale.caption.weight(.semibold))"))
     }
 
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {

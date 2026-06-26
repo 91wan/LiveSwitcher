@@ -71,6 +71,13 @@ struct ProgramMonitorView: View {
                 .opacity(monitorChromeVisibility.inlineChromeOpacity)
                 .allowsHitTesting(monitorChromeVisibility.inlineChromeAllowsHitTesting)
         }
+        .overlay(alignment: .center) {
+            if blackoutStatusModel.kind != .none {
+                blackoutStatusOverlay
+                    .opacity(monitorChromeVisibility.inlineChromeOpacity)
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .bottomTrailing) {
             if monitorChromeVisibility.showsCompactLiveIndicator {
                 compactLiveIndicator
@@ -89,7 +96,7 @@ struct ProgramMonitorView: View {
         }
         .animation(.easeInOut(duration: 0.16), value: monitorChromeVisibility)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(viewModel.isBroadcasting ? "主输出正在直播" : "主输出待机")
+        .accessibilityLabel(blackoutStatusModel.monitorAccessibilityLabel ?? (viewModel.isBroadcasting ? "主输出正在直播" : "主输出待机"))
     }
 
     private func monitorActiveOverlayLayer(in monitorSize: CGSize) -> some View {
@@ -134,6 +141,38 @@ struct ProgramMonitorView: View {
         .background(StudioTheme.monitorOverlayFill, in: Capsule(style: .continuous))
         .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderCritical.opacity(0.75), lineWidth: 1))
         .accessibilityLabel("主输出正在直播")
+    }
+
+    private var blackoutStatusOverlay: some View {
+        let model = blackoutStatusModel
+
+        return VStack(alignment: .center, spacing: 7) {
+            Image(systemName: model.kind == .panic ? "exclamationmark.triangle.fill" : "moon.fill")
+                .font(StudioTheme.TypeScale.title.weight(.black))
+                .foregroundStyle(StudioTheme.color(for: model.statusKind))
+                .accessibilityHidden(true)
+            Text(model.title)
+                .font(StudioTheme.TypeScale.title.weight(.black))
+                .foregroundStyle(StudioTheme.monitorText)
+                .lineLimit(1)
+            if let subtitle = model.subtitle {
+                Text(subtitle)
+                    .font(StudioTheme.TypeScale.heading.weight(.semibold))
+                    .foregroundStyle(StudioTheme.monitorText.opacity(0.72))
+                    .lineLimit(1)
+            }
+        }
+        .multilineTextAlignment(.center)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .frame(minWidth: 220)
+        .background(StudioTheme.monitorOverlayFill, in: RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.color(for: model.statusKind).opacity(0.78), lineWidth: 1)
+        )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(model.monitorAccessibilityLabel ?? model.title)
     }
 
     private var monitorTopChrome: some View {
@@ -263,7 +302,16 @@ struct ProgramMonitorView: View {
             isPlaying: isMediaPlaybackActive,
             isHovering: isHoveringPreviewDeck,
             isBroadcasting: viewModel.isBroadcasting,
-            isTickerActive: viewModel.isTickerActive
+            isTickerActive: viewModel.isTickerActive,
+            isFadeToBlackActive: viewModel.isFadeToBlackActive,
+            isPanicMode: viewModel.isPanicMode
+        )
+    }
+
+    private var blackoutStatusModel: ProgramMonitorBlackoutStatusModel {
+        ProgramMonitorBlackoutStatusModel.make(
+            isFadeToBlackActive: viewModel.isFadeToBlackActive,
+            isPanicMode: viewModel.isPanicMode
         )
     }
 

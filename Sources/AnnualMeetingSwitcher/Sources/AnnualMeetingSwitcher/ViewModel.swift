@@ -639,6 +639,12 @@ extension SwitcherViewModel {
         panicPlaybackSnapshot = snapshot
     }
 
+    var outputPanicIsActive: Bool {
+        runtime.bridgeMode.owns(.panic)
+            ? runtime.state.panic.isActive
+            : isPanicMode
+    }
+
     func setLegacyPanicMode(_ isActive: Bool) {
         isPanicMode = isActive
     }

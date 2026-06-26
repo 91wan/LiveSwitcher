@@ -40,10 +40,9 @@ extension SwitcherViewModel {
         panicAudioTransitionGeneration += 1
         capturePanicPlaybackSnapshot()
         setLegacyPanicMode(true)
+        dispatchRuntimeFacadeAction(.operatorSetPanic(true))
         if shouldPauseMediaForActivePanic(panicPlaybackSnapshot) {
             dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))
-        } else {
-            dispatchRuntimeFacadeAction(.operatorSetPanic(true))
         }
         applyCurrentRuntimeAudioRouting(reason: .panicChanged)
         pausePlaybackForActivePanic(generation: panicAudioTransitionGeneration)

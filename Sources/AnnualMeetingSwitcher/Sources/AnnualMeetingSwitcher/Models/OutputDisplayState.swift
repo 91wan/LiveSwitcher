@@ -51,7 +51,7 @@ struct OutputDisplayState: Equatable {
             lowerThirdName: viewModel.lowerThirdName,
             lowerThirdRole: viewModel.lowerThirdRole,
             lowerThirdOrganization: viewModel.lowerThirdOrganization,
-            isPanicMode: viewModel.isPanicMode,
+            isPanicMode: viewModel.outputPanicIsActive,
             isFadeToBlackActive: viewModel.isFadeToBlackActive,
             cornerLogoPosition: viewModel.cornerLogoPosition,
             isCornerLogoVisible: viewModel.isCornerLogoVisible

@@ -58,6 +58,20 @@ final class PanicRuntimeTargetStateTests: XCTestCase {
         XCTAssertTrue(supportRange.lowerBound > guardRange.upperBound)
     }
 
+    func testLegacyPanicActivationSetsPanicBeforePausingMedia() throws {
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Panic.swift")
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "activatePanic"))
+
+        let panicRange = try XCTUnwrap(body.range(of: "dispatchRuntimeFacadeAction(.operatorSetPanic(true))"))
+        let mediaPauseRange = try XCTUnwrap(body.range(of: "dispatchRuntimeFacadeAction(.operatorPausedMediaForPanic(generation: nil))"))
+
+        XCTAssertLessThan(
+            panicRange.lowerBound,
+            mediaPauseRange.lowerBound,
+            "Panic must enter black output before media pause can reveal standby wallpaper."
+        )
+    }
+
     private func makePanicOwnedViewModel(
         runtimeIsActive: Bool,
         facadeIsActive: Bool
