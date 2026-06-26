@@ -149,7 +149,7 @@ Latest operator smoke note:
 
 - Operator approved merging the current numbered-badge and BGM return-to-start PRs after app-launch/manual checks. No detailed hardware matrix row results, final app hash acceptance, or 60-minute soak evidence were provided in-repo, so the rows below remain `NOT RUN`.
 - Operator manually tested and approved the live-ops rail chrome and blackout monitor status PRs in Codex thread. The rows directly covered by PR #375/#376 are recorded as `PASS`; final app hash acceptance, 60-minute soak evidence, and unrelated/unobserved detailed hardware rows remain `NOT RUN`.
-- Operator confirmed manual test acceptance in Codex thread for the current production app. PR #359 changes docs/tests only; stable automated gates, bundle hash recording, and final human acceptance are recorded as `PASS`. The 60-minute soak remains `NOT RUN` until explicit soak evidence or waiver.
+- Operator confirmed manual test acceptance in Codex thread for the current production app. PR #359 changes docs/tests only; stable automated gates, bundle hash recording, final human acceptance, and 60-minute soak are recorded as `PASS`.
 
 | 场景 | 结果 | 证据/备注 |
 |---|---|---|
@@ -217,7 +217,7 @@ Latest operator smoke note:
 | idle 等待仍准时提醒 | NOT RUN | |
 | 提醒不自动切换 | NOT RUN | |
 | 提醒 Timer/clock 无残留 | NOT RUN | |
-| 60 分钟 soak | NOT RUN | |
+| 60 分钟 soak | PASS | Operator completed 60-minute soak and confirmed PASS in Codex thread. |
 | 准备页节目编号可读 | NOT RUN | |
 | 现场节目编号可读 | NOT RUN | |
 | 10+ 节目编号不裁剪 | NOT RUN | |
@@ -237,7 +237,7 @@ Latest operator smoke note:
 | Stable final automated gates | PASS | Local release gate and GitHub Actions Smoke Tests passed for PR #359; details recorded in PR body. |
 | Stable final app hash recorded | PASS | Bundle executable SHA-256 recorded in PR #359 body. |
 | Stable final human acceptance recorded | PASS | Operator confirmed manual test acceptance in Codex thread; PR #359 production code changes are none. |
-| Stable 60-minute soak | NOT RUN | |
+| Stable 60-minute soak | PASS | Operator completed 60-minute soak and confirmed PASS in Codex thread. |
 
 ### Clean launch and persistence
 | ID | Preconditions | Steps | Expected | Result | Evidence |

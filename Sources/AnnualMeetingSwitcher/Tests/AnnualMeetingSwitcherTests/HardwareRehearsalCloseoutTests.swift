@@ -389,7 +389,6 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
             "idle 等待仍准时提醒",
             "提醒不自动切换",
             "提醒 Timer/clock 无残留",
-            "60 分钟 soak",
             "准备页节目编号可读",
             "现场节目编号可读",
             "10+ 节目编号不裁剪",
@@ -399,8 +398,7 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
             "BGM 暂停中回到开头仍暂停",
             "BGM 静音/主持人模式回到开头无异常",
             "快速连续回到开头不串音",
-            "BGM 切歌中回到开头不拉高旧歌",
-            "Stable 60-minute soak"
+            "BGM 切歌中回到开头不拉高旧歌"
         ]
     }
 
@@ -408,7 +406,9 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
         [
             "Stable final automated gates",
             "Stable final app hash recorded",
-            "Stable final human acceptance recorded"
+            "Stable final human acceptance recorded",
+            "60 分钟 soak",
+            "Stable 60-minute soak"
         ]
     }
 
