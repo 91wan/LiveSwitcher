@@ -35,7 +35,7 @@ extension SwitcherViewModel {
             isCornerLogoVisible: preferences.isCornerLogoVisible,
             cornerLogoPosition: preferences.cornerLogoPosition,
             autoPlayNextVideoOnEnd: preferences.autoPlayNextVideoOnEnd,
-            autoAdvanceAtScheduledTime: preferences.autoAdvanceAtScheduledTime,
+            isAgendaTimeReminderEnabled: preferences.isAgendaTimeReminderEnabled,
             showAgendaTimeline: preferences.showAgendaTimeline,
             consoleMode: runtimeBackedConsoleModeForPersistentSnapshot,
             themeOverride: preferences.themeOverride,
@@ -76,7 +76,7 @@ extension SwitcherViewModel {
             isCornerLogoVisible = state.isCornerLogoVisible
             cornerLogoPosition = state.cornerLogoPosition
             autoPlayNextVideoOnEnd = state.autoPlayNextVideoOnEnd
-            autoAdvanceAtScheduledTime = state.autoAdvanceAtScheduledTime
+            isAgendaTimeReminderEnabled = state.isAgendaTimeReminderEnabled
             showAgendaTimeline = state.showAgendaTimeline
             consoleMode = state.consoleMode
             themeOverride = state.themeOverride
@@ -116,7 +116,7 @@ extension SwitcherViewModel {
             cornerLogoURL: cornerLogoURL,
             isCornerLogoVisible: isCornerLogoVisible,
             autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd,
-            autoAdvanceAtScheduledTime: autoAdvanceAtScheduledTime,
+            isAgendaTimeReminderEnabled: isAgendaTimeReminderEnabled,
             showAgendaTimeline: showAgendaTimeline,
             cornerLogoPosition: cornerLogoPosition
         )
@@ -150,8 +150,8 @@ extension SwitcherViewModel {
         persistenceStore.saveAutoPlayNextVideoOnEnd(isEnabled)
     }
 
-    func persistAutoAdvanceAtScheduledTimeFromRuntime(_ isEnabled: Bool) {
-        persistenceStore.saveAutoAdvanceAtScheduledTime(isEnabled)
+    func persistAgendaTimeReminderEnabledFromRuntime(_ isEnabled: Bool) {
+        persistenceStore.saveAgendaTimeReminderEnabled(isEnabled)
     }
 
     func persistShowAgendaTimelineFromRuntime(_ isEnabled: Bool) {

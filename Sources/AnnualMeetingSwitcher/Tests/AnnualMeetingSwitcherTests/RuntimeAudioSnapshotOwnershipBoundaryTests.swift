@@ -196,7 +196,7 @@ final class RuntimeAudioSnapshotOwnershipBoundaryTests: XCTestCase {
             configureStaleAudioFacade($0)
         }
 
-        viewModel.dispatchRuntimeFacadeAction(LiveRuntimeAction.operatorSetAutoAdvanceAtScheduledTime(true))
+        viewModel.dispatchRuntimeFacadeAction(LiveRuntimeAction.operatorSetAgendaTimeReminderEnabled(true))
 
         XCTAssertEqual(viewModel.runtime.state.audio.masterVolume, state.audio.masterVolume, accuracy: 0.0001)
         XCTAssertEqual(viewModel.runtime.state.audio.strategy, state.audio.strategy)

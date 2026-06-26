@@ -196,7 +196,7 @@ final class RuntimeClosurePortsTests: XCTestCase {
         port.saveSpeakerModeHandler = { events.append("speaker:\($0)") }
         port.saveBGMPlayModeHandler = { events.append("bgmMode:\($0.rawValue)") }
         port.saveAutoPlayNextVideoOnEndHandler = { events.append("autoNext:\($0)") }
-        port.saveAutoAdvanceAtScheduledTimeHandler = { events.append("autoAdvance:\($0)") }
+        port.saveAgendaTimeReminderEnabledHandler = { events.append("agendaReminder:\($0)") }
         port.saveShowAgendaTimelineHandler = { events.append("timeline:\($0)") }
         port.saveCornerLogoPositionHandler = { events.append("corner:\($0.rawValue)") }
 
@@ -207,7 +207,7 @@ final class RuntimeClosurePortsTests: XCTestCase {
         port.saveSpeakerMode(true)
         port.saveBGMPlayMode(.sequential)
         port.saveAutoPlayNextVideoOnEnd(true)
-        port.saveAutoAdvanceAtScheduledTime(true)
+        port.saveAgendaTimeReminderEnabled(true)
         port.saveShowAgendaTimeline(true)
         port.saveCornerLogoPosition(.bottomLeft)
 
@@ -219,7 +219,7 @@ final class RuntimeClosurePortsTests: XCTestCase {
             "speaker:true",
             "bgmMode:顺序播放",
             "autoNext:true",
-            "autoAdvance:true",
+            "agendaReminder:true",
             "timeline:true",
             "corner:bottomLeft"
         ])

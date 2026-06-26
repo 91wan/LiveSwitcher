@@ -122,7 +122,7 @@ private extension ProgramSourceKind {
         case .activeDeck:
             return "Active Keynote Deck"
         case .agendaMarker:
-            return "Agenda Marker"
+            return "议程标记"
         case .unsupported:
             return "Unsupported"
         }

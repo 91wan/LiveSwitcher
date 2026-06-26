@@ -225,7 +225,7 @@ final class ClosurePersistencePort: PersistencePort {
     var saveSpeakerModeHandler: ((Bool) -> Void)?
     var saveBGMPlayModeHandler: ((BGMPlayMode) -> Void)?
     var saveAutoPlayNextVideoOnEndHandler: ((Bool) -> Void)?
-    var saveAutoAdvanceAtScheduledTimeHandler: ((Bool) -> Void)?
+    var saveAgendaTimeReminderEnabledHandler: ((Bool) -> Void)?
     var saveShowAgendaTimelineHandler: ((Bool) -> Void)?
     var saveCornerLogoVisibleHandler: ((Bool) -> Void)?
     var saveCornerLogoPositionHandler: ((CornerLogoPosition) -> Void)?
@@ -262,8 +262,8 @@ final class ClosurePersistencePort: PersistencePort {
         saveAutoPlayNextVideoOnEndHandler?(isEnabled)
     }
 
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {
-        saveAutoAdvanceAtScheduledTimeHandler?(isEnabled)
+    func saveAgendaTimeReminderEnabled(_ isEnabled: Bool) {
+        saveAgendaTimeReminderEnabledHandler?(isEnabled)
     }
 
     func saveShowAgendaTimeline(_ isEnabled: Bool) {

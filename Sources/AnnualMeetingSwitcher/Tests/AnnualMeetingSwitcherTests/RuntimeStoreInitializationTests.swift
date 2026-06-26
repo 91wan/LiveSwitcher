@@ -80,7 +80,7 @@ private final class RuntimeStoreInitializationPersistencePort: PersistencePort {
     func saveSpeakerMode(_ isEnabled: Bool) {}
     func saveBGMPlayMode(_ playMode: BGMPlayMode) {}
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) {}
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) {}
+    func saveAgendaTimeReminderEnabled(_ isEnabled: Bool) {}
     func saveShowAgendaTimeline(_ isEnabled: Bool) {}
     func saveCornerLogoVisible(_ isVisible: Bool) {}
     func saveCornerLogoPosition(_ position: CornerLogoPosition) {}

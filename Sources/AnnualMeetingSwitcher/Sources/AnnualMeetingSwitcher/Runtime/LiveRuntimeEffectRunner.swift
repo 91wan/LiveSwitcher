@@ -201,8 +201,8 @@ final class LiveRuntimeEffectRunner {
             persistence?.saveBGMPlayMode(playMode)
         case .saveAutoPlayNextVideoOnEnd(let isEnabled):
             persistence?.saveAutoPlayNextVideoOnEnd(isEnabled)
-        case .saveAutoAdvanceAtScheduledTime(let isEnabled):
-            persistence?.saveAutoAdvanceAtScheduledTime(isEnabled)
+        case .saveAgendaTimeReminderEnabled(let isEnabled):
+            persistence?.saveAgendaTimeReminderEnabled(isEnabled)
         case .saveShowAgendaTimeline(let isEnabled):
             persistence?.saveShowAgendaTimeline(isEnabled)
         case .saveCornerLogoVisible(let isVisible):

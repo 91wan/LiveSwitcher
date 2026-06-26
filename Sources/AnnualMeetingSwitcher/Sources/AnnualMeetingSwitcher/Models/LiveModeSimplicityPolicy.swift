@@ -59,7 +59,7 @@ enum LiveModeConfigurationSurface: String, CaseIterable {
     case editBGMLibrary
     case editOverlayPreset
     case editAutomationSettings
-    case editAutoAdvance
+    case editAgendaReminder
     case editReleaseBuildDebugSettings
 
     var documentationLabel: String {
@@ -74,8 +74,8 @@ enum LiveModeConfigurationSurface: String, CaseIterable {
             return "Editing overlay preset definitions"
         case .editAutomationSettings:
             return "Editing automation settings"
-        case .editAutoAdvance:
-            return "Editing auto-advance or auto-next preferences"
+        case .editAgendaReminder:
+            return "Editing agenda reminder or auto-next preferences"
         case .editReleaseBuildDebugSettings:
             return "Editing release, build, debug, or developer settings"
         }

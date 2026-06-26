@@ -75,7 +75,7 @@ final class PreferencesRuntimeReducerExtractionTests: XCTestCase {
             "state.preferences.activeWallpaperURL =",
             "state.preferences.cornerLogoURL =",
             "state.preferences.autoPlayNextVideoOnEnd =",
-            "state.preferences.autoAdvanceAtScheduledTime =",
+            "state.preferences.isAgendaTimeReminderEnabled =",
             "state.preferences.showAgendaTimeline =",
             "state.preferences.cornerLogoPosition =",
             "effects.append(.saveConsoleMode",
@@ -83,7 +83,7 @@ final class PreferencesRuntimeReducerExtractionTests: XCTestCase {
             "effects.append(.loadBackgroundImage",
             "effects.append(.loadCornerLogoImage",
             "effects.append(.saveAutoPlayNextVideoOnEnd",
-            "effects.append(.saveAutoAdvanceAtScheduledTime",
+            "effects.append(.saveAgendaTimeReminderEnabled",
             "effects.append(.saveShowAgendaTimeline",
             "effects.append(.saveCornerLogoPosition"
         ].forEach { forbidden in

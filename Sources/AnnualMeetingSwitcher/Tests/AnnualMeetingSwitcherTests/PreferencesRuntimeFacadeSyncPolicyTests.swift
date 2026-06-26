@@ -62,7 +62,7 @@ final class PreferencesRuntimeFacadeSyncPolicyTests: XCTestCase {
             .operatorSetActiveWallpaperURL(URL(fileURLWithPath: "/tmp/wallpaper.png")),
             .operatorSetCornerLogoURL(URL(fileURLWithPath: "/tmp/logo.png")),
             .operatorSetAutoPlayNextVideoOnEnd(true),
-            .operatorSetAutoAdvanceAtScheduledTime(true),
+            .operatorSetAgendaTimeReminderEnabled(true),
             .operatorSetShowAgendaTimeline(true),
             .operatorSetCornerLogoPosition(.bottomLeft)
         ]

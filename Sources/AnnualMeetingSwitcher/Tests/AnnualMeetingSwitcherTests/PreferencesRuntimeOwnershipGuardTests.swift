@@ -26,11 +26,11 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testAutoAdvanceNoopsBeforePersistenceOwnership() {
+    func testAgendaTimeReminderNoopsBeforePersistenceOwnership() {
         let state = guardedState()
-        let mutation = reduce(state, .operatorSetAutoAdvanceAtScheduledTime(true), bridgeMode: .recordingOnly)
+        let mutation = reduce(state, .operatorSetAgendaTimeReminderEnabled(true), bridgeMode: .recordingOnly)
 
-        XCTAssertEqual(mutation.state.preferences.autoAdvanceAtScheduledTime, state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertEqual(mutation.state.preferences.isAgendaTimeReminderEnabled, state.preferences.isAgendaTimeReminderEnabled)
         XCTAssertTrue(mutation.effects.isEmpty)
     }
 
@@ -93,7 +93,7 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
             reduce(.operatorSetConsoleMode(.live), bridgeMode: .audioOwned).state.mode == .live,
             reduce(.operatorSetThemeOverride(.system), bridgeMode: .audioOwned).state.preferences.themeOverride == .system,
             reduce(.operatorSetAutoPlayNextVideoOnEnd(true), bridgeMode: .audioOwned).state.preferences.autoPlayNextVideoOnEnd,
-            reduce(.operatorSetAutoAdvanceAtScheduledTime(true), bridgeMode: .audioOwned).state.preferences.autoAdvanceAtScheduledTime,
+            reduce(.operatorSetAgendaTimeReminderEnabled(true), bridgeMode: .audioOwned).state.preferences.isAgendaTimeReminderEnabled,
             reduce(.operatorSetShowAgendaTimeline(true), bridgeMode: .audioOwned).state.preferences.showAgendaTimeline,
             reduce(.operatorSetCornerLogoPosition(.bottomLeft), bridgeMode: .audioOwned).state.preferences.cornerLogoPosition == .bottomLeft
         ].forEach { didMutate in
@@ -117,7 +117,7 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
         assertCase(".operatorSetConsoleMode(let mode)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
         assertCase(".operatorSetThemeOverride(let theme)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
         assertCase(".operatorSetAutoPlayNextVideoOnEnd(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetAutoAdvanceAtScheduledTime(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
+        assertCase(".operatorSetAgendaTimeReminderEnabled(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
         assertCase(".operatorSetShowAgendaTimeline(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
         assertCase(".operatorSetCornerLogoPosition(let position)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
         assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
@@ -138,7 +138,7 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
         var state = LiveRuntimeState()
         state.preferences.themeOverride = .dark
         state.preferences.autoPlayNextVideoOnEnd = false
-        state.preferences.autoAdvanceAtScheduledTime = false
+        state.preferences.isAgendaTimeReminderEnabled = false
         state.preferences.showAgendaTimeline = true
         state.preferences.cornerLogoPosition = .topRight
         state.preferences.activeWallpaperURL = URL(fileURLWithPath: "/tmp/existing-wallpaper.png")

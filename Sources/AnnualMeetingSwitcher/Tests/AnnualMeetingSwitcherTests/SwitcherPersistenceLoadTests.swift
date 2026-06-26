@@ -151,7 +151,7 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         defaults.set(BGMPlayMode.sequential.rawValue, forKey: "bgmPlayMode")
         defaults.set(true, forKey: "speakerMode")
         defaults.set(true, forKey: "autoPlayNextVideoOnEnd")
-        defaults.set(true, forKey: "autoAdvanceAtScheduledTime")
+        defaults.set(true, forKey: "agendaReminderEnabled")
         defaults.set(true, forKey: "showAgendaTimeline")
         defaults.set(ConsoleMode.live.rawValue, forKey: "consoleMode")
         defaults.set(ThemeOverride.light.rawValue, forKey: "themeOverride")
@@ -162,10 +162,22 @@ final class SwitcherPersistenceLoadTests: XCTestCase {
         XCTAssertEqual(state.bgmPlayMode, .sequential)
         XCTAssertTrue(state.isSpeakerMode)
         XCTAssertTrue(state.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(state.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(state.isAgendaTimeReminderEnabled)
         XCTAssertTrue(state.showAgendaTimeline)
         XCTAssertEqual(state.consoleMode, .live)
         XCTAssertEqual(state.themeOverride, .light)
+    }
+
+    func testLoadMigratesLegacyAutoAdvancePreferenceToAgendaReminderKey() throws {
+        let defaults = try makeDefaults()
+        defaults.set(true, forKey: "autoAdvanceAtScheduledTime")
+        XCTAssertNil(defaults.object(forKey: "agendaReminderEnabled"))
+
+        let state = SwitcherPersistenceStore(userDefaults: defaults).load().state
+
+        XCTAssertTrue(state.isAgendaTimeReminderEnabled)
+        XCTAssertTrue(defaults.bool(forKey: "agendaReminderEnabled"))
+        XCTAssertNil(defaults.object(forKey: "autoAdvanceAtScheduledTime"))
     }
 
     func testLoadRestoresOverlayPresetsNormalized() throws {

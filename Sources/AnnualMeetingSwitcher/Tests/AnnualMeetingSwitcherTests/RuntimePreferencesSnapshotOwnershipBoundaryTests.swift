@@ -45,12 +45,12 @@ final class RuntimePreferencesSnapshotOwnershipBoundaryTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.state.preferences.autoPlayNextVideoOnEnd)
     }
 
-    func testPersistenceOwnedOperatorSetAutoAdvanceStillUpdatesRuntimePreference() {
-        let viewModel = makePersistenceOwnedViewModel(staleFacade: { $0.autoAdvanceAtScheduledTime = false })
+    func testPersistenceOwnedOperatorSetAgendaTimeReminderStillUpdatesRuntimePreference() {
+        let viewModel = makePersistenceOwnedViewModel(staleFacade: { $0.isAgendaTimeReminderEnabled = false })
 
-        viewModel.dispatchRuntimeFacadeAction(.operatorSetAutoAdvanceAtScheduledTime(true))
+        viewModel.dispatchRuntimeFacadeAction(.operatorSetAgendaTimeReminderEnabled(true))
 
-        XCTAssertTrue(viewModel.runtime.state.preferences.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(viewModel.runtime.state.preferences.isAgendaTimeReminderEnabled)
     }
 
     func testPersistenceOwnedOperatorSetShowAgendaTimelineStillUpdatesRuntimePreference() {
@@ -76,7 +76,7 @@ final class RuntimePreferencesSnapshotOwnershipBoundaryTests: XCTestCase {
         state.preferences.activeWallpaperURL = runtimeWallpaperURL
         state.preferences.cornerLogoURL = runtimeLogoURL
         state.preferences.autoPlayNextVideoOnEnd = true
-        state.preferences.autoAdvanceAtScheduledTime = true
+        state.preferences.isAgendaTimeReminderEnabled = true
         state.preferences.showAgendaTimeline = false
         state.preferences.cornerLogoPosition = .bottomLeft
         let expectedPreferences = state.preferences
@@ -86,7 +86,7 @@ final class RuntimePreferencesSnapshotOwnershipBoundaryTests: XCTestCase {
             viewModel.activeWallpaperURL = staleWallpaperURL
             viewModel.cornerLogoURL = staleLogoURL
             viewModel.autoPlayNextVideoOnEnd = false
-            viewModel.autoAdvanceAtScheduledTime = false
+            viewModel.isAgendaTimeReminderEnabled = false
             viewModel.showAgendaTimeline = true
             viewModel.cornerLogoPosition = .topRight
         }
@@ -124,7 +124,7 @@ final class RuntimePreferencesSnapshotOwnershipBoundaryTests: XCTestCase {
         state.preferences.activeWallpaperURL = URL(fileURLWithPath: "/tmp/runtime-existing-wallpaper.png")
         state.preferences.cornerLogoURL = URL(fileURLWithPath: "/tmp/runtime-existing-logo.png")
         state.preferences.autoPlayNextVideoOnEnd = false
-        state.preferences.autoAdvanceAtScheduledTime = false
+        state.preferences.isAgendaTimeReminderEnabled = false
         state.preferences.showAgendaTimeline = true
         state.preferences.cornerLogoPosition = .topLeft
         return state

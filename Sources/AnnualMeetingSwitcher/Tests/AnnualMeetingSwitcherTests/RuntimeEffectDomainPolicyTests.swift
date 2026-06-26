@@ -21,7 +21,7 @@ final class RuntimeEffectDomainPolicyTests: XCTestCase {
             .saveAudioStrategy(.followSource),
             .saveSpeakerMode(true),
             .saveAutoPlayNextVideoOnEnd(true),
-            .saveAutoAdvanceAtScheduledTime(true),
+            .saveAgendaTimeReminderEnabled(true),
             .saveShowAgendaTimeline(true),
             .saveCornerLogoVisible(true),
             .saveCornerLogoPosition(.bottomLeft),

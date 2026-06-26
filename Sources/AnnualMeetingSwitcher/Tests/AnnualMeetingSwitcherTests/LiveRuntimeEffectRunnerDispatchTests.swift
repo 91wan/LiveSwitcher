@@ -280,7 +280,7 @@ private final class DispatchPersistencePortSpy: PersistencePort {
     func saveSpeakerMode(_ isEnabled: Bool) { calls.append("speaker:\(isEnabled)") }
     func saveBGMPlayMode(_ playMode: BGMPlayMode) { calls.append("bgmPlayMode:\(playMode.rawValue)") }
     func saveAutoPlayNextVideoOnEnd(_ isEnabled: Bool) { calls.append("autoPlay:\(isEnabled)") }
-    func saveAutoAdvanceAtScheduledTime(_ isEnabled: Bool) { calls.append("autoAdvance:\(isEnabled)") }
+    func saveAgendaTimeReminderEnabled(_ isEnabled: Bool) { calls.append("agendaReminder:\(isEnabled)") }
     func saveShowAgendaTimeline(_ isEnabled: Bool) { calls.append("agenda:\(isEnabled)") }
     func saveCornerLogoVisible(_ isVisible: Bool) { calls.append("logoVisible:\(isVisible)") }
     func saveCornerLogoPosition(_ position: CornerLogoPosition) { calls.append("logoPosition:\(position.rawValue)") }

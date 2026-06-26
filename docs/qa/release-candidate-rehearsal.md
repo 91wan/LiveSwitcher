@@ -148,7 +148,7 @@ Use this result vocabulary only: PASS, FAIL, BLOCKED, NOT RUN.
 |---|---|---|---|---|---|
 | RC-01 | Candidate bundle built; app not running | Launch the app with the RC defaults suite | App starts, no crash, main window is operable, no unexpected output window covers the main screen | | |
 | RC-02 | RC suite seeded | Confirm demo queue, BGM, and wallpaper state | RC suite is isolated from production user data; demo queue/BGM/wallpaper are visible | | |
-| RC-03 | Settings changed: audio strategy, speaker mode, BGM play mode, auto-next, auto-advance, agenda timeline, wallpaper, corner logo, queue order | Quit fully and relaunch with the same RC suite | Inputs restore, Runtime-derived Audio output recalculates, no duplicate queue item, no ghost BGM | | |
+| RC-03 | Settings changed: audio strategy, speaker mode, BGM play mode, auto-next, agenda reminder, agenda timeline, wallpaper, corner logo, queue order | Quit fully and relaunch with the same RC suite | Inputs restore, Runtime-derived Audio output recalculates, no duplicate queue item, no ghost BGM | | |
 
 ### Media lifecycle
 | ID | Preconditions | Steps | Expected | Result | Evidence |

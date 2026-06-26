@@ -15,7 +15,7 @@ final class PersistentStateRuntimeSourceBoundaryTests: XCTestCase {
         state.preferences.activeWallpaperURL = URL(fileURLWithPath: "/tmp/runtime-wallpaper.png")
         state.preferences.cornerLogoURL = URL(fileURLWithPath: "/tmp/runtime-logo.png")
         state.preferences.autoPlayNextVideoOnEnd = true
-        state.preferences.autoAdvanceAtScheduledTime = true
+        state.preferences.isAgendaTimeReminderEnabled = true
         state.preferences.showAgendaTimeline = false
         state.preferences.cornerLogoPosition = .bottomLeft
         let viewModel = makeViewModel(runtimeState: state, bridgeMode: .panicOwned)
@@ -33,7 +33,7 @@ final class PersistentStateRuntimeSourceBoundaryTests: XCTestCase {
         XCTAssertEqual(snapshot.activeWallpaperURL, state.preferences.activeWallpaperURL)
         XCTAssertEqual(snapshot.cornerLogoURL, state.preferences.cornerLogoURL)
         XCTAssertTrue(snapshot.autoPlayNextVideoOnEnd)
-        XCTAssertTrue(snapshot.autoAdvanceAtScheduledTime)
+        XCTAssertTrue(snapshot.isAgendaTimeReminderEnabled)
         XCTAssertFalse(snapshot.showAgendaTimeline)
         XCTAssertEqual(snapshot.cornerLogoPosition, .bottomLeft)
     }
@@ -73,7 +73,7 @@ final class PersistentStateRuntimeSourceBoundaryTests: XCTestCase {
             "cornerLogoURL: cornerLogoURL",
             "cornerLogoPosition: cornerLogoPosition",
             "autoPlayNextVideoOnEnd: autoPlayNextVideoOnEnd",
-            "autoAdvanceAtScheduledTime: autoAdvanceAtScheduledTime",
+            "isAgendaTimeReminderEnabled: isAgendaTimeReminderEnabled",
             "showAgendaTimeline: showAgendaTimeline",
             "consoleMode: consoleMode",
             "themeOverride: themeOverride"
@@ -113,7 +113,7 @@ final class PersistentStateRuntimeSourceBoundaryTests: XCTestCase {
         viewModel.cornerLogoURL = URL(fileURLWithPath: "/tmp/facade-logo.png")
         viewModel.cornerLogoPosition = .topRight
         viewModel.autoPlayNextVideoOnEnd = false
-        viewModel.autoAdvanceAtScheduledTime = false
+        viewModel.isAgendaTimeReminderEnabled = false
         viewModel.showAgendaTimeline = true
     }
 

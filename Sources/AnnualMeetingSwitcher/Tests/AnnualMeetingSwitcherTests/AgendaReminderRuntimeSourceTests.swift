@@ -2,78 +2,78 @@ import XCTest
 @testable import LiveSwitcher
 
 @MainActor
-final class AgendaAutoAdvanceRuntimeSourceTests: XCTestCase {
-    func testAgendaAutoAdvancePromptUsesRuntimePreferenceWhenPersistenceOwned() throws {
+final class AgendaReminderRuntimeSourceTests: XCTestCase {
+    func testAgendaReminderPromptUsesRuntimePreferenceWhenPersistenceOwned() throws {
         let current = scheduledProgram("Current", start: 0)
         let next = scheduledProgram("Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .programSelectionOwned,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [current, next],
             facadeCurrent: current,
-            facadeAutoAdvance: false
+            facadeAgendaReminder: false
         )
 
-        let prompt = viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120))
+        let prompt = viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120))
 
         XCTAssertEqual(prompt?.itemID, next.id)
     }
 
-    func testAgendaAutoAdvancePromptUsesFacadePreferenceBeforePersistenceOwnership() {
+    func testAgendaReminderPromptUsesFacadePreferenceBeforePersistenceOwnership() {
         let current = scheduledProgram("Current", start: 0)
         let next = scheduledProgram("Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .recordingOnly,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [current, next],
             facadeCurrent: current,
-            facadeAutoAdvance: false
+            facadeAgendaReminder: false
         )
 
-        XCTAssertNil(viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120)))
+        XCTAssertNil(viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120)))
     }
 
-    func testAgendaAutoAdvancePromptUsesRuntimeQueueWhenProgramQueueOwned() throws {
+    func testAgendaReminderPromptUsesRuntimeQueueWhenProgramQueueOwned() throws {
         let current = scheduledProgram("Runtime Current", start: 0)
         let next = scheduledProgram("Runtime Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .programSelectionOwned,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [],
             facadeCurrent: current,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
 
-        let prompt = viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120))
+        let prompt = viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120))
 
         XCTAssertEqual(prompt?.itemID, next.id)
     }
 
-    func testAgendaAutoAdvancePromptUsesRuntimeCurrentProgramWhenProgramSelectionOwned() throws {
+    func testAgendaReminderPromptUsesRuntimeCurrentProgramWhenProgramSelectionOwned() throws {
         let current = scheduledProgram("Runtime Current", start: 0)
         let next = scheduledProgram("Runtime Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .programSelectionOwned,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [current, next],
             facadeCurrent: nil,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
 
-        let prompt = viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120))
+        let prompt = viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120))
 
         XCTAssertEqual(prompt?.itemID, next.id)
     }
 
-    func testAgendaAutoAdvancePromptDoesNotUseStaleFacadeQueueWhenProgramQueueOwned() {
+    func testAgendaReminderPromptDoesNotUseStaleFacadeQueueWhenProgramQueueOwned() {
         let runtimeCurrent = scheduledProgram("Runtime Current", start: 0)
         let runtimeNext = scheduledProgram("Runtime Next", start: 200)
         let staleFacadeNext = scheduledProgram("Facade Next", start: 100)
@@ -81,18 +81,18 @@ final class AgendaAutoAdvanceRuntimeSourceTests: XCTestCase {
             bridgeMode: .programSelectionOwned,
             runtimeItems: [runtimeCurrent, runtimeNext],
             runtimeCurrent: runtimeCurrent,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [runtimeCurrent, staleFacadeNext],
             facadeCurrent: runtimeCurrent,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
 
-        let prompt = viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120))
+        let prompt = viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120))
 
         XCTAssertNil(prompt)
     }
 
-    func testAgendaAutoAdvancePromptDoesNotUseStaleFacadeCurrentProgramWhenProgramSelectionOwned() {
+    func testAgendaReminderPromptDoesNotUseStaleFacadeCurrentProgramWhenProgramSelectionOwned() {
         let runtimeCurrent = scheduledProgram("Runtime Current", start: 0)
         let runtimeNext = scheduledProgram("Runtime Next", start: 100)
         let staleFacadeCurrent = scheduledProgram("Facade Current", start: 0)
@@ -100,57 +100,57 @@ final class AgendaAutoAdvanceRuntimeSourceTests: XCTestCase {
             bridgeMode: .programSelectionOwned,
             runtimeItems: [runtimeCurrent, runtimeNext],
             runtimeCurrent: runtimeCurrent,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [staleFacadeCurrent, runtimeCurrent, runtimeNext],
             facadeCurrent: staleFacadeCurrent,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
 
-        let prompt = viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120))
+        let prompt = viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120))
 
         XCTAssertEqual(prompt?.itemID, runtimeNext.id)
     }
 
-    func testAgendaAutoAdvancePromptStillSuppressesPromptedIDs() {
+    func testAgendaReminderPromptStillSuppressesPromptedIDs() {
         let current = scheduledProgram("Current", start: 0)
         let next = scheduledProgram("Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .programSelectionOwned,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: true,
+            runtimeAgendaReminder: true,
             facadeItems: [current, next],
             facadeCurrent: current,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
-        viewModel.agendaAutoAdvancePromptedItemIDs.insert(next.id)
+        viewModel.agendaReminderAcknowledgedItemIDs.insert(next.id)
 
-        XCTAssertNil(viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120)))
+        XCTAssertNil(viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120)))
     }
 
-    func testAgendaAutoAdvancePromptStillReturnsNilWhenDisabled() {
+    func testAgendaReminderPromptStillReturnsNilWhenDisabled() {
         let current = scheduledProgram("Current", start: 0)
         let next = scheduledProgram("Next", start: 100)
         let viewModel = makeViewModel(
             bridgeMode: .programSelectionOwned,
             runtimeItems: [current, next],
             runtimeCurrent: current,
-            runtimeAutoAdvance: false,
+            runtimeAgendaReminder: false,
             facadeItems: [current, next],
             facadeCurrent: current,
-            facadeAutoAdvance: true
+            facadeAgendaReminder: true
         )
 
-        XCTAssertNil(viewModel.agendaAutoAdvancePrompt(now: Date(timeIntervalSince1970: 120)))
+        XCTAssertNil(viewModel.agendaReminderPrompt(now: Date(timeIntervalSince1970: 120)))
     }
 
-    func testAgendaAutoAdvancePromptUsesRuntimeBackedSources() throws {
-        let body = try XCTUnwrap(try programQueueSource().extractedRuntimeFunctionBody(named: "agendaAutoAdvancePrompt"))
+    func testAgendaReminderPromptUsesRuntimeBackedSources() throws {
+        let body = try XCTUnwrap(try programQueueSource().extractedRuntimeFunctionBody(named: "agendaReminderPrompt"))
 
-        XCTAssertTrue(body.contains("runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel"))
+        XCTAssertTrue(body.contains("runtimeBackedAgendaTimeReminderEnabledForProgramQueueViewModel"))
         XCTAssertTrue(body.contains("runtimeBackedProgramItemsForProgramQueueViewModel"))
         XCTAssertTrue(body.contains("runtimeBackedCurrentProgramForProgramQueueViewModel"))
-        XCTAssertFalse(body.contains("isEnabled: autoAdvanceAtScheduledTime"))
+        XCTAssertFalse(body.contains("isEnabled: isAgendaTimeReminderEnabled"))
         XCTAssertFalse(body.contains("programItems: programItems"))
         XCTAssertFalse(body.contains("currentProgramItem: currentProgramItem"))
     }
@@ -163,22 +163,22 @@ final class AgendaAutoAdvanceRuntimeSourceTests: XCTestCase {
         bridgeMode: LiveRuntimeBridgeMode,
         runtimeItems: [ProgramItem],
         runtimeCurrent: ProgramItem?,
-        runtimeAutoAdvance: Bool,
+        runtimeAgendaReminder: Bool,
         facadeItems: [ProgramItem],
         facadeCurrent: ProgramItem?,
-        facadeAutoAdvance: Bool
+        facadeAgendaReminder: Bool
     ) -> SwitcherViewModel {
         var state = LiveRuntimeState()
         state.program.items = runtimeItems
         state.program.currentID = runtimeCurrent?.id
         state.program.currentSwitchedAt = runtimeCurrent == nil ? nil : Date(timeIntervalSince1970: 10)
-        state.preferences.autoAdvanceAtScheduledTime = runtimeAutoAdvance
+        state.preferences.isAgendaTimeReminderEnabled = runtimeAgendaReminder
         let runtime = LiveRuntimeStore(
             initialState: state,
             effectRunner: .recording(),
             environment: LiveRuntimeEnvironment(bridgeMode: bridgeMode)
         )
-        let suiteName = "AgendaAutoAdvanceRuntimeSourceTests.\(UUID().uuidString)"
+        let suiteName = "AgendaReminderRuntimeSourceTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
         let viewModel = SwitcherViewModel(
@@ -192,7 +192,7 @@ final class AgendaAutoAdvanceRuntimeSourceTests: XCTestCase {
             facadeCurrent,
             switchedAt: facadeCurrent == nil ? nil : Date(timeIntervalSince1970: 10)
         )
-        viewModel.autoAdvanceAtScheduledTime = facadeAutoAdvance
+        viewModel.isAgendaTimeReminderEnabled = facadeAgendaReminder
         viewModel.runtime.replaceStateForFacadeSync(state, clearActionLog: true)
         return viewModel
     }

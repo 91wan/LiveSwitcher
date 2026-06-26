@@ -21,7 +21,7 @@ extension SwitcherViewModel {
 
     func updateAgendaMarker(id: UUID, input: AgendaMarkerInput) {
         dispatchRuntimeFacadeAction(.operatorUpdatedAgendaMarker(id: id, input: input))
-        agendaAutoAdvancePromptedItemIDs.remove(id)
+        agendaReminderAcknowledgedItemIDs.remove(id)
         saveData()
     }
 
@@ -35,7 +35,7 @@ extension SwitcherViewModel {
             scheduledStartAt: scheduledStartAt,
             scheduledDuration: scheduledDuration
         ))
-        agendaAutoAdvancePromptedItemIDs.remove(id)
+        agendaReminderAcknowledgedItemIDs.remove(id)
         saveData()
     }
 
@@ -57,6 +57,7 @@ extension SwitcherViewModel {
         if isCurrent && !runtime.bridgeMode.owns(.programSelection) {
             clearCurrentProgramSelection(reason: .operatorCleared)
         }
+        agendaReminderAcknowledgedItemIDs.remove(id)
         saveData()
     }
 
@@ -93,18 +94,18 @@ extension SwitcherViewModel {
         return true
     }
 
-    func agendaAutoAdvancePrompt(now: Date = Date()) -> AgendaAutoAdvancePrompt? {
-        AgendaAutoAdvanceModel.prompt(
-            isEnabled: runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel,
+    func agendaReminderPrompt(now: Date = Date()) -> AgendaReminderPrompt? {
+        AgendaReminderModel.prompt(
+            isEnabled: runtimeBackedAgendaTimeReminderEnabledForProgramQueueViewModel,
             programItems: runtimeBackedProgramItemsForProgramQueueViewModel,
             currentProgramItem: runtimeBackedCurrentProgramForProgramQueueViewModel,
             now: now,
-            promptedItemIDs: agendaAutoAdvancePromptedItemIDs
+            acknowledgedItemIDs: agendaReminderAcknowledgedItemIDs
         )
     }
 
-    func dismissAgendaAutoAdvancePrompt(_ prompt: AgendaAutoAdvancePrompt) {
-        agendaAutoAdvancePromptedItemIDs.insert(prompt.itemID)
+    func acknowledgeAgendaReminder(_ prompt: AgendaReminderPrompt) {
+        agendaReminderAcknowledgedItemIDs.insert(prompt.itemID)
     }
 
     private var runtimeBackedProgramItemsForProgramQueueViewModel: [ProgramItem] {
@@ -119,10 +120,10 @@ extension SwitcherViewModel {
             : currentProgramItem
     }
 
-    private var runtimeBackedAutoAdvanceAtScheduledTimeForProgramQueueViewModel: Bool {
+    private var runtimeBackedAgendaTimeReminderEnabledForProgramQueueViewModel: Bool {
         runtime.bridgeMode.owns(.persistence)
-            ? runtime.state.preferences.autoAdvanceAtScheduledTime
-            : autoAdvanceAtScheduledTime
+            ? runtime.state.preferences.isAgendaTimeReminderEnabled
+            : isAgendaTimeReminderEnabled
     }
 
     private func runtimeBackedProgramItemForProgramQueueViewModel(id: UUID) -> ProgramItem? {

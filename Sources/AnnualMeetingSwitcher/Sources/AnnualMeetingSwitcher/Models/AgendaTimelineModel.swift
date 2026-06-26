@@ -86,68 +86,88 @@ struct AgendaScheduleStatusModel: Equatable {
         let actualElapsed = now.timeIntervalSince(switchedAt)
         let drift = expectedElapsed - actualElapsed
         guard abs(drift) > tolerance else {
-            return AgendaScheduleStatusModel(state: .onSchedule, text: "On schedule", kind: .ready)
+            return AgendaScheduleStatusModel(state: .onSchedule, text: "准点", kind: .ready)
         }
 
         let minutes = max(1, Int((abs(drift) / 60).rounded()))
         if drift > 0 {
             return AgendaScheduleStatusModel(
                 state: .behind(minutes: minutes),
-                text: "Behind by \(minutes) min",
+                text: "落后 \(minutes) 分钟",
                 kind: .warn
             )
         }
         return AgendaScheduleStatusModel(
             state: .ahead(minutes: minutes),
-            text: "Ahead \(minutes) min",
+            text: "提前 \(minutes) 分钟",
             kind: .ready
         )
     }
 }
 
-struct AgendaAutoAdvancePrompt: Equatable {
+enum AgendaReminderKind: Equatable {
+    case playableProgram
+    case marker
+}
+
+struct AgendaReminderPrompt: Equatable {
     let itemID: UUID
     let title: String
     let scheduledStartAt: Date
+    let kind: AgendaReminderKind
 
     var message: String {
-        "Scheduled time reached. Switch to \(title)?"
+        switch kind {
+        case .playableProgram:
+            return "已到计划时间：\(title)"
+        case .marker:
+            return "议程提醒：\(title)"
+        }
     }
 }
 
-enum AgendaAutoAdvanceModel {
+enum AgendaReminderModel {
     static func prompt(
         isEnabled: Bool,
         programItems: [ProgramItem],
         currentProgramItem: ProgramItem?,
         now: Date = Date(),
-        promptedItemIDs: Set<UUID>
-    ) -> AgendaAutoAdvancePrompt? {
-        guard isEnabled,
-              let currentProgramItem,
-              programItems.contains(where: { $0.id == currentProgramItem.id }) else {
+        acknowledgedItemIDs: Set<UUID>
+    ) -> AgendaReminderPrompt? {
+        guard isEnabled else {
             return nil
         }
 
-        guard let nextIndex = ProgramQueueStore.nextPlayableIndexAfterCurrent(
-            current: currentProgramItem,
-            in: programItems
-        ) else {
-            return nil
+        let currentIndex = currentProgramItem.flatMap { current in
+            programItems.firstIndex { $0.id == current.id }
+        }
+        let scanStart = currentIndex.map { $0 + 1 } ?? 0
+        guard scanStart < programItems.count else { return nil }
+
+        let candidates = programItems[scanStart...].compactMap { item -> (item: ProgramItem, scheduledStart: Date, queueIndex: Int)? in
+            guard item.id != currentProgramItem?.id,
+                  let scheduledStart = item.scheduledStartAt,
+                  scheduledStart <= now,
+                  !acknowledgedItemIDs.contains(item.id)
+            else {
+                return nil
+            }
+            let queueIndex = programItems.firstIndex { $0.id == item.id } ?? Int.max
+            return (item, scheduledStart, queueIndex)
         }
 
-        let nextItem = programItems[nextIndex]
-        guard
-              let scheduledStart = nextItem.scheduledStartAt,
-              scheduledStart <= now,
-              !promptedItemIDs.contains(nextItem.id) else {
-            return nil
-        }
+        guard let nextReminder = candidates.min(by: { lhs, rhs in
+            if lhs.scheduledStart != rhs.scheduledStart {
+                return lhs.scheduledStart < rhs.scheduledStart
+            }
+            return lhs.queueIndex < rhs.queueIndex
+        }) else { return nil }
 
-        return AgendaAutoAdvancePrompt(
-            itemID: nextItem.id,
-            title: nextItem.title,
-            scheduledStartAt: scheduledStart
+        return AgendaReminderPrompt(
+            itemID: nextReminder.item.id,
+            title: nextReminder.item.title,
+            scheduledStartAt: nextReminder.scheduledStart,
+            kind: nextReminder.item.isAgendaMarker ? .marker : .playableProgram
         )
     }
 }

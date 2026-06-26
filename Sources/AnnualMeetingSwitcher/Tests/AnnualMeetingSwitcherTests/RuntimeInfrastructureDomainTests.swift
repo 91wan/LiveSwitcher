@@ -76,8 +76,8 @@ final class RuntimeInfrastructureDomainTests: XCTestCase {
         XCTAssertEqual(LiveRuntimeEffect.saveAutoPlayNextVideoOnEnd(true).requiredBridgeDomain, .persistence)
     }
 
-    func testSaveAutoAdvanceAtScheduledTimeRequiresPersistenceDomain() {
-        XCTAssertEqual(LiveRuntimeEffect.saveAutoAdvanceAtScheduledTime(true).requiredBridgeDomain, .persistence)
+    func testSaveAgendaTimeReminderEnabledRequiresPersistenceDomain() {
+        XCTAssertEqual(LiveRuntimeEffect.saveAgendaTimeReminderEnabled(true).requiredBridgeDomain, .persistence)
     }
 
     func testSaveShowAgendaTimelineRequiresPersistenceDomain() {

@@ -74,13 +74,13 @@ enum PreferencesRuntimeReducer {
         effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))
     }
 
-    static func setAutoAdvanceAtScheduledTime(
+    static func setAgendaTimeReminderEnabled(
         _ isEnabled: Bool,
         state: inout LiveRuntimeState,
         effects: inout [LiveRuntimeEffect]
     ) {
-        state.preferences.autoAdvanceAtScheduledTime = isEnabled
-        effects.append(.saveAutoAdvanceAtScheduledTime(isEnabled))
+        state.preferences.isAgendaTimeReminderEnabled = isEnabled
+        effects.append(.saveAgendaTimeReminderEnabled(isEnabled))
     }
 
     static func setShowAgendaTimeline(
