@@ -63,3 +63,56 @@ struct ProgramQueueNumberBadge: View {
             .accessibilityLabel(text)
     }
 }
+
+struct ProgramQueueRowFramePreferenceKey: PreferenceKey {
+    static let defaultValue: [UUID: CGRect] = [:]
+
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+struct ProgramQueueListFramePreferenceKey: PreferenceKey {
+    static let defaultValue: CGRect = .null
+
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}
+
+extension SignalSourceRow {
+    var queueBadge: some View {
+        ProgramQueueNumberBadge(
+            text: queueBadgeText,
+            kind: .setup,
+            foreground: queueBadgeForeground,
+            background: queueBadgeBackground
+        )
+    }
+
+    var queueBadgeText: String {
+        rowModel.queueBadgeText
+    }
+
+    var queueBadgeForeground: Color {
+        switch queueRole {
+        case .current:
+            return .white
+        case .next:
+            return StudioTheme.Tone.warn
+        case .queued:
+            return StudioTheme.textSecondary
+        }
+    }
+
+    var queueBadgeBackground: Color {
+        switch queueRole {
+        case .current:
+            return isBroadcasting ? StudioTheme.Tone.live : StudioTheme.Action.primary
+        case .next:
+            return StudioTheme.Tone.warn.opacity(0.14)
+        case .queued:
+            return StudioTheme.Surface.raised
+        }
+    }
+}

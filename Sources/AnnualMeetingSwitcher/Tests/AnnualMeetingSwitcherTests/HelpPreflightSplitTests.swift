@@ -67,11 +67,23 @@ final class HelpPreflightSplitTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceFileExists(_ relativePath: String) throws -> Bool {
-        FileManager.default.fileExists(atPath: try sourceURL(relativePath).path)
+        if isProgramMonitorViewSourcePath(relativePath) {
+            let root = try LiveSwitcherTests.repositoryRoot(filePath: #filePath)
+            return programMonitorSplitSourceRelativePaths.allSatisfy {
+                FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+            }
+        }
+        if isRunQueueViewSourcePath(relativePath) {
+            let root = try LiveSwitcherTests.repositoryRoot(filePath: #filePath)
+            return runQueueSplitSourceRelativePaths.allSatisfy {
+                FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
+            }
+        }
+        return FileManager.default.fileExists(atPath: try sourceURL(relativePath).path)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

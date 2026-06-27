@@ -96,11 +96,7 @@ final class ThumbnailServiceTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        let candidate = try sourceRoot().appendingPathComponent(relativePath)
-        guard FileManager.default.fileExists(atPath: candidate.path) else {
-            throw XCTSkip("Could not locate \(relativePath)")
-        }
-        return try String(contentsOf: candidate, encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceRoot() throws -> URL {
