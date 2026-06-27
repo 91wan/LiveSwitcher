@@ -38,7 +38,7 @@ final class ProgramTransitionPruningTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOfFile: sourcePath(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourcePath(_ relativePath: String) throws -> String {

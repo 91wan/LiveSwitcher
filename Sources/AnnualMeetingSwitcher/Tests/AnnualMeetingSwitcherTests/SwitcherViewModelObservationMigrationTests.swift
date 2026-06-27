@@ -105,7 +105,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
         let content = try sourceText("ContentView.swift")
         let liveMode = try sourceText("Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("@ObservedObject private var avCoordinator: AVPlayerCoordinator"))
+        XCTAssertTrue(source.contains("@ObservedObject var avCoordinator: AVPlayerCoordinator"))
         XCTAssertTrue(source.contains("init(isLiveMode: Bool = false, avCoordinator: AVPlayerCoordinator)"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.isPlaying"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.hasLoadedMedia"))
@@ -116,10 +116,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot())
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceTreeText() throws -> String {

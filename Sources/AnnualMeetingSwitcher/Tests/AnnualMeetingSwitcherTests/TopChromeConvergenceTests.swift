@@ -57,7 +57,7 @@ final class TopChromeConvergenceTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

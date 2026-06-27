@@ -322,9 +322,7 @@ final class AgendaTimelineModelTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        var root = URL(fileURLWithPath: #filePath)
-        for _ in 0..<3 { root.deleteLastPathComponent() }
-        return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 }
 

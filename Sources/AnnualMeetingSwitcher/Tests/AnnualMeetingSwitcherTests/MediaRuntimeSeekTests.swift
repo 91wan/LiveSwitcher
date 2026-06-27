@@ -257,8 +257,7 @@ final class MediaRuntimeSeekTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        let url = try repositoryRoot().appendingPathComponent(relativePath)
-        return try String(contentsOf: url, encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceFunctionBody(named name: String, inSource source: String) throws -> String {

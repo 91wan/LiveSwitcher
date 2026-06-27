@@ -117,8 +117,8 @@ final class MonitorChromeVisibilityTests: XCTestCase {
     func testProgramMonitorViewUsesVisibilityModelAndHoverState() throws {
         let source = try sourceText("Views/ProgramMonitorView.swift")
 
-        XCTAssertTrue(source.contains("@State private var isHoveringPreviewDeck"))
-        XCTAssertTrue(source.contains("private var monitorOutputDisplayState: OutputDisplayState"))
+        XCTAssertTrue(source.contains("@State var isHoveringPreviewDeck"))
+        XCTAssertTrue(source.contains("var monitorOutputDisplayState: OutputDisplayState"))
         XCTAssertTrue(source.contains("OutputDisplayState.make(from: viewModel)"))
         XCTAssertTrue(source.contains("MonitorChromeVisibility.make("))
         XCTAssertTrue(source.contains("isTickerActive: viewModel.isTickerActive"))
@@ -130,7 +130,7 @@ final class MonitorChromeVisibilityTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {
