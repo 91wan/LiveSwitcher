@@ -14,7 +14,7 @@ final class CountPillVisibilityPolicyTests: XCTestCase {
 
     func testNoisyRunDeskCountPillsUseVisibilityPolicy() throws {
         for relativePath in [
-            "Views/LeftPanel.swift",
+            "Views/Setup/ProgramRailHeader.swift",
             "Views/LiveSourceRail.swift",
             "Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift"
         ] {

@@ -60,7 +60,12 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     }
 
     func testLeftPanelUsesVisibleAddSourceGridAndNonFocusableRefresh() throws {
-        let source = try sourceText("Views/LeftPanel.swift")
+        let source = try [
+            "Views/Setup/LeftPanel.swift",
+            "Views/Setup/ProgramRailControls.swift",
+            "Views/Setup/ProgramImportDropZone.swift",
+            "Views/Setup/ProgramRailFooter.swift"
+        ].map(sourceText).joined(separator: "\n")
 
         XCTAssertFalse(source.contains("Menu {"))
         XCTAssertEqual(source.components(separatedBy: "addSourceButton(title:").count - 1, 4)
@@ -101,7 +106,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     }
 
     func testRunDeskRailsHaveLowEmphasisFooters() throws {
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
 
         XCTAssertTrue(leftPanel.contains("ProgramRailFooter"))

@@ -2,16 +2,6 @@ import Foundation
 import XCTest
 
 func sourceText(_ relativePath: String, filePath: String = #filePath) throws -> String {
-    if isLegacyLeftPanelPath(relativePath) {
-        return try programSetupRailSurfaceText(filePath: filePath)
-    }
-    if isLegacyPreflightPopoverPath(relativePath) {
-        return try preflightPopoverSurfaceText(filePath: filePath)
-    }
-    if isLegacySafetyCockpitPath(relativePath) {
-        return try safetyCockpitSurfaceText(filePath: filePath)
-    }
-
     let root = try repositoryRoot(filePath: filePath)
     return try String(contentsOf: sourceURL(relativePath, repositoryRoot: root), encoding: .utf8)
 }
@@ -28,19 +18,6 @@ func repositoryRoot(filePath: String = #filePath) throws -> URL {
 }
 
 func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
-    if isLegacyLeftPanelPath(relativePath) {
-        return root
-            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Setup/LeftPanel.swift")
-    }
-    if isLegacyPreflightPopoverPath(relativePath) {
-        return root
-            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Support/PreflightPopoverView.swift")
-    }
-    if isLegacySafetyCockpitPath(relativePath) {
-        return root
-            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Support/SafetyCockpitView.swift")
-    }
-
     let directCandidate = root.appendingPathComponent(relativePath)
     if FileManager.default.fileExists(atPath: directCandidate.path) {
         return directCandidate
@@ -65,103 +42,4 @@ func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
     }
 
     return directCandidate
-}
-
-func programSetupRailSurfaceText(filePath: String = #filePath) throws -> String {
-    let files = [
-        "Views/Setup/LeftPanel.swift",
-        "Views/Setup/ProgramRailHeader.swift",
-        "Views/Setup/ProgramRailControls.swift",
-        "Views/Setup/ProgramImportDropZone.swift",
-        "Views/Setup/ProgramQueueList.swift",
-        "Views/Setup/ProgramRailFooter.swift",
-        "Views/Setup/ProgramDropHandler.swift"
-    ]
-
-    return try files
-        .map { try sourceText($0, filePath: filePath) }
-        .joined(separator: "\n")
-}
-
-private func isLegacyLeftPanelPath(_ relativePath: String) -> Bool {
-    relativePath == "Views/LeftPanel.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
-}
-
-func preflightPopoverSurfaceText(filePath: String = #filePath) throws -> String {
-    let files = [
-        "Views/Support/PreflightPopoverView.swift",
-        "Views/Support/PreflightSummaryHeader.swift",
-        "Views/Support/PreflightCheckList.swift",
-        "Views/Support/PreflightCheckRow.swift",
-        "Views/Support/PreflightPermissionSection.swift",
-        "Views/Support/PreflightSupportActions.swift"
-    ]
-
-    return try files
-        .map { try sourceText($0, filePath: filePath) }
-        .joined(separator: "\n")
-}
-
-private func isLegacyPreflightPopoverPath(_ relativePath: String) -> Bool {
-    relativePath == "Views/PreflightPopoverView.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift"
-}
-
-func safetyCockpitSurfaceText(filePath: String = #filePath) throws -> String {
-    let files = [
-        "Views/Support/SafetyCockpitView.swift",
-        "Views/Support/SafetyCockpitHeader.swift",
-        "Views/Support/SafetyCockpitStatusGrid.swift",
-        "Views/Support/SafetyCockpitRiskRow.swift",
-        "Views/Support/SafetyCockpitSupportActions.swift"
-    ]
-
-    return try files
-        .map { try sourceText($0, filePath: filePath) }
-        .joined(separator: "\n")
-}
-
-private func isLegacySafetyCockpitPath(_ relativePath: String) -> Bool {
-    relativePath == "Views/SafetyCockpitView.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Views/SafetyCockpitView.swift"
-        || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/SafetyCockpitView.swift"
-}
-
-func bgmPlaylistSurfaceText(filePath: String = #filePath) throws -> String {
-    let files = [
-        "Views/BGMPlaylistPanel.swift",
-        "Views/BGM/BGMPlaylistHeader.swift",
-        "Views/BGM/BGMTransportControls.swift",
-        "Views/BGM/BGMProgressRow.swift",
-        "Views/BGM/BGMCategoryPicker.swift",
-        "Views/BGM/BGMTrackList.swift",
-        "Views/BGM/BGMTrackRow.swift",
-        "Views/BGM/BGMImportControls.swift",
-        "Views/BGM/BGMPanelStatusRow.swift"
-    ]
-
-    return try files
-        .map { try sourceText($0, filePath: filePath) }
-        .joined(separator: "\n")
-}
-
-func overlayControlSurfaceText(filePath: String = #filePath) throws -> String {
-    let files = [
-        "Views/OverlayControlPanel.swift",
-        "Views/Overlays/OverlayComposerPicker.swift",
-        "Views/Overlays/OverlayComposerControls.swift",
-        "Views/Overlays/LowerThirdComposerCard.swift",
-        "Views/Overlays/CountdownComposerCard.swift",
-        "Views/Overlays/TickerComposerCard.swift",
-        "Views/Overlays/OverlayPresetList.swift",
-        "Views/Overlays/OverlayLivePreviewColumn.swift",
-        "Views/Overlays/OverlayActiveStatusCard.swift"
-    ]
-
-    return try files
-        .map { try sourceText($0, filePath: filePath) }
-        .joined(separator: "\n")
 }

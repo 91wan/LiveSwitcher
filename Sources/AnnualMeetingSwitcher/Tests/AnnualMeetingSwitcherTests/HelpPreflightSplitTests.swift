@@ -25,7 +25,7 @@ final class HelpPreflightSplitTests: XCTestCase {
 
     func testPreflightPopoverDoesNotOwnHelpCopy() throws {
         XCTAssertTrue(try sourceFileExists("Views/Support/PreflightPopoverView.swift"))
-        let preflight = try sourceText("Views/PreflightPopoverView.swift")
+        let preflight = try sourceTextForSplitSurface(.preflightPopover)
 
         XCTAssertTrue(preflight.contains("struct PreflightPopoverView"))
         XCTAssertTrue(preflight.contains("PreflightReviewMode"))
@@ -79,7 +79,7 @@ final class HelpPreflightSplitTests: XCTestCase {
     }
 
     func testQueueRowMovedOutOfLeftPanel() throws {
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
 
         XCTAssertTrue(try sourceFileExists("Views/ProgramQueue/SignalSourceRow.swift"))
         XCTAssertTrue(try sourceFileExists("Views/ProgramQueue/ProgressSliderRow.swift"))

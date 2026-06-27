@@ -68,7 +68,7 @@ final class ConsoleModeTests: XCTestCase {
 
     func testLiveModeRoutesDedicatedLayoutInsteadOfSetupRunDesk() throws {
         let content = try sourceText("ContentView.swift")
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
         let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
 

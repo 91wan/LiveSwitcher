@@ -28,7 +28,7 @@ final class AccessibilityHiddenContractTests: XCTestCase {
 
     func testIconOnlyControlsExposeSemanticLabels() throws {
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/ProgramRailHeader.swift")
 
         XCTAssertTrue(liveOps.contains(".accessibilityLabel(model.operatorLine)"))
         XCTAssertTrue(liveOps.contains(".accessibilityLabel(\"进入现场模式\")"))

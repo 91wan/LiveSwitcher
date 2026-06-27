@@ -74,7 +74,7 @@ final class ConsoleChromeCleanupTests: XCTestCase {
     }
 
     func testRunQueueDoesNotInstallDuplicateUnmodifiedNumberShortcuts() throws {
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
 
         XCTAssertFalse(leftPanel.contains("ShortcutKeyHandler"))
         XCTAssertFalse(leftPanel.contains(".keyboardShortcut(KeyEquivalent(Character(\"\\(index)\")), modifiers: [])"))

@@ -11,16 +11,16 @@ final class Round3PolishTests: XCTestCase {
     }
 
     func testRunQueueUsesExplicitDragHandleAndBGMLibraryDoesNotRenderDragHandleDecorations() throws {
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let programQueueList = try sourceText("Views/Setup/ProgramQueueList.swift")
         let dragHandle = try sourceText("Views/ProgramQueue/ProgramQueueDragHandle.swift")
         let sourceRow = try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
-        let bgmPanel = try bgmPlaylistSurfaceText(filePath: #filePath)
+        let bgmTrackList = try sourceText("Views/BGM/BGMTrackList.swift")
 
         XCTAssertTrue(sourceRow.contains("ProgramQueueDragHandle"))
         XCTAssertTrue(dragHandle.contains("line.3.horizontal"))
-        XCTAssertTrue(leftPanel.contains("拖拽左侧手柄调整顺序"))
-        XCTAssertFalse(bgmPanel.contains("line.3.horizontal"))
-        XCTAssertTrue(bgmPanel.contains(".accessibilityHint(\"拖拽调整顺序。\""))
+        XCTAssertTrue(programQueueList.contains("拖拽左侧手柄调整顺序"))
+        XCTAssertFalse(bgmTrackList.contains("line.3.horizontal"))
+        XCTAssertTrue(bgmTrackList.contains(".accessibilityHint(\"拖拽调整顺序。\""))
     }
 
     func testOverlayComposerStatusSeparatesEmptyDraftReadyAndLive() {
@@ -46,7 +46,7 @@ final class Round3PolishTests: XCTestCase {
     }
 
     func testAutoNextSwitchUsesWarningTint() throws {
-        let source = try sourceText("Views/LeftPanel.swift")
+        let source = try sourceText("Views/Setup/ProgramRailControls.swift")
         XCTAssertTrue(source.contains(".toggleStyle(.switch)"))
         XCTAssertTrue(source.contains(".tint(StudioTheme.Tone.warn)"))
     }

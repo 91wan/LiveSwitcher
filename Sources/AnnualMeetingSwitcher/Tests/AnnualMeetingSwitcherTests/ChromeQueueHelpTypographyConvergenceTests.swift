@@ -5,8 +5,14 @@ final class ChromeQueueHelpTypographyConvergenceTests: XCTestCase {
         try assertUsesTypeScale(relativePath: "ContentView.swift")
     }
 
-    func testLeftPanelUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
-        try assertUsesTypeScale(relativePath: "Views/LeftPanel.swift")
+    func testSetupProgramRailUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
+        for relativePath in [
+            "Views/Setup/ProgramRailHeader.swift",
+            "Views/Setup/ProgramRailControls.swift",
+            "Views/Setup/ProgramImportDropZone.swift"
+        ] {
+            try assertUsesTypeScale(relativePath: relativePath)
+        }
     }
 
     func testHelpPopoverUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {

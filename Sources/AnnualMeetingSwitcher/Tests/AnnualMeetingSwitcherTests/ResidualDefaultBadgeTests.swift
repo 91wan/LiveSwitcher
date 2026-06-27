@@ -14,14 +14,17 @@ final class ResidualDefaultBadgeTests: XCTestCase {
     }
 
     func testOverlayPanelDoesNotRenderOffStatesAsBadges() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
+        let source = try [
+            "Views/OverlayControlPanel.swift",
+            "Views/Overlays/OverlayActiveStatusCard.swift"
+        ].map(sourceText).joined(separator: "\n")
 
         XCTAssertFalse(source.contains("StatusBadge(activeOverlayCount == 0 ? \"OFF\""))
         XCTAssertFalse(source.contains("StatusBadge(isLive ? \"LIVE\" : \"OFF\""))
     }
 
     func testBGMPlaylistHeaderUsesSharedBadgeVisibilityPolicy() throws {
-        let source = try bgmPlaylistSurfaceText(filePath: #filePath)
+        let source = try sourceText("Views/BGM/BGMPlaylistHeader.swift")
 
         XCTAssertTrue(
             source.contains("StatusBadgeVisibilityPolicy.shouldShow"),
