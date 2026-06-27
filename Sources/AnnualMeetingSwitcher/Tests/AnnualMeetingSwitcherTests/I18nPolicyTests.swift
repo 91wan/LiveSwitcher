@@ -93,7 +93,12 @@ final class I18nPolicyTests: XCTestCase {
             "Views/ProgramQueue/SignalSourceRow.swift",
             "Views/CornerLogoCard.swift",
             "Models/HelpCopyModel.swift",
-            "Models/LivePreflight.swift",
+            "Models/Preflight/LivePreflight.swift",
+            "Models/Preflight/PreflightCheck.swift",
+            "Models/Preflight/PreflightPermissionModel.swift",
+            "Models/Preflight/PreflightRiskModel.swift",
+            "Models/Preflight/PreflightSummaryModel.swift",
+            "Models/Preflight/PreflightSupportModel.swift",
             "Models/OverlayLivePreviewModel.swift",
             "Models/LiveBGMQuickPickerModel.swift",
             "Resources/en.lproj/Localizable.strings"
