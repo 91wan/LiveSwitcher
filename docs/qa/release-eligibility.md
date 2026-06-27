@@ -29,3 +29,11 @@ A patch release is not allowed for internal-only maintenance:
 A post-stable refactor does not require a public release.
 
 Do not automatically publish a patch release after internal refactors, tests, documentation, complexity-budget cleanup, source-string tests replacement, or allowlist burn-down. Reassess release eligibility only when a change meets one of the allowed patch-release conditions above.
+
+## Current Post-v0.5.0 Decision - 2026-06-27
+
+Post-v0.5.0 commits through `4f0fed4` are internal maintenance only. This includes the earlier `d7d0fa...` post-stable cleanup checkpoint referenced by the release-decision contract.
+
+No v0.5.1 release is required.
+
+Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands.
