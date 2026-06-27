@@ -4,15 +4,18 @@ import XCTest
 @MainActor
 final class ProgramQueueMigrationReadinessTests: XCTestCase {
     func testRuntimeIntroducesProgramQueueOwnershipStage() throws {
-        let state = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift"
+        let bridgeMode = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift"
+        )
+        let domain = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift"
         )
         let action = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
         )
 
-        XCTAssertTrue(state.contains("programQueueOwned"))
-        XCTAssertTrue(state.contains("case programQueue"))
+        XCTAssertTrue(bridgeMode.contains("programQueueOwned"))
+        XCTAssertTrue(domain.contains("case programQueue"))
         XCTAssertTrue(action.contains("operatorAddedProgramItems"))
         XCTAssertTrue(action.contains("operatorRemovedProgramItem"))
         XCTAssertTrue(action.contains("operatorMovedProgramItems"))

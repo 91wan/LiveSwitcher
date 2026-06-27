@@ -64,8 +64,11 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
     }
 
     func testProgramActivationRuntimeLifecycleDomainAndEffectsExist() throws {
-        let runtimeState = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift"
+        let bridgeMode = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift"
+        )
+        let domain = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift"
         )
         let effect = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift"
@@ -74,8 +77,8 @@ final class ProgramSelectionMigrationReadinessTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift"
         )
 
-        XCTAssertTrue(runtimeState.contains("programActivationOwned"))
-        XCTAssertTrue(runtimeState.contains("case programActivation"))
+        XCTAssertTrue(bridgeMode.contains("programActivationOwned"))
+        XCTAssertTrue(domain.contains("case programActivation"))
         XCTAssertTrue(effect.contains("executeProgramActivation"))
         XCTAssertTrue(action.contains("programActivationCompleted"))
         XCTAssertFalse(action.contains("programActivationFailed"))

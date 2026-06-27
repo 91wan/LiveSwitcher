@@ -216,7 +216,13 @@ final class ProgramActivationMigrationReadinessTests: XCTestCase {
     }
 
     private func runtimeStateSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift"
+        ]
+        .map(repositorySource)
+        .joined(separator: "\n")
     }
 
     private func programActivationPortSource() throws -> String {
