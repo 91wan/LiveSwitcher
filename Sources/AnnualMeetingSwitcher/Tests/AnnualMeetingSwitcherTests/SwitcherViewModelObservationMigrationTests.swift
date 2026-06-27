@@ -70,7 +70,9 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
                 "private struct SafetyCheckRow: View"
             ],
             "Views/SetupAudioDock.swift": ["struct SetupAudioDock: View"],
-            "Views/BGMPlaylistPanel.swift": ["struct BGMPlaylistPanel: View", "struct BGMItemRow: View"],
+            "Views/BGMPlaylistPanel.swift": ["struct BGMPlaylistPanel: View"],
+            "Views/BGM/BGMTrackList.swift": ["struct BGMTrackList: View"],
+            "Views/BGM/BGMTrackRow.swift": ["struct BGMTrackRow: View"],
             "Views/AudioMixerView.swift": ["struct AudioMixerView: View"],
             "Views/OverlayControlPanel.swift": ["struct OverlayControlPanel: View"],
             "Views/WallpaperGalleryRow.swift": ["struct WallpaperGalleryRow: View"],

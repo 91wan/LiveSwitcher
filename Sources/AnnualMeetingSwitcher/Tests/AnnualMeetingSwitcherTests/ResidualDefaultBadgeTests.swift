@@ -21,7 +21,7 @@ final class ResidualDefaultBadgeTests: XCTestCase {
     }
 
     func testBGMPlaylistHeaderUsesSharedBadgeVisibilityPolicy() throws {
-        let source = try sourceText("Views/BGMPlaylistPanel.swift")
+        let source = try bgmPlaylistSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(
             source.contains("StatusBadgeVisibilityPolicy.shouldShow"),

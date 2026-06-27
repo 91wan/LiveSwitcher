@@ -17,7 +17,7 @@ final class RuntimePerformanceHygieneTests: XCTestCase {
         let bgmControls = try sourceText("ViewModel+BGMControls.swift")
         let programQueue = try sourceText("ViewModel+ProgramQueue.swift")
         let leftPanel = try sourceText("Views/LeftPanel.swift")
-        let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
+        let bgmPanel = try bgmPlaylistSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(programQueue.contains("func addProgramItems(_ items: [ProgramItem])"))
         XCTAssertTrue(bgmControls.contains("func addBGMItems(_ items: [BGMItem])"))

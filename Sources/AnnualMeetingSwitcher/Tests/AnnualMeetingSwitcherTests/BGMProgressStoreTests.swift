@@ -68,9 +68,9 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testBGMPlaylistProgressBarObservesDedicatedStore() throws {
-        let source = try sourceText("Views/BGMPlaylistPanel.swift")
+        let source = try bgmPlaylistSurfaceText(filePath: #filePath)
 
-        XCTAssertTrue(source.contains("BGMProgressBar(progressStore: viewModel.bgmProgressStore"))
+        XCTAssertTrue(source.contains("BGMProgressRow(progressStore: viewModel.bgmProgressStore"))
         XCTAssertTrue(source.contains("@ObservedObject var progressStore: BGMProgressStore"))
         XCTAssertFalse(source.contains("get: { viewModel.bgmProgress }"))
     }

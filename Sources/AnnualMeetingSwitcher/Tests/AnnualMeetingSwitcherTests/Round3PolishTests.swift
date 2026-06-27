@@ -14,7 +14,7 @@ final class Round3PolishTests: XCTestCase {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
         let dragHandle = try sourceText("Views/ProgramQueue/ProgramQueueDragHandle.swift")
         let sourceRow = try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
-        let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
+        let bgmPanel = try bgmPlaylistSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(sourceRow.contains("ProgramQueueDragHandle"))
         XCTAssertTrue(dragHandle.contains("line.3.horizontal"))
