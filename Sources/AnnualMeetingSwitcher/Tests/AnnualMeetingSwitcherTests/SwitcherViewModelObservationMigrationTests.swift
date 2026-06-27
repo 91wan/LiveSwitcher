@@ -67,9 +67,11 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
                 "struct PreflightRowView: View"
             ],
             "Views/SafetyCockpitView.swift": [
-                "struct SafetyCockpitView: View",
-                "private struct SafetySectionCard: View",
-                "private struct SafetyCheckRow: View"
+                "struct SafetyCockpitView: View"
+            ],
+            "Views/Support/SafetyCockpitRiskRow.swift": [
+                "struct SafetySectionCard: View",
+                "struct SafetyCheckRow: View"
             ],
             "Views/SetupAudioDock.swift": ["struct SetupAudioDock: View"],
             "Views/BGMPlaylistPanel.swift": ["struct BGMPlaylistPanel: View"],
