@@ -24,7 +24,7 @@ final class HelpPreflightSplitTests: XCTestCase {
     }
 
     func testPreflightPopoverDoesNotOwnHelpCopy() throws {
-        XCTAssertTrue(try sourceFileExists("Views/PreflightPopoverView.swift"))
+        XCTAssertTrue(try sourceFileExists("Views/Support/PreflightPopoverView.swift"))
         let preflight = try sourceText("Views/PreflightPopoverView.swift")
 
         XCTAssertTrue(preflight.contains("struct PreflightPopoverView"))
@@ -33,6 +33,30 @@ final class HelpPreflightSplitTests: XCTestCase {
         XCTAssertTrue(preflight.contains("复制支持报告"))
         XCTAssertTrue(preflight.contains("保存支持报告"))
         XCTAssertFalse(preflight.contains("HelpCopyModel.sections"))
+    }
+
+    func testPreflightPopoverFilesStayFocusedAndOffComplexityAllowlist() throws {
+        let expectedFiles = [
+            "Views/Support/PreflightPopoverView.swift",
+            "Views/Support/PreflightSummaryHeader.swift",
+            "Views/Support/PreflightCheckList.swift",
+            "Views/Support/PreflightCheckRow.swift",
+            "Views/Support/PreflightPermissionSection.swift",
+            "Views/Support/PreflightSupportActions.swift"
+        ]
+
+        for relativePath in expectedFiles {
+            XCTAssertTrue(try sourceFileExists(relativePath), "\(relativePath) should exist after the split.")
+            let lineCount = try sourceText(relativePath).split(separator: "\n", omittingEmptySubsequences: false).count
+            XCTAssertLessThan(lineCount, 250, "\(relativePath) should stay below the per-file complexity budget.")
+        }
+
+        let allowlist = try String(
+            contentsOf: repositoryRoot(filePath: #filePath).appendingPathComponent("docs/architecture/complexity-allowlist.tsv"),
+            encoding: .utf8
+        )
+        XCTAssertFalse(allowlist.contains("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift"))
+        XCTAssertFalse(allowlist.contains("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Support/PreflightPopoverView.swift"))
     }
 
     func testProgramMonitorMovedOutOfContentView() throws {
