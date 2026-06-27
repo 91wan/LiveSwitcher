@@ -426,7 +426,7 @@ final class VideoLayerVisibilityTests: XCTestCase {
     }
 
     func testProgramMonitorDoesNotMountVideoOnlyWhilePlaying() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorMediaLayer.swift")
 
         XCTAssertFalse(source.contains("if viewModel.avCoordinator.isPlaying {\n            VideoPlayerView"))
         XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowMonitorVideoLayer"))

@@ -4,7 +4,12 @@ import XCTest
 final class ProgramTransitionPruningTests: XCTestCase {
     func testFakeProgramTransitionControlsAndStateAreRemoved() throws {
         let viewModel = try sourceText("ViewModel.swift")
-        let monitor = try sourceText("Views/ProgramMonitorView.swift")
+        let monitor = [
+            try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorChrome.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift")
+        ].joined(separator: "\n")
         let mixer = try sourceText("Views/AudioMixerView.swift")
 
         XCTAssertFalse(viewModel.contains("crossfadeDuration"))

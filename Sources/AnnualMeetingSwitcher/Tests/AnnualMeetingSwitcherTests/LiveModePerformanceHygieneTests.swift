@@ -3,7 +3,7 @@ import XCTest
 
 final class LiveModePerformanceHygieneTests: XCTestCase {
     func testLiveModeAndOutputDoNotSynchronouslyLoadImagesInBody() throws {
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try liveModeSurfaceSource()
         let output = try sourceText("Output/OutputWindowController.swift")
         let wallpaper = try sourceText("Views/WallpaperGalleryRow.swift")
 
@@ -28,10 +28,18 @@ final class LiveModePerformanceHygieneTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func liveModeSurfaceSource() throws -> String {
+        try [
+            "Views/LiveModeView.swift",
+            "Views/LiveSourceRail.swift",
+            "Views/LiveQuickRail.swift",
+            "Views/LiveWallpaperPickerThumb.swift"
+        ]
+        .map { try sourceText($0) }
+        .joined(separator: "\n")
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

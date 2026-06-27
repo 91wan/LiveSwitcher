@@ -210,7 +210,7 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
         XCTAssertFalse(firstImage === secondImage)
 
         let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
-        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
         let overlay = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
 
         XCTAssertTrue(output.contains("StandbyWallpaperLayer(image: viewModel.backgroundImage)"))

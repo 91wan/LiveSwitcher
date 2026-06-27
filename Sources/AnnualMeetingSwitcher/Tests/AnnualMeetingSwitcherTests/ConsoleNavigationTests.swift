@@ -27,12 +27,13 @@ final class ConsoleNavigationTests: XCTestCase {
     }
 
     func testLiveModeSetupButtonsUseSetupNavigationHelper() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let sourceRail = try sourceText("Views/LiveSourceRail.swift")
+        let overlayRail = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
-        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
-        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.overlays)"))
-        XCTAssertFalse(source.contains("viewModel.consoleMode = .setup\n                            viewModel.selectedMainTab = .preview"))
-        XCTAssertFalse(source.contains("viewModel.consoleMode = .setup\n            viewModel.selectedMainTab = .overlays"))
+        XCTAssertTrue(sourceRail.contains("viewModel.navigateToSetup(.preview)"))
+        XCTAssertTrue(overlayRail.contains("viewModel.navigateToSetup(.overlays)"))
+        XCTAssertFalse(sourceRail.contains("viewModel.consoleMode = .setup\n                            viewModel.selectedMainTab = .preview"))
+        XCTAssertFalse(overlayRail.contains("viewModel.consoleMode = .setup\n            viewModel.selectedMainTab = .overlays"))
     }
 
     func testAppCommandsUseSetupNavigationHelperForTabSwitches() throws {
@@ -45,10 +46,7 @@ final class ConsoleNavigationTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

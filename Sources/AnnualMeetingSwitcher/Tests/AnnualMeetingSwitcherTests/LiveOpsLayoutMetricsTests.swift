@@ -63,7 +63,7 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
 
     func testLiveOpsRailKeepsFooterPinnedAndContentScrollable() throws {
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
-        let monitor = try sourceText("Views/ProgramMonitorView.swift")
+        let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
 
         XCTAssertTrue(liveOps.contains("scrollsContent: true"))
         XCTAssertTrue(liveOps.contains("CornerLogoCard()"))

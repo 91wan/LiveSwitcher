@@ -115,7 +115,10 @@ final class MonitorChromeVisibilityTests: XCTestCase {
     }
 
     func testProgramMonitorViewUsesVisibilityModelAndHoverState() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = [
+            try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
+        ].joined(separator: "\n")
 
         XCTAssertTrue(source.contains("@State var isHoveringPreviewDeck"))
         XCTAssertTrue(source.contains("var monitorOutputDisplayState: OutputDisplayState"))

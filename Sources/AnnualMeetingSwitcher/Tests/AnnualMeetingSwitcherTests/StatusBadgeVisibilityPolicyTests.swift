@@ -21,24 +21,21 @@ final class StatusBadgeVisibilityPolicyTests: XCTestCase {
 
     func testLiveOpsAndLiveModeCardsUseVisibilityPolicy() throws {
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(liveOps.contains("StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind)"))
         XCTAssertTrue(liveMode.contains("StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind)"))
     }
 
     func testLiveQuickCardRequiresNonEmptyStatusBeforeRenderingBadge() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("if !status.isEmpty && StatusBadgeVisibilityPolicy.shouldShow(text: status, kind: kind)"))
         XCTAssertFalse(source.contains("status: viewModel.isFadeToBlackActive ? \"FTB\" : \"READY\""))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

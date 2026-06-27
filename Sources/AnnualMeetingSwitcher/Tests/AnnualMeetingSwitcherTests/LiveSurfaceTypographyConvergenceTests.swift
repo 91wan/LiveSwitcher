@@ -2,7 +2,10 @@ import XCTest
 
 final class LiveSurfaceTypographyConvergenceTests: XCTestCase {
     func testRunQueueUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
-        try assertUsesTypeScale(relativePath: "Views/RunQueueView.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/SignalSourceRow.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgramQueueDragHandle.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgramQueueNumberBadge.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgressSliderRow.swift")
     }
 
     func testLiveModeUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {

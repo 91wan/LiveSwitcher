@@ -3,30 +3,12 @@ import XCTest
 
 func repositorySource(_ relativePath: String) throws -> String {
     let root = try repositoryRoot()
-    if isLiveModeViewSourcePath(relativePath) {
-        return try liveModeSourceTextAggregate(repositoryRoot: root)
-    }
-    if isProgramMonitorViewSourcePath(relativePath) {
-        return try programMonitorSourceTextAggregate(repositoryRoot: root)
-    }
-    if isRunQueueViewSourcePath(relativePath) {
-        return try runQueueSourceTextAggregate(repositoryRoot: root)
-    }
-    return try String(contentsOf: root.appendingPathComponent(relativePath), encoding: .utf8)
+    return try String(contentsOf: sourceURL(relativePath, repositoryRoot: root), encoding: .utf8)
 }
 
 func optionalRepositorySource(_ relativePath: String) throws -> String? {
     let root = try repositoryRoot()
-    if isLiveModeViewSourcePath(relativePath) {
-        return try liveModeSourceTextAggregate(repositoryRoot: root)
-    }
-    if isProgramMonitorViewSourcePath(relativePath) {
-        return try programMonitorSourceTextAggregate(repositoryRoot: root)
-    }
-    if isRunQueueViewSourcePath(relativePath) {
-        return try runQueueSourceTextAggregate(repositoryRoot: root)
-    }
-    let url = root.appendingPathComponent(relativePath)
+    let url = sourceURL(relativePath, repositoryRoot: root)
     guard FileManager.default.fileExists(atPath: url.path) else { return nil }
     return try String(contentsOf: url, encoding: .utf8)
 }

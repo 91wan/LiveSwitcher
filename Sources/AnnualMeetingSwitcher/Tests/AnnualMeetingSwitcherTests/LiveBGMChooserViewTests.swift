@@ -3,7 +3,10 @@ import XCTest
 
 final class LiveBGMChooserViewTests: XCTestCase {
     func testLiveModeBGMCardExposesFullLibraryChooserEntryAndPopover() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
+        let source = try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail+BGM.swift"
+        ].map(repositorySource).joined(separator: "\n")
 
         XCTAssertTrue(source.contains("@State var isBGMChooserPresented"))
         XCTAssertTrue(source.contains("全部曲目"))

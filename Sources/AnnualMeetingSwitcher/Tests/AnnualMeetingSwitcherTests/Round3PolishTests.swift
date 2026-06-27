@@ -12,11 +12,12 @@ final class Round3PolishTests: XCTestCase {
 
     func testRunQueueUsesExplicitDragHandleAndBGMLibraryDoesNotRenderDragHandleDecorations() throws {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
-        let runQueue = try sourceText("Views/RunQueueView.swift")
+        let dragHandle = try sourceText("Views/ProgramQueue/ProgramQueueDragHandle.swift")
+        let sourceRow = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
         let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
 
-        XCTAssertTrue(runQueue.contains("ProgramQueueDragHandle"))
-        XCTAssertTrue(runQueue.contains("line.3.horizontal"))
+        XCTAssertTrue(sourceRow.contains("ProgramQueueDragHandle"))
+        XCTAssertTrue(dragHandle.contains("line.3.horizontal"))
         XCTAssertTrue(leftPanel.contains("拖拽左侧手柄调整顺序"))
         XCTAssertFalse(bgmPanel.contains("line.3.horizontal"))
         XCTAssertTrue(bgmPanel.contains(".accessibilityHint(\"拖拽调整顺序。\""))

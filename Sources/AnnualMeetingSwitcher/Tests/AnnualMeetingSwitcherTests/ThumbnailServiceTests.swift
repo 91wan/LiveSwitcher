@@ -88,7 +88,7 @@ final class ThumbnailServiceTests: XCTestCase {
     }
 
     func testRunQueueRowsRenderThumbnailViewInsteadOfPlainIconOnlySourceRows() throws {
-        let source = try sourceText("Views/RunQueueView.swift")
+        let source = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
 
         XCTAssertTrue(source.contains("ProgramThumbnailView("))
         XCTAssertTrue(source.contains("displaySize: CGSize(width: 48, height: 27)"))

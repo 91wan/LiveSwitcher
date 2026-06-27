@@ -51,14 +51,12 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
         let viewFiles = [
             "ContentView.swift": ["struct ContentView: View", "struct GlobalKeyMonitor: NSViewRepresentable"],
             "Views/LeftPanel.swift": ["struct LeftPanel: View"],
-            "Views/ProgramMonitorView.swift": ["struct ProgramMonitorView: View"],
-            "Views/LiveModeView.swift": [
-                "struct LiveModeView: View",
-                "struct LiveSourceRail: View",
-                "struct LiveAudioStrip: View",
-                "struct LiveQuickRail: View",
-                "struct LiveRuntimeStatusBar: View"
-            ],
+            "Views/ProgramMonitor/ProgramMonitorView.swift": ["struct ProgramMonitorView: View"],
+            "Views/LiveModeView.swift": ["struct LiveModeView: View"],
+            "Views/LiveSourceRail.swift": ["struct LiveSourceRail: View"],
+            "Views/LiveAudioStrip.swift": ["struct LiveAudioStrip: View"],
+            "Views/LiveQuickRail.swift": ["struct LiveQuickRail: View"],
+            "Views/LiveRuntimeStatusBar.swift": ["struct LiveRuntimeStatusBar: View"],
             "Views/LiveOpsPanel.swift": ["struct LiveOpsPanel: View"],
             "Views/MainToolbar.swift": ["struct MainToolbar: View"],
             "Views/PreflightPopoverView.swift": [
@@ -101,16 +99,16 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     }
 
     func testProgramMonitorObservesAVPlayerCoordinatorBoundaryDirectly() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         let content = try sourceText("ContentView.swift")
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveProgramStack = try sourceText("Views/LiveProgramStack.swift")
 
         XCTAssertTrue(source.contains("@ObservedObject var avCoordinator: AVPlayerCoordinator"))
         XCTAssertTrue(source.contains("init(isLiveMode: Bool = false, avCoordinator: AVPlayerCoordinator)"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.isPlaying"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.hasLoadedMedia"))
         XCTAssertTrue(content.contains("ProgramMonitorView(avCoordinator: viewModel.avCoordinator)"))
-        XCTAssertTrue(liveMode.contains("ProgramMonitorView(isLiveMode: true, avCoordinator: viewModel.avCoordinator)"))
+        XCTAssertTrue(liveProgramStack.contains("ProgramMonitorView(isLiveMode: true, avCoordinator: viewModel.avCoordinator)"))
         XCTAssertFalse(source.contains("@State private var viewModel = SwitcherViewModel()"))
         XCTAssertFalse(source.contains("#Preview {\n    let viewModel = SwitcherViewModel()"))
     }

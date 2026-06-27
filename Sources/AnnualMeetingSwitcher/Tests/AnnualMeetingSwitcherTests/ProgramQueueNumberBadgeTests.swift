@@ -34,8 +34,11 @@ final class ProgramQueueNumberBadgeTests: XCTestCase {
     }
 
     func testQueueAndLiveSourceRowsUseSharedProgramQueueNumberBadge() throws {
-        let runQueueSource = try sourceText("Views/RunQueueView.swift")
-        let liveSource = try sourceText("Views/LiveModeView.swift")
+        let runQueueSource = [
+            try sourceText("Views/ProgramQueue/SignalSourceRow.swift"),
+            try sourceText("Views/ProgramQueue/ProgramQueueNumberBadge.swift")
+        ].joined(separator: "\n")
+        let liveSource = try sourceText("Views/LiveSourceRail.swift")
 
         XCTAssertTrue(runQueueSource.contains("ProgramQueueNumberBadge("))
         XCTAssertGreaterThanOrEqual(liveSource.components(separatedBy: "ProgramQueueNumberBadge(").count - 1, 2)
@@ -44,7 +47,7 @@ final class ProgramQueueNumberBadgeTests: XCTestCase {
     }
 
     func testLiveSourceRowAlignsNumberBadgeWithThumbnailCenter() throws {
-        let liveSource = try sourceText("Views/LiveModeView.swift")
+        let liveSource = try sourceText("Views/LiveSourceRail.swift")
         let rowSource = try sourceBlock(
             named: "private struct LiveSourceRailRow",
             endingBefore: "    private var statusColor",

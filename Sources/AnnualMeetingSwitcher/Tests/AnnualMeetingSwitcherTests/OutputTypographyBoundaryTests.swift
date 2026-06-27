@@ -46,7 +46,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
 
     func testProjectionOutputButtonsUseSingleLineMixedScaleOperatorLabel() throws {
         let liveOps = try String(contentsOf: sourceURL("Views/LiveOpsPanel.swift"), encoding: .utf8)
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try sourceText("Views/LiveQuickRail.swift")
         let label = try String(contentsOf: sourceURL("Views/ProjectionOutputOperatorLabel.swift"), encoding: .utf8)
 
         XCTAssertTrue(liveOps.contains("ProjectionOutputOperatorLabel(model: model)"))
@@ -89,10 +89,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot())
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func repositoryRoot() throws -> URL {

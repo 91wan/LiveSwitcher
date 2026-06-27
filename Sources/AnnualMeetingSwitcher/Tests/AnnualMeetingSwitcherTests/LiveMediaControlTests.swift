@@ -88,7 +88,7 @@ final class LiveMediaControlTests: XCTestCase {
     }
 
     func testLiveModeContainsReturnToStartAction() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("returnCurrentMediaToStart"))
         XCTAssertTrue(source.contains("LiveMediaReturnToStartControlModel"))
@@ -113,9 +113,6 @@ final class LiveMediaControlTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 }

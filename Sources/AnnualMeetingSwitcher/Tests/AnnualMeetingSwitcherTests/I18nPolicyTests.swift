@@ -21,7 +21,10 @@ final class I18nPolicyTests: XCTestCase {
     }
 
     func testRunAndLiveChromeUseChineseLabels() throws {
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try [
+            "Views/LiveSourceRail.swift",
+            "Views/LiveQuickRail.swift"
+        ].map(sourceText).joined(separator: "\n")
         let tabs = try sourceText("Models/MainConsoleTab.swift")
         let app = try sourceText("App.swift")
 
@@ -60,7 +63,7 @@ final class I18nPolicyTests: XCTestCase {
     }
 
     func testFadeToBlackOperatorCopyUsesChineseInsteadOfFTB() throws {
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try sourceText("Views/LiveQuickRail.swift")
         let output = try sourceText("Output/OutputWindowController.swift")
         let activeOverlay = try sourceText("Views/ActiveProgramOverlayLayer.swift")
 
@@ -84,7 +87,7 @@ final class I18nPolicyTests: XCTestCase {
             "Views/OverlayControlPanel.swift",
             "Views/AudioMixerView.swift",
             "Views/LeftPanel.swift",
-            "Views/RunQueueView.swift",
+            "Views/ProgramQueue/SignalSourceRow.swift",
             "Views/CornerLogoCard.swift",
             "Models/HelpCopyModel.swift",
             "Models/LivePreflight.swift",

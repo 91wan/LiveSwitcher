@@ -201,11 +201,13 @@ final class MediaRuntimeSeekTests: XCTestCase {
     }
 
     func testProgressSliderRowDoesNotDirectlySeekAVPlayer() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let source = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let progressSource = try sourceText("Views/ProgramQueue/ProgressSliderRow.swift")
+        let combined = [source, progressSource].joined(separator: "\n")
 
-        XCTAssertTrue(source.contains("ProgressSliderRow"))
-        XCTAssertFalse(source.contains("avCoordinator.seek(to:"))
-        XCTAssertTrue(source.contains("onSeekProgress"))
+        XCTAssertTrue(combined.contains("ProgressSliderRow"))
+        XCTAssertFalse(combined.contains("avCoordinator.seek(to:"))
+        XCTAssertTrue(combined.contains("onSeekProgress"))
     }
 
     private func viewModel(media: MediaRuntimeSeekPortSpy) -> SwitcherViewModel {
