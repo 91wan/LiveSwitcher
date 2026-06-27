@@ -185,7 +185,10 @@ final class PresentationReadinessProbeTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

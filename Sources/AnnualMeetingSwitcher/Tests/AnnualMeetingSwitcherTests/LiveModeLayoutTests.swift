@@ -29,6 +29,36 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("struct LiveRuntimeStatusBar"))
     }
 
+    func testLiveModeViewFilesStayFocusedAfterPostStableSplit() throws {
+        let expectedFiles = [
+            "LiveModeView.swift",
+            "LiveSourceRail.swift",
+            "LiveProgramStack.swift",
+            "LiveAudioStrip.swift",
+            "LiveQuickRail.swift",
+            "LiveQuickRail+BGM.swift",
+            "LiveQuickRail+Overlays.swift",
+            "LiveRuntimeStatusBar.swift",
+            "LiveWallpaperPickerThumb.swift"
+        ]
+        let viewsDirectory = try sourceURL("Views/LiveModeView.swift").deletingLastPathComponent()
+
+        for fileName in expectedFiles {
+            let fileURL = viewsDirectory.appendingPathComponent(fileName)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path), "\(fileName) should exist")
+
+            let source = try String(contentsOf: fileURL, encoding: .utf8)
+            let lineCount = source.split(separator: "\n", omittingEmptySubsequences: false).count
+            let maxLineCount = fileName == "LiveModeView.swift" ? 350 : 450
+            XCTAssertLessThanOrEqual(lineCount, maxLineCount, "\(fileName) should stay focused")
+        }
+
+        let liveModeViewSource = try String(contentsOf: viewsDirectory.appendingPathComponent("LiveModeView.swift"), encoding: .utf8)
+        XCTAssertFalse(liveModeViewSource.contains("struct LiveSourceRail"))
+        XCTAssertFalse(liveModeViewSource.contains("struct LiveQuickRail"))
+        XCTAssertFalse(liveModeViewSource.contains("struct LiveRuntimeStatusBar"))
+    }
+
     func testLiveSourceRailUsesUnifiedLabelModel() throws {
         let source = try sourceText("Views/LiveModeView.swift")
 
@@ -275,7 +305,10 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

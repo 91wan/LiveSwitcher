@@ -116,7 +116,10 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot())
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceTreeText() throws -> String {

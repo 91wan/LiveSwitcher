@@ -5,7 +5,7 @@ final class LiveBGMChooserViewTests: XCTestCase {
     func testLiveModeBGMCardExposesFullLibraryChooserEntryAndPopover() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
 
-        XCTAssertTrue(source.contains("@State private var isBGMChooserPresented"))
+        XCTAssertTrue(source.contains("@State var isBGMChooserPresented"))
         XCTAssertTrue(source.contains("全部曲目"))
         XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
         XCTAssertTrue(source.contains(".popover(isPresented: $isBGMChooserPresented"))

@@ -39,7 +39,7 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
 
     func testBGMPlayButtonsUseSelectedCategoryDefaultInsteadOfFirstLibraryItem() throws {
         let librarySource = try String(contentsOf: sourceURL("Views/BGMPlaylistPanel.swift"), encoding: .utf8)
-        let liveSource = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+        let liveSource = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(librarySource.contains("BGMDefaultSelectionPolicy.defaultItem"))
         XCTAssertTrue(liveSource.contains("BGMDefaultSelectionPolicy.defaultItem"))
@@ -72,5 +72,12 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 }
