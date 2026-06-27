@@ -106,7 +106,7 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     func testSetupRunDeskExposesCornerLogoControls() throws {
-        let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         let opsPanel = try sourceText("Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift")
         let card = try sourceText("Sources/AnnualMeetingSwitcher/Views/CornerLogoCard.swift")
 
@@ -120,7 +120,7 @@ final class CornerLogoModelTests: XCTestCase {
     }
 
     func testProgramMonitorPreviewsCornerLogoOverlay() throws {
-        let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
 
         XCTAssertTrue(monitor.contains("ActiveProgramOverlayLayer("))
         XCTAssertTrue(monitor.contains("cornerLogoImage: viewModel.cornerLogoImage"))

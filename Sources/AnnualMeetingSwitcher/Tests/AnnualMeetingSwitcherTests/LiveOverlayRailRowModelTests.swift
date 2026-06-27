@@ -124,7 +124,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
     }
 
     func testLiveModePresetCreationUsesStructuredInteractionInsteadOfDisplayCopy() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("switch model.presetInteraction"))
         XCTAssertTrue(source.contains("case .create(let kind):"))

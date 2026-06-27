@@ -18,7 +18,7 @@ final class AccessibilityHiddenContractTests: XCTestCase {
     }
 
     func testQueueAndBGMRowDecorativeStateIconsAreHidden() throws {
-        let runQueue = try sourceText("Views/RunQueueView.swift")
+        let runQueue = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
         let thumbnailView = try sourceText("Views/ThumbnailView.swift")
 
         XCTAssertTrue(runQueue.contains("ProgramThumbnailView("))

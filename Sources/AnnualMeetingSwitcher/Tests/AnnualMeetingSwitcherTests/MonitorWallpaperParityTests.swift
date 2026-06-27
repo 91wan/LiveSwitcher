@@ -49,7 +49,7 @@ final class MonitorWallpaperParityTests: XCTestCase {
     func testOutputAndMonitorConsumeSharedStandbyWallpaperLayer() throws {
         let layer = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StandbyWallpaperLayer.swift")
         let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
-        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
 
         XCTAssertTrue(layer.contains("struct StandbyWallpaperLayer"))
         XCTAssertTrue(layer.contains("let image: NSImage?"))
@@ -63,7 +63,7 @@ final class MonitorWallpaperParityTests: XCTestCase {
     }
 
     func testProgramMonitorKeepsWallpaperBehindMediaLogoAndChromeWithoutURLDecoding() throws {
-        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
 
         XCTAssertFalse(monitor.contains("Data(contentsOf:"))
         XCTAssertFalse(monitor.contains("NSImage(contentsOf:"))
@@ -83,7 +83,7 @@ final class MonitorWallpaperParityTests: XCTestCase {
     }
 
     func testVideoPlaybackAndPauseVisibilityContractStaysAboveWallpaper() throws {
-        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift")
+        let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorMediaLayer.swift")
         let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
         let outputBodyStart = try XCTUnwrap(output.range(of: "ZStack {")).lowerBound
         let outputBodyEnd = try XCTUnwrap(output.range(of: "ActiveProgramOverlayLayer(")).lowerBound

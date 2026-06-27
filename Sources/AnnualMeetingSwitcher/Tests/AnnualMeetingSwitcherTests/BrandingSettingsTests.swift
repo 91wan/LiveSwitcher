@@ -254,7 +254,7 @@ final class BrandingSettingsTests: XCTestCase {
 
     func testBrandingCardLivesInSetupRightColumnBelowModeControls() throws {
         let monitor = try sourceText(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitorView.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorView.swift"
         )
         let opsPanel = try sourceText(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveOpsPanel.swift"

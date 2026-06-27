@@ -38,11 +38,11 @@ final class HelpPreflightSplitTests: XCTestCase {
     func testProgramMonitorMovedOutOfContentView() throws {
         let content = try sourceText("ContentView.swift")
 
-        XCTAssertTrue(try sourceFileExists("Views/ProgramMonitorView.swift"))
+        XCTAssertTrue(try sourceFileExists("Views/ProgramMonitor/ProgramMonitorView.swift"))
         XCTAssertFalse(content.contains("struct ProgramMonitorView"))
         XCTAssertFalse(content.contains("struct WallpaperGalleryRow"))
 
-        let monitor = try sourceText("Views/ProgramMonitorView.swift")
+        let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         XCTAssertTrue(monitor.contains("struct ProgramMonitorView"))
         XCTAssertFalse(monitor.contains("struct WallpaperGalleryRow"))
         XCTAssertFalse(monitor.contains("struct WallpaperThumbView"))
@@ -57,13 +57,15 @@ final class HelpPreflightSplitTests: XCTestCase {
     func testQueueRowMovedOutOfLeftPanel() throws {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
 
-        XCTAssertTrue(try sourceFileExists("Views/RunQueueView.swift"))
+        XCTAssertTrue(try sourceFileExists("Views/ProgramQueue/SignalSourceRow.swift"))
+        XCTAssertTrue(try sourceFileExists("Views/ProgramQueue/ProgressSliderRow.swift"))
         XCTAssertFalse(leftPanel.contains("struct SignalSourceRow"))
         XCTAssertFalse(leftPanel.contains("struct ProgressSliderRow"))
 
-        let queue = try sourceText("Views/RunQueueView.swift")
+        let queue = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let progress = try sourceText("Views/ProgramQueue/ProgressSliderRow.swift")
         XCTAssertTrue(queue.contains("struct SignalSourceRow"))
-        XCTAssertTrue(queue.contains("struct ProgressSliderRow"))
+        XCTAssertTrue(progress.contains("struct ProgressSliderRow"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
@@ -71,18 +73,6 @@ final class HelpPreflightSplitTests: XCTestCase {
     }
 
     private func sourceFileExists(_ relativePath: String) throws -> Bool {
-        if isProgramMonitorViewSourcePath(relativePath) {
-            let root = try LiveSwitcherTests.repositoryRoot(filePath: #filePath)
-            return programMonitorSplitSourceRelativePaths.allSatisfy {
-                FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
-            }
-        }
-        if isRunQueueViewSourcePath(relativePath) {
-            let root = try LiveSwitcherTests.repositoryRoot(filePath: #filePath)
-            return runQueueSplitSourceRelativePaths.allSatisfy {
-                FileManager.default.fileExists(atPath: root.appendingPathComponent($0).path)
-            }
-        }
         return FileManager.default.fileExists(atPath: try sourceURL(relativePath).path)
     }
 

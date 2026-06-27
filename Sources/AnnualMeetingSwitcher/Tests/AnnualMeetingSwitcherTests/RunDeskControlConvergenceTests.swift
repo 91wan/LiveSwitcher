@@ -4,7 +4,10 @@ import XCTest
 
 final class RunDeskControlConvergenceTests: XCTestCase {
     func testProgramMonitorUtilitiesAreVisibleWithoutDisclosure() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = [
+            try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift")
+        ].joined(separator: "\n")
 
         XCTAssertFalse(source.contains("DisclosureGroup"))
         XCTAssertFalse(source.contains("utilitiesDisclosure"))
@@ -14,7 +17,10 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     }
 
     func testProgramMonitorChromeDoesNotRepeatStandbyStatus() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = [
+            try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift"),
+            try sourceText("Views/ProgramMonitor/ProgramMonitorChrome.swift")
+        ].joined(separator: "\n")
 
         XCTAssertFalse(source.contains("StatusBadge(monitorStateLabel"))
         XCTAssertFalse(source.contains("monitorDisplayMode"))
@@ -24,7 +30,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     }
 
     func testWallpaperEmptyStateKeepsInlineImportAction() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift")
 
         XCTAssertTrue(source.contains("没有待机壁纸"))
         XCTAssertTrue(source.contains("导入壁纸"))
@@ -68,7 +74,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
     }
 
     func testProgramMonitorPreviewDeckIsExplicitlyCenteredWithoutChangingCanvas() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
 
         XCTAssertTrue(source.contains("previewDeckFrame"))
         XCTAssertTrue(source.contains(".frame(maxWidth: .infinity, alignment: .center)"))

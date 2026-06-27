@@ -303,23 +303,28 @@ final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
     }
 
     func testRunQueueRowExposesDragHandleWithoutWholeRowDragging() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let sourceRow = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRow.swift")
+        let dragHandle = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueDragHandle.swift")
+        let numberBadge = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueNumberBadge.swift")
+        let combined = [sourceRow, dragHandle, numberBadge].joined(separator: "\n")
 
-        XCTAssertTrue(source.contains("struct ProgramQueueDragHandle"))
-        XCTAssertTrue(source.contains("line.3.horizontal"))
-        XCTAssertTrue(source.contains("DragGesture(minimumDistance: 2, coordinateSpace: .global)"))
-        XCTAssertTrue(source.contains("onHandleDragChanged"))
-        XCTAssertTrue(source.contains("manualDropPlacement"))
-        XCTAssertTrue(source.contains("ProgramQueueRowFramePreferenceKey"))
-        XCTAssertFalse(source.contains("Button(action: {})"))
-        XCTAssertFalse(source.contains("ProgramQueueRowDropDelegate"))
-        XCTAssertFalse(source.contains(".onDrop("))
-        XCTAssertFalse(source.contains(".draggable(item.id"))
-        XCTAssertFalse(source.contains("registeredTypeIdentifiers.contains"))
+        XCTAssertTrue(dragHandle.contains("struct ProgramQueueDragHandle"))
+        XCTAssertTrue(dragHandle.contains("line.3.horizontal"))
+        XCTAssertTrue(dragHandle.contains("DragGesture(minimumDistance: 2, coordinateSpace: .global)"))
+        XCTAssertTrue(sourceRow.contains("onHandleDragChanged"))
+        XCTAssertTrue(sourceRow.contains("manualDropPlacement"))
+        XCTAssertTrue(numberBadge.contains("ProgramQueueRowFramePreferenceKey"))
+        XCTAssertFalse(combined.contains("Button(action: {})"))
+        XCTAssertFalse(combined.contains("ProgramQueueRowDropDelegate"))
+        XCTAssertFalse(combined.contains(".onDrop("))
+        XCTAssertFalse(combined.contains(".draggable(item.id"))
+        XCTAssertFalse(combined.contains("registeredTypeIdentifiers.contains"))
     }
 
     func testRunQueueUsesLocalDragSessionInsteadOfPasteboardMetadata() throws {
-        let runQueueSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let sourceRow = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRow.swift")
+        let numberBadge = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueNumberBadge.swift")
+        let runQueueSource = [sourceRow, numberBadge].joined(separator: "\n")
         let dropPlanSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/ProgramQueueDropPlan.swift")
 
         XCTAssertTrue(dropPlanSource.contains("ProgramQueueDropPreview"))
@@ -338,11 +343,12 @@ final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
     }
 
     func testMediaProgressRowUsesFullWidthTransportLayout() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRow.swift")
+        let progressSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgressSliderRow.swift")
         let progressBlock = try XCTUnwrap(source.balancedBlock(after: "if isSelected && rowModel.showsProgressSlider"))
 
         XCTAssertTrue(progressBlock.contains("ProgressSliderRow("))
         XCTAssertFalse(progressBlock.contains(".padding(.leading, rowContentIndent)"))
-        XCTAssertTrue(source.contains(".layoutPriority(1)"))
+        XCTAssertTrue(progressSource.contains(".layoutPriority(1)"))
     }
 }

@@ -20,7 +20,7 @@ final class LiveModeSimplicityTests: XCTestCase {
     }
 
     func testLiveModeViewDoesNotExposeForbiddenConfigurationSurfaces() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try liveModeSurfaceSource()
 
         XCTAssertFalse(source.contains("fileImporter("))
         XCTAssertFalse(source.contains("addProgramItem("))
@@ -30,7 +30,7 @@ final class LiveModeSimplicityTests: XCTestCase {
     }
 
     func testLiveModeKeepsCoreOperatorActionsVisible() throws {
-        let liveMode = try sourceText("Views/LiveModeView.swift")
+        let liveMode = try liveModeSurfaceSource()
         let toolbar = try sourceText("Views/MainToolbar.swift")
         let content = try sourceText("ContentView.swift")
 
@@ -45,10 +45,19 @@ final class LiveModeSimplicityTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot())
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func liveModeSurfaceSource() throws -> String {
+        try [
+            "Views/LiveModeView.swift",
+            "Views/LiveSourceRail.swift",
+            "Views/LiveQuickRail.swift",
+            "Views/LiveQuickRail+BGM.swift",
+            "Views/LiveQuickRail+Overlays.swift"
+        ]
+        .map { try sourceText($0) }
+        .joined(separator: "\n")
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

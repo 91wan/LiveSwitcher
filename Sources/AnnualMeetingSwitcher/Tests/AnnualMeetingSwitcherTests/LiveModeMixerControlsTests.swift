@@ -232,7 +232,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testLiveAudioStripShowsStrategyTogetherWithActiveLimiter() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertTrue(source.contains("audioStrategy.displayTitle"))
         XCTAssertTrue(source.contains("· 主持人"))
@@ -270,15 +270,16 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testLiveModeViewContainsMetersMuteButtonsAndCutBus() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let audioStrip = try sourceText("Views/LiveAudioStrip.swift")
+        let quickRail = try sourceText("Views/LiveQuickRail.swift")
 
-        XCTAssertTrue(source.contains("LiveAudioMeter"))
-        XCTAssertTrue(source.contains("isMasterAudioMuted"))
-        XCTAssertTrue(source.contains("isMediaAudioMuted"))
-        XCTAssertTrue(source.contains("isBGMAudioMuted"))
-        XCTAssertTrue(source.contains("viewModel.isPanicMode || viewModel.isMasterAudioMuted"))
-        XCTAssertTrue(source.contains("切换"))
-        XCTAssertTrue(source.contains("下一项"))
+        XCTAssertTrue(audioStrip.contains("LiveAudioMeter"))
+        XCTAssertTrue(audioStrip.contains("isMasterAudioMuted"))
+        XCTAssertTrue(audioStrip.contains("isMediaAudioMuted"))
+        XCTAssertTrue(audioStrip.contains("isBGMAudioMuted"))
+        XCTAssertTrue(audioStrip.contains("viewModel.isPanicMode || viewModel.isMasterAudioMuted"))
+        XCTAssertTrue(quickRail.contains("切换"))
+        XCTAssertTrue(quickRail.contains("下一项"))
     }
 
     func testBGMPlayerEnablesRealtimeMetering() throws {
@@ -290,7 +291,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testLiveAudioStripUsesRealtimeBGMMeter() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertTrue(source.contains("realtimeDB: viewModel.liveMasterMeterRealtimeDB()"))
         XCTAssertTrue(source.contains("fallbackEffectiveVolume: viewModel.liveMasterMeterFallbackVolume()"))
@@ -310,7 +311,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testLiveAudioFaderMarksEstimatedMeters() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertTrue(source.contains("meter.isEstimated"))
         XCTAssertFalse(source.contains("exclamationmark.triangle.fill"))
@@ -318,7 +319,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testCutBusUsesFadeToBlackInsteadOfPanic() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("viewModel.toggleFadeToBlack()"))
         XCTAssertTrue(source.contains("从黑场恢复"))
@@ -327,7 +328,7 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testCutBusMakesTakeNextPrimaryAndFTBSecondary() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("Label(\"下一项\", systemImage: \"arrow.right.to.line.compact\")"))
         XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
@@ -337,17 +338,14 @@ final class LiveModeMixerControlsTests: XCTestCase {
     }
 
     func testLiveModeMuteButtonsUseTransportHitTargetHeight() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertFalse(source.contains("height: 22"))
         XCTAssertTrue(source.contains("height: LiveModeLayoutMetrics.transportButtonSize"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

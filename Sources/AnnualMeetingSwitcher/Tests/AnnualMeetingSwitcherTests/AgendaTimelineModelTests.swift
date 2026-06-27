@@ -279,7 +279,7 @@ final class AgendaTimelineModelTests: XCTestCase {
 
     func testRunQueueSourcesExposeAgendaTimelineUIHooks() throws {
         let leftPanel = try sourceText("Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift")
-        let runQueue = try sourceText("Sources/AnnualMeetingSwitcher/Views/RunQueueView.swift")
+        let runQueue = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
         let liveMode = try sourceText("Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
 
         XCTAssertTrue(leftPanel.contains("AgendaTimelineView"))

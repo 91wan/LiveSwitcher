@@ -19,14 +19,12 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveModeViewDefinesDedicatedStageFourRegions() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
-
-        XCTAssertTrue(source.contains("struct LiveModeView"))
-        XCTAssertTrue(source.contains("struct LiveSourceRail"))
-        XCTAssertTrue(source.contains("struct LiveProgramStack"))
-        XCTAssertTrue(source.contains("struct LiveAudioStrip"))
-        XCTAssertTrue(source.contains("struct LiveQuickRail"))
-        XCTAssertTrue(source.contains("struct LiveRuntimeStatusBar"))
+        XCTAssertTrue(try sourceText("Views/LiveModeView.swift").contains("struct LiveModeView"))
+        XCTAssertTrue(try sourceText("Views/LiveSourceRail.swift").contains("struct LiveSourceRail"))
+        XCTAssertTrue(try sourceText("Views/LiveProgramStack.swift").contains("struct LiveProgramStack"))
+        XCTAssertTrue(try sourceText("Views/LiveAudioStrip.swift").contains("struct LiveAudioStrip"))
+        XCTAssertTrue(try sourceText("Views/LiveQuickRail.swift").contains("struct LiveQuickRail"))
+        XCTAssertTrue(try sourceText("Views/LiveRuntimeStatusBar.swift").contains("struct LiveRuntimeStatusBar"))
     }
 
     func testLiveModeViewFilesStayFocusedAfterPostStableSplit() throws {
@@ -60,7 +58,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveSourceRailUsesUnifiedLabelModel() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveSourceRail.swift")
 
         XCTAssertTrue(source.contains("SourceRailRowLabelModel.make"))
         XCTAssertFalse(source.contains("Text(rowModel.queueBadgeText)"))
@@ -78,7 +76,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveQuickRailScrollsInsteadOfClippingDenseControls() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("ScrollView(.vertical, showsIndicators: false)"))
         XCTAssertFalse(source.contains(".scrollClipDisabled()"))
@@ -104,7 +102,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveSourcesEmptyStateOffersSetupCTA() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveSourceRail.swift")
 
         XCTAssertTrue(source.contains("切到准备模式"))
         XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
@@ -120,7 +118,12 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testProgramMonitorLiveModeHidesSetupUtilitiesAndHeightCap() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try [
+            "Views/ProgramMonitor/ProgramMonitorView.swift",
+            "Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift"
+        ]
+        .map { try sourceText($0) }
+        .joined(separator: "\n")
 
         XCTAssertTrue(source.contains("if !isLiveMode"))
         XCTAssertTrue(source.contains("livePreviewMaxHeight"))
@@ -128,7 +131,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveAudioStripExposesThreeFadersWithoutSwitchingTabs() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertTrue(source.contains("$viewModel.masterVolume"))
         XCTAssertTrue(source.contains("$viewModel.mediaVolume"))
@@ -139,7 +142,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveBGMCardOffersLibraryPickerWithoutLeavingLiveMode() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
 
         XCTAssertTrue(source.contains("LiveBGMQuickPickerModel.make"))
         XCTAssertTrue(source.contains("LiveBGMPlaylistModel.make"))
@@ -170,7 +173,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveBGMCardShowsMiniPlaylistWithoutSetupNavigation() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
 
         XCTAssertTrue(source.contains("liveBGMCategory"))
         XCTAssertTrue(source.contains("liveBGMPlaylistRows("))
@@ -182,7 +185,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveBGMTransportHasRestartButtonAndChineseTooltips() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
 
         XCTAssertTrue(source.contains("viewModel.seekBGMToBeginning()"))
         XCTAssertTrue(source.contains("\"回到开头\""))
@@ -194,13 +197,13 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveQuickRailKeepsBGMPlaylistInFirstViewportPriority() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         guard let cut = source.range(of: "cutBusCard"),
               let bgm = source.range(of: "bgmCard"),
               let overlay = source.range(of: "overlayCard"),
               let wallpaper = source.range(of: "wallpaperCard") else {
-            return XCTFail("Expected live quick rail cards to be declared in LiveModeView.")
+            return XCTFail("Expected live quick rail cards to be declared in LiveQuickRail.")
         }
 
         XCTAssertLessThan(cut.lowerBound, bgm.lowerBound)
@@ -209,7 +212,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertTrue(source.contains("LiveWallpaperQuickPickerModel.make"))
         XCTAssertTrue(source.contains("选择待机壁纸"))
@@ -219,7 +222,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveLowerThirdPresetMenuSendsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
         XCTAssertTrue(source.contains("ForEach(viewModel.lowerThirdPresets)"))
@@ -228,7 +231,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveCountdownPresetMenuStartsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("LiveOverlayRailRowModel.countdown"))
         XCTAssertTrue(source.contains("ForEach(viewModel.countdownPresets)"))
@@ -237,7 +240,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveTickerPresetMenuStartsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("LiveOverlayRailRowModel.ticker"))
         XCTAssertTrue(source.contains("ForEach(viewModel.tickerPresets)"))
@@ -246,7 +249,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveOverlayRailUsesCompactPresetRows() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("compactOverlayRow("))
         XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
@@ -263,7 +266,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveOverlayRailProvidesClearAllAction() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains("overlayClearAllButton"))
         XCTAssertTrue(source.contains("Label(\"全部清空\", systemImage: \"xmark.circle\")"))
@@ -278,7 +281,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testOverlayRailUsesIconOnlyTypeLabelAndTailTruncatedPresetName() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains(".truncationMode(.tail)"))
         XCTAssertFalse(source.contains(".frame(width: 70, alignment: .leading)"))
@@ -286,7 +289,7 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
 
         XCTAssertTrue(source.contains(".frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)"))
         XCTAssertFalse(source.contains(".frame(height: 30)"))

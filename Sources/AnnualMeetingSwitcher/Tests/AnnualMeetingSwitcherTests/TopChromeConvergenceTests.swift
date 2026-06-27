@@ -26,7 +26,7 @@ final class TopChromeConvergenceTests: XCTestCase {
     }
 
     func testProgramMonitorUsesCompactInlineStatusInsteadOfCurrentNextCards() throws {
-        let source = try sourceText("Views/ProgramMonitorView.swift")
+        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorChrome.swift")
 
         XCTAssertFalse(source.contains("currentNextInfoRow"))
         XCTAssertFalse(source.contains("monitorInfoBlock"))

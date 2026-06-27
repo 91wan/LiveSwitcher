@@ -2,7 +2,7 @@ import XCTest
 
 final class LiveAudioDefaultBadgeTests: XCTestCase {
     func testLiveAudioStripUsesStatusByExceptionPolicyForRoutingBadge() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertFalse(source.contains("StatusBadge(viewModel.audioStrategy.displayTitle, kind: audioStatusKind)"))
         XCTAssertTrue(
@@ -12,10 +12,7 @@ final class LiveAudioDefaultBadgeTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

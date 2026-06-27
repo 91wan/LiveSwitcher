@@ -162,15 +162,15 @@ final class PresentationReadinessProbeTests: XCTestCase {
     }
 
     func testRunQueueAndLiveRailsExposeReadinessIndicatorsWithoutLeftSummary() throws {
-        let runQueueSource = try sourceText("Views/RunQueueView.swift")
+        let runQueueSource = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
         let leftPanelSource = try sourceText("Views/LeftPanel.swift")
-        let liveModeSource = try sourceText("Views/LiveModeView.swift")
+        let liveSourceRail = try sourceText("Views/LiveSourceRail.swift")
 
         XCTAssertTrue(runQueueSource.contains("PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))"))
         XCTAssertFalse(leftPanelSource.contains("PresentationReadinessSummary"))
         XCTAssertFalse(leftPanelSource.contains("presentationReadinessSummaryRow"))
-        XCTAssertTrue(liveModeSource.contains("PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))"))
-        XCTAssertTrue(liveModeSource.contains("switchToProgramAfterReadinessConfirmation(item)"))
+        XCTAssertTrue(liveSourceRail.contains("PresentationReadinessDot(result: PresentationReadinessProbe.probe(item: item))"))
+        XCTAssertTrue(liveSourceRail.contains("switchToProgramAfterReadinessConfirmation(item)"))
         XCTAssertTrue(leftPanelSource.contains("switchToProgramAfterReadinessConfirmation(item)"))
     }
 

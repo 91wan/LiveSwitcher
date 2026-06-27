@@ -38,7 +38,7 @@ final class AudioMeterStoreTests: XCTestCase {
     }
 
     func testLiveAudioStripObservesDedicatedMeterStore() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
+        let source = try sourceText("Views/LiveAudioStrip.swift")
 
         XCTAssertTrue(source.contains("@ObservedObject var avCoordinator: AVPlayerCoordinator"))
         XCTAssertTrue(source.contains("avCoordinator: viewModel.avCoordinator"))
@@ -92,10 +92,7 @@ final class AudioMeterStoreTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        if isLiveModeViewSourcePath(relativePath) {
-            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
-        }
-        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {
