@@ -22,10 +22,61 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
 
     func testComplexityBudgetAllowlistEntriesCarryReasons() throws {
         let script = try repoText("script/check_complexity_budget.sh")
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
 
         XCTAssertTrue(script.contains("allow_over_budget_reason()"))
-        XCTAssertTrue(script.contains("split planned separately"))
+        XCTAssertTrue(manifest.contains("split planned separately"))
         XCTAssertFalse(script.contains("return 0 # allow"))
+    }
+
+    func testComplexityBudgetReadsAuditableAllowlistManifest() throws {
+        let script = try repoText("script/check_complexity_budget.sh")
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let rows = manifest.split(separator: "\n", omittingEmptySubsequences: true).map(String.init)
+
+        XCTAssertTrue(script.contains("complexity-allowlist.tsv"))
+        XCTAssertFalse(script.contains("<<'ALLOWLIST'"))
+        XCTAssertEqual(rows.first, "category\tpath\tlimit\tactual\treason\ttarget_version\towner")
+
+        let validCategories: Set<String> = [
+            "top-level-view",
+            "focused-subview",
+            "model-reducer",
+            "test-helper",
+            "test-file",
+            "source-contains"
+        ]
+
+        for row in rows.dropFirst() {
+            let columns = row.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            XCTAssertEqual(columns.count, 7, row)
+            XCTAssertTrue(validCategories.contains(columns[0]), row)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: try repoURL(columns[1]).path), row)
+            XCTAssertFalse(columns[2].isEmpty, row)
+            XCTAssertFalse(columns[3].isEmpty, row)
+            XCTAssertFalse(columns[4].isEmpty, row)
+            XCTAssertFalse(columns[5].isEmpty, row)
+            XCTAssertFalse(columns[6].isEmpty, row)
+        }
+    }
+
+    func testComplexityBudgetClassifiesViewDirectoriesRecursively() throws {
+        let script = try repoText("script/check_complexity_budget.sh")
+
+        XCTAssertTrue(script.contains("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/*/*.swift"))
+        XCTAssertTrue(script.contains("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/*/*/*.swift"))
+        XCTAssertFalse(script.contains("Views/ProgramMonitor/*.swift"))
+        XCTAssertFalse(script.contains("Views/ProgramQueue/*.swift"))
+    }
+
+    func testComplexityBudgetDocumentationDefinesPostStableDebtPolicy() throws {
+        let policy = try repoText("docs/architecture/complexity-budget.md")
+
+        XCTAssertTrue(policy.contains("Views/**/*.swift"))
+        XCTAssertTrue(policy.contains("complexity-allowlist.tsv"))
+        XCTAssertTrue(policy.contains("target_version"))
+        XCTAssertTrue(policy.contains("owner"))
+        XCTAssertTrue(policy.contains("behavior changes: none"))
     }
 
     private func repoText(_ relativePath: String) throws -> String {
