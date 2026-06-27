@@ -101,4 +101,23 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.rows.first?.systemImage, "checkmark")
         XCTAssertEqual(model.rows.first?.accessibilityLabel, "Award，当前 BGM，已选")
     }
+
+    func testLiveMiniPlaylistModelCarriesCategoryButtonRowsAndRemainingCount() {
+        let tracks = (1...7).map {
+            BGMItem(title: "Warm \($0)", url: URL(fileURLWithPath: "/tmp/warm-\($0).mp3"), category: .warmUp)
+        }
+
+        let model = LiveBGMPlaylistModel.make(
+            items: tracks,
+            currentItem: nil,
+            selectedCategory: .warmUp,
+            isPlaying: false
+        )
+
+        XCTAssertEqual(model.categoryButtonTitle, BGMCategory.warmUp.rawValue)
+        XCTAssertEqual(model.rows.map(\.item.id), tracks.prefix(5).map(\.id))
+        XCTAssertEqual(model.rows.map(\.accessibilityLabel), tracks.prefix(5).map { "\($0.title)，BGM 曲目，可播放" })
+        XCTAssertEqual(model.remainingCount, 2)
+        XCTAssertEqual(model.remainingCountText, "+2 首")
+    }
 }

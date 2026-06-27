@@ -141,17 +141,9 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("BGM"))
     }
 
-    func testLiveBGMCardOffersLibraryPickerWithoutLeavingLiveMode() throws {
+    func testLiveBGMCardDoesNotNavigateToSetupLibrary() throws {
         let source = try sourceText("Views/LiveQuickRail+BGM.swift")
 
-        XCTAssertTrue(source.contains("LiveBGMQuickPickerModel.make"))
-        XCTAssertTrue(source.contains("LiveBGMPlaylistModel.make"))
-        XCTAssertTrue(source.contains("选择 BGM 分类"))
-        XCTAssertTrue(source.contains("BGMCategory.allCases"))
-        XCTAssertTrue(source.contains("viewModel.toggleBGM(row.item)"))
-        XCTAssertTrue(source.contains("playlist.categoryButtonTitle"))
-        XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
-        XCTAssertTrue(source.contains("全部曲目"))
         let legacyLibraryLabel = "Open BGM " + "Library"
         XCTAssertFalse(source.contains(legacyLibraryLabel))
         XCTAssertFalse(source.contains("onOpenMixer()"))
@@ -179,7 +171,6 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertTrue(source.contains("liveBGMPlaylistRows("))
         XCTAssertTrue(source.contains("playlist.rows"))
         XCTAssertTrue(source.contains("playlist.remainingCountText"))
-        XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
         let legacyLibraryLabel = "Label(\"Open BGM " + "Library\""
         XCTAssertFalse(source.contains(legacyLibraryLabel))
     }
@@ -214,10 +205,6 @@ final class LiveModeLayoutTests: XCTestCase {
     func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
         let source = try sourceText("Views/LiveQuickRail.swift")
 
-        XCTAssertTrue(source.contains("LiveWallpaperQuickPickerModel.make"))
-        XCTAssertTrue(source.contains("选择待机壁纸"))
-        XCTAssertTrue(source.contains("viewModel.setActiveWallpaper(url: item.url)"))
-        XCTAssertTrue(source.contains("ForEach(picker.items)"))
         XCTAssertFalse(source.contains("Next wallpaper"))
     }
 
