@@ -2,7 +2,7 @@ import XCTest
 
 final class SectionCardBadgePolicyTests: XCTestCase {
     func testStudioSectionCardUsesStatusBadgeVisibilityPolicy() throws {
-        let source = try sourceText("Views/StudioTheme.swift")
+        let source = try sourceText("Views/Theme/StudioTheme+Components.swift")
 
         XCTAssertTrue(
             source.contains("StatusBadgeVisibilityPolicy.shouldShow(text: status.0, kind: status.1)"),
