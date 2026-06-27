@@ -133,22 +133,6 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertFalse(source.contains(".font(.system(size: 24, weight: .bold))"))
     }
 
-    func testOverlayComposerExposesLowerThirdPresetShelf() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
-
-        XCTAssertTrue(source.contains("lowerThirdPresetShelf"))
-        XCTAssertTrue(source.contains("保存预设"))
-        XCTAssertTrue(source.contains("新建人名条"))
-        XCTAssertTrue(source.contains("删除预设"))
-        XCTAssertTrue(source.contains("导入..."))
-        XCTAssertTrue(source.contains("导出..."))
-        XCTAssertTrue(source.contains("NSOpenPanel"))
-        XCTAssertTrue(source.contains("NSSavePanel"))
-        XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.saveLowerThirdPresetFromDraft()"))
-        XCTAssertTrue(source.contains("viewModel.importLowerThirdPresets"))
-    }
-
     func testAppExposesPasteSpeakersFromClipboardCommand() throws {
         let source = try sourceText("App.swift")
 
@@ -158,33 +142,63 @@ final class OverlayLivePreviewModelTests: XCTestCase {
         XCTAssertTrue(source.contains("viewModel.importLowerThirdSpeakersFromClipboardText"))
     }
 
-    func testOverlayComposerExposesCountdownPresetShelf() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
-
-        XCTAssertTrue(source.contains("countdownPresetShelf"))
-        XCTAssertTrue(source.contains("保存倒计时预设"))
-        XCTAssertTrue(source.contains("新建倒计时"))
-        XCTAssertTrue(source.contains("删除倒计时预设"))
-        XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.saveCountdownPresetFromDraft()"))
-    }
-
-    func testOverlayComposerExposesTickerPresetShelf() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
-
-        XCTAssertTrue(source.contains("tickerPresetShelf"))
-        XCTAssertTrue(source.contains("保存游动字幕预设"))
-        XCTAssertTrue(source.contains("新建游动字幕"))
-        XCTAssertTrue(source.contains("删除游动字幕预设"))
-        XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.saveTickerPresetFromDraft()"))
-    }
-
     func testLiveOverlayCanBeReplacedBySendLiveWhenDraftIsValid() {
         XCTAssertNil(OverlayUIState.lowerThirdDisabledReason(name: "Host", isLive: true))
         XCTAssertNil(OverlayUIState.tickerDisabledReason(text: "Welcome", isLive: true))
         XCTAssertNil(OverlayUIState.countdownDisabledReason(totalSeconds: 30, isLive: true))
         XCTAssertNil(OverlayUIState.countdownDisabledReason(minutes: 1, seconds: 0, isLive: true))
+    }
+
+    @MainActor
+    func testOverlayPresetDraftActionsRoundTripThroughViewModelBehavior() throws {
+        let suite = "OverlayPresetDraftActions.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+
+        viewModel.overlayComposerState.lowerThirdNameDraft = "  张三  "
+        viewModel.overlayComposerState.lowerThirdRoleDraft = "  主持人  "
+        viewModel.overlayComposerState.lowerThirdOrganizationDraft = "  示例科技  "
+        XCTAssertTrue(viewModel.saveLowerThirdPresetFromDraft())
+        let lowerThird = try XCTUnwrap(viewModel.lowerThirdPresets.first)
+        viewModel.clearLowerThirdPresetDraft()
+        viewModel.loadLowerThirdPreset(lowerThird)
+        XCTAssertEqual(viewModel.overlayComposerState.lowerThirdNameDraft, "张三")
+        XCTAssertEqual(viewModel.overlayComposerState.lowerThirdRoleDraft, "主持人")
+        XCTAssertEqual(viewModel.overlayComposerState.lowerThirdOrganizationDraft, "示例科技")
+        XCTAssertEqual(viewModel.overlayComposerState.selectedLowerThirdPresetID, lowerThird.id)
+
+        let imported = try SpeakerImportService.parse(text: "name,role,organization\n李四,嘉宾,研发中心")
+        let importResult = viewModel.importLowerThirdPresets(imported)
+        XCTAssertEqual(importResult.importedNames, ["李四"])
+        XCTAssertTrue(viewModel.exportLowerThirdPresetsCSV().contains("李四,嘉宾,研发中心"))
+
+        viewModel.overlayComposerState.countdownTitleDraft = "  开场倒计时  "
+        viewModel.overlayComposerState.countdownMinutesDraft = 1
+        viewModel.overlayComposerState.countdownSecondsDraft = 15
+        XCTAssertTrue(viewModel.saveCountdownPresetFromDraft())
+        let countdown = try XCTUnwrap(viewModel.countdownPresets.first)
+        viewModel.clearCountdownPresetDraft()
+        viewModel.loadCountdownPreset(countdown)
+        XCTAssertEqual(viewModel.overlayComposerState.countdownTitleDraft, "开场倒计时")
+        XCTAssertEqual(viewModel.overlayComposerState.countdownMinutesDraft, 1)
+        XCTAssertEqual(viewModel.overlayComposerState.countdownSecondsDraft, 15)
+        XCTAssertEqual(viewModel.overlayComposerState.selectedCountdownPresetID, countdown.id)
+
+        viewModel.overlayComposerState.tickerTextDraft = "  欢迎莅临  "
+        viewModel.overlayComposerState.tickerSpeedIndex = 2
+        XCTAssertTrue(viewModel.saveTickerPresetFromDraft())
+        let ticker = try XCTUnwrap(viewModel.tickerPresets.first)
+        viewModel.clearTickerPresetDraft()
+        viewModel.loadTickerPreset(ticker)
+        XCTAssertEqual(viewModel.overlayComposerState.tickerTextDraft, "欢迎莅临")
+        XCTAssertEqual(viewModel.overlayComposerState.tickerSpeedIndex, 2)
+        XCTAssertEqual(viewModel.overlayComposerState.selectedTickerPresetID, ticker.id)
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
