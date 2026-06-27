@@ -41,6 +41,15 @@ final class QADocumentationSimplificationTests: XCTestCase {
         XCTAssertTrue(hygiene.contains("published `.sha256`"))
     }
 
+    func testReleaseHygieneRecordsPostStableNoReleaseDecision() throws {
+        let hygiene = try repositorySource("docs/qa/release-hygiene-v0.5.0.md")
+
+        XCTAssertTrue(hygiene.contains("Post-v0.5.0 commits through"))
+        XCTAssertTrue(hygiene.contains("internal maintenance only"))
+        XCTAssertTrue(hygiene.contains("No v0.5.1 release is required"))
+        XCTAssertTrue(hygiene.contains("Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands"))
+    }
+
     func testReleaseCandidateTemplateRecordsReproducibilityEvidenceWithoutClaimingByteIdentity() throws {
         let runbook = try repositorySource("docs/qa/release-candidate-rehearsal.md")
 

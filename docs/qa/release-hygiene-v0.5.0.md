@@ -105,6 +105,14 @@ The local rebuild executable hash does not match the downloaded release executab
 
 Conclusion: `v0.5.0` is published with the expected assets and verified checksum. No tag, release, asset, production-code, dependency, bundle identifier, macOS minimum-version, or republish action is required by this audit.
 
+## Post-stable no-release decision - 2026-06-27
+
+Post-v0.5.0 commits through `4f0fed4` are internal maintenance only. This includes the earlier `d7d0fa...` post-stable cleanup checkpoint referenced by the release-decision contract.
+
+No v0.5.1 release is required.
+
+Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands.
+
 ## Known limitations
 
 - The public build is not Apple-notarized.

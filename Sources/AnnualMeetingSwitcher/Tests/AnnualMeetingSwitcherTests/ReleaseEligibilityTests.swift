@@ -49,6 +49,15 @@ final class ReleaseEligibilityTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("do not automatically publish a patch release"))
     }
 
+    func testPostStableCleanupDecisionBlocksUnnecessaryV051Release() throws {
+        let document = try releaseEligibilityDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Post-v0.5.0 commits through"))
+        XCTAssertTrue(document.localizedStandardContains("internal maintenance only"))
+        XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required"))
+        XCTAssertTrue(document.localizedStandardContains("Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands"))
+    }
+
     private func releaseEligibilityDocument() throws -> String {
         try String(contentsOf: try releaseEligibilityURL(), encoding: .utf8)
     }
