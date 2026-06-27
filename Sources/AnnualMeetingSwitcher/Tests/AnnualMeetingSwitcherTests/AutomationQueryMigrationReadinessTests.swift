@@ -16,14 +16,14 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
     }
 
     func testNoBroadAutomationQueryOwnedBridgeModeExists() throws {
-        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift")
 
         XCTAssertFalse(state.contains("automationQueryOwned"))
         XCTAssertTrue(state.contains("presentationQueryOwned"))
     }
 
     func testNoBroadAutomationQueryDomainExists() throws {
-        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift")
 
         XCTAssertFalse(state.contains("automationQuery"))
         XCTAssertTrue(state.contains("case presentationQuery"))
@@ -107,27 +107,30 @@ final class AutomationQueryMigrationReadinessTests: XCTestCase {
     }
 
     func testInfrastructureDomainHardeningDidNotIntroduceQueryOwnership() throws {
-        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let bridgeMode = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift")
+        let domain = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift")
         let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
         let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
 
-        XCTAssertTrue(state.contains("case imageAssets"))
-        XCTAssertTrue(state.contains("case persistence"))
-        XCTAssertFalse(state.contains("automationQuery"))
-        XCTAssertTrue(state.contains("presentationQuery"))
+        XCTAssertTrue(domain.contains("case imageAssets"))
+        XCTAssertTrue(domain.contains("case persistence"))
+        XCTAssertFalse(bridgeMode.contains("automationQuery"))
+        XCTAssertFalse(domain.contains("automationQuery"))
+        XCTAssertTrue(domain.contains("presentationQuery"))
         XCTAssertFalse(effect.contains("AutomationQueryPort"))
         XCTAssertFalse(ports.contains("AutomationQueryPort"))
     }
 
     func testRuntimeEffectInfrastructureSplitIntroducedOnlyNarrowPresentationQueryOwnership() throws {
-        let state = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let bridgeMode = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift")
+        let domain = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift")
         let effect = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffect.swift")
         let ports = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimePorts.swift")
         let action = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeAction.swift")
 
-        XCTAssertFalse(state.contains("automationQueryOwned"))
-        XCTAssertFalse(state.contains("automationQuery"))
-        XCTAssertTrue(state.contains("presentationQueryOwned"))
+        XCTAssertFalse(bridgeMode.contains("automationQueryOwned"))
+        XCTAssertFalse(domain.contains("automationQuery"))
+        XCTAssertTrue(bridgeMode.contains("presentationQueryOwned"))
         XCTAssertTrue(effect.contains("scanPresentationQuery"))
         XCTAssertFalse(ports.contains("AutomationQueryPort"))
         XCTAssertTrue(ports.contains("PresentationQueryPort"))

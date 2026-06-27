@@ -119,7 +119,10 @@ final class RuntimeEffectInfrastructureSplitTests: XCTestCase {
     }
 
     func testEffectSplitHasNarrowPresentationQueryButNoBroadAutomationQuery() throws {
-        let state = try runtimeSource("LiveRuntimeState.swift")
+        let state = try [
+            runtimeSource("LiveRuntimeBridgeMode.swift"),
+            runtimeSource("LiveRuntimeDomain.swift")
+        ].joined(separator: "\n")
         let effect = try runtimeSource("LiveRuntimeEffect.swift")
         let ports = try runtimeSource("LiveRuntimePorts.swift")
 

@@ -321,7 +321,12 @@ final class ProgramQueueViewModelSourceBoundaryTests: XCTestCase {
     }
 
     func testNoProgramQueueViewModelBridgeModeDomainOrPortAdded() throws {
-        let runtimeSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift")
+        let runtimeSource = try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeBridgeMode.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeDomain.swift"
+        ]
+        .map(repositorySource)
+        .joined(separator: "\n")
         let portsSource = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeEffectPortKind.swift")
 
         XCTAssertFalse(runtimeSource.contains("programQueueViewModelOwned"))
