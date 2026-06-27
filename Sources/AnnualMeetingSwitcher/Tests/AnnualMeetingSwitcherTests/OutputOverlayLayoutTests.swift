@@ -57,7 +57,7 @@ final class OutputOverlayLayoutTests: XCTestCase {
     }
 
     func testTickerRendersFullWidthTopBarInsteadOfFloatingCard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Views/OutputOverlays/TickerOverlay.swift")
 
         XCTAssertEqual(OutputOverlayLayoutMetrics.tickerCornerRadius, 0)
         XCTAssertTrue(source.contains("Rectangle()"))

@@ -106,7 +106,7 @@ final class ProgramMonitorActiveOverlayTests: XCTestCase {
     }
 
     func testTickerOverlayStopsTimerWhenSharedLayerUnmounts() throws {
-        let ticker = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+        let ticker = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OutputOverlays/TickerOverlay.swift")
 
         XCTAssertTrue(ticker.contains("@StateObject private var engine = TickerEngine()"))
         XCTAssertTrue(ticker.contains(".onDisappear {\n            engine.stop()\n        }"))

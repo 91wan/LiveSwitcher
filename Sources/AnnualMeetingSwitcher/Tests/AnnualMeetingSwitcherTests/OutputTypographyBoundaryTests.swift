@@ -4,7 +4,8 @@ final class OutputTypographyBoundaryTests: XCTestCase {
     func testRawFontLiteralsAreLimitedToProjectedOverlayCompositionViews() throws {
         let allowedFiles: Set<String> = [
             "CountdownOverlay.swift",
-            "LowerThirdOverlay.swift"
+            "LowerThirdView.swift",
+            "TickerOverlay.swift"
         ]
 
         for url in try sourceFiles(under: "Views") {
@@ -60,7 +61,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
     }
 
     func testLowerThirdUsesFloatingCountdownCardTreatment() throws {
-        let source = try String(contentsOf: sourceURL("Views/LowerThirdOverlay.swift"), encoding: .utf8)
+        let source = try String(contentsOf: sourceURL("Views/OutputOverlays/LowerThirdView.swift"), encoding: .utf8)
 
         XCTAssertTrue(source.contains(".transition(.opacity.combined(with: .scale(scale: 0.95)))"))
         XCTAssertTrue(source.contains("RoundedRectangle(cornerRadius: 0)"))
