@@ -56,7 +56,7 @@ final class SetupAudioDockModelTests: XCTestCase {
     }
 
     func testContentViewMountsSetupAudioDockOutsideAudioPage() throws {
-        let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
+        let content = try String(contentsOf: sourceURL("Views/AppShell/ActiveConsoleLayer.swift"), encoding: .utf8)
 
         XCTAssertTrue(content.contains("SetupAudioDockModel.shouldShow"))
         XCTAssertTrue(content.contains("SetupAudioDock {"))

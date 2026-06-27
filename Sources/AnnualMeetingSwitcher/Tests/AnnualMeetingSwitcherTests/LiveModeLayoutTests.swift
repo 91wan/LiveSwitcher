@@ -67,12 +67,12 @@ final class LiveModeLayoutTests: XCTestCase {
 
     func testLiveModePreservesBreathingRoomBelowChrome() throws {
         let source = try sourceText("Views/LiveModeView.swift")
-        let content = try sourceText("ContentView.swift")
+        let navigationBar = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
 
         XCTAssertTrue(source.contains(".padding(.top, LiveModeLayoutMetrics.contentTopPadding)"))
         XCTAssertFalse(source.contains(".padding(.top, 8)"))
-        XCTAssertTrue(content.contains("ConsoleChromeLayoutMetrics.navigationBarMinHeight"))
-        XCTAssertFalse(content.contains(".frame(minHeight: 64)"))
+        XCTAssertTrue(navigationBar.contains("ConsoleChromeLayoutMetrics.navigationBarMinHeight"))
+        XCTAssertFalse(navigationBar.contains(".frame(minHeight: 64)"))
     }
 
     func testLiveQuickRailScrollsInsteadOfClippingDenseControls() throws {
@@ -83,12 +83,12 @@ final class LiveModeLayoutTests: XCTestCase {
     }
 
     func testContentViewRoutesLiveModeToDedicatedLayout() throws {
-        let source = try sourceText("ContentView.swift")
+        let source = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
         XCTAssertTrue(source.contains("LiveModeView"))
         XCTAssertTrue(source.contains("liveContent"))
-        XCTAssertTrue(source.contains("activeConsoleLayer(isActive: viewModel.consoleMode == .live)"))
-        XCTAssertFalse(source.contains("runDesk(isLiveMode: viewModel.consoleMode == .live)"))
+        XCTAssertTrue(source.contains("ActiveConsoleLayer(isActive: consoleMode == .live)"))
+        XCTAssertFalse(source.contains("runDesk(isLiveMode: consoleMode == .live)"))
     }
 
     func testLiveModeDoesNotExposeSetupOnlyImportControls() throws {

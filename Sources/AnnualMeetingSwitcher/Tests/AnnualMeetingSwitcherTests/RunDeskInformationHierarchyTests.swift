@@ -2,18 +2,18 @@ import XCTest
 
 final class RunDeskInformationHierarchyTests: XCTestCase {
     func testRunDeskDoesNotReuseHeavyRightRailPanels() throws {
-        let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
+        let runDesk = try String(contentsOf: sourceURL("Views/AppShell/RunDeskLayout.swift"), encoding: .utf8)
 
-        XCTAssertTrue(content.contains("LiveOpsPanel"))
-        XCTAssertFalse(content.contains("BGMPlaylistPanel(mode: .liveDock)"))
-        XCTAssertFalse(content.contains("RightPanel(mode: .liveQuick"))
+        XCTAssertTrue(runDesk.contains("LiveOpsPanel"))
+        XCTAssertFalse(runDesk.contains("BGMPlaylistPanel(mode: .liveDock)"))
+        XCTAssertFalse(runDesk.contains("RightPanel(mode: .liveQuick"))
     }
 
     func testProgramMonitorDoesNotKeepDuplicatedProgramBus() throws {
-        let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
+        let runDesk = try String(contentsOf: sourceURL("Views/AppShell/RunDeskLayout.swift"), encoding: .utf8)
 
-        XCTAssertFalse(content.contains("programPresetRow"))
-        XCTAssertFalse(content.contains("节目总线"))
+        XCTAssertFalse(runDesk.contains("programPresetRow"))
+        XCTAssertFalse(runDesk.contains("节目总线"))
     }
 
     func testQueueRailNoLongerOwnsProjectionControls() throws {
@@ -25,14 +25,14 @@ final class RunDeskInformationHierarchyTests: XCTestCase {
     }
 
     func testRunNavigationUsesRunAudioOverlaysLanguage() throws {
-        let content = try String(contentsOf: sourceURL("ContentView.swift"), encoding: .utf8)
+        let modeCluster = try String(contentsOf: sourceURL("Views/AppShell/ConsoleModeCluster.swift"), encoding: .utf8)
         let tabs = try String(contentsOf: sourceURL("Models/MainConsoleTab.swift"), encoding: .utf8)
 
-        XCTAssertTrue(content.contains("setupModeMenuButton"))
+        XCTAssertTrue(modeCluster.contains("setupModeMenuButton"))
         XCTAssertTrue(tabs.contains("节目单"))
         XCTAssertTrue(tabs.contains("音频"))
         XCTAssertTrue(tabs.contains("叠层"))
-        XCTAssertFalse(content.contains("预览 / 切换"))
+        XCTAssertFalse(modeCluster.contains("预览 / 切换"))
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

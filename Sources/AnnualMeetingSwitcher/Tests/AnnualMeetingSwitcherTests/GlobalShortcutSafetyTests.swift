@@ -150,7 +150,7 @@ final class GlobalShortcutSafetyTests: XCTestCase {
     }
 
     func testKeyMonitorUsesEventWindowForScopeAndResponderChecks() throws {
-        let content = try sourceText("ContentView.swift")
+        let content = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 
         XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldHandleEvent(monitorWindow: window, eventWindow: event.window)"))
         XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
@@ -158,7 +158,7 @@ final class GlobalShortcutSafetyTests: XCTestCase {
     }
 
     func testKeyMonitorKeepsEmergencyPanicBeforeFocusedResponderPassThrough() throws {
-        let content = try sourceText("ContentView.swift")
+        let content = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
         let panicRange = try XCTUnwrap(content.range(of: "GlobalShortcutPolicy.isEmergencyPanicShortcut"))
         let passThroughRange = try XCTUnwrap(
             content.range(of: "GlobalShortcutPolicy.shouldPassThroughFocusedResponder")
@@ -188,7 +188,7 @@ final class GlobalShortcutSafetyTests: XCTestCase {
     }
 
     func testKeyMonitorOnlyConsumesNumberShortcutsForPlayableTargets() throws {
-        let content = try sourceText("ContentView.swift")
+        let content = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 
         XCTAssertTrue(content.contains("vm.programShortcutTargetIndex(forKeyCode: event.keyCode)"))
         XCTAssertFalse(content.contains("vm.switchToProgram(at: idx - 1)"))
