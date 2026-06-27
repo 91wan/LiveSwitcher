@@ -343,7 +343,7 @@ final class AutomationRuntimeSafetyTests: XCTestCase {
     }
 
     func testTickerEngineDoesNotCreateMainActorTaskPerFrameAndGuardsInvalidSizes() throws {
-        let source = try sourceText("Views/LowerThirdOverlay.swift")
+        let source = try sourceText("Views/OutputOverlays/TickerEngine.swift")
         let startBody = try XCTUnwrap(source.functionBody(named: "start"))
         let configureBody = try XCTUnwrap(source.functionBody(named: "configure"))
 

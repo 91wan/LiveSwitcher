@@ -106,20 +106,20 @@ final class TickerTrackGeometryTests: XCTestCase {
     }
 
     func testTickerEngineNoLongerUsesSentinelTextWidthOrStartedFlag() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OutputOverlays/TickerEngine.swift")
 
         XCTAssertFalse(source.contains("textWidth == 800"))
         XCTAssertFalse(source.contains("private var started"))
     }
 
     func testTickerTrackDisablesInheritedActivationAnimation() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OutputOverlays/TickerOverlay.swift")
 
         XCTAssertTrue(source.contains(".transaction { transaction in\n                    transaction.animation = nil\n                    transaction.disablesAnimations = true\n                }"))
     }
 
     func testTickerTrackClipsAfterFullWidthFrame() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OutputOverlays/TickerOverlay.swift")
 
         XCTAssertTrue(source.contains(".frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)\n                .clipped()"))
         XCTAssertFalse(source.contains(".clipped()\n                .frame(width: cardWidth, height: OutputOverlayLayoutMetrics.tickerHeight, alignment: .leading)"))
