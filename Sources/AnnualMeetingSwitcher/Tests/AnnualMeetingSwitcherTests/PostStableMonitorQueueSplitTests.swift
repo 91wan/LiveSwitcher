@@ -9,7 +9,12 @@ final class PostStableMonitorQueueSplitTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorBlackoutOverlay.swift": 450,
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorMediaLayer.swift": 450,
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift": 450,
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRow.swift": 450,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRow.swift": 249,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRowHeader.swift": 249,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRowStatusChips.swift": 249,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRowControlRail.swift": 249,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRowDropIndicator.swift": 249,
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/SignalSourceRowStyleModel.swift": 249,
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueDragHandle.swift": 450,
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueNumberBadge.swift": 450,
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/ProgramQueueScheduleEditor.swift": 450,
@@ -46,5 +51,9 @@ final class PostStableMonitorQueueSplitTests: XCTestCase {
         XCTAssertFalse(queueSource.contains("struct ProgramQueueDragHandle"))
         XCTAssertFalse(queueSource.contains("struct AgendaMarkerEditorPopover"))
         XCTAssertFalse(queueSource.contains("struct ProgressSliderRow"))
+        XCTAssertFalse(queueSource.contains("private var selectedControlRail"))
+        XCTAssertFalse(queueSource.contains("private var dropIndicatorOverlay"))
+        XCTAssertFalse(queueSource.contains("private var sourceTypeChip"))
+        XCTAssertFalse(queueSource.contains("private var backgroundFill"))
     }
 }

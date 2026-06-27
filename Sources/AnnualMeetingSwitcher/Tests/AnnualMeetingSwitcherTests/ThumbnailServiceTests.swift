@@ -88,11 +88,12 @@ final class ThumbnailServiceTests: XCTestCase {
     }
 
     func testRunQueueRowsRenderThumbnailViewInsteadOfPlainIconOnlySourceRows() throws {
-        let source = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let source = try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
+        let rowSource = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
 
         XCTAssertTrue(source.contains("ProgramThumbnailView("))
         XCTAssertTrue(source.contains("displaySize: CGSize(width: 48, height: 27)"))
-        XCTAssertTrue(source.contains("private let rowContentIndent"))
+        XCTAssertTrue(rowSource.contains("private let rowContentIndent"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

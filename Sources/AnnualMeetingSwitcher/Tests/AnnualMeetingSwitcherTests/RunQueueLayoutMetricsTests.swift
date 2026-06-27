@@ -7,7 +7,7 @@ final class RunQueueLayoutMetricsTests: XCTestCase {
     }
 
     func testRunQueueRowControlsUseSharedMetricInsteadOfHardcodedThirtyPointFrame() throws {
-        let source = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let source = try sourceText("Views/ProgramQueue/SignalSourceRowControlRail.swift")
 
         XCTAssertTrue(source.contains("RunQueueLayoutMetrics.rowControlButtonSize"))
         XCTAssertFalse(source.contains(".frame(width: 30, height: 30)"))

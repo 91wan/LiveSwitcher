@@ -162,7 +162,7 @@ final class PresentationReadinessProbeTests: XCTestCase {
     }
 
     func testRunQueueAndLiveRailsExposeReadinessIndicatorsWithoutLeftSummary() throws {
-        let runQueueSource = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let runQueueSource = try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
         let leftPanelSource = try sourceText("Views/LeftPanel.swift")
         let liveSourceRail = try sourceText("Views/LiveSourceRail.swift")
 

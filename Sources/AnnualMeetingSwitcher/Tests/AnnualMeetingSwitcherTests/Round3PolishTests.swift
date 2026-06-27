@@ -13,7 +13,7 @@ final class Round3PolishTests: XCTestCase {
     func testRunQueueUsesExplicitDragHandleAndBGMLibraryDoesNotRenderDragHandleDecorations() throws {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
         let dragHandle = try sourceText("Views/ProgramQueue/ProgramQueueDragHandle.swift")
-        let sourceRow = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let sourceRow = try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
         let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
 
         XCTAssertTrue(sourceRow.contains("ProgramQueueDragHandle"))
