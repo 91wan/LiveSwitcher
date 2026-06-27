@@ -3,7 +3,6 @@ top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Conte
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift	300	547	legacy AppKit output-window bridge; split planned separately	v0.5.1	maintainers
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift	300	534	legacy setup navigation panel; split planned separately	v0.5.1	maintainers
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift	300	330	legacy overlay renderer; split planned separately	v0.5.1	maintainers
-top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OverlayControlPanel.swift	300	973	legacy overlay editor panel; split planned separately	v0.5.1	maintainers
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift	300	501	legacy preflight popover; split planned separately	v0.5.1	maintainers
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/SafetyCockpitView.swift	300	444	legacy safety cockpit surface; split planned separately	v0.5.1	maintainers
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StudioTheme.swift	300	564	theme token registry, not a runtime surface; split planned separately	v0.5.1	maintainers

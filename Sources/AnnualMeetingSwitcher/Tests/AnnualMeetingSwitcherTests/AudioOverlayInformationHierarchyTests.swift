@@ -98,10 +98,10 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
     }
 
     func testOverlayPageUsesSingleComposerAndActiveStackClearAction() throws {
-        let content = try String(contentsOf: sourceURL("Views/OverlayControlPanel.swift"), encoding: .utf8)
+        let content = try overlayControlSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(content.contains("OverlayComposerKind.allCases"))
-        XCTAssertTrue(content.contains("activeStackCard"))
+        XCTAssertTrue(content.contains("OverlayActiveStatusCard"))
         XCTAssertFalse(content.contains("全部下屏 / Clear all"))
     }
 

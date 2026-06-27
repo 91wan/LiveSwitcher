@@ -133,7 +133,7 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
     }
 
     func testOverlayCreationCopyDoesNotUseGenericPresetLabels() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OverlayControlPanel.swift")
+        let source = try overlayControlSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(source.contains("新建人名条"))
         XCTAssertTrue(source.contains("新建倒计时"))
