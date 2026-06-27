@@ -14,7 +14,7 @@ final class ResidualDefaultBadgeTests: XCTestCase {
     }
 
     func testOverlayPanelDoesNotRenderOffStatesAsBadges() throws {
-        let source = try sourceText("Views/OverlayControlPanel.swift")
+        let source = try overlayControlSurfaceText(filePath: #filePath)
 
         XCTAssertFalse(source.contains("StatusBadge(activeOverlayCount == 0 ? \"OFF\""))
         XCTAssertFalse(source.contains("StatusBadge(isLive ? \"LIVE\" : \"OFF\""))

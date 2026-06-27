@@ -61,3 +61,21 @@ func bgmPlaylistSurfaceText(filePath: String = #filePath) throws -> String {
         .map { try sourceText($0, filePath: filePath) }
         .joined(separator: "\n")
 }
+
+func overlayControlSurfaceText(filePath: String = #filePath) throws -> String {
+    let files = [
+        "Views/OverlayControlPanel.swift",
+        "Views/Overlays/OverlayComposerPicker.swift",
+        "Views/Overlays/OverlayComposerControls.swift",
+        "Views/Overlays/LowerThirdComposerCard.swift",
+        "Views/Overlays/CountdownComposerCard.swift",
+        "Views/Overlays/TickerComposerCard.swift",
+        "Views/Overlays/OverlayPresetList.swift",
+        "Views/Overlays/OverlayLivePreviewColumn.swift",
+        "Views/Overlays/OverlayActiveStatusCard.swift"
+    ]
+
+    return try files
+        .map { try sourceText($0, filePath: filePath) }
+        .joined(separator: "\n")
+}

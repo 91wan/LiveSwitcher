@@ -2,7 +2,16 @@ import XCTest
 
 final class OverlayTypographyConvergenceTests: XCTestCase {
     func testOverlayControlPanelUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
-        try assertOverlayFileUsesTypeScale(relativePath: "Views/OverlayControlPanel.swift")
+        let source = try overlayControlSurfaceText(filePath: #filePath)
+
+        XCTAssertFalse(
+            source.contains(".font(.system(size:"),
+            "Overlay control UI should use StudioTheme.TypeScale instead of raw font sizes."
+        )
+        XCTAssertTrue(
+            source.contains("StudioTheme.TypeScale"),
+            "Overlay control UI should reference the shared type scale."
+        )
     }
 
     func testOverlayLivePreviewCanvasUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
