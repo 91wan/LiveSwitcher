@@ -78,6 +78,14 @@ shasum -a 256 dist/LiveSwitcher.app/Contents/MacOS/LiveSwitcher
 | Version/bundle metadata | | |
 | Executable SHA-256 recorded | | |
 
+## Release Reproducibility Note
+
+Do not require byte-for-byte local rebuild identity for v0.5.x candidate decisions. Record the local executable SHA-256 so later audits can compare it with a published artifact, but evaluate release trust through the tested commit, tag/main equality, CI workflow result, release asset checksum, and extracted app verification.
+
+A local rebuild hash that differs from a release executable hash does not by itself prove compromise. Check the release workflow, the published `.sha256`, the extracted app metadata, and signature verification before escalating.
+
+Known sources of local/release hash drift include build path embedding, timestamps, resource ordering, and signing metadata. If v0.5.1 or later needs byte-identical reproducibility, control those inputs before making executable hash equality a release gate.
+
 ## Test Media and Isolated Profile
 
 Use a separate defaults suite:
