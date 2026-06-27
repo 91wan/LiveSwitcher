@@ -18,7 +18,7 @@ final class TopChromeConvergenceTests: XCTestCase {
     }
 
     func testBrandChromeTitleUsesProminentTypography() throws {
-        let source = try sourceText("ContentView.swift")
+        let source = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
 
         XCTAssertTrue(source.contains(".font(StudioTheme.TypeScale.title.weight(.black))"))
         XCTAssertTrue(source.contains(".frame(minWidth: 220, idealWidth: 280, maxWidth: 340, alignment: .leading)"))

@@ -19,11 +19,13 @@ final class ConsoleNavigationTests: XCTestCase {
     }
 
     func testContentViewLiveMixerCallbackUsesSetupNavigationHelper() throws {
-        let source = try sourceText("ContentView.swift")
+        let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
-        XCTAssertTrue(source.contains("LiveModeView"))
-        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.audioMixer)"))
-        XCTAssertFalse(source.contains("LiveModeView {\n                            viewModel.selectedMainTab = .audioMixer"))
+        XCTAssertTrue(mainContent.contains("LiveModeView"))
+        XCTAssertTrue(content.contains("viewModel.navigateToSetup(tab)"))
+        XCTAssertTrue(mainContent.contains("onNavigateToSetup(.audioMixer)"))
+        XCTAssertFalse(mainContent.contains("LiveModeView {\n                            selectedTab = .audioMixer"))
     }
 
     func testLiveModeSetupButtonsUseSetupNavigationHelper() throws {

@@ -49,7 +49,8 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
 
     func testSwiftFiveTenViewBoundariesStayMainActorIsolated() throws {
         let viewFiles = [
-            "ContentView.swift": ["struct ContentView: View", "struct GlobalKeyMonitor: NSViewRepresentable"],
+            "ContentView.swift": ["struct ContentView: View"],
+            "Views/AppShell/GlobalKeyMonitor.swift": ["struct GlobalKeyMonitor: NSViewRepresentable"],
             "Views/Setup/LeftPanel.swift": ["struct LeftPanel: View"],
             "Views/ProgramMonitor/ProgramMonitorView.swift": ["struct ProgramMonitorView: View"],
             "Views/LiveModeView.swift": ["struct LiveModeView: View"],
@@ -113,13 +114,15 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     func testProgramMonitorObservesAVPlayerCoordinatorBoundaryDirectly() throws {
         let source = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         let content = try sourceText("ContentView.swift")
+        let runDesk = try sourceText("Views/AppShell/RunDeskLayout.swift")
         let liveProgramStack = try sourceText("Views/LiveProgramStack.swift")
 
         XCTAssertTrue(source.contains("@ObservedObject var avCoordinator: AVPlayerCoordinator"))
         XCTAssertTrue(source.contains("init(isLiveMode: Bool = false, avCoordinator: AVPlayerCoordinator)"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.isPlaying"))
         XCTAssertFalse(source.contains("viewModel.avCoordinator.hasLoadedMedia"))
-        XCTAssertTrue(content.contains("ProgramMonitorView(avCoordinator: viewModel.avCoordinator)"))
+        XCTAssertTrue(content.contains("avCoordinator: viewModel.avCoordinator"))
+        XCTAssertTrue(runDesk.contains("ProgramMonitorView(avCoordinator: avCoordinator)"))
         XCTAssertTrue(liveProgramStack.contains("ProgramMonitorView(isLiveMode: true, avCoordinator: viewModel.avCoordinator)"))
         XCTAssertFalse(source.contains("@State private var viewModel = SwitcherViewModel()"))
         XCTAssertFalse(source.contains("#Preview {\n    let viewModel = SwitcherViewModel()"))

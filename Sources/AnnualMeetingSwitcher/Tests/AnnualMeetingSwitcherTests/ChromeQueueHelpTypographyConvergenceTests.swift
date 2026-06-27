@@ -2,7 +2,13 @@ import XCTest
 
 final class ChromeQueueHelpTypographyConvergenceTests: XCTestCase {
     func testContentViewChromeUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
-        try assertUsesTypeScale(relativePath: "ContentView.swift")
+        for relativePath in [
+            "Views/AppShell/PrimaryNavigationBar.swift",
+            "Views/AppShell/ConsoleModeCluster.swift",
+            "Views/AppShell/ConsoleChromeView.swift"
+        ] {
+            try assertUsesTypeScale(relativePath: relativePath)
+        }
     }
 
     func testSetupProgramRailUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {

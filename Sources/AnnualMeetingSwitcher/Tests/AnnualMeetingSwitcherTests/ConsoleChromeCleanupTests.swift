@@ -26,25 +26,26 @@ final class ConsoleChromeCleanupTests: XCTestCase {
 
     func testTopChromeShowsNavigationAffordancesForSetupAndPreflight() throws {
         let toolbar = try sourceText("Views/MainToolbar.swift")
-        let content = try sourceText("ContentView.swift")
+        let modeCluster = try sourceText("Views/AppShell/ConsoleModeCluster.swift")
 
         XCTAssertTrue(toolbar.contains("chevron.down"))
-        XCTAssertTrue(content.contains("title: \"准备\""))
-        XCTAssertFalse(content.contains("title: \"← 准备\""))
-        XCTAssertTrue(content.contains("systemImage: \"chevron.left\""))
-        XCTAssertTrue(content.contains("accessibilityHint(\"返回准备模式\")"))
+        XCTAssertTrue(modeCluster.contains("title: \"准备\""))
+        XCTAssertFalse(modeCluster.contains("title: \"← 准备\""))
+        XCTAssertTrue(modeCluster.contains("systemImage: \"chevron.left\""))
+        XCTAssertTrue(modeCluster.contains("accessibilityHint(\"返回准备模式\")"))
     }
 
     func testPanicIsPlacedBeforeConsoleModeClusterAndModesUseOldToolbarSlot() throws {
         let content = try sourceText("ContentView.swift")
+        let navigationBar = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
 
-        guard let panic = content.range(of: "panicChromeButton"),
-              let consoleModeCluster = content.range(of: "consoleModeCluster") else {
-            return XCTFail("Expected ContentView chrome to render panic before the setup/live mode cluster.")
+        guard let panic = navigationBar.range(of: "PanicChromeContainer("),
+              let consoleModeCluster = navigationBar.range(of: "ConsoleModeCluster(") else {
+            return XCTFail("Expected primary chrome to render panic before the setup/live mode cluster.")
         }
         XCTAssertLessThan(panic.lowerBound, consoleModeCluster.lowerBound)
-        XCTAssertTrue(content.contains("ToolbarLayoutMetrics.panicToModeClusterSpacing"))
+        XCTAssertTrue(navigationBar.contains("ToolbarLayoutMetrics.panicToModeClusterSpacing"))
         XCTAssertTrue(content.contains("viewModel.togglePanicMode()"))
         XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
         XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
@@ -55,22 +56,22 @@ final class ConsoleChromeCleanupTests: XCTestCase {
     }
 
     func testGlobalArrowShortcutsRequirePresentationControl() throws {
-        let content = try sourceText("ContentView.swift")
+        let monitor = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 
-        XCTAssertTrue(content.contains("let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true"))
-        XCTAssertTrue(content.contains("guard presentationShortcutsEnabled else { return event }"))
+        XCTAssertTrue(monitor.contains("let presentationShortcutsEnabled = vm.isPageInterceptEnabled || vm.currentProgramItem?.supportsPresentationControl == true"))
+        XCTAssertTrue(monitor.contains("guard presentationShortcutsEnabled else { return event }"))
     }
 
     func testGlobalShortcutsRespectNativeControlFocus() throws {
-        let content = try sourceText("ContentView.swift")
+        let monitor = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 
-        XCTAssertTrue(content.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
+        XCTAssertTrue(monitor.contains("GlobalShortcutPolicy.shouldPassThroughFocusedResponder(in: event.window, keyCode: event.keyCode)"))
     }
 
     func testNonEmergencyGlobalShortcutsIgnoreShiftModifiedKeys() throws {
-        let content = try sourceText("ContentView.swift")
+        let monitor = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 
-        XCTAssertTrue(content.contains("GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags)"))
+        XCTAssertTrue(monitor.contains("GlobalShortcutPolicy.hasNonEmergencyShortcutModifiers(event.modifierFlags)"))
     }
 
     func testRunQueueDoesNotInstallDuplicateUnmodifiedNumberShortcuts() throws {

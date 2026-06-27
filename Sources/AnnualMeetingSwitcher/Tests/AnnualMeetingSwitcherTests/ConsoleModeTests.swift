@@ -54,27 +54,30 @@ final class ConsoleModeTests: XCTestCase {
     }
 
     func testContentViewUsesModeSwitcherAndKeepsSetupTabsScopedToSetupMode() throws {
-        let source = try sourceText("ContentView.swift")
+        let content = try sourceText("ContentView.swift")
+        let modeCluster = try sourceText("Views/AppShell/ConsoleModeCluster.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
-        XCTAssertTrue(source.contains("consoleModeCluster"))
-        XCTAssertTrue(source.contains("setupModeMenuButton"))
-        XCTAssertFalse(source.contains("setupTabCluster"))
-        XCTAssertFalse(source.contains("navigationTab("))
-        XCTAssertTrue(source.contains("viewModel.consoleMode == .setup"))
-        XCTAssertTrue(source.contains("setupContentTabs"))
-        XCTAssertFalse(source.contains("activeContentTab"))
-        XCTAssertFalse(source.contains("Image(systemName: \"ellipsis\")"))
+        XCTAssertTrue(content.contains("ConsoleChromeView("))
+        XCTAssertTrue(modeCluster.contains("struct ConsoleModeCluster"))
+        XCTAssertTrue(modeCluster.contains("setupModeMenuButton"))
+        XCTAssertFalse(modeCluster.contains("setupTabCluster"))
+        XCTAssertFalse(modeCluster.contains("navigationTab("))
+        XCTAssertTrue(mainContent.contains("consoleMode == .setup"))
+        XCTAssertTrue(mainContent.contains("setupContentTabs"))
+        XCTAssertFalse(mainContent.contains("activeContentTab"))
+        XCTAssertFalse(modeCluster.contains("Image(systemName: \"ellipsis\")"))
     }
 
     func testLiveModeRoutesDedicatedLayoutInsteadOfSetupRunDesk() throws {
-        let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
         let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
         let monitor = try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
 
-        XCTAssertTrue(content.contains("LiveModeView"))
-        XCTAssertTrue(content.contains("runDesk()"))
-        XCTAssertFalse(content.contains("runDesk(isLiveMode:"))
+        XCTAssertTrue(mainContent.contains("LiveModeView"))
+        XCTAssertTrue(mainContent.contains("RunDeskLayout("))
+        XCTAssertFalse(mainContent.contains("runDesk(isLiveMode:"))
         XCTAssertFalse(leftPanel.contains("var isLiveMode: Bool"))
         XCTAssertTrue(monitor.contains("var isLiveMode: Bool"))
         XCTAssertTrue(monitor.contains("if !isLiveMode"))
@@ -82,40 +85,41 @@ final class ConsoleModeTests: XCTestCase {
     }
 
     func testLiveModeDoesNotMountInactiveSetupTabsDuringModeSwitch() throws {
-        let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
-        XCTAssertTrue(content.contains("setupContentTabs"))
-        XCTAssertTrue(content.contains("liveContent"))
-        XCTAssertFalse(content.contains("hasMountedLiveMode"))
-        XCTAssertFalse(content.contains("prewarmLiveModeLayer"))
-        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
-        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountLiveLayer("))
-        XCTAssertFalse(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
-        XCTAssertTrue(content.contains("activeConsoleLayer(isActive: viewModel.consoleMode == .live)"))
-        XCTAssertFalse(content.contains("retainedTab(.preview) {\n                    if viewModel.consoleMode == .live"))
-        XCTAssertFalse(content.contains("activeContentTab"))
+        XCTAssertTrue(mainContent.contains("setupContentTabs"))
+        XCTAssertTrue(mainContent.contains("liveContent"))
+        XCTAssertFalse(mainContent.contains("hasMountedLiveMode"))
+        XCTAssertFalse(mainContent.contains("prewarmLiveModeLayer"))
+        XCTAssertTrue(mainContent.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
+        XCTAssertTrue(mainContent.contains("ConsoleModeMountPolicy.shouldMountLiveLayer("))
+        XCTAssertFalse(mainContent.contains("consoleModeRetainedLayer(isActive: consoleMode == .setup)"))
+        XCTAssertTrue(mainContent.contains("ActiveConsoleLayer(isActive: consoleMode == .live)"))
+        XCTAssertFalse(mainContent.contains("retainedTab(.preview) {\n                    if consoleMode == .live"))
+        XCTAssertFalse(mainContent.contains("activeContentTab"))
     }
 
     func testSetupTabsMountLazilyToAvoidLiveSetupSwitchStalls() throws {
         let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
         XCTAssertTrue(content.contains("@State private var loadedSetupTabs"))
-        XCTAssertTrue(content.contains("shouldMountSetupTab(.audioMixer)"))
-        XCTAssertTrue(content.contains("shouldMountSetupTab(.overlays)"))
+        XCTAssertTrue(mainContent.contains("shouldMountSetupTab(.audioMixer)"))
+        XCTAssertTrue(mainContent.contains("shouldMountSetupTab(.overlays)"))
         XCTAssertTrue(content.contains("markSetupTabLoaded"))
         XCTAssertTrue(content.contains("trimLoadedSetupTabsForLiveMode"))
     }
 
     func testSetupLayerUnmountsWhileLiveModeIsActive() throws {
-        let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
         XCTAssertFalse(ConsoleModeMountPolicy.shouldMountSetupLayer(
             consoleMode: .live,
             selectedTab: .preview,
             loadedTabs: [.preview]
         ))
-        XCTAssertTrue(content.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
-        XCTAssertFalse(content.contains("consoleModeRetainedLayer(isActive: viewModel.consoleMode == .setup)"))
+        XCTAssertTrue(mainContent.contains("ConsoleModeMountPolicy.shouldMountSetupLayer("))
+        XCTAssertFalse(mainContent.contains("consoleModeRetainedLayer(isActive: consoleMode == .setup)"))
     }
 
     func testSetupTabsUnmountWhileLiveModeIsActive() {
@@ -152,14 +156,14 @@ final class ConsoleModeTests: XCTestCase {
     }
 
     func testLiveModeLayerUnmountsWhileSetupIsActiveToAvoidHiddenHeavyView() throws {
-        let content = try sourceText("ContentView.swift")
+        let mainContent = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
         let policy = try sourceText("Models/ConsoleModeMountPolicy.swift")
 
         XCTAssertTrue(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .live))
         XCTAssertFalse(ConsoleModeMountPolicy.shouldMountLiveLayer(consoleMode: .setup))
-        XCTAssertFalse(content.contains("hasMountedLiveMode"))
+        XCTAssertFalse(mainContent.contains("hasMountedLiveMode"))
         XCTAssertFalse(policy.contains("hasMountedLiveLayer"))
-        XCTAssertFalse(content.contains("prewarmLiveModeLayer"))
+        XCTAssertFalse(mainContent.contains("prewarmLiveModeLayer"))
     }
 
     func testConsoleModeSwitchesAvoidWholeLayoutAnimation() throws {
@@ -170,19 +174,19 @@ final class ConsoleModeTests: XCTestCase {
     }
 
     func testLiveReturnToSetupButtonDoesNotDuplicateBackArrowCopy() throws {
-        let content = try sourceText("ContentView.swift")
+        let modeCluster = try sourceText("Views/AppShell/ConsoleModeCluster.swift")
 
-        XCTAssertTrue(content.contains("title: \"准备\""))
-        XCTAssertTrue(content.contains("systemImage: \"chevron.left\""))
-        XCTAssertFalse(content.contains("title: \"← 准备\""))
+        XCTAssertTrue(modeCluster.contains("title: \"准备\""))
+        XCTAssertTrue(modeCluster.contains("systemImage: \"chevron.left\""))
+        XCTAssertFalse(modeCluster.contains("title: \"← 准备\""))
     }
 
     func testInactiveRetainedConsoleLayerIsHiddenInsteadOfTransparentRendered() throws {
-        let content = try sourceText("ContentView.swift")
+        let layer = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
 
-        XCTAssertTrue(content.contains("if isActive {"))
-        XCTAssertTrue(content.contains(".hidden()"))
-        XCTAssertFalse(content.contains(".opacity(isActive ? 1 : 0)"))
+        XCTAssertTrue(layer.contains("if isActive {"))
+        XCTAssertTrue(layer.contains(".hidden()"))
+        XCTAssertFalse(layer.contains(".opacity(isActive ? 1 : 0)"))
     }
 
     func testModeMenuDefinesSetupAndLiveKeyboardShortcuts() throws {
@@ -196,12 +200,12 @@ final class ConsoleModeTests: XCTestCase {
     }
 
     func testSetupMenuExposesDiscoverableTabShortcuts() throws {
-        let content = try sourceText("ContentView.swift")
+        let modeCluster = try sourceText("Views/AppShell/ConsoleModeCluster.swift")
         let app = try sourceText("App.swift")
 
-        XCTAssertTrue(content.contains("tab.setupMenuShortcutLabel"))
-        XCTAssertTrue(content.contains(".keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)"))
-        XCTAssertFalse(content.contains("ellipsis"))
+        XCTAssertTrue(modeCluster.contains("tab.setupMenuShortcutLabel"))
+        XCTAssertTrue(modeCluster.contains(".keyboardShortcut(KeyEquivalent(Character(tab.setupShortcutKey)), modifiers: .command)"))
+        XCTAssertFalse(modeCluster.contains("ellipsis"))
 
         XCTAssertTrue(app.contains("CommandMenu(\"准备页面\")"))
         XCTAssertTrue(app.contains("viewModel.navigateToSetup(.preview)"))
