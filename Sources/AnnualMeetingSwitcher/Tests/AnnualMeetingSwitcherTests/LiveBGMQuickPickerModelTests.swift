@@ -31,4 +31,18 @@ final class LiveBGMQuickPickerModelTests: XCTestCase {
         XCTAssertEqual(model.sections.map(\.category), BGMCategory.allCases)
         XCTAssertEqual(model.nonEmptySections.map(\.category), [.entrance, .exit])
     }
+
+    func testLivePickerModelExposesAllCategorySectionsForLiveCategorySelection() {
+        let warm = BGMItem(title: "Warm", url: URL(fileURLWithPath: "/tmp/warm.mp3"), category: .warmUp)
+        let award = BGMItem(title: "Award", url: URL(fileURLWithPath: "/tmp/award.mp3"), category: .award)
+
+        let model = LiveBGMQuickPickerModel.make(items: [warm, award], currentItem: warm)
+
+        XCTAssertEqual(model.currentTitle, "Warm")
+        XCTAssertEqual(model.sections.count, BGMCategory.allCases.count)
+        XCTAssertEqual(model.sections.map(\.title), BGMCategory.allCases.map(\.rawValue))
+        XCTAssertEqual(model.section(for: .warmUp)?.tracks.map(\.id), [warm.id])
+        XCTAssertEqual(model.section(for: .award)?.tracks.map(\.id), [award.id])
+        XCTAssertTrue(model.section(for: .exit)?.isEmpty ?? false)
+    }
 }

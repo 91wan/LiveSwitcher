@@ -119,6 +119,29 @@ final class LiveBGMChooserModelTests: XCTestCase {
         XCTAssertEqual(awardOnly.filteredCount, 1)
     }
 
+    func testAllTracksChooserModelCarriesSelectableRowsForLiveBGMSelection() {
+        let tracks = [
+            BGMItem(title: "Warm A", url: URL(fileURLWithPath: "/tmp/warm-a.mp3"), category: .warmUp),
+            BGMItem(title: "Award A", url: URL(fileURLWithPath: "/tmp/award-a.mp3"), category: .award),
+            BGMItem(title: "Exit A", url: URL(fileURLWithPath: "/tmp/exit-a.mp3"), category: .exit)
+        ]
+
+        let model = LiveBGMChooserModel.make(
+            items: tracks,
+            currentItem: tracks[1],
+            phase: .selected,
+            selectedCategory: nil,
+            searchText: ""
+        )
+
+        XCTAssertEqual(model.totalCount, 3)
+        XCTAssertEqual(model.filteredCount, 3)
+        XCTAssertEqual(model.rows.map(\.item.id), tracks.map(\.id))
+        XCTAssertEqual(model.rows.map(\.categoryTitle), tracks.map { $0.category.rawValue })
+        XCTAssertEqual(model.rows[1].stateText, "已选")
+        XCTAssertEqual(model.rows[1].accessibilityLabel, "Award A，颁奖音乐，当前 BGM，已选")
+    }
+
     func testSearchMatchesChineseAndEnglishTitlesAndTrimsWhitespace() {
         let chinese = BGMItem(title: "开场鼓点", url: URL(fileURLWithPath: "/tmp/opening.mp3"), category: .entrance)
         let english = BGMItem(title: "Victory Loop", url: URL(fileURLWithPath: "/tmp/victory.mp3"), category: .award)

@@ -59,4 +59,22 @@ final class LiveWallpaperQuickPickerModelTests: XCTestCase {
         XCTAssertEqual(model.displayTitle, "未选择壁纸")
         XCTAssertEqual(model.items.map(\.isActive), [false])
     }
+
+    func testLiveWallpaperPickerModelCarriesSpecificSelectableWallpaperURLs() {
+        let first = URL(fileURLWithPath: "/tmp/Fallback A.png")
+        let second = URL(fileURLWithPath: "/tmp/Sponsor Wall.jpg")
+        let third = URL(fileURLWithPath: "/tmp/Closing.png")
+
+        let model = LiveWallpaperQuickPickerModel.make(
+            wallpapers: [first, second, third],
+            activeWallpaperURL: second
+        )
+
+        XCTAssertEqual(model.statusText, "3")
+        XCTAssertEqual(model.displayTitle, "Sponsor Wall.jpg")
+        XCTAssertEqual(model.items.map(\.id), [first, second, third])
+        XCTAssertEqual(model.items.map(\.url), [first, second, third])
+        XCTAssertEqual(model.items.map(\.title), ["Fallback A.png", "Sponsor Wall.jpg", "Closing.png"])
+        XCTAssertEqual(model.items.map(\.isActive), [false, true, false])
+    }
 }

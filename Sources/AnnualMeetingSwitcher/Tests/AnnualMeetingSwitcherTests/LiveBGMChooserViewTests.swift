@@ -34,11 +34,4 @@ final class LiveBGMChooserViewTests: XCTestCase {
         XCTAssertFalse(source.contains("onMove"))
     }
 
-    func testLiveModeLayoutTestsTrackChooserWithoutSetupNavigation() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeLayoutTests.swift")
-
-        XCTAssertTrue(source.contains("LiveBGMChooserPopover"))
-        XCTAssertTrue(source.contains("全部曲目"))
-        XCTAssertFalse(source.contains("Open BGM Library"))
-    }
 }
