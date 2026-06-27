@@ -123,6 +123,31 @@ final class LiveOverlayRailRowModelTests: XCTestCase {
         XCTAssertFalse(model.canToggle)
     }
 
+    func testActiveOverlayRowsRemainDismissibleWithoutSelectedPreset() {
+        let lowerThird = LiveOverlayRailRowModel.lowerThird(
+            presets: [],
+            selectedID: nil,
+            isLive: true
+        )
+        let countdown = LiveOverlayRailRowModel.countdown(
+            presets: [],
+            selectedID: nil,
+            isLive: true
+        )
+        let ticker = LiveOverlayRailRowModel.ticker(
+            presets: [],
+            selectedID: nil,
+            isLive: true
+        )
+
+        for model in [lowerThird, countdown, ticker] {
+            XCTAssertTrue(model.isPlaceholder)
+            XCTAssertTrue(model.canToggle)
+            XCTAssertEqual(model.toggleText, "关闭")
+            XCTAssertTrue(model.accessibilityLabel.hasSuffix("关闭"))
+        }
+    }
+
     func testLiveModePresetCreationUsesStructuredInteractionInsteadOfDisplayCopy() throws {
         let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail+Overlays.swift")
 

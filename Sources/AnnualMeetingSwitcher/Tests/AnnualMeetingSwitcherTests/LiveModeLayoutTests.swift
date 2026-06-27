@@ -57,14 +57,6 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertFalse(liveModeViewSource.contains("struct LiveRuntimeStatusBar"))
     }
 
-    func testLiveSourceRailUsesUnifiedLabelModel() throws {
-        let source = try sourceText("Views/LiveSourceRail.swift")
-
-        XCTAssertTrue(source.contains("SourceRailRowLabelModel.make"))
-        XCTAssertFalse(source.contains("Text(rowModel.queueBadgeText)"))
-        XCTAssertFalse(source.contains("Text(item.displaySourceLabel)"))
-    }
-
     func testLiveModePreservesBreathingRoomBelowChrome() throws {
         let source = try sourceText("Views/LiveModeView.swift")
         let navigationBar = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
@@ -206,80 +198,6 @@ final class LiveModeLayoutTests: XCTestCase {
         let source = try sourceText("Views/LiveQuickRail.swift")
 
         XCTAssertFalse(source.contains("Next wallpaper"))
-    }
-
-    func testLiveLowerThirdPresetMenuSendsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
-        XCTAssertTrue(source.contains("ForEach(viewModel.lowerThirdPresets)"))
-        XCTAssertTrue(source.contains("viewModel.loadLowerThirdPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.showLowerThirdPreset(preset)"))
-    }
-
-    func testLiveCountdownPresetMenuStartsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.countdown"))
-        XCTAssertTrue(source.contains("ForEach(viewModel.countdownPresets)"))
-        XCTAssertTrue(source.contains("viewModel.loadCountdownPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.startCountdownPreset(preset)"))
-    }
-
-    func testLiveTickerPresetMenuStartsSelectedPresetDirectly() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.ticker"))
-        XCTAssertTrue(source.contains("ForEach(viewModel.tickerPresets)"))
-        XCTAssertTrue(source.contains("viewModel.loadTickerPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
-    }
-
-    func testLiveOverlayRailUsesCompactPresetRows() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains("compactOverlayRow("))
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.lowerThird"))
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.countdown"))
-        XCTAssertTrue(source.contains("LiveOverlayRailRowModel.ticker"))
-        XCTAssertTrue(source.contains("overlayPresetMenu("))
-        XCTAssertFalse(source.contains("private var lowerThirdPresetMenu"))
-        XCTAssertFalse(source.contains("private var countdownPresetMenu"))
-        XCTAssertFalse(source.contains("private var tickerPresetMenu"))
-        XCTAssertFalse(source.contains("Choose lower third preset"))
-        XCTAssertTrue(source.contains("viewModel.showLowerThirdPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.startCountdownPreset(preset)"))
-        XCTAssertTrue(source.contains("viewModel.startTickerPreset(preset)"))
-    }
-
-    func testLiveOverlayRailProvidesClearAllAction() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains("overlayClearAllButton"))
-        XCTAssertTrue(source.contains("Label(\"全部清空\", systemImage: \"xmark.circle\")"))
-        XCTAssertTrue(source.contains("let hasActiveOverlay = overlayActiveCount > 0"))
-        XCTAssertEqual(source.components(separatedBy: "viewModel.clearAllOverlays()").count - 1, 1)
-        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity)"))
-        XCTAssertTrue(source.contains(".buttonStyle(.bordered)"))
-        XCTAssertTrue(source.contains(".disabled(!hasActiveOverlay)"))
-        XCTAssertTrue(source.contains(".opacity(hasActiveOverlay ? 1 : 0.42)"))
-        XCTAssertTrue(source.contains(".help(\"关闭当前全部上屏叠层\")"))
-        XCTAssertTrue(source.contains(".accessibilityLabel(\"全部清空叠层\")"))
-    }
-
-    func testOverlayRailUsesIconOnlyTypeLabelAndTailTruncatedPresetName() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains(".truncationMode(.tail)"))
-        XCTAssertFalse(source.contains(".frame(width: 70, alignment: .leading)"))
-        XCTAssertTrue(source.contains(".help(model.title)"))
-    }
-
-    func testLiveOverlayQuickActionsUseProtectedHitTargetHeight() throws {
-        let source = try sourceText("Views/LiveQuickRail+Overlays.swift")
-
-        XCTAssertTrue(source.contains(".frame(height: LiveModeLayoutMetrics.quickActionButtonHeight)"))
-        XCTAssertFalse(source.contains(".frame(height: 30)"))
     }
 
     func testAudioAndOverlaySubtitlesUseChineseCopy() throws {

@@ -10,6 +10,10 @@ final class SourceContractReductionTests: XCTestCase {
             try sourceContainsCallCount(in: "ViewModelPersistenceFacadeTests.swift"),
             27
         )
+        XCTAssertLessThanOrEqual(
+            try sourceContainsCallCount(in: "LiveModeLayoutTests.swift"),
+            44
+        )
     }
 
     private func sourceContainsCallCount(in testFile: String) throws -> Int {
