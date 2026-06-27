@@ -62,4 +62,8 @@ if [[ "$MODE" == "release" ]]; then
   [[ "$local_only_count" == "0" ]] || fail "local-only commits found"
 fi
 
+if [[ -x script/check_complexity_budget.sh ]]; then
+  script/check_complexity_budget.sh "$MODE"
+fi
+
 echo "workspace guard passed ($MODE)"
