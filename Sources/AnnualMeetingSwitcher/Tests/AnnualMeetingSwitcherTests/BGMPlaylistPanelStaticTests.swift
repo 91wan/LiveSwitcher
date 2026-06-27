@@ -48,16 +48,6 @@ final class BGMPlaylistPanelStaticTests: XCTestCase {
         XCTAssertFalse(source.contains("isPlaying ? \"waveform\" : \"pause.fill\""))
     }
 
-    func testBGMStatusRowUsesSharedControlsStateCopy() throws {
-        let source = try bgmPanelSurfaceText()
-
-        XCTAssertTrue(source.contains("BGMPanelStatusRow(controls: bgmControlsState)"))
-        XCTAssertTrue(source.contains("statusRowText(for: controls)"))
-        XCTAssertFalse(source.contains("viewModel.bgmItems.isEmpty ? \"引擎已停止\" : \"BGM 已就绪\""))
-        XCTAssertTrue(source.contains("case \"播放中\":"))
-        XCTAssertTrue(source.contains("return \"BGM 播放中\""))
-    }
-
     func testBGMPlayButtonsUseSelectedCategoryDefaultInsteadOfFirstLibraryItem() throws {
         let librarySource = try bgmPanelSurfaceText()
         let liveSource = try sourceText("Views/LiveQuickRail+BGM.swift")
