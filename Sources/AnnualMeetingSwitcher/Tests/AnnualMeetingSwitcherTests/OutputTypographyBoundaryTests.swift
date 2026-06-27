@@ -46,7 +46,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
 
     func testProjectionOutputButtonsUseSingleLineMixedScaleOperatorLabel() throws {
         let liveOps = try String(contentsOf: sourceURL("Views/LiveOpsPanel.swift"), encoding: .utf8)
-        let liveMode = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+        let liveMode = try sourceText("Views/LiveModeView.swift")
         let label = try String(contentsOf: sourceURL("Views/ProjectionOutputOperatorLabel.swift"), encoding: .utf8)
 
         XCTAssertTrue(liveOps.contains("ProjectionOutputOperatorLabel(model: model)"))
@@ -86,6 +86,25 @@ final class OutputTypographyBoundaryTests: XCTestCase {
             throw XCTSkip("Could not locate \(relativePath)")
         }
         return candidate
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot())
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+    }
+
+    private func repositoryRoot() throws -> URL {
+        var directory = URL(fileURLWithPath: #filePath)
+        while directory.pathComponents.count > 1 {
+            directory.deleteLastPathComponent()
+            let marker = directory.appendingPathComponent("script/check_release_hygiene.sh")
+            if FileManager.default.fileExists(atPath: marker.path) {
+                return directory
+            }
+        }
+        throw XCTSkip("Could not locate repository root from test source path.")
     }
 
     private func sourceRoot() throws -> URL {

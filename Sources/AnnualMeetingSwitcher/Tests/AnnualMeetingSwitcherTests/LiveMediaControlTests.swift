@@ -88,7 +88,7 @@ final class LiveMediaControlTests: XCTestCase {
     }
 
     func testLiveModeContainsReturnToStartAction() throws {
-        let source = try String(contentsOf: sourceURL("Views/LiveModeView.swift"), encoding: .utf8)
+        let source = try sourceText("Views/LiveModeView.swift")
 
         XCTAssertTrue(source.contains("returnCurrentMediaToStart"))
         XCTAssertTrue(source.contains("LiveMediaReturnToStartControlModel"))
@@ -110,5 +110,12 @@ final class LiveMediaControlTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        if isLiveModeViewSourcePath(relativePath) {
+            return try liveModeSourceTextAggregate(repositoryRoot: repositoryRoot(filePath: #filePath))
+        }
+        return try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 }
