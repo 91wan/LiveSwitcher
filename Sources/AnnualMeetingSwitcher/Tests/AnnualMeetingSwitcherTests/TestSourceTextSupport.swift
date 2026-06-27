@@ -43,3 +43,21 @@ func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
 
     return directCandidate
 }
+
+func bgmPlaylistSurfaceText(filePath: String = #filePath) throws -> String {
+    let files = [
+        "Views/BGMPlaylistPanel.swift",
+        "Views/BGM/BGMPlaylistHeader.swift",
+        "Views/BGM/BGMTransportControls.swift",
+        "Views/BGM/BGMProgressRow.swift",
+        "Views/BGM/BGMCategoryPicker.swift",
+        "Views/BGM/BGMTrackList.swift",
+        "Views/BGM/BGMTrackRow.swift",
+        "Views/BGM/BGMImportControls.swift",
+        "Views/BGM/BGMPanelStatusRow.swift"
+    ]
+
+    return try files
+        .map { try sourceText($0, filePath: filePath) }
+        .joined(separator: "\n")
+}

@@ -53,7 +53,7 @@ final class BGMCategorySelectionStateTests: XCTestCase {
             enableSystemVolumeObserver: false,
             userDefaults: defaults
         )
-        let panelSource = try sourceText("Views/BGMPlaylistPanel.swift")
+        let panelSource = try bgmPlaylistSurfaceText(filePath: #filePath)
 
         viewModel.bgmLibraryCategorySelection.selectCategory(.award)
 
