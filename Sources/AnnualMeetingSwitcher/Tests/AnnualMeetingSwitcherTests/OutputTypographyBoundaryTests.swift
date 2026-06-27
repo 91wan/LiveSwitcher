@@ -37,7 +37,7 @@ final class OutputTypographyBoundaryTests: XCTestCase {
     }
 
     func testOutputViewDoesNotAnimatePanicModeAtParentLayer() throws {
-        let source = try String(contentsOf: sourceURL("Output/OutputWindowController.swift"), encoding: .utf8)
+        let source = try String(contentsOf: sourceURL("Output/OutputView.swift"), encoding: .utf8)
         let outputView = try XCTUnwrap(source.balancedBlock(after: "struct OutputView: View"))
 
         XCTAssertFalse(outputView.contains("value: displayState.isPanicMode"))

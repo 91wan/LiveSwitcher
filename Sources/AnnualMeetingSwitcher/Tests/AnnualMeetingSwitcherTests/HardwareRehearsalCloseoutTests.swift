@@ -209,7 +209,7 @@ final class HardwareRehearsalCloseoutTests: XCTestCase {
         XCTAssertNotNil(secondImage)
         XCTAssertFalse(firstImage === secondImage)
 
-        let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let output = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputView.swift")
         let monitor = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
         let overlay = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")
 

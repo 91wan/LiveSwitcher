@@ -3,7 +3,7 @@ import XCTest
 
 final class ProgramMonitorActiveOverlayTests: XCTestCase {
     func testOutputAndProgramMonitorUseSharedActiveOverlayLayer() throws {
-        let output = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let output = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputView.swift")
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
 
         XCTAssertTrue(output.contains("ActiveProgramOverlayLayer("))
@@ -21,7 +21,7 @@ final class ProgramMonitorActiveOverlayTests: XCTestCase {
     }
 
     func testProgramMonitorOwnsLocalBlackoutStatusChromeButOutputDoesNot() throws {
-        let output = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift")
+        let output = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputView.swift")
         let monitor = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
         let blackoutOverlay = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/ProgramMonitorBlackoutOverlay.swift")
         let layer = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ActiveProgramOverlayLayer.swift")

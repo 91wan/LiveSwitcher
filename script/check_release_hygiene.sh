@@ -184,7 +184,7 @@ do
   require_literal_in_file Sources/AnnualMeetingSwitcher/build_v33.sh "$tcc_key" "$tcc_key"
 done
 
-search_pattern '#if DEBUG' Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift >/dev/null \
+search_pattern '#if DEBUG' Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputHTMLLayer.swift >/dev/null \
   || fail "WKWebView developer extras are not debug-gated"
 
 echo "release hygiene passed for $CURRENT_TAG"

@@ -89,7 +89,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
             "Views/CornerLogoCard.swift": ["struct CornerLogoCard: View"],
             "Views/CountdownOverlay.swift": ["struct CountdownOverlay: View"],
             "Views/LowerThirdOverlay.swift": ["struct TickerOverlay: View"],
-            "Output/OutputWindowController.swift": ["struct OutputView: View"]
+            "Output/OutputView.swift": ["struct OutputView: View"]
         ]
 
         for (file, declarations) in viewFiles {
