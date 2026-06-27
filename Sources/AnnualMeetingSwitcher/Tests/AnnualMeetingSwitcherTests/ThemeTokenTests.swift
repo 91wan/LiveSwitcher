@@ -12,7 +12,7 @@ final class ThemeTokenTests: XCTestCase {
     }
 
     func testStudioThemeUsesDynamicColorProvidersForConsoleTokens() throws {
-        let theme = try sourceText("Views/StudioTheme.swift")
+        let theme = try sourceText("Views/Theme/StudioTheme+Colors.swift")
 
         XCTAssertTrue(theme.contains("dynamicColor(name:"))
         XCTAssertTrue(theme.contains("NSColor(name:"))
@@ -43,7 +43,7 @@ final class ThemeTokenTests: XCTestCase {
     }
 
     func testMonitorSurfaceTokensStayHardDarkAndOutOfThemeSwitching() throws {
-        let theme = try sourceText("Views/StudioTheme.swift")
+        let theme = try sourceText("Views/Theme/StudioTheme+Colors.swift")
 
         XCTAssertTrue(theme.contains("static let monitorSurfaceTop = Color(red: 0.08, green: 0.09, blue: 0.13)"))
         XCTAssertTrue(theme.contains("static let monitorSurfaceBottom = Color(red: 0.03, green: 0.03, blue: 0.05)"))

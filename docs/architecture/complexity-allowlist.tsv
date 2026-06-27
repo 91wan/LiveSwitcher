@@ -1,6 +1,5 @@
 category	path	limit	actual	reason	target_version	owner
 top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift	300	330	legacy overlay renderer; split planned separately	v0.5.1	maintainers
-top-level-view	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StudioTheme.swift	300	564	theme token registry, not a runtime surface; split planned separately	v0.5.1	maintainers
 model-reducer	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/LivePreflight.swift	400	594	broad preflight model aggregation; split planned separately	v0.5.1	maintainers
 model-reducer	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift	400	430	central BGM runtime reducer; split planned separately	v0.5.1	maintainers
 model-reducer	Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift	400	650	central runtime reducer; split planned separately	v0.5.1	maintainers

@@ -2,7 +2,7 @@ import XCTest
 
 final class StudioThemeTokenContractTests: XCTestCase {
     func testStudioThemeUsesNestedSemanticTokenNamespaces() throws {
-        let content = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+        let content = try themeContractSurfaceText()
 
         XCTAssertTrue(content.contains("enum Tone"))
         XCTAssertTrue(content.contains("enum Action"))
@@ -17,7 +17,7 @@ final class StudioThemeTokenContractTests: XCTestCase {
     }
 
     func testStudioThemeNoLongerDefinesDecorativeColorTokens() throws {
-        let content = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+        let content = try themeContractSurfaceText()
 
         XCTAssertFalse(content.contains("static let accent"))
         XCTAssertFalse(content.contains("static let accentSecondary"))
@@ -55,18 +55,40 @@ final class StudioThemeTokenContractTests: XCTestCase {
             XCTAssertFalse(content.contains("StudioTheme.numeric()"), url.lastPathComponent)
         }
 
-        let theme = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+        let theme = try themeContractSurfaceText()
         XCTAssertTrue(theme.contains(".font(StudioTheme.TypeScale.numeric)"))
     }
 
     func testStudioThemeGenericComponentsUseTypeScaleInsteadOfRawFontViewModifiers() throws {
-        let theme = try String(contentsOf: sourceURL("Views/StudioTheme.swift"), encoding: .utf8)
+        let componentSurface = try themeComponentSurfaceText()
+        let typography = try String(contentsOf: sourceURL("Views/Theme/StudioTheme+Typography.swift"), encoding: .utf8)
 
         XCTAssertFalse(
-            theme.contains(".font(.system(size:"),
+            componentSurface.contains(".font(.system(size:"),
             "StudioTheme reusable components should use StudioTheme.TypeScale instead of raw view font literals."
         )
-        XCTAssertTrue(theme.contains("Font.system(size: 28"), "TypeScale token declarations should remain explicit.")
+        XCTAssertTrue(typography.contains("Font.system(size: 28"), "TypeScale token declarations should remain explicit.")
+    }
+
+    private func themeContractSurfaceText() throws -> String {
+        try [
+            "Views/Theme/StudioTheme+Colors.swift",
+            "Views/Theme/StudioTheme+Typography.swift",
+            "Views/Theme/StudioTheme+Layout.swift",
+            "Views/Theme/StudioTheme+Status.swift",
+            "Views/Theme/StudioTheme+Components.swift"
+        ]
+        .map { try String(contentsOf: sourceURL($0), encoding: .utf8) }
+        .joined(separator: "\n")
+    }
+
+    private func themeComponentSurfaceText() throws -> String {
+        try [
+            "Views/Theme/StudioTheme+Status.swift",
+            "Views/Theme/StudioTheme+Components.swift"
+        ]
+        .map { try String(contentsOf: sourceURL($0), encoding: .utf8) }
+        .joined(separator: "\n")
     }
 
     private func sourceFiles(under relativeDirectory: String) throws -> [URL] {
