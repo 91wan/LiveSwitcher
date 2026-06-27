@@ -16,14 +16,16 @@ final class RuntimePerformanceHygieneTests: XCTestCase {
     func testBulkProgramAndBGMImportsUseBatchAppendAPIs() throws {
         let bgmControls = try sourceText("ViewModel+BGMControls.swift")
         let programQueue = try sourceText("ViewModel+ProgramQueue.swift")
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let setupRail = try sourceText("Views/LeftPanel.swift")
+        let importDropZone = try sourceText("Views/Setup/ProgramImportDropZone.swift")
         let bgmPanel = try bgmPlaylistSurfaceText(filePath: #filePath)
 
         XCTAssertTrue(programQueue.contains("func addProgramItems(_ items: [ProgramItem])"))
         XCTAssertTrue(bgmControls.contains("func addBGMItems(_ items: [BGMItem])"))
-        XCTAssertTrue(leftPanel.contains("viewModel.addProgramItems(items)"))
+        XCTAssertTrue(setupRail.contains("onAddProgramItems: { viewModel.addProgramItems($0) }"))
+        XCTAssertTrue(importDropZone.contains("onAddProgramItems(items)"))
         XCTAssertTrue(bgmPanel.contains("viewModel.addBGMItems(importedItems)"))
-        XCTAssertFalse(leftPanel.contains("for url in panel.urls {\n                let item = ProgramItem"))
+        XCTAssertFalse(importDropZone.contains("for url in panel.urls {\n                let item = ProgramItem"))
         XCTAssertFalse(bgmPanel.contains("viewModel.addBGMItem(bgm)"))
     }
 
@@ -35,7 +37,7 @@ final class RuntimePerformanceHygieneTests: XCTestCase {
     }
 
     private func sourceText(_ relativePath: String) throws -> String {
-        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {

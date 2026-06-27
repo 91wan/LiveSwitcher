@@ -2,6 +2,10 @@ import Foundation
 import XCTest
 
 func sourceText(_ relativePath: String, filePath: String = #filePath) throws -> String {
+    if isLegacyLeftPanelPath(relativePath) {
+        return try programSetupRailSurfaceText(filePath: filePath)
+    }
+
     let root = try repositoryRoot(filePath: filePath)
     return try String(contentsOf: sourceURL(relativePath, repositoryRoot: root), encoding: .utf8)
 }
@@ -18,6 +22,11 @@ func repositoryRoot(filePath: String = #filePath) throws -> URL {
 }
 
 func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
+    if isLegacyLeftPanelPath(relativePath) {
+        return root
+            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Setup/LeftPanel.swift")
+    }
+
     let directCandidate = root.appendingPathComponent(relativePath)
     if FileManager.default.fileExists(atPath: directCandidate.path) {
         return directCandidate
@@ -42,6 +51,28 @@ func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
     }
 
     return directCandidate
+}
+
+func programSetupRailSurfaceText(filePath: String = #filePath) throws -> String {
+    let files = [
+        "Views/Setup/LeftPanel.swift",
+        "Views/Setup/ProgramRailHeader.swift",
+        "Views/Setup/ProgramRailControls.swift",
+        "Views/Setup/ProgramImportDropZone.swift",
+        "Views/Setup/ProgramQueueList.swift",
+        "Views/Setup/ProgramRailFooter.swift",
+        "Views/Setup/ProgramDropHandler.swift"
+    ]
+
+    return try files
+        .map { try sourceText($0, filePath: filePath) }
+        .joined(separator: "\n")
+}
+
+private func isLegacyLeftPanelPath(_ relativePath: String) -> Bool {
+    relativePath == "Views/LeftPanel.swift"
+        || relativePath == "Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
+        || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
 }
 
 func bgmPlaylistSurfaceText(filePath: String = #filePath) throws -> String {

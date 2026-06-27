@@ -14,7 +14,7 @@ final class ChromeQueueHelpTypographyConvergenceTests: XCTestCase {
     }
 
     private func assertUsesTypeScale(relativePath: String) throws {
-        let source = try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
+        let source = try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
 
         XCTAssertFalse(
             source.contains(".font(.system(size:"),

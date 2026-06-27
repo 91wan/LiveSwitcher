@@ -70,7 +70,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         XCTAssertFalse(source.contains("Text(\"拖入文件\")"))
         XCTAssertFalse(source.contains("Text(\"或使用上方按钮添加\")"))
         XCTAssertTrue(source.contains(".minimumScaleFactor(0.78)"))
-        XCTAssertTrue(source.contains("queueFooter"))
+        XCTAssertTrue(source.contains("ProgramRailFooter"))
     }
 
     func testProgramMonitorPreviewDeckIsExplicitlyCenteredWithoutChangingCanvas() throws {
@@ -104,7 +104,7 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         let leftPanel = try sourceText("Views/LeftPanel.swift")
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
 
-        XCTAssertTrue(leftPanel.contains("queueFooter"))
+        XCTAssertTrue(leftPanel.contains("ProgramRailFooter"))
         XCTAssertTrue(liveOps.contains("runtimeFooter"))
         XCTAssertTrue(liveOps.contains("HostSystemSummary.shortVersionString"))
         XCTAssertFalse(liveOps.contains("ProcessInfo.processInfo.operatingSystemVersionString"))
