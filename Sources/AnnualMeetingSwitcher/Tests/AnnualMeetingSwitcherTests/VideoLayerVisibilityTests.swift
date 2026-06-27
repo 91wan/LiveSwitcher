@@ -396,7 +396,7 @@ final class VideoLayerVisibilityTests: XCTestCase {
     }
 
     func testOutputVideoPlayerVisibilitySubscribesToLoadedMediaAndPlayingState() throws {
-        let source = try sourceText("Output/OutputWindowController.swift")
+        let source = try sourceText("Output/OutputVideoPlayerView.swift")
 
         XCTAssertFalse(source.contains("isHidden = !coordinator.isPlaying"))
         XCTAssertFalse(source.contains("view?.isHidden = !isPlaying"))
@@ -410,7 +410,7 @@ final class VideoLayerVisibilityTests: XCTestCase {
     }
 
     func testOutputVideoPlayerVisibilityUsesCurrentProgramSourceKindNotLoadedURL() throws {
-        let source = try sourceText("Output/OutputWindowController.swift")
+        let source = try sourceText("Output/OutputView.swift")
 
         XCTAssertTrue(source.contains("sourceKind: viewModel.currentProgramItem?.sourceKind"))
         XCTAssertFalse(source.contains("sourceKind: coordinator.currentURL.map { _ in .media }"))
@@ -418,7 +418,7 @@ final class VideoLayerVisibilityTests: XCTestCase {
     }
 
     func testOutputVideoPlayerReadsPanicStateWhenVisibilityUpdates() throws {
-        let source = try sourceText("Output/OutputWindowController.swift")
+        let source = try sourceText("Output/OutputVideoPlayerView.swift")
 
         XCTAssertTrue(source.contains("isPanicModeProvider"))
         XCTAssertTrue(source.contains("isPanicMode: isPanicModeProvider()"))
