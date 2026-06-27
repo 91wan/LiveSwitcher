@@ -2,7 +2,10 @@ import XCTest
 
 final class LiveSurfaceTypographyConvergenceTests: XCTestCase {
     func testRunQueueUsesStudioTypeScaleInsteadOfRawSystemFontLiterals() throws {
-        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/SignalSourceRow.swift")
+        try assertDoesNotUseRawSystemFont(relativePath: "Views/ProgramQueue/SignalSourceRow.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/SignalSourceRowHeader.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/SignalSourceRowStatusChips.swift")
+        try assertUsesTypeScale(relativePath: "Views/ProgramQueue/SignalSourceRowControlRail.swift")
         try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgramQueueDragHandle.swift")
         try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgramQueueNumberBadge.swift")
         try assertUsesTypeScale(relativePath: "Views/ProgramQueue/ProgressSliderRow.swift")
@@ -21,6 +24,12 @@ final class LiveSurfaceTypographyConvergenceTests: XCTestCase {
 
         XCTAssertFalse(source.contains(".font(.system(size:"))
         XCTAssertTrue(source.contains("StudioTheme.TypeScale"))
+    }
+
+    private func assertDoesNotUseRawSystemFont(relativePath: String) throws {
+        let source = try sourceText(relativePath)
+
+        XCTAssertFalse(source.contains(".font(.system(size:"))
     }
 
     private func sourceText(_ relativePath: String) throws -> String {

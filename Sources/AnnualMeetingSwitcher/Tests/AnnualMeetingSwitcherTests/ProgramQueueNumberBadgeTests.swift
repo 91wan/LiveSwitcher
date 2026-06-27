@@ -36,6 +36,7 @@ final class ProgramQueueNumberBadgeTests: XCTestCase {
     func testQueueAndLiveSourceRowsUseSharedProgramQueueNumberBadge() throws {
         let runQueueSource = [
             try sourceText("Views/ProgramQueue/SignalSourceRow.swift"),
+            try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift"),
             try sourceText("Views/ProgramQueue/ProgramQueueNumberBadge.swift")
         ].joined(separator: "\n")
         let liveSource = try sourceText("Views/LiveSourceRail.swift")

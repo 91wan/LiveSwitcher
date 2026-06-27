@@ -13,7 +13,10 @@ final class AgendaMarkerEditorSourceTests: XCTestCase {
     }
 
     func testRunQueueAndTimelineExposeMarkerEditorForExistingMarkers() throws {
-        let runQueue = try sourceText("Views/ProgramQueue/SignalSourceRow.swift")
+        let runQueue = [
+            try sourceText("Views/ProgramQueue/SignalSourceRow.swift"),
+            try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
+        ].joined(separator: "\n")
         let markerEditor = try sourceText("Views/ProgramQueue/AgendaMarkerEditorPopover.swift")
         let timeline = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/AgendaTimelineView.swift")
 
