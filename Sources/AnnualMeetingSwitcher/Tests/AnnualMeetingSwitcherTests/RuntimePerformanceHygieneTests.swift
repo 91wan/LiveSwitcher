@@ -16,9 +16,9 @@ final class RuntimePerformanceHygieneTests: XCTestCase {
     func testBulkProgramAndBGMImportsUseBatchAppendAPIs() throws {
         let bgmControls = try sourceText("ViewModel+BGMControls.swift")
         let programQueue = try sourceText("ViewModel+ProgramQueue.swift")
-        let setupRail = try sourceText("Views/LeftPanel.swift")
+        let setupRail = try sourceText("Views/Setup/LeftPanel.swift")
         let importDropZone = try sourceText("Views/Setup/ProgramImportDropZone.swift")
-        let bgmPanel = try bgmPlaylistSurfaceText(filePath: #filePath)
+        let bgmPanel = try sourceText("Views/BGMPlaylistPanel.swift")
 
         XCTAssertTrue(programQueue.contains("func addProgramItems(_ items: [ProgramItem])"))
         XCTAssertTrue(bgmControls.contains("func addBGMItems(_ items: [BGMItem])"))

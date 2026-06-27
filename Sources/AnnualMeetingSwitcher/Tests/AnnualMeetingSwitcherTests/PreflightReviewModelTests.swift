@@ -62,8 +62,8 @@ final class PreflightReviewModelTests: XCTestCase {
     }
 
     func testPopoverAndCockpitSourceUseSharedReviewModel() throws {
-        let popover = try sourceText("Views/PreflightPopoverView.swift")
-        let cockpit = try sourceText("Views/SafetyCockpitView.swift")
+        let popover = try sourceText("Views/Support/PreflightPopoverView.swift")
+        let cockpit = try sourceText("Views/Support/SafetyCockpitStatusGrid.swift")
 
         XCTAssertTrue(popover.contains("PreflightReviewModel.make("))
         XCTAssertFalse(popover.contains("LivePreflightCheck.attentionChecks(from: viewModel.livePreflightChecks)"))

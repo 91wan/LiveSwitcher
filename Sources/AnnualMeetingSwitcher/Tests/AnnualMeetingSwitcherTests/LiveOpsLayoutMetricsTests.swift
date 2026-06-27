@@ -42,7 +42,8 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
     }
 
     func testSetupRailsShareChromeMetricsAndFooterStyle() throws {
-        let leftPanel = try sourceText("Views/LeftPanel.swift")
+        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
+        let programRailFooter = try sourceText("Views/Setup/ProgramRailFooter.swift")
         let liveOps = try sourceText("Views/LiveOpsPanel.swift")
         let chrome = try sourceText("Views/SetupSideRailChrome.swift")
 
@@ -56,7 +57,8 @@ final class LiveOpsLayoutMetricsTests: XCTestCase {
 
         XCTAssertTrue(leftPanel.contains("SetupSideRailChrome"))
         XCTAssertTrue(liveOps.contains("SetupSideRailChrome"))
-        XCTAssertTrue(leftPanel.contains("SetupSideRailFooter"))
+        XCTAssertTrue(leftPanel.contains("ProgramRailFooter"))
+        XCTAssertTrue(programRailFooter.contains("SetupSideRailFooter"))
         XCTAssertTrue(liveOps.contains("SetupSideRailFooter"))
         XCTAssertFalse(leftPanel.contains(".studioCard(cornerRadius: 28)"))
     }

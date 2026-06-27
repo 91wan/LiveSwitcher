@@ -289,7 +289,10 @@ final class ProgramQueueExplicitReorderViewModelTests: XCTestCase {
 
 final class ProgramQueueExplicitReorderSourceTests: XCTestCase {
     func testLeftPanelUsesExplicitHandleDropAndSafeDeleteSnapshot() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift")
+        let source = try [
+            repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Setup/LeftPanel.swift"),
+            repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Setup/ProgramQueueList.swift")
+        ].joined(separator: "\n")
 
         XCTAssertTrue(source.contains("onHandleDragEnded:"))
         XCTAssertTrue(source.contains("@State private var programQueueRowFrames"))

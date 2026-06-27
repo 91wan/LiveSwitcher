@@ -99,7 +99,10 @@ final class OverlayLivePreviewModelTests: XCTestCase {
     }
 
     func testOverlayControlPanelUsesSharedPreviewCanvasAndPrimarySendLiveCTA() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
+        let source = try [
+            "Views/OverlayControlPanel.swift",
+            "Views/Overlays/OverlayLivePreviewColumn.swift"
+        ].map(sourceText).joined(separator: "\n")
 
         XCTAssertTrue(source.contains("OverlayLivePreviewCanvas("))
         XCTAssertFalse(source.contains("private var tickerPreview"))
@@ -110,7 +113,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
     }
 
     func testOverlayActionButtonKeepsDisabledTintHierarchy() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
+        let source = try sourceText("Views/Overlays/OverlayComposerControls.swift")
 
         XCTAssertTrue(source.contains(".foregroundStyle(isDisabled ? .white.opacity(0.55) : .white)"))
         XCTAssertTrue(source.contains(".fill(isDisabled ? fill.opacity(0.25) : fill)"))
@@ -118,7 +121,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
     }
 
     func testOverlayEmptyPreviewUsesCompactCanvasSizing() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
+        let source = try sourceText("Views/Overlays/OverlayLivePreviewColumn.swift")
 
         XCTAssertTrue(source.contains("let previewModel = livePreviewModel"))
         XCTAssertTrue(source.contains("let isEmptyPreview = previewModel.layers.isEmpty"))
@@ -127,7 +130,7 @@ final class OverlayLivePreviewModelTests: XCTestCase {
     }
 
     func testOverlayComposerTitleUsesSharedTypeScale() throws {
-        let source = try overlayControlSurfaceText(filePath: #filePath)
+        let source = try sourceText("Views/OverlayControlPanel.swift")
 
         XCTAssertTrue(source.contains(".font(StudioTheme.TypeScale.title)"))
         XCTAssertFalse(source.contains(".font(.system(size: 24, weight: .bold))"))

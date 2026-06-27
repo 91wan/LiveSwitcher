@@ -7,8 +7,8 @@ final class I18nPolicyTests: XCTestCase {
             "Views/AudioMixerView.swift",
             "Views/SettingsView.swift",
             "Models/LiveConsoleStatus.swift",
-            "Views/SafetyCockpitView.swift",
-            "Views/PreflightPopoverView.swift"
+            "Views/Support/SafetyCockpitView.swift",
+            "Views/Support/PreflightPopoverView.swift"
         ]
         let combined = try files.map(sourceText).joined(separator: "\n")
 
@@ -33,7 +33,7 @@ final class I18nPolicyTests: XCTestCase {
         XCTAssertTrue(liveMode.contains("Text(\"信号源\")"))
         XCTAssertTrue(liveMode.contains("Label(\"下一项\""))
         XCTAssertFalse(liveMode.contains("视频播毕自动下一条"))
-        XCTAssertTrue(try sourceText("Views/LeftPanel.swift").contains("自动续播下一项"))
+        XCTAssertTrue(try sourceText("Views/Setup/ProgramRailControls.swift").contains("自动续播下一项"))
         XCTAssertTrue(tabs.contains("导播台"))
         XCTAssertTrue(tabs.contains("return \"节目单\""))
         XCTAssertTrue(app.contains("Button(\"节目单\")"))
@@ -86,7 +86,10 @@ final class I18nPolicyTests: XCTestCase {
             "Views/LiveOpsPanel.swift",
             "Views/OverlayControlPanel.swift",
             "Views/AudioMixerView.swift",
-            "Views/LeftPanel.swift",
+            "Views/Setup/LeftPanel.swift",
+            "Views/Setup/ProgramRailControls.swift",
+            "Views/Setup/ProgramImportDropZone.swift",
+            "Views/Setup/ProgramRailFooter.swift",
             "Views/ProgramQueue/SignalSourceRow.swift",
             "Views/CornerLogoCard.swift",
             "Models/HelpCopyModel.swift",

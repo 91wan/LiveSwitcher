@@ -17,7 +17,7 @@ final class RunDeskInformationHierarchyTests: XCTestCase {
     }
 
     func testQueueRailNoLongerOwnsProjectionControls() throws {
-        let leftPanel = try LiveSwitcherTests.sourceText("Views/LeftPanel.swift", filePath: #filePath)
+        let leftPanel = try LiveSwitcherTests.sourceText("Views/Setup/LeftPanel.swift", filePath: #filePath)
 
         XCTAssertFalse(leftPanel.contains("outputScreenModule"))
         XCTAssertFalse(leftPanel.contains("Start Projection"))

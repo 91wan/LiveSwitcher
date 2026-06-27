@@ -31,8 +31,8 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     }
 
     func testButtonActionHelpersCallingSwitcherViewModelStayMainActorIsolated() throws {
-        let safetyCockpit = try sourceText("Views/SafetyCockpitView.swift")
-        let preflightPopover = try sourceText("Views/PreflightPopoverView.swift")
+        let safetyCockpit = try sourceText("Views/Support/SafetyCockpitView.swift")
+        let preflightPopover = try sourceText("Views/Support/PreflightPopoverView.swift")
         let toolbar = try sourceText("Views/MainToolbar.swift")
         let content = try sourceText("ContentView.swift")
 
@@ -50,7 +50,7 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
     func testSwiftFiveTenViewBoundariesStayMainActorIsolated() throws {
         let viewFiles = [
             "ContentView.swift": ["struct ContentView: View", "struct GlobalKeyMonitor: NSViewRepresentable"],
-            "Views/LeftPanel.swift": ["struct LeftPanel: View"],
+            "Views/Setup/LeftPanel.swift": ["struct LeftPanel: View"],
             "Views/ProgramMonitor/ProgramMonitorView.swift": ["struct ProgramMonitorView: View"],
             "Views/LiveModeView.swift": ["struct LiveModeView: View"],
             "Views/LiveSourceRail.swift": ["struct LiveSourceRail: View"],
@@ -59,14 +59,14 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
             "Views/LiveRuntimeStatusBar.swift": ["struct LiveRuntimeStatusBar: View"],
             "Views/LiveOpsPanel.swift": ["struct LiveOpsPanel: View"],
             "Views/MainToolbar.swift": ["struct MainToolbar: View"],
-            "Views/PreflightPopoverView.swift": [
+            "Views/Support/PreflightPopoverView.swift": [
                 "struct PreflightPopoverView: View"
             ],
             "Views/Support/PreflightCheckRow.swift": [
                 "struct PreflightGroupView: View",
                 "struct PreflightRowView: View"
             ],
-            "Views/SafetyCockpitView.swift": [
+            "Views/Support/SafetyCockpitView.swift": [
                 "struct SafetyCockpitView: View"
             ],
             "Views/Support/SafetyCockpitRiskRow.swift": [
@@ -101,12 +101,13 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
             }
         }
 
-        let preflightPopover = try sourceText("Views/PreflightPopoverView.swift")
-        let safetyCockpit = try sourceText("Views/SafetyCockpitView.swift")
+        let preflightPopover = try sourceText("Views/Support/PreflightPopoverView.swift")
+        let preflightRows = try sourceText("Views/Support/PreflightCheckRow.swift")
+        let safetyRows = try sourceText("Views/Support/SafetyCockpitRiskRow.swift")
         XCTAssertTrue(preflightPopover.contains("var onPreflightAction: @MainActor"))
         XCTAssertTrue(preflightPopover.contains("var onOpenSafetyCockpit: @MainActor"))
-        XCTAssertEqual(preflightPopover.components(separatedBy: "let onAction: @MainActor").count - 1, 2)
-        XCTAssertEqual(safetyCockpit.components(separatedBy: "let onAction: @MainActor").count - 1, 2)
+        XCTAssertEqual(preflightRows.components(separatedBy: "let onAction: @MainActor").count - 1, 2)
+        XCTAssertEqual(safetyRows.components(separatedBy: "let onAction: @MainActor").count - 1, 2)
     }
 
     func testProgramMonitorObservesAVPlayerCoordinatorBoundaryDirectly() throws {

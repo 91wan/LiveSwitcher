@@ -3,7 +3,10 @@ import XCTest
 
 final class AgendaMarkerEditorSourceTests: XCTestCase {
     func testSetupPanelAddsMarkersThroughEditorPopoverInsteadOfSilentDefault() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift")
+        let source = try [
+            sourceText("Views/Setup/LeftPanel.swift"),
+            sourceText("Views/Setup/ProgramRailControls.swift")
+        ].joined(separator: "\n")
 
         XCTAssertTrue(source.contains("Label(\"添加标记\""))
         XCTAssertTrue(source.contains("AgendaMarkerEditorPopover"))

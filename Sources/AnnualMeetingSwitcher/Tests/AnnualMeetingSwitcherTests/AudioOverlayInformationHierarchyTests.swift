@@ -98,7 +98,11 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
     }
 
     func testOverlayPageUsesSingleComposerAndActiveStackClearAction() throws {
-        let content = try overlayControlSurfaceText(filePath: #filePath)
+        let content = try [
+            "Views/OverlayControlPanel.swift",
+            "Views/Overlays/OverlayComposerPicker.swift",
+            "Views/Overlays/OverlayLivePreviewColumn.swift"
+        ].map(sourceText).joined(separator: "\n")
 
         XCTAssertTrue(content.contains("OverlayComposerKind.allCases"))
         XCTAssertTrue(content.contains("OverlayActiveStatusCard"))
@@ -117,5 +121,9 @@ final class AudioOverlayInformationHierarchyTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    }
+
+    private func sourceText(_ relativePath: String) throws -> String {
+        try String(contentsOf: sourceURL(relativePath), encoding: .utf8)
     }
 }

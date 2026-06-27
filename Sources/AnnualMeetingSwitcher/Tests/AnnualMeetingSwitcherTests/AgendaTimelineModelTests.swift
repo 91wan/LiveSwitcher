@@ -278,17 +278,20 @@ final class AgendaTimelineModelTests: XCTestCase {
     }
 
     func testRunQueueSourcesExposeAgendaTimelineUIHooks() throws {
-        let leftPanel = try sourceText("Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift")
+        let setupRail = try [
+            sourceText("Views/Setup/LeftPanel.swift"),
+            sourceText("Views/Setup/ProgramRailControls.swift")
+        ].joined(separator: "\n")
         let runQueue = [
             try sourceText("Views/ProgramQueue/SignalSourceRow.swift"),
             try sourceText("Views/ProgramQueue/SignalSourceRowHeader.swift")
         ].joined(separator: "\n")
         let liveMode = try sourceText("Sources/AnnualMeetingSwitcher/Views/LiveModeView.swift")
 
-        XCTAssertTrue(leftPanel.contains("AgendaTimelineView"))
-        XCTAssertTrue(leftPanel.contains("showAgendaTimeline"))
-        XCTAssertTrue(leftPanel.contains("到点提醒"))
-        XCTAssertTrue(leftPanel.contains("addAgendaMarker"))
+        XCTAssertTrue(setupRail.contains("AgendaTimelineView"))
+        XCTAssertTrue(setupRail.contains("showAgendaTimeline"))
+        XCTAssertTrue(setupRail.contains("到点提醒"))
+        XCTAssertTrue(setupRail.contains("addAgendaMarker"))
         XCTAssertTrue(runQueue.contains("AgendaScheduleEditorPopover"))
         XCTAssertTrue(runQueue.contains("scheduledTimeText"))
         XCTAssertTrue(liveMode.contains("AgendaReminderHost"))
