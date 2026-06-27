@@ -24,6 +24,14 @@ LiveSwitcher requires macOS 14 or later and has been tested on Apple Silicon. Ac
 
 The public build is source-available, ad-hoc signed, and not notarized. The Release workflow must read `VERSION`, require the tag version to match `VERSION`, require the tag commit to equal `origin/main`, run the release gates, package with `ditto`, verify the extracted app, and upload both the zip and checksum assets as a draft release.
 
+## Release reproducibility limits
+
+The v0.5.x release trust model is tag/main equality plus CI workflow evidence, release asset checksum verification, and extracted app verification. It does not promise byte-for-byte local rebuild reproducibility.
+
+If a local rebuild executable hash differs from the downloaded release executable hash, that mismatch must not be treated as compromised by itself. Check whether the release tag still equals `origin/main`, the CI workflow passed from that tag, the release asset checksum matches the published `.sha256`, and the extracted app metadata/signature verification still passes.
+
+Future v0.5.1+ reproducibility hardening should identify and control likely non-deterministic inputs before treating local/release executable hash identity as a gate. Known candidates include build path embedding, timestamps, resource ordering, and signing metadata.
+
 ## Release integrity audit - 2026-06-27
 
 This audit verifies the published `v0.5.0` release without changing production code.

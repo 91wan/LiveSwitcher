@@ -24,6 +24,36 @@ final class QADocumentationSimplificationTests: XCTestCase {
         XCTAssertTrue(acceptance.contains("Static evidence"))
     }
 
+    func testReleaseHygieneDocumentsV05ReproducibilityTrustModel() throws {
+        let hygiene = try repositorySource("docs/qa/release-hygiene-v0.5.0.md")
+
+        XCTAssertTrue(hygiene.contains("## Release reproducibility limits"))
+        XCTAssertTrue(hygiene.contains("tag/main equality"))
+        XCTAssertTrue(hygiene.contains("CI workflow"))
+        XCTAssertTrue(hygiene.contains("release asset checksum"))
+        XCTAssertTrue(hygiene.contains("extracted app verification"))
+        XCTAssertTrue(hygiene.contains("does not promise byte-for-byte local rebuild reproducibility"))
+        XCTAssertTrue(hygiene.contains("build path"))
+        XCTAssertTrue(hygiene.contains("timestamps"))
+        XCTAssertTrue(hygiene.contains("resource ordering"))
+        XCTAssertTrue(hygiene.contains("signing metadata"))
+        XCTAssertTrue(hygiene.contains("must not be treated as compromised by itself"))
+        XCTAssertTrue(hygiene.contains("published `.sha256`"))
+    }
+
+    func testReleaseCandidateTemplateRecordsReproducibilityEvidenceWithoutClaimingByteIdentity() throws {
+        let runbook = try repositorySource("docs/qa/release-candidate-rehearsal.md")
+
+        XCTAssertTrue(runbook.contains("## Release Reproducibility Note"))
+        XCTAssertTrue(runbook.contains("Do not require byte-for-byte local rebuild identity"))
+        XCTAssertTrue(runbook.contains("release asset checksum"))
+        XCTAssertTrue(runbook.contains("build path"))
+        XCTAssertTrue(runbook.contains("timestamps"))
+        XCTAssertTrue(runbook.contains("resource ordering"))
+        XCTAssertTrue(runbook.contains("signing metadata"))
+        XCTAssertTrue(runbook.contains("does not by itself prove compromise"))
+    }
+
     func testHardwareRehearsalCloseoutKeepsBehaviorGatesWithoutDocMatrixAssertions() throws {
         let source = try repositorySource(
             "Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/HardwareRehearsalCloseoutTests.swift"
