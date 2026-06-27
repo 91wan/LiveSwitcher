@@ -10,6 +10,9 @@ MAX_TEST_HELPER_LINES=250
 MAX_TEST_FILE_LINES=500
 MAX_SOURCE_CONTAINS_PER_TEST_FILE=15
 
+ALLOWLIST_PATH="docs/architecture/complexity-allowlist.tsv"
+ALLOWLIST_HEADER=$'category\tpath\tlimit\tactual\treason\ttarget_version\towner'
+
 fail() {
   echo "complexity budget failed: $*" >&2
   exit 1
@@ -56,61 +59,124 @@ record_violation() {
   violations=1
 }
 
+valid_category() {
+  case "$1" in
+    top-level-view|focused-subview|model-reducer|test-helper|test-file|source-contains)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+budget_limit_for_category() {
+  case "$1" in
+    top-level-view)
+      echo "$MAX_TOP_LEVEL_VIEW_LINES"
+      ;;
+    focused-subview)
+      echo "$MAX_FOCUSED_SUBVIEW_LINES"
+      ;;
+    model-reducer)
+      echo "$MAX_MODEL_REDUCER_LINES"
+      ;;
+    test-helper)
+      echo "$MAX_TEST_HELPER_LINES"
+      ;;
+    test-file)
+      echo "$MAX_TEST_FILE_LINES"
+      ;;
+    source-contains)
+      echo "$MAX_SOURCE_CONTAINS_PER_TEST_FILE"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+actual_for_category() {
+  local category="$1"
+  local path="$2"
+
+  case "$category" in
+    source-contains)
+      source_contains_count "$path"
+      ;;
+    *)
+      line_count "$path"
+      ;;
+  esac
+}
+
+validate_allowlist_manifest() {
+  [[ -f "$ALLOWLIST_PATH" ]] || fail "missing $ALLOWLIST_PATH"
+
+  local header
+  IFS= read -r header < "$ALLOWLIST_PATH" || fail "$ALLOWLIST_PATH is empty"
+  [[ "$header" == "$ALLOWLIST_HEADER" ]] || fail "$ALLOWLIST_PATH header must be: $ALLOWLIST_HEADER"
+
+  local category
+  local manifest_path
+  local limit
+  local actual
+  local reason
+  local target_version
+  local owner
+  local extra
+  local expected_limit
+  local current_actual
+  local row_count=0
+  local line_number=1
+
+  while IFS=$'\t' read -r category manifest_path limit actual reason target_version owner extra; do
+    ((line_number += 1))
+    [[ -z "$category$manifest_path$limit$actual$reason$target_version$owner${extra:-}" ]] && continue
+
+    [[ -z "${extra:-}" ]] || record_violation "allowlist columns" "$ALLOWLIST_PATH:$line_number" 8 7
+    valid_category "$category" || record_violation "allowlist category" "$ALLOWLIST_PATH:$line_number" "$category" "known category"
+    [[ -n "$manifest_path" ]] || record_violation "allowlist path" "$ALLOWLIST_PATH:$line_number" 0 "non-empty path"
+    [[ -f "$manifest_path" ]] || record_violation "allowlist path exists" "$manifest_path" 0 "tracked file"
+    [[ -n "$reason" ]] || record_violation "allowlist reason" "$manifest_path" 0 "non-empty reason"
+    [[ -n "$target_version" ]] || record_violation "allowlist target_version" "$manifest_path" 0 "non-empty target_version"
+    [[ -n "$owner" ]] || record_violation "allowlist owner" "$manifest_path" 0 "non-empty owner"
+
+    if valid_category "$category"; then
+      expected_limit="$(budget_limit_for_category "$category")"
+      if [[ "$limit" =~ ^[0-9]+$ ]]; then
+        [[ "$limit" == "$expected_limit" ]] || record_violation "$category allowlist limit" "$manifest_path" "$limit" "$expected_limit"
+      else
+        record_violation "$category allowlist limit" "$manifest_path" "$limit" "numeric"
+      fi
+
+      if [[ -f "$manifest_path" ]]; then
+        current_actual="$(actual_for_category "$category" "$manifest_path")"
+        if [[ "$actual" =~ ^[0-9]+$ ]]; then
+          [[ "$actual" == "$current_actual" ]] || record_violation "$category allowlist actual" "$manifest_path" "$actual" "$current_actual"
+        else
+          record_violation "$category allowlist actual" "$manifest_path" "$actual" "numeric"
+        fi
+      fi
+    fi
+
+    ((row_count += 1))
+  done < <(tail -n +2 "$ALLOWLIST_PATH")
+
+  ((row_count > 0)) || record_violation "allowlist rows" "$ALLOWLIST_PATH" 0 "one or more rows"
+}
+
 allow_over_budget_reason() {
   local category="$1"
   local path="$2"
 
-  awk -F '|' -v category="$category" -v path="$path" '
-    $1 == category && $2 == path {
-      print $3
+  awk -F '\t' -v category="$category" -v path="$path" '
+    NR > 1 && $1 == category && $2 == path {
+      print $5
       found = 1
     }
     END { exit found ? 0 : 1 }
-  ' <<'ALLOWLIST'
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ContentView.swift|legacy app shell and window composition; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputWindowController.swift|legacy AppKit output-window bridge; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/BGMPlaylistPanel.swift|legacy setup BGM panel; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift|legacy setup navigation panel; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LowerThirdOverlay.swift|legacy overlay renderer; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/OverlayControlPanel.swift|legacy overlay editor panel; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift|legacy preflight popover; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/SafetyCockpitView.swift|legacy safety cockpit surface; split planned separately
-top-level-view|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/StudioTheme.swift|theme token registry, not a runtime surface; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/LivePreflight.swift|broad preflight model aggregation; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift|central BGM runtime reducer; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift|central runtime reducer; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeState.swift|central runtime state model; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift|legacy BGM playback facade wiring; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Overlay.swift|legacy overlay facade wiring; split planned separately
-model-reducer|Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift|legacy root view model shell; split planned separately
-test-file|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AudioRuntimeOwnershipTests.swift|legacy runtime ownership matrix; split planned separately
-test-file|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/BGMRuntimeReducerBehaviorTests.swift|central BGM reducer behavior matrix; split planned separately
-test-file|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LivePreflightTests.swift|broad preflight behavior suite; split planned separately
-test-file|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PersistentStateRuntimeLoadBoundaryTests.swift|legacy persistence load boundary matrix; split planned separately
-test-file|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/SwitcherViewModelSmokeTests.swift|legacy integration smoke suite; split planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AppLaunchPolicyTests.swift|legacy launch source-contract coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AudioRuntimeReducerExtractionTests.swift|runtime reducer extraction contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/BGMPlaylistPanelStaticTests.swift|legacy static BGM panel coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/BGMRuntimeReducerExtractionTests.swift|runtime reducer extraction contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveBGMChooserViewTests.swift|legacy live chooser static coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeLayoutTests.swift|legacy live layout source-contract coverage; replacement in progress
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeMixerControlsTests.swift|legacy mixer source-contract coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/MediaRuntimeReducerExtractionTests.swift|runtime reducer extraction contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/OverlayLivePreviewModelTests.swift|legacy overlay static coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PersistentStateRuntimeLoadBoundaryTests.swift|legacy persistence source-contract coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PreferencesRuntimeReducerExtractionTests.swift|runtime reducer extraction contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PresentationQueryRuntimeReducerExtractionTests.swift|runtime reducer extraction contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ProgramActivationSideEffectBoundaryTests.swift|side-effect boundary contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ProgramActivationSideEffectWiringTests.swift|side-effect wiring contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/RunDeskControlConvergenceTests.swift|legacy run-desk convergence coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/RuntimeEffectInfrastructureSplitTests.swift|runtime effect split contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/VideoLayerVisibilityTests.swift|legacy video-layer source-contract coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelActionHandlerWiringTests.swift|legacy action-handler wiring contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelEncapsulationTests.swift|legacy view-model encapsulation contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelLiveOutputEncapsulationTests.swift|legacy live-output source-contract coverage; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelMainHygieneTests.swift|legacy view-model hygiene contract; replacement planned separately
-source-contains|Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelPersistenceFacadeTests.swift|legacy persistence facade contract; replacement planned separately
-ALLOWLIST
+  ' "$ALLOWLIST_PATH"
 }
 
 check_budget() {
@@ -132,17 +198,10 @@ check_budget() {
   record_violation "$category" "$path" "$actual" "$limit"
 }
 
-is_focused_subview_file() {
+is_test_helper_file() {
   case "$1" in
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramMonitor/*.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/ProgramQueue/*.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveAudioStrip.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveProgramStack.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail+BGM.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveQuickRail+Overlays.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveRuntimeStatusBar.swift|\
-    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LiveWallpaperPickerThumb.swift)
+    Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/*Support.swift|\
+    Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/RuntimeTestFactory.swift)
       return 0
       ;;
     *)
@@ -151,55 +210,29 @@ is_focused_subview_file() {
   esac
 }
 
-is_top_level_view_file() {
-  case "$1" in
+check_swift_file() {
+  local path="$1"
+  local lines
+  local source_contains
+
+  lines="$(line_count "$path")"
+
+  case "$path" in
+    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/*/*/*.swift|\
+    Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/*/*.swift)
+      check_budget "focused-subview" "$path" "$lines" "$MAX_FOCUSED_SUBVIEW_LINES"
+      ;;
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ContentView.swift|\
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/*.swift|\
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/*.swift)
-      return 0
+      check_budget "top-level-view" "$path" "$lines" "$MAX_TOP_LEVEL_VIEW_LINES"
       ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-is_model_reducer_file() {
-  case "$1" in
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/*.swift|\
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/*.swift|\
     Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel*.swift)
-      return 0
-      ;;
-    *)
-      return 1
+      check_budget "model-reducer" "$path" "$lines" "$MAX_MODEL_REDUCER_LINES"
       ;;
   esac
-}
-
-is_test_helper_file() {
-  case "$1" in
-    Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/RuntimeTestFactory.swift|\
-    Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/TestSourceTextSupport.swift|\
-    Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelRuntimeExtractionTestSupport.swift)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
-  esac
-}
-
-while IFS= read -r path; do
-  lines="$(line_count "$path")"
-
-  if is_focused_subview_file "$path"; then
-    check_budget "focused-subview" "$path" "$lines" "$MAX_FOCUSED_SUBVIEW_LINES"
-  elif is_top_level_view_file "$path"; then
-    check_budget "top-level-view" "$path" "$lines" "$MAX_TOP_LEVEL_VIEW_LINES"
-  elif is_model_reducer_file "$path"; then
-    check_budget "model-reducer" "$path" "$lines" "$MAX_MODEL_REDUCER_LINES"
-  fi
 
   if [[ "$path" == Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/*.swift ]]; then
     if is_test_helper_file "$path"; then
@@ -211,6 +244,15 @@ while IFS= read -r path; do
     source_contains="$(source_contains_count "$path")"
     check_budget "source-contains" "$path" "$source_contains" "$MAX_SOURCE_CONTAINS_PER_TEST_FILE"
   fi
+}
+
+validate_allowlist_manifest
+if (( violations != 0 )); then
+  fail "allowlist manifest is invalid"
+fi
+
+while IFS= read -r path; do
+  check_swift_file "$path"
 done < <(git ls-files '*.swift')
 
 if (( violations != 0 )); then
