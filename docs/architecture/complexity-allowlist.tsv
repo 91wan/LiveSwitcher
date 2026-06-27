@@ -20,7 +20,6 @@ source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/B
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveBGMChooserViewTests.swift	15	19	legacy live chooser static coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeLayoutTests.swift	15	84	legacy live layout source-contract coverage; replacement in progress	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeMixerControlsTests.swift	15	32	legacy mixer source-contract coverage; replacement planned separately	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/MediaRuntimeReducerExtractionTests.swift	15	28	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/OverlayLivePreviewModelTests.swift	15	19	legacy overlay static coverage; replacement in progress	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PersistentStateRuntimeLoadBoundaryTests.swift	15	16	legacy persistence source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PreferencesRuntimeReducerExtractionTests.swift	15	16	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
@@ -34,4 +33,4 @@ source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/V
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelEncapsulationTests.swift	15	49	legacy view-model encapsulation contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelLiveOutputEncapsulationTests.swift	15	25	legacy live-output source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelMainHygieneTests.swift	15	16	legacy view-model hygiene contract; replacement planned separately	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelPersistenceFacadeTests.swift	15	29	legacy persistence facade contract; replacement planned separately	v0.5.1	maintainers
+source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ViewModelPersistenceFacadeTests.swift	15	27	legacy persistence facade contract; replacement in progress	v0.5.1	maintainers

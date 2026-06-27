@@ -2,6 +2,109 @@ import XCTest
 @testable import LiveSwitcher
 
 final class MediaRuntimeReducerBehaviorTests: XCTestCase {
+    func testTogglePlaybackPausesPlayingMediaAndAppliesRouting() {
+        var state = mediaState(mediaPlaying: true)
+        state.media.didPlayToEnd = false
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.togglePlayback(
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertFalse(state.media.isPlaying)
+        XCTAssertFalse(state.audio.routingContext.isMediaPlaying)
+        XCTAssertTrue(effects.contains(.pauseMedia(generation: 3)))
+        XCTAssertTrue(effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testRestartCurrentResetsEndedMediaAndStartsPlayback() {
+        var state = mediaState(mediaPlaying: false)
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.restartCurrent(
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertFalse(state.media.didPlayToEnd)
+        XCTAssertEqual(state.media.currentTime, 0)
+        XCTAssertTrue(state.media.isPlaying)
+        XCTAssertTrue(effects.contains(.restartMedia(generation: 3)))
+        XCTAssertTrue(effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testSeekCurrentToEndUsesKnownDuration() {
+        var state = mediaState()
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.seekCurrentToEnd(state: &state, effects: &effects)
+
+        XCTAssertFalse(state.media.didPlayToEnd)
+        XCTAssertEqual(state.media.currentTime, 30)
+        XCTAssertTrue(effects.contains(.seekMediaToEnd(generation: 3)))
+    }
+
+    func testStopCurrentClearsLoadedMediaAndAdvancesGeneration() {
+        var state = mediaState(mediaPlaying: true)
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.stopCurrent(
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertNil(state.media.loadedURL)
+        XCTAssertFalse(state.media.isPlaying)
+        XCTAssertFalse(state.media.didPlayToEnd)
+        XCTAssertEqual(state.media.currentTime, 0)
+        XCTAssertNil(state.media.duration)
+        XCTAssertEqual(state.media.generation, 4)
+        XCTAssertTrue(effects.contains(.stopMedia(generation: 4)))
+        XCTAssertTrue(effects.contains(.applyAudioRouting(reason: .mediaPlaybackChanged)))
+    }
+
+    func testPauseForPanicPausesMatchingGenerationAndAppliesPanicRouting() {
+        var state = mediaState(mediaPlaying: true)
+        state.media.didPlayToEnd = false
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.pauseForPanic(
+            generation: 3,
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertFalse(state.media.isPlaying)
+        XCTAssertFalse(state.audio.routingContext.isMediaPlaying)
+        XCTAssertTrue(effects.contains(.pauseMedia(generation: 3)))
+        XCTAssertTrue(effects.contains(.applyAudioRouting(reason: .panicChanged)))
+    }
+
+    func testResumeAfterPanicRestartsMediaFromMutedVolume() {
+        var state = mediaState(mediaPlaying: false)
+        state.media.didPlayToEnd = true
+        state.panic.isActive = false
+        var effects: [LiveRuntimeEffect] = []
+
+        MediaRuntimeReducer.resumeAfterPanic(
+            generation: 3,
+            state: &state,
+            effects: &effects,
+            speakerModeDuckedRatio: AudioRoutingDefaults.speakerModeDuckedRatio
+        )
+
+        XCTAssertTrue(state.media.isPlaying)
+        XCTAssertFalse(state.media.didPlayToEnd)
+        XCTAssertTrue(effects.contains(.setMediaVolume(0, fade: 0, generation: 3)))
+        XCTAssertTrue(effects.contains(.playMedia(generation: 3)))
+        XCTAssertTrue(effects.contains(.applyAudioRouting(reason: .panicChanged)))
+    }
+
     func testMediaLoadedStoresURLWhenGenerationMatches() {
         var state = mediaState()
         let url = URL(fileURLWithPath: "/tmp/new-video.mp4")
