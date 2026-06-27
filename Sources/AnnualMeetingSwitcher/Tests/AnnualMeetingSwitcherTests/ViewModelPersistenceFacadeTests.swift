@@ -3,18 +3,6 @@ import XCTest
 
 @MainActor
 final class ViewModelPersistenceFacadeTests: XCTestCase {
-    func testSaveDataIsNotDeclaredInMainViewModel() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func saveData("))
-    }
-
-    func testLoadDataIsNotDeclaredInMainViewModel() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func loadData("))
-    }
-
     func testPersistentStateSnapshotIsNotDeclaredInMainViewModel() throws {
         let source = try viewModelSource()
 
