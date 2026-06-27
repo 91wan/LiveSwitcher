@@ -90,6 +90,7 @@ English maintainer note: `v0.5.0` freezes the current runtime ownership architec
 当前验收入口：
 
 - [Release Candidate 演练](docs/qa/release-candidate-rehearsal.md)
+- [v0.5.0 发布验收记录](docs/qa/release-acceptance-v0.5.0.md)
 - [v0.5.0 发布卫生检查](docs/qa/release-hygiene-v0.5.0.md)
 - [v0.5.0 工作区门禁](docs/qa/workspace-guard-v0.5.0.md)
 - [当前 UI 验证](docs/qa/ui-current-main.md)

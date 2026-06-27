@@ -88,6 +88,7 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 Related guides:
 
 - [Release Candidate rehearsal](docs/qa/release-candidate-rehearsal.md)
+- [v0.5.0 release acceptance](docs/qa/release-acceptance-v0.5.0.md)
 - [v0.5.0 release hygiene](docs/qa/release-hygiene-v0.5.0.md)
 - [v0.5.0 workspace guard](docs/qa/workspace-guard-v0.5.0.md)
 - [Current UI verification](docs/qa/ui-current-main.md)
