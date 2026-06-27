@@ -120,7 +120,7 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
         viewModel.toggleBGM(item)
 
         viewModel.dispatchRuntimeFacadeAction(.operatorStoppedBGM)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.08))
+        runMainLoop(until: { viewModel.bgmFallbackPlayer.currentItem == nil })
 
         XCTAssertEqual(viewModel.currentBGMItem?.id, item.id)
         XCTAssertFalse(viewModel.isBGMPlaying)
@@ -175,6 +175,13 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
             .appendingPathExtension(ext)
         try Data("not-a-decodable-audio-fixture".utf8).write(to: url)
         return url
+    }
+
+    private func runMainLoop(until condition: () -> Bool, timeout: TimeInterval = 1.0) {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() && Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+        }
     }
 
     private func functionBody(named name: String, in source: String) throws -> String {
