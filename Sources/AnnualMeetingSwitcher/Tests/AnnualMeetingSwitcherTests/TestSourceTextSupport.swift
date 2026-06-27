@@ -5,6 +5,9 @@ func sourceText(_ relativePath: String, filePath: String = #filePath) throws -> 
     if isLegacyLeftPanelPath(relativePath) {
         return try programSetupRailSurfaceText(filePath: filePath)
     }
+    if isLegacyPreflightPopoverPath(relativePath) {
+        return try preflightPopoverSurfaceText(filePath: filePath)
+    }
 
     let root = try repositoryRoot(filePath: filePath)
     return try String(contentsOf: sourceURL(relativePath, repositoryRoot: root), encoding: .utf8)
@@ -25,6 +28,10 @@ func sourceURL(_ relativePath: String, repositoryRoot root: URL) -> URL {
     if isLegacyLeftPanelPath(relativePath) {
         return root
             .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Setup/LeftPanel.swift")
+    }
+    if isLegacyPreflightPopoverPath(relativePath) {
+        return root
+            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/Support/PreflightPopoverView.swift")
     }
 
     let directCandidate = root.appendingPathComponent(relativePath)
@@ -73,6 +80,27 @@ private func isLegacyLeftPanelPath(_ relativePath: String) -> Bool {
     relativePath == "Views/LeftPanel.swift"
         || relativePath == "Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
         || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/LeftPanel.swift"
+}
+
+func preflightPopoverSurfaceText(filePath: String = #filePath) throws -> String {
+    let files = [
+        "Views/Support/PreflightPopoverView.swift",
+        "Views/Support/PreflightSummaryHeader.swift",
+        "Views/Support/PreflightCheckList.swift",
+        "Views/Support/PreflightCheckRow.swift",
+        "Views/Support/PreflightPermissionSection.swift",
+        "Views/Support/PreflightSupportActions.swift"
+    ]
+
+    return try files
+        .map { try sourceText($0, filePath: filePath) }
+        .joined(separator: "\n")
+}
+
+private func isLegacyPreflightPopoverPath(_ relativePath: String) -> Bool {
+    relativePath == "Views/PreflightPopoverView.swift"
+        || relativePath == "Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift"
+        || relativePath == "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Views/PreflightPopoverView.swift"
 }
 
 func bgmPlaylistSurfaceText(filePath: String = #filePath) throws -> String {

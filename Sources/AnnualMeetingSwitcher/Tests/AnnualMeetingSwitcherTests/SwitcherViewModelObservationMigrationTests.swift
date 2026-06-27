@@ -60,9 +60,11 @@ final class SwitcherViewModelObservationMigrationTests: XCTestCase {
             "Views/LiveOpsPanel.swift": ["struct LiveOpsPanel: View"],
             "Views/MainToolbar.swift": ["struct MainToolbar: View"],
             "Views/PreflightPopoverView.swift": [
-                "struct PreflightPopoverView: View",
-                "private struct PreflightGroupView: View",
-                "private struct PreflightRowView: View"
+                "struct PreflightPopoverView: View"
+            ],
+            "Views/Support/PreflightCheckRow.swift": [
+                "struct PreflightGroupView: View",
+                "struct PreflightRowView: View"
             ],
             "Views/SafetyCockpitView.swift": [
                 "struct SafetyCockpitView: View",
