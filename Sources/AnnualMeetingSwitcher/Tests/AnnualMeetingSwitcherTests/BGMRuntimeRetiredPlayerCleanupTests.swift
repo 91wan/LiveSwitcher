@@ -116,7 +116,7 @@ final class BGMRuntimeRetiredPlayerCleanupTests: XCTestCase {
     }
 
     func testReleaseRetiredBGMPlayerAfterFadeDoesNotGuardOnCurrentGeneration() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try sourceText("BGMPlayback/BGMPlayerFade.swift")
         let body = try functionBody(named: "releaseRetiredBGMPlayerAfterFade", in: source)
 
         XCTAssertFalse(body.contains("runtime.state.bgm.generation"))
@@ -124,7 +124,7 @@ final class BGMRuntimeRetiredPlayerCleanupTests: XCTestCase {
     }
 
     func testCurrentBGMFadeHelperDoesGuardOnGeneration() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try sourceText("BGMPlayback/BGMPlayerFade.swift")
         let body = try functionBody(named: "fadeCurrentBGMPlayerVolume", in: source)
 
         XCTAssertTrue(body.contains("runtime.state.bgm.generation"))

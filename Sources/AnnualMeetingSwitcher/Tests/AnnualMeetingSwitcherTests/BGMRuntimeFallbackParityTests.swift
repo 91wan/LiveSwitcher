@@ -128,7 +128,7 @@ final class BGMRuntimeFallbackParityTests: XCTestCase {
     }
 
     func testFallbackBGMStopDoesNotRequireCurrentItemNil() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try sourceText("BGMPlayback/BGMPlayerFade.swift")
         let body = try functionBody(named: "releaseBGMFallbackAfterFade", in: source)
 
         XCTAssertFalse(body.contains("currentBGMItem == nil"))

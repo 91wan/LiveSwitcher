@@ -57,20 +57,25 @@ final class BGMPlaybackEndPolicyTests: XCTestCase {
     }
 
     func testViewModelUsesEndPolicyFromProgressTimerAndNewPlayers() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let progressSource = try sourceText("BGMPlayback/BGMPlayerProgress.swift")
+        let preparationSource = try sourceText("BGMPlayback/BGMPlayerPreparation.swift")
         let controls = try sourceText("ViewModel+BGMControls.swift")
-        let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
-        let prepareBody = try XCTUnwrap(source.functionBody(named: "prepareRuntimeBGM"))
+        let updateBody = try XCTUnwrap(progressSource.functionBody(named: "updateBGMProgress"))
+        let prepareBody = try XCTUnwrap(preparationSource.functionBody(named: "prepareRuntimeBGMPlayer"))
 
         XCTAssertTrue(updateBody.contains("finishBGMIfProgressReachedEnd"))
-        XCTAssertTrue(source.contains("BGMPlaybackEndPolicy.shouldTreatAsFinished"))
-        XCTAssertTrue(source.contains("bgmAudioPlayer?.delegate = nil"))
+        XCTAssertTrue(progressSource.contains("BGMPlaybackEndPolicy.shouldTreatAsFinished"))
+        XCTAssertTrue(progressSource.contains("bgmAudioPlayer?.delegate = nil"))
         XCTAssertTrue(prepareBody.contains("BGMPlaybackEndPolicy.numberOfLoops(for: runtime.state.bgm.playMode)"))
         XCTAssertTrue(controls.contains(".operatorSelectedBGMPlayMode(bgmPlayMode)"))
     }
 
     func testBGMPauseFadeTasksAreGenerationGuarded() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try [
+            "ViewModel+BGMRuntimePlayback.swift",
+            "BGMPlayback/BGMPlayerPreparation.swift",
+            "BGMPlayback/BGMFallbackPlayerBridge.swift"
+        ].map(sourceText).joined(separator: "\n")
         let facade = try sourceText("ViewModel+RuntimeFacade.swift")
 
         XCTAssertTrue(source.contains("func prepareRuntimeBGM(_ item: BGMItem, generation: Int)"))

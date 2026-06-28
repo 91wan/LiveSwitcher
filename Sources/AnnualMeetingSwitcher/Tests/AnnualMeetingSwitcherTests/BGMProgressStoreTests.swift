@@ -56,15 +56,15 @@ final class BGMProgressStoreTests: XCTestCase {
 
     func testViewModelNoLongerPublishesBGMProgressTriplet() throws {
         let viewModel = try sourceText("ViewModel.swift")
-        let playback = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let playbackProgress = try sourceText("BGMPlayback/BGMPlayerProgress.swift")
 
         XCTAssertFalse(viewModel.contains("@Published var bgmProgress: Double"))
         XCTAssertFalse(viewModel.contains("@Published var bgmCurrentTime: Double"))
         XCTAssertFalse(viewModel.contains("@Published var bgmDuration: Double?"))
         XCTAssertFalse(viewModel.contains("@Published var bgmRealtimeLevelDB"))
-        XCTAssertFalse(playback.contains("withTimeInterval: 1.0 / 30.0"))
+        XCTAssertFalse(playbackProgress.contains("withTimeInterval: 1.0 / 30.0"))
         XCTAssertTrue(viewModel.contains("let bgmProgressStore = BGMProgressStore()"))
-        XCTAssertTrue(playback.contains("withTimeInterval: BGMProgressStore.updateInterval"))
+        XCTAssertTrue(playbackProgress.contains("withTimeInterval: BGMProgressStore.updateInterval"))
     }
 
     func testBGMPlaylistProgressBarObservesDedicatedStore() throws {
@@ -79,7 +79,10 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testBGMSwitchingUsesOwnedFadeTransitionInsteadOfImmediateHardStop() throws {
-        let playback = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let playback = try [
+            "BGMPlayback/BGMPlayerFade.swift",
+            "BGMPlayback/BGMFallbackPlayerBridge.swift"
+        ].map(sourceText).joined(separator: "\n")
         let cleanupBag = try sourceText("Models/ViewModelCleanupBag.swift")
         let controls = try sourceText("ViewModel+BGMControls.swift")
 
@@ -100,7 +103,7 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testFallbackBGMProgressTimerSamplesFallbackPlayerTime() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try sourceText("BGMPlayback/BGMPlayerProgress.swift")
         let updateBody = try XCTUnwrap(source.functionBody(named: "updateBGMProgress"))
 
         XCTAssertTrue(updateBody.contains("bgmFallbackPlayer.currentTime()"))
@@ -109,11 +112,11 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testBGMSeekUsesFallbackDurationPolicyForAVPlayerFallbackItems() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
-        let seekBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGM(toProgress"))
+        let source = try sourceText("BGMPlayback/BGMPlayerProgress.swift")
+        let seekBody = try XCTUnwrap(source.functionBody(named: "seekRuntimeBGMProgress"))
         let beginningBody = try XCTUnwrap(source.functionBody(named: "seekCurrentRuntimeBGMToBeginning"))
 
-        XCTAssertTrue(source.contains("private func fallbackBGMKnownDuration()"))
+        XCTAssertTrue(source.contains("func fallbackBGMKnownDuration()"))
         XCTAssertTrue(source.contains("BGMFallbackDurationPolicy.knownDuration"))
         XCTAssertTrue(source.contains("bgmFallbackPlayer.currentItem?.duration.seconds"))
         XCTAssertTrue(seekBody.contains("fallbackBGMKnownDuration()"))
@@ -121,8 +124,8 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testBGMProgressTimerIgnoresStaleTransitionGeneration() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
-        let startBody = try XCTUnwrap(source.functionBody(named: "startBGMTimer(generation: Int)"))
+        let source = try sourceText("BGMPlayback/BGMPlayerProgress.swift")
+        let startBody = try XCTUnwrap(source.functionBody(named: "startRuntimeBGMTimer"))
 
         XCTAssertTrue(startBody.contains("self.activeBGMTimerGenerationForRuntime() == generation"))
         XCTAssertTrue(startBody.contains("updateBGMProgress(generation: generation)"))
@@ -146,7 +149,10 @@ final class BGMProgressStoreTests: XCTestCase {
 
     func testStoppingBGMUsesSingleRoutingFadeBeforePausing() throws {
         let controls = try sourceText("ViewModel+BGMControls.swift")
-        let playback = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let playback = try [
+            "BGMPlayback/BGMPlayerFade.swift",
+            "BGMPlayback/BGMPlayerTransport.swift"
+        ].map(sourceText).joined(separator: "\n")
         let audioRouting = try sourceText("ViewModel+AudioRouting.swift")
         let toggleBody = try XCTUnwrap(controls.functionBody(named: "toggleBGM"))
 
@@ -166,7 +172,7 @@ final class BGMProgressStoreTests: XCTestCase {
     }
 
     func testBGMReleaseUsesCompletionPolicySettleDelay() throws {
-        let source = try sourceText("ViewModel+BGMRuntimePlayback.swift")
+        let source = try sourceText("BGMPlayback/BGMPlayerFade.swift")
         let playerReleaseBody = try XCTUnwrap(source.functionBody(named: "releaseRetiredBGMPlayerAfterFade"))
         let fallbackReleaseBody = try XCTUnwrap(source.functionBody(named: "releaseBGMFallbackAfterFade"))
 
