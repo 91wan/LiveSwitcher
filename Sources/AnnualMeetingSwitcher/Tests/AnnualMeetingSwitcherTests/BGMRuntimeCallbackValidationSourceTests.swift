@@ -195,7 +195,9 @@ final class BGMRuntimeCallbackValidationSourceTests: XCTestCase {
     }
 
     func testBGMCallbackValidationSourceUsesRuntimeBackedHelpers() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeIdentity.swift"
+        )
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "validatedRuntimeBGMCallbackGeneration"))
         let store = try sourceText(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"

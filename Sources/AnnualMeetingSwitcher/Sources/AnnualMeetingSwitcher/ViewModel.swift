@@ -30,7 +30,7 @@ final class SwitcherViewModel {
 
     private(set) var currentProgramItem: ProgramItem?
     private(set) var currentProgramSwitchedAt: Date?
-    @ObservationIgnored private var runtimeIdentityStore = ViewModelRuntimeIdentityStore()
+    @ObservationIgnored var runtimeIdentityStore = ViewModelRuntimeIdentityStore()
     var needsMutedMediaStartupAfterClearedProgram = false
     private(set) var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
@@ -231,7 +231,7 @@ final class SwitcherViewModel {
 
     // MARK: - 推流窗口
 
-    @ObservationIgnored private var projectionOutputStore = ViewModelProjectionOutputStore()
+    @ObservationIgnored var projectionOutputStore = ViewModelProjectionOutputStore()
     var externalScreenProvider: () -> NSScreen? = {
         SecondScreenSelector.pickExternal()
     } {
@@ -251,8 +251,8 @@ final class SwitcherViewModel {
 
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
-    private var bgmTransitionGeneration: Int = 0
-    @ObservationIgnored private var activeBGMTimerGeneration: Int?
+    var bgmTransitionGeneration: Int = 0
+    @ObservationIgnored var activeBGMTimerGeneration: Int?
     var agendaReminderAcknowledgedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -262,9 +262,9 @@ final class SwitcherViewModel {
     @ObservationIgnored var testHooks = SwitcherViewModelTestHooks()
     @ObservationIgnored var runtimeFacadeDispatchSuppressionDepth = 0
 
-    @ObservationIgnored private var pageInterceptStore = ViewModelPageInterceptStore()
-    nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
-    nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()
+    @ObservationIgnored var pageInterceptStore = ViewModelPageInterceptStore()
+    nonisolated let pageInterceptRuntime = PageInterceptRuntime()
+    nonisolated let wpsApplicationMonitor = WPSApplicationMonitor()
 
     // MARK: - V21 Fix #1: BGM Delegate（持有 delegate 防止 ARC 释放）
     let bgmDelegate = BGMPlayerDelegate()
@@ -319,174 +319,8 @@ final class SwitcherViewModel {
         supportEvents = events
     }
 
-    func setActiveRuntimeMediaCallbackIdentity(generation: Int, url: URL) {
-        runtimeIdentityStore.setActiveMedia(generation: generation, url: url)
-    }
-
-    func clearActiveRuntimeMediaCallbackIdentity(ifGeneration generation: Int) {
-        runtimeIdentityStore.clearActiveMedia(ifGeneration: generation)
-    }
-
-    func validatedRuntimeMediaCallbackGeneration() -> Int? {
-        runtimeIdentityStore.validatedMediaGeneration(
-            runtimeGeneration: runtimeBackedMediaGenerationForCallbackValidation,
-            currentProgram: runtimeBackedCurrentProgramForMediaCallbackValidation,
-            currentMediaURL: avCoordinator.currentURL
-        )
-    }
-
-    private var runtimeBackedCurrentProgramForMediaCallbackValidation: ProgramItem? {
-        runtime.bridgeMode.owns(.programSelection)
-            ? runtime.state.program.effectiveCurrentItem
-            : currentProgramItem
-    }
-
-    private var runtimeBackedMediaGenerationForCallbackValidation: Int? {
-        runtime.bridgeMode.owns(.media)
-            ? runtime.state.media.generation
-            : nil
-    }
-
-    func setActiveRuntimeBGMCallbackIdentity(item: BGMItem, generation: Int) {
-        runtimeIdentityStore.setActiveBGM(item: item, generation: generation)
-    }
-
-    func clearActiveRuntimeBGMCallbackIdentity() {
-        runtimeIdentityStore.clearActiveBGM()
-    }
-
-    func validatedRuntimeBGMCallbackGeneration() -> Int? {
-        runtimeIdentityStore.validatedBGMGeneration(
-            runtimeGeneration: runtimeBackedBGMGenerationForCallbackValidation,
-            currentItem: runtimeBackedCurrentBGMItemForCallbackValidation
-        )
-    }
-
-    private var runtimeBackedCurrentBGMItemForCallbackValidation: BGMItem? {
-        runtime.bridgeMode.owns(.bgm)
-            ? runtime.state.bgm.currentItem
-            : currentBGMItem
-    }
-
-    private var runtimeBackedBGMGenerationForCallbackValidation: Int? {
-        runtime.bridgeMode.owns(.bgm)
-            ? runtime.state.bgm.generation
-            : nil
-    }
-
-    func includeTransientRuntimeBGMItem(_ item: BGMItem) {
-        runtimeIdentityStore.includeTransientBGMItem(item)
-    }
-
-    func clearTransientRuntimeBGMItemIfNeeded(_ item: BGMItem) {
-        runtimeIdentityStore.clearTransientBGMItemIfNeeded(item)
-    }
-
-    func runtimeBGMItemsForSnapshot() -> [BGMItem] {
-        runtimeIdentityStore.runtimeBGMItems(
-            libraryItems: bgmItems,
-            runtimeCurrentItem: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.currentItem : nil,
-            facadeCurrentItem: currentBGMItem
-        )
-    }
-
-    var isPageInterceptEventTapActiveForRuntimeSnapshot: Bool {
-        pageInterceptStore.isPageInterceptEventTapActive
-    }
-
     func updateExternalDisplayAvailabilityForProjection(_ isAvailable: Bool) {
         isExternalDisplayAvailable = isAvailable
-    }
-
-    func makeOutputWindowControllerForProjection() -> OutputWindowControlling {
-        projectionOutputStore.makeOutputWindowController(factory: outputWindowControllerFactory)
-    }
-
-    func currentOutputWindowControllerForProjection() -> OutputWindowControlling? {
-        projectionOutputStore.currentOutputWindowController()
-    }
-
-    func setOutputWindowControllerForProjection(_ controller: OutputWindowControlling?) {
-        projectionOutputStore.setOutputWindowController(controller)
-    }
-
-    func clearOutputWindowControllerForProjection() {
-        projectionOutputStore.clearOutputWindowController()
-    }
-
-    func currentPageInterceptTapForRuntime() -> CFMachPort? {
-        pageInterceptStore.currentPageInterceptTap()
-    }
-
-    func currentPageInterceptRunLoopSourceForRuntime() -> CFRunLoopSource? {
-        pageInterceptStore.currentPageInterceptRunLoopSource()
-    }
-
-    func installPageInterceptTapForRuntime(
-        tap: CFMachPort,
-        source: CFRunLoopSource,
-        refcon: UnsafeMutableRawPointer
-    ) {
-        pageInterceptStore.installPageInterceptTap(tap: tap, source: source, refcon: refcon)
-    }
-
-    func clearPageInterceptTapForRuntime() {
-        if let refcon = pageInterceptStore.clearPageInterceptTap() {
-            Unmanaged<SwitcherViewModel>.fromOpaque(refcon).release()
-        }
-        updatePageInterceptRuntimeTap(nil)
-    }
-
-    func enableCurrentPageInterceptTapForRuntime() {
-        pageInterceptStore.enableCurrentPageInterceptTap()
-    }
-
-    func disableCurrentPageInterceptTapForRuntime() {
-        pageInterceptStore.disableCurrentPageInterceptTap()
-    }
-
-    nonisolated func updatePageInterceptRuntimeTap(_ tap: CFMachPort?) {
-        pageInterceptRuntime.updateEventTap(tap)
-    }
-
-    nonisolated func reenablePageInterceptRuntimeTap() -> Bool {
-        pageInterceptRuntime.reenableEventTap()
-    }
-
-    nonisolated func currentWPSProcessIdentifierForPageForwarding() -> pid_t? {
-        wpsApplicationMonitor.currentProcessIdentifier
-    }
-
-    func setPendingPPTToggleSource(_ source: PPTModeToggleSource?) {
-        pageInterceptStore.setPendingPPTToggleSource(source)
-    }
-
-    func consumePendingPPTToggleSource() -> PPTModeToggleSource? {
-        pageInterceptStore.consumePendingPPTToggleSource()
-    }
-
-    func currentPendingPPTToggleSource() -> PPTModeToggleSource? {
-        pageInterceptStore.currentPendingPPTToggleSource()
-    }
-
-    func setBGMTransitionGenerationForRuntime(_ generation: Int) {
-        bgmTransitionGeneration = generation
-    }
-
-    func incrementBGMTransitionGenerationForRuntime() {
-        bgmTransitionGeneration += 1
-    }
-
-    func currentBGMTransitionGenerationForRuntime() -> Int {
-        bgmTransitionGeneration
-    }
-
-    func setActiveBGMTimerGenerationForRuntime(_ generation: Int?) {
-        activeBGMTimerGeneration = generation
-    }
-
-    func activeBGMTimerGenerationForRuntime() -> Int? {
-        activeBGMTimerGeneration
     }
 
     func applyLastAudioRoutingTransitionFromRuntime(_ transition: AudioRoutingTransition?) {
@@ -495,61 +329,6 @@ final class SwitcherViewModel {
 
     func storeMediaPlaybackCancellable(_ cancellable: AnyCancellable) {
         cancellables.insert(cancellable)
-    }
-
-    func resetLastAudioRoutingTransitionForTesting() {
-        applyLastAudioRoutingTransitionFromRuntime(nil)
-    }
-
-    var activeRuntimeMediaCallbackGenerationForTesting: Int? {
-        runtimeIdentityStore.activeMediaGeneration
-    }
-
-    var activeRuntimeMediaCallbackURLForTesting: URL? {
-        runtimeIdentityStore.activeMediaURL
-    }
-
-    var bgmTransitionGenerationForTesting: Int {
-        bgmTransitionGeneration
-    }
-
-    var bgmProgressTimerForTesting: Timer? {
-        cleanupBag.bgmProgressTimer
-    }
-
-    var activeBGMTimerGenerationForTesting: Int? {
-        activeBGMTimerGeneration
-    }
-
-    var activeRuntimeBGMCallbackGenerationForTesting: Int? {
-        runtimeIdentityStore.activeBGMGeneration
-    }
-
-    var activeRuntimeBGMCallbackItemIDForTesting: UUID? {
-        runtimeIdentityStore.activeBGMItemID
-    }
-
-    var activeRuntimeBGMCallbackURLForTesting: URL? {
-        runtimeIdentityStore.activeBGMURL
-    }
-
-    func seedActiveRuntimeBGMCallbackForTesting(item: BGMItem, generation: Int) {
-        setActiveRuntimeBGMCallbackIdentity(item: item, generation: generation)
-    }
-
-    func invalidateBGMTransitionGeneration() {
-        incrementBGMTransitionGenerationForRuntime()
-    }
-
-    var projectionService: ProjectionService {
-        ProjectionService(
-            externalScreenProvider: externalScreenProvider,
-            hasExternalDisplaySnapshot: isExternalDisplayAvailable
-        )
-    }
-
-    var hasExternalDisplay: Bool {
-        isExternalDisplayAvailable
     }
 
     // MARK: - Tier1: 紧急切黑 State

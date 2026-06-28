@@ -49,12 +49,17 @@ final class ViewModelMainHygieneTests: XCTestCase {
         XCTAssertNil(viewModel.currentPendingPPTToggleSource())
     }
 
-    func testPrivateBridgeAccessorBlockIsAllowedInMainViewModel() throws {
+    func testRuntimeIdentityAccessorsLiveInFocusedExtension() throws {
         let source = try viewModelSource()
+        let runtimeIdentitySource = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeIdentity.swift"
+        )
 
-        XCTAssertTrue(source.contains("func setActiveRuntimeMediaCallbackIdentity("))
-        XCTAssertTrue(source.contains("func validatedRuntimeBGMCallbackGeneration()"))
-        XCTAssertTrue(source.contains("var runtimeSpeakerModeDuckedRatio"))
+        XCTAssertNil(source.range(of: "func setActiveRuntimeMediaCallbackIdentity("))
+        XCTAssertNil(source.range(of: "func validatedRuntimeBGMCallbackGeneration()"))
+        XCTAssertNotNil(runtimeIdentitySource.range(of: "func setActiveRuntimeMediaCallbackIdentity("))
+        XCTAssertNotNil(runtimeIdentitySource.range(of: "func validatedRuntimeBGMCallbackGeneration()"))
+        XCTAssertNotNil(source.range(of: "var runtimeSpeakerModeDuckedRatio"))
     }
 
     func testPrivateStorageRemainsEncapsulatedBehindMainViewModelStore() throws {
@@ -63,7 +68,7 @@ final class ViewModelMainHygieneTests: XCTestCase {
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"
         )
 
-        XCTAssertNotNil(source.range(of: "@ObservationIgnored private var runtimeIdentityStore"))
+        XCTAssertNotNil(source.range(of: "@ObservationIgnored var runtimeIdentityStore"))
         XCTAssertNil(source.range(of: "@ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks"))
         XCTAssertNil(source.range(of: "@ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks"))
         XCTAssertNotNil(store.range(of: "private(set) var activeMediaGeneration"))
@@ -119,6 +124,26 @@ final class ViewModelMainHygieneTests: XCTestCase {
         }
     }
 
+    func testRootViewModelShellIsUnderBudgetAndRemovedFromAllowlist() throws {
+        let source = try viewModelSource()
+        let allowlist = try sourceText("docs/architecture/complexity-allowlist.tsv")
+
+        XCTAssertLessThan(source.split(separator: "\n", omittingEmptySubsequences: false).count, 400)
+        XCTAssertNil(allowlist.range(of: "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift"))
+    }
+
+    func testFocusedViewModelExtensionFilesStayUnderBudget() throws {
+        for path in focusedExtensionPaths {
+            let source = try sourceText(path)
+            XCTAssertLessThan(
+                source.split(separator: "\n", omittingEmptySubsequences: false).count,
+                400,
+                path
+            )
+            XCTAssertNotNil(source.range(of: "extension SwitcherViewModel"), path)
+        }
+    }
+
     private func makeViewModel(runtime: LiveRuntimeStore? = nil) -> SwitcherViewModel {
         let suiteName = "ViewModelMainHygieneTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
@@ -133,5 +158,14 @@ final class ViewModelMainHygieneTests: XCTestCase {
 
     private func viewModelSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+    }
+
+    private var focusedExtensionPaths: [String] {
+        [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeIdentity.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionAccessors.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PageInterceptAccessors.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+TestingAccessors.swift"
+        ]
     }
 }
