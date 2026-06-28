@@ -2,100 +2,102 @@ import XCTest
 @testable import LiveSwitcher
 
 final class PreferencesRuntimeReducerExtractionTests: XCTestCase {
-    func testPreferencesRuntimeReducerFileExists() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PreferencesRuntimeReducer.swift")
+    func testRuntimePreferenceActionsPersistConsoleThemeAndCompanyName() {
+        let consoleMode = reduce(.operatorSetConsoleMode(.live))
+        XCTAssertEqual(consoleMode.state.mode, .live)
+        XCTAssertEqual(consoleMode.effects, [.saveConsoleMode(.live)])
 
-        XCTAssertTrue(source.contains("enum PreferencesRuntimeReducer"))
+        let theme = reduce(.operatorSetThemeOverride(.system))
+        XCTAssertEqual(theme.state.preferences.themeOverride, .system)
+        XCTAssertEqual(theme.effects, [.saveThemeOverride(.system)])
+
+        let companyName = reduce(.operatorSetCompanyDisplayName("  Acme   Live  "))
+        XCTAssertEqual(companyName.state.preferences.companyDisplayName, "Acme Live")
+        XCTAssertEqual(companyName.effects, [.saveCompanyDisplayName("Acme Live")])
     }
 
-    func testPreferencesRuntimeReducerOwnsConsoleModeLogic() throws {
-        let source = try reducerSource()
+    func testWallpaperAndCornerLogoActionsLoadAssetsAndPersistVisibility() {
+        let wallpaper = URL(fileURLWithPath: "/tmp/wallpaper.png")
+        let background = reduce(.operatorSetActiveWallpaperURL(wallpaper))
+        XCTAssertEqual(background.state.preferences.activeWallpaperURL, wallpaper)
+        XCTAssertEqual(background.effects, [.loadBackgroundImage(wallpaper)])
 
-        XCTAssertTrue(source.contains("state.mode = mode"))
-        XCTAssertTrue(source.contains("effects.append(.saveConsoleMode(mode))"))
+        let logo = URL(fileURLWithPath: "/tmp/logo.png")
+        let logoAdded = reduce(.operatorSetCornerLogoURL(logo))
+        XCTAssertEqual(logoAdded.state.preferences.cornerLogoURL, logo)
+        XCTAssertTrue(logoAdded.state.preferences.isCornerLogoVisible)
+        XCTAssertEqual(logoAdded.effects, [
+            .loadCornerLogoImage(logo),
+            .saveCornerLogoVisible(true)
+        ] as [LiveRuntimeEffect])
+
+        let logoHidden = reduce(logoAdded.state, .operatorSetCornerLogoVisible(false))
+        XCTAssertFalse(logoHidden.state.preferences.isCornerLogoVisible)
+        XCTAssertEqual(logoHidden.effects, [.saveCornerLogoVisible(false)])
+
+        let logoRemoved = reduce(logoAdded.state, .operatorSetCornerLogoURL(nil))
+        XCTAssertNil(logoRemoved.state.preferences.cornerLogoURL)
+        XCTAssertFalse(logoRemoved.state.preferences.isCornerLogoVisible)
+        XCTAssertEqual(logoRemoved.effects, [
+            .loadCornerLogoImage(nil),
+            .saveCornerLogoVisible(false)
+        ] as [LiveRuntimeEffect])
     }
 
-    func testPreferencesRuntimeReducerOwnsThemeOverrideLogic() throws {
-        let source = try reducerSource()
+    func testPlaybackAgendaAndLogoPositionActionsEmitSinglePersistenceEffects() {
+        let autoNext = reduce(.operatorSetAutoPlayNextVideoOnEnd(true))
+        XCTAssertTrue(autoNext.state.preferences.autoPlayNextVideoOnEnd)
+        XCTAssertEqual(autoNext.effects, [.saveAutoPlayNextVideoOnEnd(true)])
 
-        XCTAssertTrue(source.contains("state.preferences.themeOverride = theme"))
-        XCTAssertTrue(source.contains("effects.append(.saveThemeOverride(theme))"))
+        let reminder = reduce(.operatorSetAgendaTimeReminderEnabled(true))
+        XCTAssertTrue(reminder.state.preferences.isAgendaTimeReminderEnabled)
+        XCTAssertEqual(reminder.effects, [.saveAgendaTimeReminderEnabled(true)])
+
+        let timeline = reduce(.operatorSetShowAgendaTimeline(true))
+        XCTAssertTrue(timeline.state.preferences.showAgendaTimeline)
+        XCTAssertEqual(timeline.effects, [.saveShowAgendaTimeline(true)])
+
+        let logoPosition = reduce(.operatorSetCornerLogoPosition(.bottomLeft))
+        XCTAssertEqual(logoPosition.state.preferences.cornerLogoPosition, .bottomLeft)
+        XCTAssertEqual(logoPosition.effects, [.saveCornerLogoPosition(.bottomLeft)])
     }
 
-    func testPreferencesRuntimeReducerOwnsWallpaperLogic() throws {
-        let source = try reducerSource()
+    func testInvalidCompanyNameDoesNotMutateOrPersist() {
+        var state = LiveRuntimeState()
+        state.preferences.companyDisplayName = "Acme"
+        let tooLongName = String(repeating: "A", count: BrandingDisplayNamePolicy.maximumCharacterCount + 1)
 
-        XCTAssertTrue(source.contains("state.preferences.activeWallpaperURL = url"))
-        XCTAssertTrue(source.contains("effects.append(.loadBackgroundImage(url))"))
+        let mutation = reduce(state, .operatorSetCompanyDisplayName(tooLongName))
+
+        XCTAssertEqual(mutation.state.preferences.companyDisplayName, "Acme")
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testPreferencesRuntimeReducerOwnsCornerLogoLogic() throws {
-        let source = try reducerSource()
+    func testPreferenceActionsNoopWhenPersistenceBridgeIsNotRuntimeOwned() {
+        let state = LiveRuntimeState()
 
-        XCTAssertTrue(source.contains("state.preferences.cornerLogoURL = url"))
-        XCTAssertTrue(source.contains("effects.append(.loadCornerLogoImage(url))"))
+        let mutation = reduce(
+            state,
+            .operatorSetConsoleMode(.live),
+            environment: .recordingOnlyForTests()
+        )
+
+        XCTAssertEqual(mutation.state, state)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testPreferencesRuntimeReducerOwnsAutoPlayNextVideoLogic() throws {
-        let source = try reducerSource()
-
-        XCTAssertTrue(source.contains("state.preferences.autoPlayNextVideoOnEnd = isEnabled"))
-        XCTAssertTrue(source.contains("effects.append(.saveAutoPlayNextVideoOnEnd(isEnabled))"))
+    private func reduce(
+        _ action: LiveRuntimeAction,
+        environment: LiveRuntimeEnvironment = .fullRuntimeForTests()
+    ) -> LiveRuntimeMutation {
+        reduce(LiveRuntimeState(), action, environment: environment)
     }
 
-    func testLiveRuntimeReducerDelegatesConsoleMode() throws {
-        let source = try liveRuntimeReducerSource()
-
-        XCTAssertTrue(source.contains("PreferencesRuntimeReducer.setConsoleMode("))
-    }
-
-    func testLiveRuntimeReducerDelegatesThemeOverride() throws {
-        let source = try liveRuntimeReducerSource()
-
-        XCTAssertTrue(source.contains("PreferencesRuntimeReducer.setThemeOverride("))
-    }
-
-    func testLiveRuntimeReducerDelegatesWallpaperURL() throws {
-        let source = try liveRuntimeReducerSource()
-
-        XCTAssertTrue(source.contains("PreferencesRuntimeReducer.setActiveWallpaperURL("))
-    }
-
-    func testLiveRuntimeReducerDelegatesCornerLogoURL() throws {
-        let source = try liveRuntimeReducerSource()
-
-        XCTAssertTrue(source.contains("PreferencesRuntimeReducer.setCornerLogoURL("))
-    }
-
-    func testLiveRuntimeReducerDoesNotContainPreferenceMutationBodies() throws {
-        let source = try liveRuntimeReducerSource()
-        [
-            "state.mode =",
-            "state.preferences.themeOverride =",
-            "state.preferences.activeWallpaperURL =",
-            "state.preferences.cornerLogoURL =",
-            "state.preferences.autoPlayNextVideoOnEnd =",
-            "state.preferences.isAgendaTimeReminderEnabled =",
-            "state.preferences.showAgendaTimeline =",
-            "state.preferences.cornerLogoPosition =",
-            "effects.append(.saveConsoleMode",
-            "effects.append(.saveThemeOverride",
-            "effects.append(.loadBackgroundImage",
-            "effects.append(.loadCornerLogoImage",
-            "effects.append(.saveAutoPlayNextVideoOnEnd",
-            "effects.append(.saveAgendaTimeReminderEnabled",
-            "effects.append(.saveShowAgendaTimeline",
-            "effects.append(.saveCornerLogoPosition"
-        ].forEach { forbidden in
-            XCTAssertFalse(source.contains(forbidden), "LiveRuntimeReducer still owns preference mutation body: \(forbidden)")
-        }
-    }
-
-    private func reducerSource() throws -> String {
-        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PreferencesRuntimeReducer.swift")
-    }
-
-    private func liveRuntimeReducerSource() throws -> String {
-        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PreferenceRuntimeActionDispatcher.swift")
+    private func reduce(
+        _ state: LiveRuntimeState,
+        _ action: LiveRuntimeAction,
+        environment: LiveRuntimeEnvironment = .fullRuntimeForTests()
+    ) -> LiveRuntimeMutation {
+        LiveRuntimeReducer.reduce(state: state, action: action, environment: environment)
     }
 }

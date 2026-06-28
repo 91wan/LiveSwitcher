@@ -101,7 +101,21 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
             total += Int(columns[3]) ?? 0
         }
 
-        XCTAssertLessThanOrEqual(total, 299)
+        XCTAssertLessThanOrEqual(total, 171)
+    }
+
+    func testRuntimeReducerExtractionSourceChecksAreRetired() throws {
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let retiredPaths = [
+            "AudioRuntimeReducerExtractionTests.swift",
+            "BGMRuntimeReducerExtractionTests.swift",
+            "PreferencesRuntimeReducerExtractionTests.swift",
+            "PresentationQueryRuntimeReducerExtractionTests.swift"
+        ]
+
+        for path in retiredPaths {
+            XCTAssertFalse(manifest.contains(path), "\(path) should be covered by reducer behavior tests.")
+        }
     }
 
     private func repoText(_ relativePath: String) throws -> String {
