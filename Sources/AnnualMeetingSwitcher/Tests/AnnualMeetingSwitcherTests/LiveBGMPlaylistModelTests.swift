@@ -120,4 +120,25 @@ final class LiveBGMPlaylistModelTests: XCTestCase {
         XCTAssertEqual(model.remainingCount, 2)
         XCTAssertEqual(model.remainingCountText, "+2 首")
     }
+
+    func testCurrentTrackStaysVisibleWithinCustomRowLimit() {
+        let current = BGMItem(title: "Current", url: URL(fileURLWithPath: "/tmp/current.mp3"), category: .warmUp)
+        let tracks = (0..<6).map { index in
+            BGMItem(title: "Warm \(index)", url: URL(fileURLWithPath: "/tmp/warm-\(index).mp3"), category: .warmUp)
+        } + [current]
+
+        let model = LiveBGMPlaylistModel.make(
+            items: tracks,
+            currentItem: current,
+            selectedCategory: .warmUp,
+            isPlaying: true,
+            visibleRowLimit: 5
+        )
+
+        XCTAssertEqual(model.rows.count, 5)
+        XCTAssertEqual(model.rows.first?.item.id, current.id)
+        XCTAssertEqual(model.rows.first?.systemImage, "pause.fill")
+        XCTAssertEqual(model.remainingCount, 2)
+        XCTAssertEqual(model.remainingCountText, "+2 首")
+    }
 }

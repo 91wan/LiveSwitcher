@@ -100,7 +100,7 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
             total += Int(columns[3]) ?? 0
         }
 
-        XCTAssertLessThanOrEqual(total, 398)
+        XCTAssertLessThanOrEqual(total, 299)
     }
 
     private func repoText(_ relativePath: String) throws -> String {
