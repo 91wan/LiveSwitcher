@@ -79,6 +79,16 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         XCTAssertTrue(policy.contains("behavior changes: none"))
     }
 
+    func testComplexityBudgetDocumentationRecordsLatestBurnDownSnapshot() throws {
+        let policy = try repoText("docs/architecture/complexity-budget.md")
+
+        XCTAssertTrue(policy.contains("Post-v0.5.0 Burn-Down Snapshot - 2026-06-28"))
+        XCTAssertTrue(policy.contains("Allowlist rows: 23"))
+        XCTAssertTrue(policy.contains("Source-string allowlist rows: 18"))
+        XCTAssertTrue(policy.contains("Source-string actual total: 448"))
+        XCTAssertTrue(policy.contains("No release is triggered by this allowlist burn-down"))
+    }
+
     private func repoText(_ relativePath: String) throws -> String {
         try String(contentsOf: repoURL(relativePath), encoding: .utf8)
     }
