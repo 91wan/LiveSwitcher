@@ -78,14 +78,19 @@ final class ProgramActivationRuntimeOwnershipTests: XCTestCase {
     }
 
     func testAllProgramActivationCasesHaveExplicitProgramActivationOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/ProgramRuntimeActionDispatcher.swift"
+        )
 
         for casePattern in [
             ".operatorRequestedProgramActivation(let id, let plan)",
             ".programActivationCompleted(let id)"
         ] {
             let body = try caseBody(casePattern, in: source)
-            XCTAssertTrue(body.contains("guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }"), casePattern)
+            XCTAssertTrue(
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.programActivation, in: bridgeMode) else { return true }"),
+                casePattern
+            )
         }
     }
 

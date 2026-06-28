@@ -67,7 +67,9 @@ final class MediaRuntimeCallbackOwnershipGuardTests: XCTestCase {
     }
 
     func testAllMediaCallbackCasesHaveExplicitMediaOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/MediaRuntimeActionDispatcher.swift"
+        )
 
         [
             ".mediaLoaded(let url, let generation)",
@@ -75,7 +77,11 @@ final class MediaRuntimeCallbackOwnershipGuardTests: XCTestCase {
             ".mediaReachedEnd(let generation)",
             ".mediaSeekCompleted(let time, let generation)"
         ].forEach { casePattern in
-            assertCase(casePattern, in: source, contains: "guard isRuntimeOwned(.media, in: bridgeMode) else { break }")
+            assertCase(
+                casePattern,
+                in: source,
+                contains: "guard LiveRuntimeReducer.isRuntimeOwned(.media, in: bridgeMode) else { return true }"
+            )
         }
     }
 

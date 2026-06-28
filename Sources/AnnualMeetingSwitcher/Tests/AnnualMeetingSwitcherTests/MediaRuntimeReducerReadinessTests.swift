@@ -22,11 +22,11 @@ final class MediaRuntimeReducerReadinessTests: XCTestCase {
 
     func testLiveRuntimeReducerRoutesMediaMutationAfterExtraction() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/MediaRuntimeActionDispatcher.swift"
         )
 
         XCTAssertTrue(source.contains("case .operatorRestartedCurrentMedia"))
-        XCTAssertTrue(source.contains("guard isRuntimeOwned(.media"))
+        XCTAssertTrue(source.contains("guard LiveRuntimeReducer.isRuntimeOwned(.media"))
         XCTAssertTrue(source.contains("MediaRuntimeReducer."))
     }
 

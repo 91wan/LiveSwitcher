@@ -61,12 +61,14 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
     func testWallpaperURLStillRequiresPersistenceAndImageAssetsOwnership() throws {
         let state = guardedState()
         let mutation = reduce(state, .operatorSetActiveWallpaperURL(wallpaperURL), bridgeMode: .recordingOnly)
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PreferenceRuntimeActionDispatcher.swift"
+        )
 
         XCTAssertEqual(mutation.state.preferences.activeWallpaperURL, state.preferences.activeWallpaperURL)
         XCTAssertTrue(mutation.effects.isEmpty)
-        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
-        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "LiveRuntimeReducer.isRuntimeOwned(.imageAssets, in: bridgeMode)")
     }
 
     func testCornerLogoURLNoopsBeforePersistenceAndImageAssetsOwnership() {
@@ -80,12 +82,14 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
     func testCornerLogoURLStillRequiresPersistenceAndImageAssetsOwnership() throws {
         let state = guardedState()
         let mutation = reduce(state, .operatorSetCornerLogoURL(logoURL), bridgeMode: .recordingOnly)
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PreferenceRuntimeActionDispatcher.swift"
+        )
 
         XCTAssertEqual(mutation.state.preferences.cornerLogoURL, state.preferences.cornerLogoURL)
         XCTAssertTrue(mutation.effects.isEmpty)
-        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
-        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "LiveRuntimeReducer.isRuntimeOwned(.imageAssets, in: bridgeMode)")
     }
 
     func testPreferenceActionsMutateWhenPersistenceOwned() {
@@ -112,18 +116,20 @@ final class PreferencesRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllPreferenceCasesHaveExplicitOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PreferenceRuntimeActionDispatcher.swift"
+        )
 
-        assertCase(".operatorSetConsoleMode(let mode)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetThemeOverride(let theme)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetAutoPlayNextVideoOnEnd(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetAgendaTimeReminderEnabled(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetShowAgendaTimeline(let isEnabled)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetCornerLogoPosition(let position)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode) else { break }")
-        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
-        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
-        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "guard isRuntimeOwned(.persistence, in: bridgeMode),")
-        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "isRuntimeOwned(.imageAssets, in: bridgeMode)")
+        assertCase(".operatorSetConsoleMode(let mode)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetThemeOverride(let theme)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetAutoPlayNextVideoOnEnd(let isEnabled)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetAgendaTimeReminderEnabled(let isEnabled)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetShowAgendaTimeline(let isEnabled)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetCornerLogoPosition(let position)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode) else { return true }")
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetActiveWallpaperURL(let url)", in: source, contains: "LiveRuntimeReducer.isRuntimeOwned(.imageAssets, in: bridgeMode)")
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "guard LiveRuntimeReducer.isRuntimeOwned(.persistence, in: bridgeMode),")
+        assertCase(".operatorSetCornerLogoURL(let url)", in: source, contains: "LiveRuntimeReducer.isRuntimeOwned(.imageAssets, in: bridgeMode)")
     }
 
     private var wallpaperURL: URL {

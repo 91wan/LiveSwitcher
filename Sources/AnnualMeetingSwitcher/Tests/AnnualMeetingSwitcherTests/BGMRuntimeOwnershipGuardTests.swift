@@ -42,7 +42,9 @@ final class BGMRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllBGMOperatorActionsHaveExplicitBGMOwnershipGuard() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/BGMRuntimeActionDispatcher.swift"
+        )
         let guardedCases = [
             "case .operatorSelectedBGM",
             "case .operatorSelectedBGMPlayMode",
@@ -58,7 +60,7 @@ final class BGMRuntimeOwnershipGuardTests: XCTestCase {
         for marker in guardedCases {
             let body = try XCTUnwrap(caseBody(after: marker, in: source), marker)
             XCTAssertTrue(
-                body.contains("guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }"),
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.bgm, in: bridgeMode) else { return true }"),
                 "\(marker) must explicitly guard .bgm ownership"
             )
         }

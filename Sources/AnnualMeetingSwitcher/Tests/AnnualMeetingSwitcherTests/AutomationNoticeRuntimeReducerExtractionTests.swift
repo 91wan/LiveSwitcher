@@ -51,7 +51,7 @@ final class AutomationNoticeRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesAutomationNoticeActionsAndDoesNotOwnMutationBodies() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift")
 
         XCTAssertTrue(source.contains("AutomationNoticeRuntimeReducer.request("))
         XCTAssertTrue(source.contains("AutomationNoticeRuntimeReducer.expire("))

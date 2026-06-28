@@ -22,23 +22,23 @@ final class ProgramActivationRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesProgramActivationRequest() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".operatorRequestedProgramActivation(let id, let plan)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.programActivation, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("ProgramActivationRuntimeReducer.request("))
     }
 
     func testLiveRuntimeReducerDelegatesProgramActivationCompletion() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".programActivationCompleted(let id)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.programActivation, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.programActivation, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("ProgramActivationRuntimeReducer.complete(id: id, state: &state)"))
     }
 
     func testLiveRuntimeReducerDoesNotContainProgramActivationMutationBodies() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let bodies = try [
             caseBody(".operatorRequestedProgramActivation(let id, let plan)", in: source),
             caseBody(".programActivationCompleted(let id)", in: source)
@@ -59,6 +59,10 @@ final class ProgramActivationRuntimeReducerExtractionTests: XCTestCase {
             throw XCTSkip("ProgramActivationRuntimeReducer.swift is missing")
         }
         return try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramActivationRuntimeReducer.swift")
+    }
+
+    private func dispatcherSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/ProgramRuntimeActionDispatcher.swift")
     }
 
     private func runtimeFile(_ name: String) -> String {

@@ -34,7 +34,9 @@ final class ProgramQueueRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesProgramQueueActions() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/ProgramRuntimeActionDispatcher.swift"
+        )
 
         for expected in [
             "ProgramQueueRuntimeReducer.addProgramItems(items, state: &state)",
@@ -50,7 +52,9 @@ final class ProgramQueueRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDoesNotContainProgramQueueMutationCalls() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/ProgramRuntimeActionDispatcher.swift"
+        )
 
         for forbidden in [
             "state.program.appendProgramItems(",

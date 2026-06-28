@@ -29,7 +29,9 @@ final class ProgramQueueRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllProgramQueueCasesHaveExplicitProgramQueueOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/ProgramRuntimeActionDispatcher.swift"
+        )
 
         for casePattern in [
             ".operatorAddedProgramItems(let items)",
@@ -43,7 +45,7 @@ final class ProgramQueueRuntimeOwnershipGuardTests: XCTestCase {
             assertCase(
                 casePattern,
                 in: source,
-                contains: "guard isRuntimeOwned(.programQueue, in: bridgeMode) else { break }"
+                contains: "guard LiveRuntimeReducer.isRuntimeOwned(.programQueue, in: bridgeMode) else { return true }"
             )
         }
     }
