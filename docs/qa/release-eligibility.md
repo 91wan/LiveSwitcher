@@ -41,13 +41,13 @@ Patch release remains blocked unless a user-visible production-risk fix or deliv
 ## Post-stable allowlist burn-down decision - 2026-06-28
 
 The post-stable source-string replacement slice reduced the target contract
-files by 63 `source.contains` assertions. The BGM runtime reducer behavior-suite
+files by 137 `source.contains` assertions. The BGM runtime reducer behavior-suite
 and LivePreflight behavior-suite splits also removed oversized test-file
 allowlist entries. The allowlist status after those slices is:
 
-- allowlist rows: 21
-- source-string allowlist rows: 18
-- source-string actual total: 448
+- allowlist rows: 19
+- source-string allowlist rows: 16
+- source-string actual total: 374
 
 This burn-down is documentation, test, and architecture-gate maintenance only.
 It does not change production behavior, UI, playback, projection, Panic, BGM,

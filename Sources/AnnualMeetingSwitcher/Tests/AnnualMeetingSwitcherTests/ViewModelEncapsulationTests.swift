@@ -3,21 +3,6 @@ import XCTest
 
 @MainActor
 final class ViewModelEncapsulationTests: XCTestCase {
-    func testSupportEventsIsPrivateSet() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private(set) var supportEvents"))
-        XCTAssertFalse(source.contains("\n    var supportEvents: [LiveSupportEvent] = []"))
-    }
-
-    func testSupportFacadeProjectionUsesNarrowRuntimeApplyMethod() throws {
-        let viewModel = try viewModelSource()
-        let sync = try runtimeFacadeSyncSource()
-
-        XCTAssertTrue(viewModel.contains("func applySupportEventsProjectionFromRuntime(_ events: [LiveSupportEvent])"))
-        XCTAssertTrue(sync.contains("applySupportEventsProjectionFromRuntime(runtime.state.support.events)"))
-    }
-
     func testSupportEventsIsNotDirectlyAssignedOutsideRuntimeFacadeSync() throws {
         let sources = try viewModelSourceFiles()
         let offenders = try sources.flatMap { path -> [String] in
@@ -42,36 +27,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
 
         XCTAssertEqual(viewModel.supportEvents, viewModel.runtime.state.support.events)
         XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionStarted })
-    }
-
-    func testRuntimeMediaCallbackIdentityFieldsArePrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks"))
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeMediaURLForCallbacks"))
-    }
-
-    func testRuntimeBGMCallbackIdentityFieldsArePrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks"))
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks"))
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeBGMURLForCallbacks"))
-    }
-
-    func testTransientRuntimeBGMItemIsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored private var transientRuntimeBGMItem"))
-    }
-
-    func testRuntimeWiringUsesMediaCallbackIdentityMethods() throws {
-        let source = try runtimeWiringSource()
-
-        XCTAssertTrue(source.contains("setActiveRuntimeMediaCallbackIdentity(generation: generation, url: url)"))
-        XCTAssertTrue(source.contains("clearActiveRuntimeMediaCallbackIdentity(ifGeneration: generation)"))
-        XCTAssertFalse(source.contains("activeRuntimeMediaGenerationForCallbacks = generation"))
-        XCTAssertFalse(source.contains("activeRuntimeMediaURLForCallbacks = url"))
     }
 
     func testRuntimeFacadeUsesValidatedMediaCallbackGeneration() throws {
@@ -132,21 +87,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
         XCTAssertTrue(viewModel.runtime.actionLog.isEmpty)
     }
 
-    func testPageInterceptEventTapIsFacadeScoped() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private var pageInterceptEventTap: CFMachPort?"))
-        XCTAssertFalse(source.contains("\n    var pageInterceptEventTap: CFMachPort?"))
-        XCTAssertFalse(source.contains("public var pageInterceptEventTap"))
-        XCTAssertFalse(source.contains("open var pageInterceptEventTap"))
-    }
-
-    func testRuntimeSnapshotUsesPageInterceptTapActiveAccessor() throws {
-        let source = try runtimeSnapshotSource()
-
-        XCTAssertTrue(source.contains("state.ppt.isEventTapActive = isPageInterceptEventTapActiveForRuntimeSnapshot"))
-    }
-
     func testRawPageInterceptEventTapIsNotReferencedOutsideViewModelCore() throws {
         let offenders = try viewModelSourceFiles()
             .filter { !$0.hasSuffix("ViewModel.swift") }
@@ -171,28 +111,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
         viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
 
         XCTAssertTrue(viewModel.runtime.state.ppt.isRequested)
-    }
-
-    func testUserDefaultsStorageIsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private let userDefaults: UserDefaults"))
-        XCTAssertFalse(source.contains("\n    let userDefaults: UserDefaults"))
-    }
-
-    func testUDKeysIsPrivateOrMovedOutOfViewModel() throws {
-        let source = try viewModelSource()
-
-        if source.contains("enum UDKeys") {
-            XCTAssertTrue(source.contains("private enum UDKeys"))
-        }
-    }
-
-    func testRuntimeWiringDoesNotDirectlySetUserDefaultsKeys() throws {
-        let source = try runtimeWiringSource()
-
-        XCTAssertFalse(source.contains("userDefaults.set"))
-        XCTAssertFalse(source.contains("UDKeys."))
     }
 
     func testPersistencePortStillWritesConsoleMode() throws {
@@ -225,13 +143,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
         viewModel.cornerLogoPosition = .bottomLeft
 
         XCTAssertEqual(defaults.string(forKey: "cornerLogo_position"), CornerLogoPosition.bottomLeft.rawValue)
-    }
-
-    func testSpeakerModeDuckedRatioIsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private let speakerModeDuckedRatio"))
-        XCTAssertFalse(source.contains("\n    let speakerModeDuckedRatio"))
     }
 
     func testRuntimeEnvironmentSyncUsesReadOnlySpeakerRatioAccessor() throws {
@@ -270,60 +181,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
             }
 
         XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))
-    }
-
-    func testMainViewModelDoesNotOwnProgramQueueMethodBodies() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func switchToProgram("))
-        XCTAssertFalse(source.contains("func addProgramItem("))
-        XCTAssertFalse(source.contains("func removeProgramItem("))
-        XCTAssertFalse(source.contains("func agendaReminderPrompt("))
-    }
-
-    func testMainViewModelDoesNotOwnPresentationAutomationMethodBodies() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func openAndPresentKeynote("))
-        XCTAssertFalse(source.contains("func openPPTXWithKeynote("))
-        XCTAssertFalse(source.contains("func scanKeynoteWindowNames("))
-        XCTAssertFalse(source.contains("func runAutomationScript("))
-    }
-
-    func testMainViewModelDoesNotOwnAutomationFailureMethodBodies() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func handleAppleScriptFailure("))
-        XCTAssertFalse(source.contains("func dismissAutomationRuntimeNotice("))
-        XCTAssertFalse(source.contains("func showAutomationRuntimeNotice("))
-        XCTAssertFalse(source.contains("func presentAutomationAlert("))
-    }
-
-    func testMainViewModelDoesNotOwnPersistenceMethodBodies() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func saveData("))
-        XCTAssertFalse(source.contains("func loadData("))
-        XCTAssertFalse(source.contains("func applyPersistentState("))
-    }
-
-    func testMainViewModelDoesNotOwnRuntimeBridgeMethodBodies() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func dispatchRuntimeFacadeAction("))
-        XCTAssertFalse(source.contains("func syncRuntimeStateFromFacade("))
-        XCTAssertFalse(source.contains("func makeRuntimeFacadeSnapshot("))
-        XCTAssertFalse(source.contains("func configureRuntimePortHandlers("))
-    }
-
-    func testMainViewModelStillOwnsFacadeStateAndInitOnly() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("final class SwitcherViewModel"))
-        XCTAssertTrue(source.contains("init("))
-        XCTAssertTrue(source.contains("var currentProgramItem: ProgramItem?"))
-        XCTAssertTrue(source.contains("let runtime: LiveRuntimeStore"))
-        XCTAssertTrue(source.contains("deinit"))
     }
 
     func testProductionViewModelRuntimeBridgeModeIsProgramActivationOwned() {
@@ -376,18 +233,6 @@ final class ViewModelEncapsulationTests: XCTestCase {
 
     private func runtimeFacadeSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacade.swift")
-    }
-
-    private func runtimeFacadeSyncSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeFacadeSync.swift")
-    }
-
-    private func runtimeSnapshotSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeSnapshot.swift")
-    }
-
-    private func runtimeWiringSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeWiring.swift")
     }
 
     private func viewModelSourceFiles() throws -> [String] {

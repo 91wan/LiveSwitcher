@@ -1,243 +1,81 @@
+import AppKit
+import SwiftUI
 import XCTest
+@testable import LiveSwitcher
 
+@MainActor
 final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
-    func testOutputWindowControllerRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private var outputWindowController: OutputWindowControlling?"))
-        XCTAssertFalse(source.contains("\n    var outputWindowController: OutputWindowControlling?"))
-    }
-
-    func testExternalDisplayAvailabilityRemainsPrivateSet() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private(set) var isExternalDisplayAvailable: Bool = false"))
-        XCTAssertFalse(source.contains("\n    var isExternalDisplayAvailable: Bool = false"))
-    }
-
-    func testProjectionOutputExtensionUsesProjectionOutputAccessors() throws {
-        let source = try projectionOutputSource()
-
-        [
-            "updateExternalDisplayAvailabilityForProjection(isAvailable)",
-            "currentOutputWindowControllerForProjection()",
-            "makeOutputWindowControllerForProjection()",
-            "setOutputWindowControllerForProjection(controller)",
-            "currentOutputWindowControllerForProjection()?.show",
-            "currentOutputWindowControllerForProjection()?.hide"
-        ].forEach { snippet in
-            XCTAssertTrue(source.contains(snippet), snippet)
+    func testProjectionOutputControllerIsMountedOnceAndReusedAcrossToggleCycles() throws {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
         }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let output = LiveOutputEncapsulationOutputSpy()
+        viewModel.outputWindowControllerFactory = { output }
+        viewModel.externalScreenProvider = { screen }
+
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+        viewModel.handleBroadcastToggle()
+
+        XCTAssertEqual(output.mountCount, 1)
+        XCTAssertEqual(output.showCount, 2)
+        XCTAssertEqual(output.hideCount, 1)
+        XCTAssertTrue(viewModel.currentOutputWindowControllerForProjection() === output)
     }
 
-    func testOnlyProjectionOutputFileTouchesOutputWindowController() throws {
-        let offenders = try sourceFiles(containing: "outputWindowController")
-            .filter { !$0.hasSuffix("ViewModel.swift") }
-            .filter { !$0.hasSuffix("ViewModel+ProjectionOutput.swift") }
-
-        XCTAssertTrue(offenders.isEmpty, offenders.joined(separator: "\n"))
-    }
-
-    func testOnlyProjectionOutputFileMutatesExternalDisplayAvailability() throws {
-        let offenders = try viewModelSourceFiles().flatMap { path -> [String] in
-            try repositorySource(path)
-                .split(separator: "\n")
-                .map(String.init)
-                .filter { line in
-                    line.contains("isExternalDisplayAvailable =")
-                        && !line.contains("private(set) var isExternalDisplayAvailable")
-                        && !path.hasSuffix("ViewModel.swift")
-                        && !path.hasSuffix("ViewModel+ProjectionOutput.swift")
-                }
-                .map { "\(path): \($0.trimmingCharacters(in: .whitespaces))" }
-        }
-
-        XCTAssertTrue(offenders.isEmpty, offenders.joined(separator: "\n"))
-    }
-
-    func testPageInterceptEventTapRemainsPrivate() throws {
-        try assertPrivateViewModelStorage("pageInterceptEventTap: CFMachPort?")
-    }
-
-    func testPageInterceptRunLoopSourceRemainsPrivate() throws {
-        try assertPrivateViewModelStorage("pageInterceptRunLoopSource: CFRunLoopSource?")
-    }
-
-    func testPageInterceptSelfRefconRemainsPrivate() throws {
-        try assertPrivateViewModelStorage("pageInterceptSelfRefcon: UnsafeMutableRawPointer?")
-    }
-
-    func testPendingPPTToggleSourceRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?"))
-        XCTAssertFalse(source.contains("@ObservationIgnored var pendingPPTToggleSource: PPTModeToggleSource?"))
-    }
-
-    func testPageInterceptRuntimeRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("nonisolated private let pageInterceptRuntime = PageInterceptRuntime()"))
-        XCTAssertFalse(source.contains("nonisolated let pageInterceptRuntime = PageInterceptRuntime()"))
-    }
-
-    func testWPSApplicationMonitorRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()"))
-        XCTAssertFalse(source.contains("nonisolated let wpsApplicationMonitor = WPSApplicationMonitor()"))
-    }
-
-    func testPPTEventTapExtensionUsesNarrowTapAccessors() throws {
-        let source = try pptEventTapSource()
-
-        [
-            "currentPendingPPTToggleSource()",
-            "consumePendingPPTToggleSource()",
-            "currentPageInterceptTapForRuntime()",
-            "enableCurrentPageInterceptTapForRuntime()",
-            "installPageInterceptTapForRuntime(",
-            "clearPageInterceptTapForRuntime()",
-            "updatePageInterceptRuntimeTap(",
-            "currentWPSProcessIdentifierForPageForwarding()"
-        ].forEach { snippet in
-            XCTAssertTrue(source.contains(snippet), snippet)
-        }
-    }
-
-    func testOnlyPPTEventTapFileTouchesRawEventTapStorage() throws {
-        let rawStorageNames = [
-            "pageInterceptEventTap",
-            "pageInterceptRunLoopSource",
-            "pageInterceptSelfRefcon",
-            "pageInterceptRuntime",
-            "wpsApplicationMonitor"
-        ]
-        let offenders = try viewModelSourceFiles().flatMap { path -> [String] in
-            guard !path.hasSuffix("ViewModel.swift"),
-                  !path.hasSuffix("ViewModel+PPTEventTap.swift")
-            else { return [] }
-            let source = try repositorySource(path)
-            return rawStorageNames
-                .filter { source.contains($0) }
-                .map { "\(path): \($0)" }
-        }
-
-        XCTAssertTrue(offenders.isEmpty, offenders.joined(separator: "\n"))
-    }
-
-    func testRuntimeSnapshotStillUsesReadOnlyTapActiveAccessor() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeSnapshot.swift")
-
-        XCTAssertTrue(source.contains("state.ppt.isEventTapActive = isPageInterceptEventTapActiveForRuntimeSnapshot"))
-    }
-
-    func testBGMTransitionGenerationRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private var bgmTransitionGeneration: Int = 0"))
-        XCTAssertFalse(source.contains("\n    var bgmTransitionGeneration: Int = 0"))
-    }
-
-    func testActiveBGMTimerGenerationRemainsPrivate() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeBGMTimerGeneration: Int?"))
-        XCTAssertFalse(source.contains("@ObservationIgnored var activeBGMTimerGeneration: Int?"))
-    }
-
-    func testLastAudioRoutingTransitionRemainsPrivateSet() throws {
-        let source = try viewModelSource()
-        let audioRouting = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+AudioRouting.swift")
-
-        XCTAssertTrue(source.contains("private(set) var lastAudioRoutingTransition: AudioRoutingTransition?"))
-        XCTAssertFalse(source.contains("\n    var lastAudioRoutingTransition: AudioRoutingTransition?"))
-        XCTAssertTrue(audioRouting.contains("applyLastAudioRoutingTransitionFromRuntime(transition)"))
-    }
-
-    func testBGMRuntimePlaybackUsesGenerationAccessors() throws {
-        let source = try [
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerPreparation.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerTransport.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerProgress.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMFallbackPlayerBridge.swift"
-        ].map(repositorySource).joined(separator: "\n")
-
-        [
-            "setBGMTransitionGenerationForRuntime(generation)",
-            "currentBGMTransitionGenerationForRuntime()",
-            "setActiveBGMTimerGenerationForRuntime(generation)",
-            "activeBGMTimerGenerationForRuntime()"
-        ].forEach { snippet in
-            XCTAssertTrue(source.contains(snippet), snippet)
-        }
-    }
-
-    func testViewModelTestHooksAreGrouped() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored var testHooks = SwitcherViewModelTestHooks()"))
-
-        let hookLines = source
-            .split(separator: "\n")
-            .map(String.init)
-            .filter { $0.contains("ForTesting") || $0.contains("Override") || $0.contains("DidRun") || $0.contains("DidFinish") }
-            .filter { line in
-                line.contains("@ObservationIgnored var")
-                    && !line.contains("testHooks")
-            }
-
-        XCTAssertTrue(hookLines.isEmpty, hookLines.joined(separator: "\n"))
-    }
-
-    func testOldLooseTestHookFieldsAreRemovedFromMainViewModel() throws {
-        let source = try viewModelSource()
-
-        [
-            "pageInterceptStartOverride",
-            "scanOpenKeynoteFilesForTesting",
-            "scanKeynoteWindowNamesForTesting",
-            "automationCommandRunnerForTesting",
-            "automationCommandDidFinishForTesting",
-            "saveDataDidRun"
-        ].forEach { hook in
-            XCTAssertFalse(source.contains("var \(hook)"), hook)
-        }
-    }
-
-    private func assertPrivateViewModelStorage(_ declaration: String) throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("private var \(declaration)"))
-        XCTAssertFalse(source.contains("\n    var \(declaration)"))
-    }
-
-    private func sourceFiles(containing needle: String) throws -> [String] {
-        try viewModelSourceFiles().filter { try repositorySource($0).contains(needle) }
-    }
-
-    private func viewModelSourceFiles() throws -> [String] {
-        let root = try repositoryRoot()
-        let sourceRoot = root.appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
-        let urls = try FileManager.default.contentsOfDirectory(
-            at: sourceRoot,
-            includingPropertiesForKeys: nil
+    func testExternalDisplayAvailabilityFeedsRuntimeSnapshotAndPreflightSnapshot() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .recordingOnly)
         )
-        return urls
-            .filter { $0.lastPathComponent.hasPrefix("ViewModel") && $0.pathExtension == "swift" }
-            .map { "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/\($0.lastPathComponent)" }
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            runtime: runtime
+        )
+
+        viewModel.updateExternalDisplayAvailabilityForProjection(true)
+        viewModel.syncRuntimeStateFromFacade(clearActionLog: true)
+
+        XCTAssertTrue(viewModel.isExternalDisplayAvailable)
+        XCTAssertTrue(viewModel.runtime.state.projection.hasExternalDisplay)
+        XCTAssertTrue(viewModel.livePreflightSnapshot.hasExternalDisplay)
     }
 
-    private func viewModelSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+    func testOutputControllerUnavailableCallbackStillStopsBroadcastThroughRuntime() throws {
+        guard let screen = NSScreen.main ?? NSScreen.screens.first else {
+            throw XCTSkip("No NSScreen is available in this test environment.")
+        }
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
+        let output = LiveOutputEncapsulationOutputSpy()
+        viewModel.outputWindowControllerFactory = { output }
+        viewModel.externalScreenProvider = { screen }
+
+        viewModel.handleBroadcastToggle()
+        output.onExternalDisplayUnavailable?()
+
+        XCTAssertFalse(viewModel.isBroadcasting)
+        XCTAssertTrue(viewModel.runtime.actionLog.contains { $0.actionName == "projectionExternalDisplayLost" })
+        XCTAssertTrue(viewModel.supportEvents.contains { $0.kind == .projectionLost })
+    }
+}
+
+private final class LiveOutputEncapsulationOutputSpy: OutputWindowControlling {
+    var onExternalDisplayUnavailable: (() -> Void)?
+    private(set) var mountCount = 0
+    private(set) var showCount = 0
+    private(set) var hideCount = 0
+
+    func mountAnyView(rootView: AnyView) {
+        mountCount += 1
     }
 
-    private func projectionOutputSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionOutput.swift")
+    func show(on screen: NSScreen?) {
+        showCount += 1
     }
 
-    private func pptEventTapSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+PPTEventTap.swift")
+    func hide() {
+        hideCount += 1
     }
 }
