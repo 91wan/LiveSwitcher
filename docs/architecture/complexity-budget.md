@@ -55,13 +55,13 @@ tests rather than moved into another source-string assertion.
 
 ## Post-v0.5.0 Burn-Down Snapshot - 2026-06-28
 
-After the post-stable runtime, ViewModel, source-string, BGM behavior-suite, and
-LivePreflight behavior-suite simplification slices, the allowlist is smaller and
-still records only explicit remaining debt.
+After the post-stable runtime, ViewModel, source-string, BGM behavior-suite,
+LivePreflight behavior-suite, and source-contract burn-down simplification
+slices, the allowlist is smaller and still records only explicit remaining debt.
 
-- Allowlist rows: 21
-- Source-string allowlist rows: 18
-- Source-string actual total: 448
+- Allowlist rows: 19
+- Source-string allowlist rows: 16
+- Source-string actual total: 374
 
 The removed entries cover completed file splits and source-string replacements.
 Remaining rows still require future behavior, model, reducer, layout, or policy

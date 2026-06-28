@@ -83,10 +83,24 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         let policy = try repoText("docs/architecture/complexity-budget.md")
 
         XCTAssertTrue(policy.contains("Post-v0.5.0 Burn-Down Snapshot - 2026-06-28"))
-        XCTAssertTrue(policy.contains("Allowlist rows: 21"))
-        XCTAssertTrue(policy.contains("Source-string allowlist rows: 18"))
-        XCTAssertTrue(policy.contains("Source-string actual total: 448"))
+        XCTAssertTrue(policy.contains("Allowlist rows: 19"))
+        XCTAssertTrue(policy.contains("Source-string allowlist rows: 16"))
+        XCTAssertTrue(policy.contains("Source-string actual total: 374"))
         XCTAssertTrue(policy.contains("No release is triggered by this allowlist burn-down"))
+    }
+
+    func testPostStableSourceContractBurnDownRemovesAtLeastFiftyMoreChecks() throws {
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        var total = 0
+        for line in manifest.split(separator: "\n").dropFirst() {
+            let columns = line.split(separator: "\t", omittingEmptySubsequences: false)
+            guard columns.first == "source-contains", columns.count > 3 else {
+                continue
+            }
+            total += Int(columns[3]) ?? 0
+        }
+
+        XCTAssertLessThanOrEqual(total, 398)
     }
 
     private func repoText(_ relativePath: String) throws -> String {
