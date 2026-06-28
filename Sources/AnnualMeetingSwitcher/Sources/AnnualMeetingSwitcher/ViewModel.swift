@@ -231,7 +231,7 @@ final class SwitcherViewModel {
 
     // MARK: - 推流窗口
 
-    private var outputWindowController: OutputWindowControlling?
+    @ObservationIgnored private var projectionOutputStore = ViewModelProjectionOutputStore()
     var externalScreenProvider: () -> NSScreen? = {
         SecondScreenSelector.pickExternal()
     } {
@@ -253,7 +253,6 @@ final class SwitcherViewModel {
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
-    @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     var agendaReminderAcknowledgedItemIDs = Set<UUID>()
 
     // MARK: - V25: 翻页拦截器状态
@@ -263,9 +262,7 @@ final class SwitcherViewModel {
     @ObservationIgnored var testHooks = SwitcherViewModelTestHooks()
     @ObservationIgnored var runtimeFacadeDispatchSuppressionDepth = 0
 
-    private var pageInterceptEventTap: CFMachPort?
-    private var pageInterceptRunLoopSource: CFRunLoopSource?
-    private var pageInterceptSelfRefcon: UnsafeMutableRawPointer?
+    @ObservationIgnored private var pageInterceptStore = ViewModelPageInterceptStore()
     nonisolated private let pageInterceptRuntime = PageInterceptRuntime()
     nonisolated private let wpsApplicationMonitor = WPSApplicationMonitor()
 
@@ -394,7 +391,7 @@ final class SwitcherViewModel {
     }
 
     var isPageInterceptEventTapActiveForRuntimeSnapshot: Bool {
-        pageInterceptEventTap != nil
+        pageInterceptStore.isPageInterceptEventTapActive
     }
 
     func updateExternalDisplayAvailabilityForProjection(_ isAvailable: Bool) {
@@ -402,27 +399,27 @@ final class SwitcherViewModel {
     }
 
     func makeOutputWindowControllerForProjection() -> OutputWindowControlling {
-        outputWindowControllerFactory()
+        projectionOutputStore.makeOutputWindowController(factory: outputWindowControllerFactory)
     }
 
     func currentOutputWindowControllerForProjection() -> OutputWindowControlling? {
-        outputWindowController
+        projectionOutputStore.currentOutputWindowController()
     }
 
     func setOutputWindowControllerForProjection(_ controller: OutputWindowControlling?) {
-        outputWindowController = controller
+        projectionOutputStore.setOutputWindowController(controller)
     }
 
     func clearOutputWindowControllerForProjection() {
-        outputWindowController = nil
+        projectionOutputStore.clearOutputWindowController()
     }
 
     func currentPageInterceptTapForRuntime() -> CFMachPort? {
-        pageInterceptEventTap
+        pageInterceptStore.currentPageInterceptTap()
     }
 
     func currentPageInterceptRunLoopSourceForRuntime() -> CFRunLoopSource? {
-        pageInterceptRunLoopSource
+        pageInterceptStore.currentPageInterceptRunLoopSource()
     }
 
     func installPageInterceptTapForRuntime(
@@ -430,29 +427,22 @@ final class SwitcherViewModel {
         source: CFRunLoopSource,
         refcon: UnsafeMutableRawPointer
     ) {
-        pageInterceptEventTap = tap
-        pageInterceptRunLoopSource = source
-        pageInterceptSelfRefcon = refcon
+        pageInterceptStore.installPageInterceptTap(tap: tap, source: source, refcon: refcon)
     }
 
     func clearPageInterceptTapForRuntime() {
-        if let refcon = pageInterceptSelfRefcon {
+        if let refcon = pageInterceptStore.clearPageInterceptTap() {
             Unmanaged<SwitcherViewModel>.fromOpaque(refcon).release()
         }
-        pageInterceptEventTap = nil
-        pageInterceptRunLoopSource = nil
-        pageInterceptSelfRefcon = nil
         updatePageInterceptRuntimeTap(nil)
     }
 
     func enableCurrentPageInterceptTapForRuntime() {
-        guard let tap = pageInterceptEventTap else { return }
-        CGEvent.tapEnable(tap: tap, enable: true)
+        pageInterceptStore.enableCurrentPageInterceptTap()
     }
 
     func disableCurrentPageInterceptTapForRuntime() {
-        guard let tap = pageInterceptEventTap else { return }
-        CGEvent.tapEnable(tap: tap, enable: false)
+        pageInterceptStore.disableCurrentPageInterceptTap()
     }
 
     nonisolated func updatePageInterceptRuntimeTap(_ tap: CFMachPort?) {
@@ -468,17 +458,15 @@ final class SwitcherViewModel {
     }
 
     func setPendingPPTToggleSource(_ source: PPTModeToggleSource?) {
-        pendingPPTToggleSource = source
+        pageInterceptStore.setPendingPPTToggleSource(source)
     }
 
     func consumePendingPPTToggleSource() -> PPTModeToggleSource? {
-        let source = pendingPPTToggleSource
-        pendingPPTToggleSource = nil
-        return source
+        pageInterceptStore.consumePendingPPTToggleSource()
     }
 
     func currentPendingPPTToggleSource() -> PPTModeToggleSource? {
-        pendingPPTToggleSource
+        pageInterceptStore.currentPendingPPTToggleSource()
     }
 
     func setBGMTransitionGenerationForRuntime(_ generation: Int) {
