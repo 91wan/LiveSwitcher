@@ -40,11 +40,12 @@ Patch release remains blocked unless a user-visible production-risk fix or deliv
 
 ## Post-stable allowlist burn-down decision - 2026-06-28
 
-PR #412 completed the current source-string replacement slice and reduced the
-target contract files by 63 `source.contains` assertions. The allowlist status
-after that merge is:
+The post-stable source-string replacement slice reduced the target contract
+files by 63 `source.contains` assertions. The BGM runtime reducer behavior
+suite split also removed one oversized test-file allowlist entry. The allowlist
+status after those slices is:
 
-- allowlist rows: 23
+- allowlist rows: 22
 - source-string allowlist rows: 18
 - source-string actual total: 448
 
