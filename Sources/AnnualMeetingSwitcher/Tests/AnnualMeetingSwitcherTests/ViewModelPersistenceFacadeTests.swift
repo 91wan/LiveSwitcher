@@ -3,117 +3,33 @@ import XCTest
 
 @MainActor
 final class ViewModelPersistenceFacadeTests: XCTestCase {
-    func testPersistentStateSnapshotIsNotDeclaredInMainViewModel() throws {
-        let source = try viewModelSource()
+    func testSaveDataPersistsPreferencesAndQueuesForNextLaunch() throws {
+        let suiteName = "ViewModelPersistenceFacadeTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        let video = try makeTempFile(extension: "mp4")
+        let bgm = try makeTempFile(extension: "mp3")
+        let program = ProgramItem(title: "Opening", subtitle: "VIDEO", sourceURL: video)
+        let bgmItem = BGMItem(title: "Walk-in", url: bgm, category: .entrance)
+        let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false, userDefaults: defaults)
+        var persistentState = SwitcherPersistentState()
+        persistentState.programItems = [program]
+        persistentState.bgmItems = [bgmItem]
+        persistentState.audioStrategy = .bgmOnly
+        persistentState.bgmPlayMode = .loopOne
+        viewModel.applyPersistentState(persistentState)
 
-        XCTAssertFalse(source.contains("func makePersistentStateSnapshot("))
-        XCTAssertFalse(source.contains("func applyPersistentState("))
-    }
+        viewModel.saveData()
 
-    func testRuntimePersistenceMethodsAreNotDeclaredInMainViewModel() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func persistConsoleModeFromRuntime("))
-        XCTAssertFalse(source.contains("func persistThemeOverrideFromRuntime("))
-        XCTAssertFalse(source.contains("func persistAudioStrategyFromRuntime("))
-        XCTAssertFalse(source.contains("func persistSpeakerModeFromRuntime("))
-        XCTAssertFalse(source.contains("func persistBGMPlayModeFromRuntime("))
-        XCTAssertFalse(source.contains("func persistAutoPlayNextVideoOnEndFromRuntime("))
-        XCTAssertFalse(source.contains("func persistAgendaTimeReminderEnabledFromRuntime("))
-        XCTAssertFalse(source.contains("func persistShowAgendaTimelineFromRuntime("))
-        XCTAssertFalse(source.contains("func persistCornerLogoPositionFromRuntime("))
-    }
-
-    func testPersistenceFacadeLivesInViewModelPersistenceExtension() throws {
-        let source = try persistenceExtensionSource()
-
-        XCTAssertTrue(source.contains("extension SwitcherViewModel"))
-        XCTAssertTrue(source.contains("func saveData("))
-        XCTAssertTrue(source.contains("func loadData("))
-        XCTAssertTrue(source.contains("func makePersistentStateSnapshot("))
-        XCTAssertTrue(source.contains("func applyPersistentState("))
-        XCTAssertTrue(source.contains("func persistAudioStrategyFromRuntime("))
-    }
-
-    func testSaveDataStillCallsPersistenceStoreSave() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "saveData"))
-
-        XCTAssertTrue(body.contains("persistenceStore.save("))
-        XCTAssertTrue(body.contains("makePersistentStateSnapshot()"))
-        XCTAssertTrue(body.contains("testHooks.saveDataDidRun?()"))
-        XCTAssertLessThanOrEqual(body.split(separator: "\n").count, 5)
-    }
-
-    func testLoadDataStillCallsPersistenceStoreLoadAndApplyRepairs() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "loadData"))
-
-        XCTAssertTrue(body.contains("persistenceStore.load()"))
-        XCTAssertTrue(body.contains("applyPersistentState("))
-        XCTAssertTrue(body.contains("persistenceStore.applyRepairs("))
-        XCTAssertTrue(body.contains("recordSupportEvent("))
-        XCTAssertLessThanOrEqual(body.split(separator: "\n").count, 9)
-    }
-
-    func testViewModelSaveDataDoesNotDirectlySetUserDefaultsKeys() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "saveData"))
-
-        XCTAssertFalse(body.contains("userDefaults.set("))
-        XCTAssertFalse(body.contains("userDefaults.removeObject"))
-        XCTAssertFalse(body.contains("JSONEncoder()"))
-        XCTAssertFalse(body.contains("ProgramQueueStore.encodedSchedule"))
-    }
-
-    func testViewModelLoadDataDoesNotDirectlyReadUserDefaultsKeys() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "loadData"))
-
-        XCTAssertFalse(body.contains("userDefaults.stringArray("))
-        XCTAssertFalse(body.contains("userDefaults.string("))
-        XCTAssertFalse(body.contains("userDefaults.data("))
-        XCTAssertFalse(body.contains("JSONDecoder()"))
-        XCTAssertFalse(body.contains("ProgramQueueStore.restoredProgramItems"))
-    }
-
-    func testViewModelDoesNotDeclareUDKeys() throws {
-        XCTAssertFalse(try viewModelSource().contains("enum UDKeys"))
-    }
-
-    func testProgramAndAutomationExtractionDidNotMovePersistenceBackIntoViewModel() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("func saveData("))
-        XCTAssertFalse(source.contains("func loadData("))
-        XCTAssertFalse(source.contains("func makePersistentStateSnapshot("))
-        XCTAssertFalse(source.contains("func applyPersistentState("))
-    }
-
-    func testViewModelDoesNotDirectlyEncodeOverlayPresets() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("JSONEncoder().encode(lowerThirdPresets)"))
-        XCTAssertFalse(source.contains("JSONEncoder().encode(countdownPresets)"))
-        XCTAssertFalse(source.contains("JSONEncoder().encode(tickerPresets)"))
-    }
-
-    func testViewModelDoesNotDirectlyDecodeOverlayPresets() throws {
-        let source = try viewModelSource()
-
-        XCTAssertFalse(source.contains("JSONDecoder().decode([LowerThirdPreset].self"))
-        XCTAssertFalse(source.contains("JSONDecoder().decode([CountdownPreset].self"))
-        XCTAssertFalse(source.contains("JSONDecoder().decode([TickerPreset].self"))
-    }
-
-    func testViewModelDoesNotDirectlyRestoreBGMItemsFromUserDefaults() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "loadData"))
-
-        XCTAssertFalse(body.contains("BGMItem(title:"))
-        XCTAssertFalse(body.contains("bgmItems.append"))
-    }
-
-    func testViewModelDoesNotDirectlyRestoreProgramItemsFromUserDefaults() throws {
-        let body = try XCTUnwrap(try persistenceExtensionSource().extractedRuntimeFunctionBody(named: "loadData"))
-
-        XCTAssertFalse(body.contains("ProgramQueueStore.restoredProgramItems"))
-        XCTAssertFalse(body.contains("programItems.append"))
+        let restored = SwitcherViewModel(loadPersistedData: true, enableSystemVolumeObserver: false, userDefaults: defaults)
+        XCTAssertEqual(restored.programItems.map(\.title), ["Opening"])
+        XCTAssertEqual(restored.programItems.map(\.sourceURL), [video])
+        XCTAssertEqual(restored.bgmItems.map(\.title), ["Walk-in"])
+        XCTAssertEqual(restored.bgmItems.map(\.url), [bgm])
+        XCTAssertEqual(restored.bgmItems.map(\.category), [.entrance])
+        XCTAssertEqual(restored.audioStrategy, .bgmOnly)
+        XCTAssertEqual(restored.runtime.state.audio.strategy, .bgmOnly)
+        XCTAssertEqual(restored.bgmPlayMode, .loopOne)
     }
 
     func testLoadPersistedDataStillRunsWhenRequested() throws {
@@ -215,14 +131,6 @@ final class ViewModelPersistenceFacadeTests: XCTestCase {
         viewModel.applyPersistentState(SwitcherPersistentState(bgmItems: [newItem]))
 
         XCTAssertEqual(viewModel.bgmItems, [newItem])
-    }
-
-    private func viewModelSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
-    }
-
-    private func persistenceExtensionSource() throws -> String {
-        try XCTUnwrap(optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+Persistence.swift"))
     }
 
     private func makeTempFile(extension pathExtension: String, contents: Data = Data()) throws -> URL {
