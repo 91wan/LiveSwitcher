@@ -3,138 +3,225 @@ import XCTest
 
 @MainActor
 final class RuntimeEffectInfrastructureSplitTests: XCTestCase {
-    func testLiveRuntimeEffectFileContainsOnlyEffectEnumAndNoPorts() throws {
-        let source = try runtimeSource("LiveRuntimeEffect.swift")
+    func testEffectRunnerRecordsRedactedSensitiveEffects() {
+        let runner = LiveRuntimeEffectRunner.recording()
+        let planID = UUID()
+        let originalURL = URL(fileURLWithPath: "/private/customer/keynote.pptx")
 
-        XCTAssertTrue(source.contains("enum LiveRuntimeEffect: Equatable"))
-        XCTAssertFalse(source.contains("protocol MediaPlaybackPort"))
-        XCTAssertFalse(source.contains("protocol PersistencePort"))
-        XCTAssertFalse(source.contains("protocol SupportEventPort"))
-        XCTAssertFalse(source.contains("enum LiveRuntimeEffectPortKind"))
-        XCTAssertFalse(source.contains("var requiredBridgeDomain"))
-        XCTAssertFalse(source.contains("var redactedForRecording"))
-    }
+        runner.run(
+            [
+                .runAppleScript(script: "tell app secret", action: "advance"),
+                .saveCompanyDisplayName("Customer Confidential"),
+                .executeProgramActivation(id: planID, plan: programActivationPlan(url: originalURL))
+            ],
+            currentState: LiveRuntimeState.init,
+            dispatch: { _ in }
+        )
 
-    func testLiveRuntimeEffectFileDoesNotContainEffectRunner() throws {
-        let source = try runtimeSource("LiveRuntimeEffect.swift")
+        XCTAssertEqual(runner.recordedEffects[0], .runAppleScript(script: "<redacted>", action: "advance"))
+        XCTAssertEqual(runner.recordedEffects[1], .saveCompanyDisplayName("<redacted>"))
 
-        XCTAssertFalse(source.contains("final class LiveRuntimeEffectRunner"))
-        XCTAssertFalse(source.contains("func run("))
-        XCTAssertFalse(source.contains("isCurrentMediaGeneration"))
-        XCTAssertFalse(source.contains("isCurrentBGMGeneration"))
-    }
-
-    func testEffectPolicyLivesInEffectPolicyFile() throws {
-        let source = try runtimeSource("LiveRuntimeEffect+Policy.swift")
-
-        XCTAssertTrue(source.contains("extension LiveRuntimeEffect"))
-        XCTAssertTrue(source.contains("var redactedForRecording: LiveRuntimeEffect"))
-        XCTAssertTrue(source.contains("var requiredBridgeDomain: LiveRuntimeDomain"))
-    }
-
-    func testEffectPortKindLivesInOwnFile() throws {
-        let source = try runtimeSource("LiveRuntimeEffectPortKind.swift")
-
-        XCTAssertTrue(source.contains("enum LiveRuntimeEffectPortKind: String, CaseIterable"))
-        XCTAssertFalse(source.contains("protocol "))
-        XCTAssertFalse(source.contains("final class LiveRuntimeEffectRunner"))
-    }
-
-    func testRuntimePortProtocolsLiveInRuntimePortsFile() throws {
-        let source = try runtimeSource("LiveRuntimePorts.swift")
-
-        [
-            "protocol MediaPlaybackPort",
-            "protocol BGMPlaybackPort",
-            "protocol ProjectionPort",
-            "protocol PPTEventTapPort",
-            "protocol AutomationPort",
-            "protocol BGMTimerPort",
-            "protocol AutomationNoticePort",
-            "protocol PresentationQueryPort",
-            "protocol AudioRoutingPort",
-            "protocol ImageAssetPort",
-            "protocol PersistencePort",
-            "protocol SupportEventPort"
-        ].forEach { snippet in
-            XCTAssertTrue(source.contains(snippet), snippet)
+        guard case .executeProgramActivation(planID, let redactedPlan) = runner.recordedEffects[2] else {
+            return XCTFail("Expected recorded program activation effect")
         }
-        XCTAssertFalse(source.contains("extension PersistencePort"))
-        XCTAssertFalse(source.contains("final class LiveRuntimeEffectRunner"))
+        XCTAssertEqual(redactedPlan.item.title, "<redacted>")
+        XCTAssertEqual(redactedPlan.item.subtitle, "<redacted>")
+        XCTAssertNil(redactedPlan.item.sourceURL)
+        XCTAssertNotEqual(redactedPlan.postSelectionEffects, [.openPPTX(originalURL)])
     }
 
-    func testEffectRunnerLivesInEffectRunnerFile() throws {
-        let source = try runtimeSource("LiveRuntimeEffectRunner.swift")
+    func testEffectDomainPolicyCoversExecutionFamilies() {
+        let supportEvent = LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 0), kind: .systemVolumeSynced, detail: "ok")
+        let bgmItem = BGMItem(title: "Walk-in", url: URL(fileURLWithPath: "/tmp/walk-in.mp3"))
 
-        XCTAssertTrue(source.contains("final class LiveRuntimeEffectRunner"))
-        XCTAssertTrue(source.contains("var connectedPortKinds: Set<LiveRuntimeEffectPortKind>"))
-        XCTAssertTrue(source.contains("recordedEffects.append(contentsOf: effects.map(\\.redactedForRecording))"))
-        XCTAssertFalse(source.contains("protocol MediaPlaybackPort"))
-        XCTAssertFalse(source.contains("enum LiveRuntimeEffect: Equatable"))
+        let samples: [(LiveRuntimeEffect, LiveRuntimeDomain)] = [
+            (.applyAudioRouting(reason: .programChanged), .audio),
+            (.loadBackgroundImage(URL(fileURLWithPath: "/tmp/bg.png")), .imageAssets),
+            (.saveAudioStrategy(.bgmOnly), .persistence),
+            (.loadMedia(URL(fileURLWithPath: "/tmp/video.mp4"), generation: 1), .media),
+            (.prepareBGM(bgmItem, generation: 1), .bgm),
+            (.schedulePanicBGMPause(
+                generation: 1,
+                snapshot: PanicPlaybackSnapshot(
+                    currentProgramID: nil,
+                    wasMediaPlaying: false,
+                    currentBGMID: nil,
+                    wasBGMPlaying: false
+                ),
+                delay: 1
+            ), .panic),
+            (.startProjection, .projection),
+            (.startPPTEventTap, .ppt),
+            (.executeProgramActivation(id: UUID(), plan: programActivationPlan()), .programActivation),
+            (.runAppleScript(script: "tell app", action: "advance"), .automationCommand),
+            (.scanPresentationQuery(id: UUID()), .presentationQuery),
+            (.showAutomationNotice(automationNotice()), .automationNotice),
+            (.recordSupportEvent(supportEvent), .support)
+        ]
+
+        for (effect, domain) in samples {
+            XCTAssertEqual(effect.requiredBridgeDomain, domain, "\(effect)")
+        }
     }
 
-    func testSwitcherRuntimePortBundleLivesInOwnFile() throws {
-        let source = try runtimeSource("SwitcherRuntimePortBundle.swift")
+    func testRecordingOnlyRunnerDoesNotInvokeConnectedPorts() {
+        let automation = ClosureAutomationPort()
+        var invokedScripts: [String] = []
+        automation.runHandler = { script, _ in invokedScripts.append(script) }
+        let runner = LiveRuntimeEffectRunner(recordsOnly: true, automation: automation)
 
-        XCTAssertTrue(source.contains("struct SwitcherRuntimePortBundle"))
-        XCTAssertTrue(source.contains("func makeEffectRunner() -> LiveRuntimeEffectRunner"))
-        XCTAssertTrue(source.contains("imageAssets: imageAssetPort"))
-        XCTAssertTrue(source.contains("persistence: persistencePort"))
+        runner.run(
+            [.runAppleScript(script: "tell app secret", action: "advance")],
+            currentState: LiveRuntimeState.init,
+            dispatch: { _ in }
+        )
+
+        XCTAssertTrue(invokedScripts.isEmpty)
+        XCTAssertEqual(runner.recordedEffects, [.runAppleScript(script: "<redacted>", action: "advance")])
     }
 
-    func testLiveRuntimeClosurePortsFileDoesNotContainSwitcherRuntimePortBundle() throws {
-        let source = try runtimeSource("LiveRuntimeClosurePorts.swift")
+    func testRunnerRoutesOnlyCurrentMediaGeneration() {
+        let media = ClosureMediaPlaybackPort()
+        var playedGenerations: [Int] = []
+        media.playHandler = { playedGenerations.append($0) }
+        let runner = LiveRuntimeEffectRunner(recordsOnly: false, media: media)
+        var state = LiveRuntimeState()
+        state.media.generation = 2
 
-        XCTAssertFalse(source.contains("struct SwitcherRuntimePortBundle"))
-        XCTAssertTrue(source.contains("final class ClosureMediaPlaybackPort"))
-        XCTAssertTrue(source.contains("final class ClosurePersistencePort"))
+        runner.run(
+            [.playMedia(generation: 1), .playMedia(generation: 2)],
+            currentState: { state },
+            dispatch: { _ in }
+        )
+
+        XCTAssertEqual(playedGenerations, [2])
+        XCTAssertEqual(runner.recordedEffects, [.playMedia(generation: 1), .playMedia(generation: 2)])
     }
 
-    func testClosurePortsFileContainsOnlyClosurePortAdapters() throws {
-        let source = try runtimeSource("LiveRuntimeClosurePorts.swift")
+    func testRunnerRoutesOnlyCurrentBGMGenerationAndAllowsGlobalPlayMode() {
+        let bgm = ClosureBGMPlaybackPort()
+        var stoppedGenerations: [Int] = []
+        var playModeChanges: [(BGMPlayMode, Int?)] = []
+        bgm.stopHandler = { _, generation in stoppedGenerations.append(generation) }
+        bgm.setPlayModeHandler = { mode, generation in playModeChanges.append((mode, generation)) }
+        let runner = LiveRuntimeEffectRunner(recordsOnly: false, bgm: bgm)
+        var state = LiveRuntimeState()
+        state.bgm.generation = 3
 
-        XCTAssertFalse(source.contains("enum LiveRuntimeEffect"))
-        XCTAssertFalse(source.contains("var requiredBridgeDomain"))
-        XCTAssertFalse(source.contains("final class LiveRuntimeEffectRunner"))
-        XCTAssertFalse(source.contains("protocol MediaPlaybackPort"))
+        runner.run(
+            [
+                .stopBGM(fade: 0.2, generation: 2),
+                .stopBGM(fade: 0.2, generation: 3),
+                .setBGMPlayMode(.loopOne, generation: nil)
+            ],
+            currentState: { state },
+            dispatch: { _ in }
+        )
+
+        XCTAssertEqual(stoppedGenerations, [3])
+        XCTAssertEqual(playModeChanges.map(\.0), [.loopOne])
+        XCTAssertEqual(playModeChanges.map(\.1), [nil])
+    }
+
+    func testRunnerRoutesUngatedEffectsToTheirPorts() {
+        let projection = ClosureProjectionPort()
+        let ppt = ClosurePPTEventTapPort()
+        let automationNoticePort = ClosureAutomationNoticePort()
+        let presentationQuery = ClosurePresentationQueryPort()
+        let audioRouting = ClosureAudioRoutingPort()
+        let imageAssets = ClosureImageAssetPort()
+        let persistence = ClosurePersistencePort()
+        let support = ClosureSupportEventPort()
+
+        var events: [String] = []
+        projection.startHandler = { events.append("projection.start") }
+        ppt.stopHandler = { reason in events.append("ppt.stop.\(reason.rawValue)") }
+        automationNoticePort.showHandler = { notice in events.append("notice.\(notice.action)") }
+        presentationQuery.scanHandler = { _, _ in events.append("presentation.scan") }
+        audioRouting.applyHandler = { reason, _ in events.append("audio.\(reason)") }
+        imageAssets.loadCornerLogoImageHandler = { _ in events.append("image.logo") }
+        persistence.saveCompanyDisplayNameHandler = { _ in events.append("persistence.company") }
+        support.recordHandler = { event in events.append("support.\(event.kind.rawValue)") }
+
+        let runner = LiveRuntimeEffectRunner(
+            recordsOnly: false,
+            projection: projection,
+            ppt: ppt,
+            automationNotice: automationNoticePort,
+            presentationQuery: presentationQuery,
+            audioRouting: audioRouting,
+            imageAssets: imageAssets,
+            persistence: persistence,
+            support: support
+        )
+
+        runner.run(
+            [
+                .startProjection,
+                .stopPPTEventTap(reason: .operatorDisabled),
+                .showAutomationNotice(automationNotice(action: "accessibilityPermission")),
+                .scanPresentationQuery(id: UUID()),
+                .applyAudioRouting(reason: .speakerChanged),
+                .loadCornerLogoImage(URL(fileURLWithPath: "/tmp/logo.png")),
+                .saveCompanyDisplayName("Customer"),
+                .recordSupportEvent(LiveSupportEvent(timestamp: Date(timeIntervalSince1970: 0), kind: .projectionStarted, detail: "ok"))
+            ],
+            currentState: LiveRuntimeState.init,
+            dispatch: { _ in }
+        )
+
+        XCTAssertEqual(
+            events,
+            [
+                "projection.start",
+                "ppt.stop.operatorDisabled",
+                "notice.accessibilityPermission",
+                "presentation.scan",
+                "audio.speakerChanged",
+                "image.logo",
+                "persistence.company",
+                "support.projection.started"
+            ]
+        )
+        XCTAssertEqual(runner.recordedEffects.count, 8)
     }
 
     func testSwitcherRuntimePortBundleStillCreatesAllProductionPorts() {
         let runner = SwitcherRuntimePortBundle().makeEffectRunner()
 
-        XCTAssertEqual(
-            runner.connectedPortKinds,
-            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
-        )
+        XCTAssertEqual(runner.connectedPortKinds, expectedProductionPortKinds)
     }
 
     func testSwitcherRuntimePortBundleConnectedPortsIncludePresentationQuerySet() {
         let viewModel = SwitcherViewModel(loadPersistedData: false, enableSystemVolumeObserver: false)
 
         XCTAssertEqual(viewModel.runtimeBridgeMode, .panicOwned)
-        XCTAssertEqual(
-            viewModel.runtimeConnectedPortKinds,
-            [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+        XCTAssertEqual(viewModel.runtimeConnectedPortKinds, expectedProductionPortKinds)
+    }
+
+    private var expectedProductionPortKinds: Set<LiveRuntimeEffectPortKind> {
+        [.media, .bgm, .bgmTimer, .panicDelay, .projection, .ppt, .automationNotice, .support, .automation, .presentationQuery, .programActivation, .audioRouting, .imageAssets, .persistence]
+    }
+
+    private func automationNotice(action: String = "advance") -> AutomationRuntimeNotice {
+        AutomationRuntimeNotice(
+            action: action,
+            title: "Notice",
+            message: "Message",
+            severity: .warn,
+            primaryAction: nil,
+            createdAt: Date(timeIntervalSince1970: 0),
+            expiresAfter: nil
         )
     }
 
-    func testEffectSplitHasNarrowPresentationQueryButNoBroadAutomationQuery() throws {
-        let state = try [
-            runtimeSource("LiveRuntimeBridgeMode.swift"),
-            runtimeSource("LiveRuntimeDomain.swift")
-        ].joined(separator: "\n")
-        let effect = try runtimeSource("LiveRuntimeEffect.swift")
-        let ports = try runtimeSource("LiveRuntimePorts.swift")
-
-        XCTAssertFalse(state.contains("automationQueryOwned"))
-        XCTAssertFalse(state.contains("automationQuery"))
-        XCTAssertTrue(state.contains("presentationQueryOwned"))
-        XCTAssertTrue(effect.contains("scanPresentationQuery"))
-        XCTAssertTrue(ports.contains("PresentationQueryPort"))
-        XCTAssertFalse(ports.contains("AutomationQueryPort"))
-    }
-
-    private func runtimeSource(_ filename: String) throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/\(filename)")
+    private func programActivationPlan(url: URL = URL(fileURLWithPath: "/tmp/deck.pptx")) -> ProgramActivationPlan {
+        let item = ProgramItem(title: "Opening", subtitle: "PPTX", sourceURL: url)
+        return ProgramActivationPlan(
+            item: item,
+            runtimeSelection: .detached(item),
+            preSelectionEffects: [.presentInvalidDeckAlert(url)],
+            postSelectionEffects: [.openPPTX(url), .presentActiveDeck]
+        )
     }
 }
