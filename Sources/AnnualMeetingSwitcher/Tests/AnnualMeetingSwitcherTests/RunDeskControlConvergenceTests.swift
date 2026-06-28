@@ -3,93 +3,6 @@ import XCTest
 @testable import LiveSwitcher
 
 final class RunDeskControlConvergenceTests: XCTestCase {
-    func testProgramMonitorUtilitiesAreVisibleWithoutDisclosure() throws {
-        let source = [
-            try sourceText("Views/ProgramMonitor/ProgramMonitorView.swift"),
-            try sourceText("Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift")
-        ].joined(separator: "\n")
-
-        XCTAssertFalse(source.contains("DisclosureGroup"))
-        XCTAssertFalse(source.contains("utilitiesDisclosure"))
-        XCTAssertTrue(source.contains("monitorUtilitiesStack"))
-        XCTAssertFalse(source.contains("transitionControlCard"))
-        XCTAssertTrue(source.contains("wallpaperTrayCard"))
-    }
-
-    func testProgramMonitorChromeDoesNotRepeatStandbyStatus() throws {
-        let source = [
-            try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift"),
-            try sourceText("Views/ProgramMonitor/ProgramMonitorChrome.swift")
-        ].joined(separator: "\n")
-
-        XCTAssertFalse(source.contains("StatusBadge(monitorStateLabel"))
-        XCTAssertFalse(source.contains("monitorDisplayMode"))
-        XCTAssertFalse(source.contains("previewDeck\n\n            monitorInlineStatusRow"))
-        XCTAssertTrue(source.contains(".overlay(alignment: .top)"))
-        XCTAssertTrue(source.contains("StudioTheme.monitorText"))
-    }
-
-    func testWallpaperEmptyStateKeepsInlineImportAction() throws {
-        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorWallpaperTray.swift")
-
-        XCTAssertTrue(source.contains("没有待机壁纸"))
-        XCTAssertTrue(source.contains("导入壁纸"))
-        XCTAssertTrue(source.contains("WallpaperImportService.presentPicker"))
-        XCTAssertTrue(source.contains(" 张"))
-    }
-
-    func testSetupRunDeskRightRailNoLongerOwnsModeControls() throws {
-        let source = try sourceText("Views/LiveOpsPanel.swift")
-
-        XCTAssertFalse(source.contains("modesCard"))
-        XCTAssertFalse(source.contains("opsCard(title: \"Modes\""))
-        XCTAssertFalse(source.contains("audioModesRow"))
-        XCTAssertFalse(source.contains("modeToggleRow("))
-    }
-
-    func testSetupRunDeskRightRailDoesNotDuplicateSetupAudioDock() throws {
-        let source = try sourceText("Views/LiveOpsPanel.swift")
-
-        XCTAssertFalse(source.contains("private var audioCard"))
-        XCTAssertFalse(source.contains("private var bgmMiniCard"))
-        XCTAssertFalse(source.contains("BGM progress"))
-        XCTAssertFalse(source.contains("Open audio mixer page"))
-        XCTAssertFalse(source.contains("Switch to Live"))
-        XCTAssertTrue(source.contains("进入现场"))
-        XCTAssertTrue(source.contains("onSwitchToLive"))
-    }
-
-    func testLeftPanelUsesVisibleAddSourceGridAndNonFocusableRefresh() throws {
-        let source = try [
-            "Views/Setup/LeftPanel.swift",
-            "Views/Setup/ProgramRailControls.swift",
-            "Views/Setup/ProgramImportDropZone.swift",
-            "Views/Setup/ProgramRailFooter.swift"
-        ].map(sourceText).joined(separator: "\n")
-
-        XCTAssertFalse(source.contains("Menu {"))
-        XCTAssertEqual(source.components(separatedBy: "addSourceButton(title:").count - 1, 4)
-        XCTAssertTrue(source.contains(".focusable(false)"))
-        XCTAssertFalse(source.contains("EmptyStateView("))
-        XCTAssertTrue(source.contains("Text(\"拖入文件，或使用上方按钮添加\")"))
-        XCTAssertFalse(source.contains("Text(\"拖入文件\")"))
-        XCTAssertFalse(source.contains("Text(\"或使用上方按钮添加\")"))
-        XCTAssertTrue(source.contains(".minimumScaleFactor(0.78)"))
-        XCTAssertTrue(source.contains("ProgramRailFooter"))
-    }
-
-    func testProgramMonitorPreviewDeckIsExplicitlyCenteredWithoutChangingCanvas() throws {
-        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift")
-
-        XCTAssertTrue(source.contains("previewDeckFrame"))
-        XCTAssertTrue(source.contains(".frame(maxWidth: .infinity, alignment: .center)"))
-        XCTAssertTrue(source.contains(".aspectRatio(ProgramMonitorPreviewDeckLayout.aspectRatio, contentMode: .fit)"))
-        XCTAssertTrue(source.contains("static let aspectRatio: CGFloat = 16.0 / 9.0"))
-        XCTAssertTrue(source.contains("ProgramMonitorOverlayCanvas.logicalSize"))
-        XCTAssertTrue(source.contains("ActiveProgramOverlayLayer("))
-        XCTAssertFalse(source.contains(".scaledToFill()"))
-    }
-
     func testProgramMonitorPreviewDeckKeepsSixteenNineAtSetupWidths() {
         let setupWidths: [CGFloat] = [800, 1_200, 1_600]
 
@@ -105,14 +18,84 @@ final class RunDeskControlConvergenceTests: XCTestCase {
         }
     }
 
-    func testRunDeskRailsHaveLowEmphasisFooters() throws {
-        let leftPanel = try sourceText("Views/Setup/LeftPanel.swift")
-        let liveOps = try sourceText("Views/LiveOpsPanel.swift")
+    func testProgramMonitorPreviewDeckHandlesZeroAndUnlimitedSpace() {
+        let zero = ProgramMonitorPreviewDeckLayout.make(containerWidth: 0, maxHeight: 342)
+        let live = ProgramMonitorPreviewDeckLayout.make(containerWidth: 1_920, maxHeight: .infinity)
 
-        XCTAssertTrue(leftPanel.contains("ProgramRailFooter"))
-        XCTAssertTrue(liveOps.contains("runtimeFooter"))
-        XCTAssertTrue(liveOps.contains("HostSystemSummary.shortVersionString"))
-        XCTAssertFalse(liveOps.contains("ProcessInfo.processInfo.operatingSystemVersionString"))
+        XCTAssertEqual(zero.size, .zero)
+        XCTAssertEqual(zero.leftGutter, 0)
+        XCTAssertEqual(zero.rightGutter, 0)
+        XCTAssertEqual(live.size.width, 1_920, accuracy: 0.001)
+        XCTAssertEqual(live.size.height, 1_080, accuracy: 0.001)
+    }
+
+    func testProgramMonitorChromeModelKeepsStatusCompactInsteadOfRepeatingBadges() {
+        let full = ProgramMonitorChromeLayoutModel.make(width: 640)
+        let compact = ProgramMonitorChromeLayoutModel.make(width: 420)
+        let stateOnly = ProgramMonitorChromeLayoutModel.make(width: 240)
+
+        XCTAssertEqual(full.variant, .full)
+        XCTAssertTrue(full.showsFullInlineStatus)
+        XCTAssertFalse(full.showsCompactInlineStatus)
+        XCTAssertEqual(compact.variant, .compact)
+        XCTAssertFalse(compact.showsFullInlineStatus)
+        XCTAssertTrue(compact.showsCompactInlineStatus)
+        XCTAssertEqual(stateOnly.variant, .stateOnly)
+        XCTAssertFalse(stateOnly.showsFullInlineStatus)
+        XCTAssertFalse(stateOnly.showsCompactInlineStatus)
+    }
+
+    func testProgramMonitorStateSummarizesPreviewLiveAndStandby() {
+        let item = ProgramItem(title: "Opening", subtitle: "VIDEO", sourceURL: URL(fileURLWithPath: "/tmp/opening.mov"))
+
+        XCTAssertEqual(ProgramMonitorStateModel.make(isBroadcasting: true, currentItem: item).label, "直播")
+        XCTAssertEqual(ProgramMonitorStateModel.make(isBroadcasting: true, currentItem: item).kind, .live)
+        XCTAssertEqual(ProgramMonitorStateModel.make(isBroadcasting: false, currentItem: item).label, "预览")
+        XCTAssertEqual(ProgramMonitorStateModel.make(isBroadcasting: false, currentItem: nil).label, "待机")
+    }
+
+    func testWallpaperEmptyAndActiveStatesStayInlineAndExplicit() {
+        let first = URL(fileURLWithPath: "/tmp/wallpaper-a.png")
+        let second = URL(fileURLWithPath: "/tmp/wallpaper-b.png")
+
+        let empty = LiveWallpaperQuickPickerModel.make(wallpapers: [], activeWallpaperURL: nil)
+        let populated = LiveWallpaperQuickPickerModel.make(wallpapers: [first, second], activeWallpaperURL: first)
+
+        XCTAssertTrue(empty.isEmpty)
+        XCTAssertEqual(empty.displayTitle, "没有待机壁纸")
+        XCTAssertEqual(empty.statusText, "无壁纸")
+        XCTAssertEqual(empty.statusKind, .warn)
+        XCTAssertEqual(populated.statusText, "2")
+        XCTAssertEqual(populated.statusKind, .ready)
+        XCTAssertEqual(populated.items.map(\.title), ["wallpaper-a.png", "wallpaper-b.png"])
+        XCTAssertEqual(populated.items.map(\.isActive), [true, false])
+    }
+
+    func testSetupAudioDockOnlyAppearsOutsideAudioMixerInSetupMode() {
+        XCTAssertTrue(SetupAudioDockModel.shouldShow(consoleMode: .setup, selectedTab: .preview))
+        XCTAssertFalse(SetupAudioDockModel.shouldShow(consoleMode: .setup, selectedTab: .audioMixer))
+        XCTAssertFalse(SetupAudioDockModel.shouldShow(consoleMode: .live, selectedTab: .preview))
+    }
+
+    func testSetupAudioDockSummarizesMutedChannelsAndEffectiveVolumes() {
+        let model = SetupAudioDockModel.make(
+            masterVolume: 0.74,
+            mediaVolume: 0.35,
+            bgmVolume: 0.2,
+            effectiveMediaVolume: 0.18,
+            effectiveBGMVolume: 0.07,
+            isMasterMuted: false,
+            isMediaMuted: true,
+            isBGMMuted: true
+        )
+
+        XCTAssertEqual(model.masterUserText, "74%")
+        XCTAssertEqual(model.masterEffectiveText, "74%")
+        XCTAssertEqual(model.mediaUserText, "35%")
+        XCTAssertEqual(model.bgmUserText, "20%")
+        XCTAssertEqual(model.mediaEffectiveText, "18%")
+        XCTAssertEqual(model.bgmEffectiveText, "7%")
+        XCTAssertEqual(model.mutedChannelCount, 2)
     }
 
     func testAutoNextIdleStateIsNeutralAndActiveStateWarns() {
@@ -133,27 +116,27 @@ final class RunDeskControlConvergenceTests: XCTestCase {
 
         XCTAssertEqual(state.displayStatusText, "待选")
         XCTAssertEqual(state.displayStatusKind, .idle)
+        XCTAssertTrue(state.canPlay)
+        XCTAssertFalse(state.canSkipNext)
+        XCTAssertEqual(state.skipDisabledReason, "请先选择或播放一首 BGM。")
+    }
+
+    func testBGMPlayingStatusUsesReadyTreatmentAndTransportAffordances() {
+        let first = BGMItem(title: "Opening", url: URL(fileURLWithPath: "/tmp/opening.mp3"), category: .warmUp)
+        let second = BGMItem(title: "Walkup", url: URL(fileURLWithPath: "/tmp/walkup.mp3"), category: .warmUp)
+        let state = BGMControlsState.make(items: [first, second], currentItem: first, isPlaying: true)
+
+        XCTAssertEqual(state.displayStatusText, "播放中")
+        XCTAssertEqual(state.displayStatusKind, .ready)
+        XCTAssertTrue(state.canSeekToBeginning)
+        XCTAssertTrue(state.canSkipPrevious)
+        XCTAssertTrue(state.canSkipNext)
+        XCTAssertNil(state.playDisabledReason)
+        XCTAssertNil(state.skipDisabledReason)
     }
 
     func testDirectorRailsUseNarrowerRunDeskWidth() {
         XCTAssertEqual(StudioTheme.directorRailWidth, 320)
-    }
-
-    private func sourceText(_ relativePath: String) throws -> String {
-        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
-    }
-
-    private func sourceURL(_ relativePath: String) throws -> URL {
-        var directory = URL(fileURLWithPath: #filePath)
-        while directory.pathComponents.count > 1 {
-            directory.deleteLastPathComponent()
-            let candidate = directory
-                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
-                .appendingPathComponent(relativePath)
-            if FileManager.default.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-        }
-        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+        XCTAssertLessThan(StudioTheme.directorRailWidth, 360)
     }
 }

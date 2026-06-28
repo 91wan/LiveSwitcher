@@ -1,3 +1,4 @@
+import CoreGraphics
 import XCTest
 @testable import LiveSwitcher
 
@@ -16,15 +17,6 @@ final class LiveModeLayoutTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.contentTopPadding, 14)
         XCTAssertGreaterThanOrEqual(LiveModeLayoutMetrics.contentBottomPadding, 6)
         XCTAssertGreaterThanOrEqual(ConsoleChromeLayoutMetrics.navigationBarMinHeight, 76)
-    }
-
-    func testLiveModeViewDefinesDedicatedStageFourRegions() throws {
-        XCTAssertTrue(try sourceText("Views/LiveModeView.swift").contains("struct LiveModeView"))
-        XCTAssertTrue(try sourceText("Views/LiveSourceRail.swift").contains("struct LiveSourceRail"))
-        XCTAssertTrue(try sourceText("Views/LiveProgramStack.swift").contains("struct LiveProgramStack"))
-        XCTAssertTrue(try sourceText("Views/LiveAudioStrip.swift").contains("struct LiveAudioStrip"))
-        XCTAssertTrue(try sourceText("Views/LiveQuickRail.swift").contains("struct LiveQuickRail"))
-        XCTAssertTrue(try sourceText("Views/LiveRuntimeStatusBar.swift").contains("struct LiveRuntimeStatusBar"))
     }
 
     func testLiveModeViewFilesStayFocusedAfterPostStableSplit() throws {
@@ -50,170 +42,150 @@ final class LiveModeLayoutTests: XCTestCase {
             let maxLineCount = fileName == "LiveModeView.swift" ? 350 : 450
             XCTAssertLessThanOrEqual(lineCount, maxLineCount, "\(fileName) should stay focused")
         }
-
-        let liveModeViewSource = try String(contentsOf: viewsDirectory.appendingPathComponent("LiveModeView.swift"), encoding: .utf8)
-        XCTAssertFalse(liveModeViewSource.contains("struct LiveSourceRail"))
-        XCTAssertFalse(liveModeViewSource.contains("struct LiveQuickRail"))
-        XCTAssertFalse(liveModeViewSource.contains("struct LiveRuntimeStatusBar"))
     }
 
-    func testLiveModePreservesBreathingRoomBelowChrome() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
-        let navigationBar = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
+    func testLiveModeColumnMetricsKeepCurrentProgramDominant() {
+        let sideRails = LiveModeLayoutMetrics.sourceRailWidth
+            + LiveModeLayoutMetrics.quickRailWidth
+            + LiveModeLayoutMetrics.mainColumnSpacing * 2
+            + LiveModeLayoutMetrics.horizontalContentPadding * 2
 
-        XCTAssertTrue(source.contains(".padding(.top, LiveModeLayoutMetrics.contentTopPadding)"))
-        XCTAssertFalse(source.contains(".padding(.top, 8)"))
-        XCTAssertTrue(navigationBar.contains("ConsoleChromeLayoutMetrics.navigationBarMinHeight"))
-        XCTAssertFalse(navigationBar.contains(".frame(minHeight: 64)"))
+        XCTAssertGreaterThan(LiveModeLayoutMetrics.minimumProgramColumnWidth, sideRails)
+        XCTAssertLessThan(LiveModeLayoutMetrics.sourceRailWidthEmpty, LiveModeLayoutMetrics.sourceRailWidth * 0.5)
+        XCTAssertEqual(LiveModeLayoutMetrics.railThumbnailSize.width / LiveModeLayoutMetrics.railThumbnailSize.height, 1.76, accuracy: 0.01)
     }
 
-    func testLiveQuickRailScrollsInsteadOfClippingDenseControls() throws {
-        let source = try sourceText("Views/LiveQuickRail.swift")
-
-        XCTAssertTrue(source.contains("ScrollView(.vertical, showsIndicators: false)"))
-        XCTAssertFalse(source.contains(".scrollClipDisabled()"))
+    func testLiveModeSimplicityPolicyAllowsOnlyOperatorActionsInLiveMode() {
+        XCTAssertLessThanOrEqual(
+            LiveModeSimplicityPolicy.primaryActions.count,
+            LiveModeSimplicityPolicy.maxPrimaryActionCount
+        )
+        XCTAssertTrue(LiveModeSimplicityPolicy.primaryActions.allSatisfy(LiveModeSimplicityPolicy.isAllowed))
+        XCTAssertTrue(LiveModeConfigurationSurface.allCases.allSatisfy(LiveModeSimplicityPolicy.isForbidden))
+        XCTAssertFalse(LiveModeSimplicityPolicy.primaryActions.map(\.rawValue).contains("editProgramQueue"))
     }
 
-    func testContentViewRoutesLiveModeToDedicatedLayout() throws {
-        let source = try sourceText("Views/AppShell/ActiveConsoleLayer.swift")
+    func testProgramMonitorPreviewDeckKeepsSixteenNineAcrossSetupAndLiveWidths() {
+        let setupWidths: [CGFloat] = [800, 1_200, 1_600]
 
-        XCTAssertTrue(source.contains("LiveModeView"))
-        XCTAssertTrue(source.contains("liveContent"))
-        XCTAssertTrue(source.contains("ActiveConsoleLayer(isActive: consoleMode == .live)"))
-        XCTAssertFalse(source.contains("runDesk(isLiveMode: consoleMode == .live)"))
-    }
+        for containerWidth in setupWidths {
+            let layout = ProgramMonitorPreviewDeckLayout.make(
+                containerWidth: containerWidth,
+                maxHeight: 342
+            )
 
-    func testLiveModeDoesNotExposeSetupOnlyImportControls() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
-
-        XCTAssertFalse(source.contains("Add Source"))
-        XCTAssertFalse(source.contains("Drag files here"))
-        XCTAssertFalse(source.contains("Auto-next video"))
-        XCTAssertFalse(source.contains("Import wallpaper"))
-        XCTAssertFalse(source.contains("scanAndAddKeynoteWindows"))
-    }
-
-    func testLiveSourcesEmptyStateOffersSetupCTA() throws {
-        let source = try sourceText("Views/LiveSourceRail.swift")
-
-        XCTAssertTrue(source.contains("切到准备模式"))
-        XCTAssertTrue(source.contains("viewModel.navigateToSetup(.preview)"))
-    }
-
-    func testLiveSourceRailUsesAdaptiveEmptyWidthAndCompactEmptyCTA() throws {
-        let source = try sourceText("Views/LiveModeView.swift")
-
-        XCTAssertTrue(source.contains("LiveModeLayoutMetrics.sourceRailWidthEmpty"))
-        XCTAssertTrue(source.contains("viewModel.programItems.isEmpty ? LiveModeLayoutMetrics.sourceRailWidthEmpty : LiveModeLayoutMetrics.sourceRailWidth"))
-        XCTAssertTrue(source.contains(".animation(.easeInOut(duration: 0.2), value: viewModel.programItems.isEmpty)"))
-        XCTAssertFalse(source.contains("EmptyStateView(\n                        title: \"No sources\""))
-    }
-
-    func testProgramMonitorLiveModeHidesSetupUtilitiesAndHeightCap() throws {
-        let source = try [
-            "Views/ProgramMonitor/ProgramMonitorView.swift",
-            "Views/ProgramMonitor/ProgramMonitorPreviewDeck.swift"
-        ]
-        .map { try sourceText($0) }
-        .joined(separator: "\n")
-
-        XCTAssertTrue(source.contains("if !isLiveMode"))
-        XCTAssertTrue(source.contains("livePreviewMaxHeight"))
-        XCTAssertTrue(source.contains("isLiveMode ? .infinity : 342"))
-    }
-
-    func testLiveAudioStripExposesThreeFadersWithoutSwitchingTabs() throws {
-        let source = try sourceText("Views/LiveAudioStrip.swift")
-
-        XCTAssertTrue(source.contains("$viewModel.masterVolume"))
-        XCTAssertTrue(source.contains("$viewModel.mediaVolume"))
-        XCTAssertTrue(source.contains("$viewModel.bgmVolume"))
-        XCTAssertTrue(source.contains("Master"))
-        XCTAssertTrue(source.contains("Media"))
-        XCTAssertTrue(source.contains("BGM"))
-    }
-
-    func testLiveBGMCardDoesNotNavigateToSetupLibrary() throws {
-        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
-
-        let legacyLibraryLabel = "Open BGM " + "Library"
-        XCTAssertFalse(source.contains(legacyLibraryLabel))
-        XCTAssertFalse(source.contains("onOpenMixer()"))
-    }
-
-    func testLiveModeQuickRailLeavesModesToTopToolbarAndKeepsCoreActions() throws {
-        let liveMode = try sourceText("Views/LiveModeView.swift")
-        let toolbar = try sourceText("Views/MainToolbar.swift")
-
-        XCTAssertFalse(liveMode.contains("modesCard"))
-        XCTAssertFalse(liveMode.contains("ModeToggleCard("))
-        XCTAssertFalse(liveMode.contains("isOn: $viewModel.isSpeakerMode"))
-        XCTAssertTrue(toolbar.contains("toolbarModeButtons"))
-        XCTAssertTrue(toolbar.contains("toggleSpeakerMode()"))
-        XCTAssertTrue(toolbar.contains("viewModel.togglePPTMode(source: pptModeToggleSource)"))
-        XCTAssertFalse(toolbar.contains("viewModel.isPageInterceptEnabled.toggle()"))
-        XCTAssertTrue(toolbar.contains("主持人"))
-        XCTAssertTrue(toolbar.contains("PPT"))
-    }
-
-    func testLiveBGMCardShowsMiniPlaylistWithoutSetupNavigation() throws {
-        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
-
-        XCTAssertTrue(source.contains("liveBGMCategory"))
-        XCTAssertTrue(source.contains("liveBGMPlaylistRows("))
-        XCTAssertTrue(source.contains("playlist.rows"))
-        XCTAssertTrue(source.contains("playlist.remainingCountText"))
-        let legacyLibraryLabel = "Label(\"Open BGM " + "Library\""
-        XCTAssertFalse(source.contains(legacyLibraryLabel))
-    }
-
-    func testLiveBGMTransportHasRestartButtonAndChineseTooltips() throws {
-        let source = try sourceText("Views/LiveQuickRail+BGM.swift")
-
-        XCTAssertTrue(source.contains("viewModel.seekBGMToBeginning()"))
-        XCTAssertTrue(source.contains("\"回到开头\""))
-        XCTAssertTrue(source.contains("\"上一首\""))
-        XCTAssertTrue(source.contains("\"播放 BGM\""))
-        XCTAssertTrue(source.contains("\"暂停 BGM\""))
-        XCTAssertTrue(source.contains("\"下一首\""))
-        XCTAssertFalse(source.contains("\"BGM transport\""))
-    }
-
-    func testLiveQuickRailKeepsBGMPlaylistInFirstViewportPriority() throws {
-        let source = try sourceText("Views/LiveQuickRail.swift")
-
-        guard let cut = source.range(of: "cutBusCard"),
-              let bgm = source.range(of: "bgmCard"),
-              let overlay = source.range(of: "overlayCard"),
-              let wallpaper = source.range(of: "wallpaperCard") else {
-            return XCTFail("Expected live quick rail cards to be declared in LiveQuickRail.")
+            XCTAssertEqual(layout.size.width / layout.size.height, ProgramMonitorPreviewDeckLayout.aspectRatio, accuracy: 0.001)
+            XCTAssertLessThanOrEqual(layout.size.width, containerWidth)
+            XCTAssertEqual(layout.leftGutter, layout.rightGutter, accuracy: 0.001)
         }
 
-        XCTAssertLessThan(cut.lowerBound, bgm.lowerBound)
-        XCTAssertLessThan(bgm.lowerBound, wallpaper.lowerBound)
-        XCTAssertLessThan(wallpaper.lowerBound, overlay.lowerBound)
+        let liveLayout = ProgramMonitorPreviewDeckLayout.make(containerWidth: 1_600, maxHeight: .infinity)
+        XCTAssertEqual(liveLayout.size.width, 1_600, accuracy: 0.001)
+        XCTAssertEqual(liveLayout.leftGutter, 0, accuracy: 0.001)
     }
 
-    func testLiveWallpaperCardSelectsSpecificWallpaperInsteadOfCycling() throws {
-        let source = try sourceText("Views/LiveQuickRail.swift")
-
-        XCTAssertFalse(source.contains("Next wallpaper"))
+    func testProgramMonitorOverlayCanvasMatchesOutputAspectRatio() {
+        XCTAssertEqual(
+            ProgramMonitorOverlayCanvas.logicalSize.width / ProgramMonitorOverlayCanvas.logicalSize.height,
+            ProgramMonitorPreviewDeckLayout.aspectRatio,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(ProgramMonitorOverlayCanvas.logicalSize, CGSize(width: 1920, height: 1080))
     }
 
-    func testAudioAndOverlaySubtitlesUseChineseCopy() throws {
-        let audio = try sourceText("Views/AudioMixerView.swift")
-        let overlays = try sourceText("Views/SettingsView.swift")
-
-        XCTAssertTrue(audio.contains("调音推子、音频策略、BGM 库三块独立管理"))
-        XCTAssertTrue(audio.contains("分类、曲目列表、添加、删除和排序集中在音频页管理"))
-        XCTAssertTrue(overlays.contains("左侧编辑，右侧实时预览"))
-        XCTAssertFalse(audio.contains("routing strategy 和 BGM library 分区管理"))
-        XCTAssertFalse(audio.contains("Categorize, list, add, remove, and reorder BGM tracks here."))
-        XCTAssertFalse(overlays.contains("当前 live 状态"))
+    func testProgramMonitorChromeLayoutRespondsToAvailableWidth() {
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 620).variant, .full)
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 420).variant, .compact)
+        XCTAssertEqual(ProgramMonitorChromeLayoutModel.make(width: 240).variant, .stateOnly)
+        XCTAssertTrue(ProgramMonitorChromeLayoutModel.make(width: 620).showsFullInlineStatus)
+        XCTAssertTrue(ProgramMonitorChromeLayoutModel.make(width: 420).showsCompactInlineStatus)
     }
 
-    private func sourceText(_ relativePath: String) throws -> String {
-        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
+    func testProgramMonitorInfoBlocksDescribeCurrentAndNextStates() {
+        let current = ProgramMonitorInfoBlockModel.current(
+            item: programItem("Opening", subtitle: "video"),
+            isBroadcasting: true,
+            isPlaying: true,
+            isHTMLLoaded: false
+        )
+        let next = ProgramMonitorInfoBlockModel.next(item: programItem("Awards", subtitle: "pptx"))
+
+        XCTAssertEqual(current.title, "当前")
+        XCTAssertEqual(current.value, "Opening")
+        XCTAssertEqual(current.subtitle, "媒体播放中")
+        XCTAssertEqual(current.badgeText, "直播")
+        XCTAssertEqual(current.status, .live)
+        XCTAssertEqual(next.title, "下一项")
+        XCTAssertEqual(next.value, "Awards")
+        XCTAssertEqual(next.subtitle, "PPTX")
+        XCTAssertEqual(next.status, .ready)
+    }
+
+    func testSourceRailRowLabelsExposeQueueRoleSemantics() {
+        let current = SourceRailRowLabelModel.make(queuePosition: 1, queueRole: .current, sourceLabel: "VIDEO")
+        let next = SourceRailRowLabelModel.make(queuePosition: 2, queueRole: .next, sourceLabel: "PPTX")
+        let queued = SourceRailRowLabelModel.make(queuePosition: 3, queueRole: .queued, sourceLabel: "HTML")
+
+        XCTAssertEqual(current.text, "1 · 正在播 · VIDEO")
+        XCTAssertEqual(current.accessibilityLabel, "第 1 项，正在播，VIDEO")
+        XCTAssertEqual(next.text, "2 · 下一项 · PPTX")
+        XCTAssertEqual(queued.text, "3 · HTML")
+    }
+
+    func testLiveRuntimeStatusBarMarksProjectionProgramAndAudioRisk() {
+        let normal = LiveStatusBarModel.make(
+            snapshot: snapshot(isBroadcasting: false, speaker: false, panic: false),
+            nextProgramTitle: "Awards"
+        )
+        let speaker = LiveStatusBarModel.make(
+            snapshot: snapshot(isBroadcasting: true, speaker: true, panic: false),
+            nextProgramTitle: nil
+        )
+        let panic = LiveStatusBarModel.make(
+            snapshot: snapshot(isBroadcasting: true, speaker: false, panic: true),
+            nextProgramTitle: nil
+        )
+
+        XCTAssertEqual(normal.projection.value, "待机")
+        XCTAssertEqual(normal.current.value, "Opening · VIDEO")
+        XCTAssertEqual(normal.next.value, "Awards")
+        XCTAssertEqual(normal.audio.value, "正常")
+        XCTAssertEqual(speaker.audio.value, "主持人")
+        XCTAssertEqual(speaker.audio.status, .warn)
+        XCTAssertEqual(panic.audio.value, "紧急切黑静音")
+        XCTAssertEqual(panic.audio.status, .fail)
+        XCTAssertTrue(panic.isCritical)
+    }
+
+    private func programItem(_ title: String, subtitle: String) -> ProgramItem {
+        ProgramItem(title: title, subtitle: subtitle, sourceURL: URL(fileURLWithPath: "/tmp/\(title).mov"))
+    }
+
+    private func snapshot(
+        isBroadcasting: Bool,
+        speaker: Bool,
+        panic: Bool
+    ) -> LivePreflightSnapshot {
+        LivePreflightSnapshot(
+            appVersion: "0.5.0",
+            hasExternalDisplay: true,
+            isBroadcasting: isBroadcasting,
+            broadcastSafetyNotice: nil,
+            programItemCount: 1,
+            currentProgramTitle: "Opening",
+            currentProgramSource: "VIDEO",
+            bgmItemCount: 1,
+            isBGMPlaying: false,
+            isBGMAudioTakeoverActive: false,
+            isSpeakerMode: speaker,
+            isPanicMode: panic,
+            isPageInterceptEnabled: false,
+            activeOverlayCount: 0,
+            wallpaperCount: 1,
+            autoPlayNextVideoOnEnd: false,
+            effectiveMediaVolume: 0.8,
+            effectiveBGMVolume: 0.4
+        )
     }
 
     private func sourceURL(_ relativePath: String) throws -> URL {
