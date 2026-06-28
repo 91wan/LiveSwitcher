@@ -37,3 +37,20 @@ Post-v0.5.0 commits through `4f0fed4` are internal maintenance only. This includ
 No v0.5.1 release is required.
 
 Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands.
+
+## Post-stable allowlist burn-down decision - 2026-06-28
+
+PR #412 completed the current source-string replacement slice and reduced the
+target contract files by 63 `source.contains` assertions. The allowlist status
+after that merge is:
+
+- allowlist rows: 23
+- source-string allowlist rows: 18
+- source-string actual total: 448
+
+This burn-down is documentation, test, and architecture-gate maintenance only.
+It does not change production behavior, UI, playback, projection, Panic, BGM,
+automation, packaging, signing, checksum, bundle identifier, app name, or the
+minimum macOS version.
+
+No v0.5.1 release is required after this burn-down.

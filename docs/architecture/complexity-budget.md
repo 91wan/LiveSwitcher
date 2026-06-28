@@ -52,3 +52,19 @@ When a file drops below budget, remove its allowlist row in the same PR. When a
 file changes but remains over budget, update `actual` and keep the reason honest.
 Source-string test debt should be replaced by model, reducer, layout, or policy
 tests rather than moved into another source-string assertion.
+
+## Post-v0.5.0 Burn-Down Snapshot - 2026-06-28
+
+After the post-stable runtime and ViewModel simplification slices through PR #412,
+the allowlist is smaller and still records only explicit remaining debt.
+
+- Allowlist rows: 23
+- Source-string allowlist rows: 18
+- Source-string actual total: 448
+
+The removed entries cover completed file splits and source-string replacements.
+Remaining rows still require future behavior, model, reducer, layout, or policy
+tests before removal.
+
+No release is triggered by this allowlist burn-down. It is internal maintenance
+with behavior changes: none.

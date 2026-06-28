@@ -58,6 +58,16 @@ final class ReleaseEligibilityTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands"))
     }
 
+    func testLatestAllowlistBurnDownStillBlocksUnnecessaryV051Release() throws {
+        let document = try releaseEligibilityDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Post-stable allowlist burn-down decision - 2026-06-28"))
+        XCTAssertTrue(document.localizedStandardContains("PR #412"))
+        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 23"))
+        XCTAssertTrue(document.localizedStandardContains("source-string actual total: 448"))
+        XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required after this burn-down"))
+    }
+
     private func releaseEligibilityDocument() throws -> String {
         try String(contentsOf: try releaseEligibilityURL(), encoding: .utf8)
     }
