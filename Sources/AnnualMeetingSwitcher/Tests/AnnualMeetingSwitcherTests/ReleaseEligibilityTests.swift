@@ -62,10 +62,12 @@ final class ReleaseEligibilityTests: XCTestCase {
         let document = try releaseEligibilityDocument()
 
         XCTAssertTrue(document.localizedStandardContains("Post-stable allowlist burn-down decision - 2026-06-28"))
-        XCTAssertTrue(document.localizedStandardContains("BGM runtime reducer behavior"))
-        XCTAssertTrue(document.localizedStandardContains("LivePreflight behavior-suite"))
-        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 19"))
-        XCTAssertTrue(document.localizedStandardContains("source-string actual total: 374"))
+        XCTAssertTrue(document.localizedStandardContains("ViewModel runtime identity, projection/page-intercept"))
+        XCTAssertTrue(document.localizedStandardContains("root-shell splits removed the remaining production-code allowlist entry"))
+        XCTAssertTrue(document.localizedStandardContains("Audio runtime ownership and Persistent runtime load boundary suite splits"))
+        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 12"))
+        XCTAssertTrue(document.localizedStandardContains("source-string allowlist rows: 12"))
+        XCTAssertTrue(document.localizedStandardContains("source-string actual total: 259"))
         XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required after this burn-down"))
     }
 

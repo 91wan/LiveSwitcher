@@ -40,14 +40,18 @@ Patch release remains blocked unless a user-visible production-risk fix or deliv
 
 ## Post-stable allowlist burn-down decision - 2026-06-28
 
-The post-stable source-string replacement slice reduced the target contract
-files by 137 `source.contains` assertions. The BGM runtime reducer behavior-suite
-and LivePreflight behavior-suite splits also removed oversized test-file
-allowlist entries. The allowlist status after those slices is:
+The post-stable ViewModel runtime identity, projection/page-intercept, and
+root-shell splits removed the remaining production-code allowlist entry.
+The Audio runtime ownership and Persistent runtime load boundary suite splits
+removed the remaining oversized test-file allowlist entries. The source-contract
+burn-down slice removed the `LiveModeLayoutTests.swift` and
+`RunDeskControlConvergenceTests.swift` source-string allowlist rows.
 
-- allowlist rows: 19
-- source-string allowlist rows: 16
-- source-string actual total: 374
+The allowlist status after those slices is:
+
+- allowlist rows: 12
+- source-string allowlist rows: 12
+- source-string actual total: 259
 
 This burn-down is documentation, test, and architecture-gate maintenance only.
 It does not change production behavior, UI, playback, projection, Panic, BGM,
