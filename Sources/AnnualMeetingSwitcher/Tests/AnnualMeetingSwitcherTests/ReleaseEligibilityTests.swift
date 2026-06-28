@@ -62,8 +62,8 @@ final class ReleaseEligibilityTests: XCTestCase {
         let document = try releaseEligibilityDocument()
 
         XCTAssertTrue(document.localizedStandardContains("Post-stable allowlist burn-down decision - 2026-06-28"))
-        XCTAssertTrue(document.localizedStandardContains("PR #412"))
-        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 23"))
+        XCTAssertTrue(document.localizedStandardContains("BGM runtime reducer behavior"))
+        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 22"))
         XCTAssertTrue(document.localizedStandardContains("source-string actual total: 448"))
         XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required after this burn-down"))
     }

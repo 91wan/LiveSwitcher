@@ -55,10 +55,11 @@ tests rather than moved into another source-string assertion.
 
 ## Post-v0.5.0 Burn-Down Snapshot - 2026-06-28
 
-After the post-stable runtime and ViewModel simplification slices through PR #412,
-the allowlist is smaller and still records only explicit remaining debt.
+After the post-stable runtime, ViewModel, source-string, and BGM behavior-suite
+simplification slices, the allowlist is smaller and still records only explicit
+remaining debt.
 
-- Allowlist rows: 23
+- Allowlist rows: 22
 - Source-string allowlist rows: 18
 - Source-string actual total: 448
 
