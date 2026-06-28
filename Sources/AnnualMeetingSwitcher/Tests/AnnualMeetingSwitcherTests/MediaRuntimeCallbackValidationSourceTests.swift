@@ -158,7 +158,9 @@ final class MediaRuntimeCallbackValidationSourceTests: XCTestCase {
     }
 
     func testMediaCallbackValidationSourceUsesRuntimeBackedHelpers() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+RuntimeIdentity.swift"
+        )
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "validatedRuntimeMediaCallbackGeneration"))
         let store = try sourceText(
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"

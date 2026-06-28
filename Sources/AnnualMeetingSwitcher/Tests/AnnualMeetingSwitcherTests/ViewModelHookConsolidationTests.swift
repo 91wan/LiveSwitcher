@@ -33,11 +33,16 @@ final class ViewModelHookConsolidationTests: XCTestCase {
         }
     }
 
-    func testProjectionReadFacadeRemainsInMainOnlyToPreservePrivateState() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+    func testProjectionReadFacadeLivesInFocusedAccessorExtension() throws {
+        let root = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        let extensionSource = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProjectionAccessors.swift"
+        )
 
-        XCTAssertTrue(source.contains("private(set) var isExternalDisplayAvailable"))
-        XCTAssertTrue(source.contains("var projectionService: ProjectionService"))
-        XCTAssertTrue(source.contains("var hasExternalDisplay: Bool"))
+        XCTAssertNotNil(root.range(of: "private(set) var isExternalDisplayAvailable"))
+        XCTAssertNil(root.range(of: "var projectionService: ProjectionService"))
+        XCTAssertNil(root.range(of: "var hasExternalDisplay: Bool"))
+        XCTAssertNotNil(extensionSource.range(of: "var projectionService: ProjectionService"))
+        XCTAssertNotNil(extensionSource.range(of: "var hasExternalDisplay: Bool"))
     }
 }
