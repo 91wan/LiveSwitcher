@@ -44,14 +44,17 @@ The post-stable ViewModel runtime identity, projection/page-intercept, and
 root-shell splits removed the remaining production-code allowlist entry.
 The Audio runtime ownership and Persistent runtime load boundary suite splits
 removed the remaining oversized test-file allowlist entries. The source-contract
-burn-down slice removed the `LiveModeLayoutTests.swift` and
-`RunDeskControlConvergenceTests.swift` source-string allowlist rows.
+burn-down slices replaced all remaining source-string allowlist rows with
+behavior, model, reducer, policy, and fixture-backed gate tests.
 
 The allowlist status after those slices is:
 
-- allowlist rows: 12
-- source-string allowlist rows: 12
-- source-string actual total: 259
+- allowlist rows: 0
+- production-code allowlist rows: 0
+- test-file allowlist rows: 0
+- source-string allowlist rows: 0
+- source-string actual total: 0
+- source-contains allowlist rows are forbidden
 
 This burn-down is documentation, test, and architecture-gate maintenance only.
 It does not change production behavior, UI, playback, projection, Panic, BGM,
@@ -59,3 +62,6 @@ automation, packaging, signing, checksum, bundle identifier, app name, or the
 minimum macOS version.
 
 No v0.5.1 release is required after this burn-down.
+
+Future post-stable cleanup should stop unless a concrete P0/P1,
+release-delivery issue, or user-visible stability fix lands.
