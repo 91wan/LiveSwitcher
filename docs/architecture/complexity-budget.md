@@ -56,19 +56,26 @@ tests rather than moved into another source-string assertion.
 ## Post-v0.5.0 Burn-Down Snapshot - 2026-06-28
 
 After the post-stable runtime, ViewModel, test-suite, and source-contract
-burn-down simplification slices, the allowlist is smaller and now records only
-explicit remaining source-string debt.
+burn-down simplification slices, the allowlist is empty. Production-code,
+oversized test-file, and source-string allowlist debt are all retired.
 
-- Allowlist rows: 12
-- Source-string allowlist rows: 12
-- Source-string actual total: 259
+- Allowlist rows: 0
+- Production-code allowlist rows: 0
+- Test-file allowlist rows: 0
+- Source-string allowlist rows: 0
+- Source-string actual total: 0
+- Source-string allowlist gate: source-contains allowlist rows are now forbidden
 - Removed production/test-file debt entries: `ViewModel.swift`, `AudioRuntimeOwnershipTests.swift`, `PersistentStateRuntimeLoadBoundaryTests.swift`
 
 The removed entries cover completed ViewModel internal-store splits, root-shell
 cleanup, Audio runtime ownership suite split, Persistent runtime load boundary
 suite split, and source-string replacements for live layout and run-desk
-coverage. Remaining rows still require future behavior, model, reducer, layout,
-or policy tests before removal.
+coverage. The remaining source-string rows were replaced by behavior, model,
+reducer, policy, and fixture-backed gate tests through the final source-contract
+burn-down slices.
+
+Future post-stable work should stop unless there is a concrete P0/P1,
+release-delivery issue, or user-visible stability fix with bounded acceptance.
 
 No release is triggered by this allowlist burn-down. It is internal maintenance
 with behavior changes: none.

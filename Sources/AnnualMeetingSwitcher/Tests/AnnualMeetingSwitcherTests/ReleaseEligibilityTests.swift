@@ -65,9 +65,12 @@ final class ReleaseEligibilityTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("ViewModel runtime identity, projection/page-intercept"))
         XCTAssertTrue(document.localizedStandardContains("root-shell splits removed the remaining production-code allowlist entry"))
         XCTAssertTrue(document.localizedStandardContains("Audio runtime ownership and Persistent runtime load boundary suite splits"))
-        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 12"))
-        XCTAssertTrue(document.localizedStandardContains("source-string allowlist rows: 12"))
-        XCTAssertTrue(document.localizedStandardContains("source-string actual total: 259"))
+        XCTAssertTrue(document.localizedStandardContains("allowlist rows: 0"))
+        XCTAssertTrue(document.localizedStandardContains("production-code allowlist rows: 0"))
+        XCTAssertTrue(document.localizedStandardContains("test-file allowlist rows: 0"))
+        XCTAssertTrue(document.localizedStandardContains("source-string allowlist rows: 0"))
+        XCTAssertTrue(document.localizedStandardContains("source-string actual total: 0"))
+        XCTAssertTrue(document.localizedStandardContains("source-contains allowlist rows are forbidden"))
         XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required after this burn-down"))
     }
 

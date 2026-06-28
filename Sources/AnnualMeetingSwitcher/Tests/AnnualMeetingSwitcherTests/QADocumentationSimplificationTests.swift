@@ -50,6 +50,19 @@ final class QADocumentationSimplificationTests: XCTestCase {
         XCTAssertTrue(hygiene.contains("Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands"))
     }
 
+    func testReleaseHygieneRecordsZeroSourceContractDebtWithoutPatchRelease() throws {
+        let hygiene = try repositorySource("docs/qa/release-hygiene-v0.5.0.md")
+
+        XCTAssertTrue(hygiene.contains("Post-stable source-contract zero-debt snapshot - 2026-06-28"))
+        XCTAssertTrue(hygiene.contains("| Allowlist rows | 0 |"))
+        XCTAssertTrue(hygiene.contains("| Production-code allowlist rows | 0 |"))
+        XCTAssertTrue(hygiene.contains("| Test-file allowlist rows | 0 |"))
+        XCTAssertTrue(hygiene.contains("| Source-string allowlist rows | 0 |"))
+        XCTAssertTrue(hygiene.contains("| Source-string actual total | 0 |"))
+        XCTAssertTrue(hygiene.contains("source-contains allowlist rows are forbidden"))
+        XCTAssertTrue(hygiene.contains("No v0.5.1 release is required after reaching zero source-contract debt"))
+    }
+
     func testReleaseCandidateTemplateRecordsReproducibilityEvidenceWithoutClaimingByteIdentity() throws {
         let runbook = try repositorySource("docs/qa/release-candidate-rehearsal.md")
 

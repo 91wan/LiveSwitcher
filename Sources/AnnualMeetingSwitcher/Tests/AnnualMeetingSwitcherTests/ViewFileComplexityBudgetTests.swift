@@ -138,9 +138,12 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         let policy = try repoText("docs/architecture/complexity-budget.md")
 
         XCTAssertTrue(policy.contains("Post-v0.5.0 Burn-Down Snapshot - 2026-06-28"))
-        XCTAssertTrue(policy.contains("Allowlist rows: 12"))
-        XCTAssertTrue(policy.contains("Source-string allowlist rows: 12"))
-        XCTAssertTrue(policy.contains("Source-string actual total: 259"))
+        XCTAssertTrue(policy.contains("Allowlist rows: 0"))
+        XCTAssertTrue(policy.contains("Production-code allowlist rows: 0"))
+        XCTAssertTrue(policy.contains("Test-file allowlist rows: 0"))
+        XCTAssertTrue(policy.contains("Source-string allowlist rows: 0"))
+        XCTAssertTrue(policy.contains("Source-string actual total: 0"))
+        XCTAssertTrue(policy.contains("source-contains allowlist rows are now forbidden"))
         XCTAssertTrue(policy.contains("Removed production/test-file debt entries: `ViewModel.swift`, `AudioRuntimeOwnershipTests.swift`, `PersistentStateRuntimeLoadBoundaryTests.swift`"))
         XCTAssertTrue(policy.contains("No release is triggered by this allowlist burn-down"))
     }
