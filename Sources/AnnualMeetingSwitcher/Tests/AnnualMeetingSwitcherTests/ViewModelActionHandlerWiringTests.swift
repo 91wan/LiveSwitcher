@@ -13,131 +13,178 @@ final class ViewModelActionHandlerWiringTests: XCTestCase {
         handlers.presentInvalidDeckAlert(URL(fileURLWithPath: "/tmp/invalid.key"))
     }
 
-    func testViewModelUsesGroupedProgramActivationSideEffects() throws {
-        let source = try viewModelSource()
-
-        XCTAssertTrue(source.contains("@ObservationIgnored var programActivationSideEffects = ProgramActivationSideEffectHandlers()"))
-        XCTAssertFalse(source.contains("@ObservationIgnored var actionHandlers"))
-    }
-
-    func testViewModelInitDoesNotAssignLooseActionHandlerClosures() throws {
-        let source = try viewModelSource()
-
-        [
-            "self.keynotePresentationHandler =",
-            "self.pptxOpenHandler =",
-            "self.deckStopHandler =",
-            "self.programSeekToStartHandler =",
-            "self.programRestartFromBeginningHandler =",
-            "self.programSeekToEndHandler =",
-            "self.activeDeckPresentationHandler =",
-            "self.invalidDeckHandler ="
-        ].forEach { snippet in
-            XCTAssertFalse(source.contains(snippet), snippet)
-        }
-    }
-
-    func testConfigureDefaultProgramActivationSideEffectsLivesInDedicatedExtension() throws {
-        let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationSideEffectWiring.swift")
-        )
-
-        XCTAssertTrue(source.contains("func configureDefaultProgramActivationSideEffects()"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentKeynote"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.openPPTX"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.stopDeck"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentActiveDeck"))
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert"))
-    }
-
-    func testKeynoteProgramSwitchStillUsesPresentKeynoteSideEffect() {
+    func testPresentationProgramActivationUsesGroupedSideEffectsInOrder() throws {
         let viewModel = makeViewModel()
-        let item = deckProgram(extension: "key")
-        var openedURL: URL?
-        viewModel.programActivationSideEffects.presentKeynote = { openedURL = $0 }
-        viewModel.programActivationSideEffects.stopDeck = {}
-        viewModel.addProgramItem(item)
+        let keynote = try deckProgram(extension: "key")
+        let pptx = try deckProgram(extension: "pptx")
+        var events: [String] = []
+        viewModel.programActivationSideEffects.presentKeynote = { events.append("keynote:\($0.pathExtension)") }
+        viewModel.programActivationSideEffects.openPPTX = { events.append("pptx:\($0.pathExtension)") }
+        viewModel.programActivationSideEffects.stopDeck = { events.append("stopDeck") }
+        viewModel.addProgramItems([keynote, pptx])
 
-        viewModel.switchToProgram(item)
+        viewModel.switchToProgram(keynote)
+        viewModel.switchToProgram(pptx)
 
-        XCTAssertEqual(openedURL, item.sourceURL)
+        XCTAssertEqual(events, ["keynote:key", "stopDeck", "pptx:pptx"])
     }
 
-    func testPPTXProgramSwitchStillUsesOpenPPTXSideEffect() {
+    func testInvalidDeckStillUsesGroupedActivationSideEffectAndDoesNotSelectProgram() throws {
         let viewModel = makeViewModel()
-        let item = deckProgram(extension: "pptx")
-        var openedURL: URL?
-        viewModel.programActivationSideEffects.openPPTX = { openedURL = $0 }
-        viewModel.programActivationSideEffects.stopDeck = {}
-        viewModel.addProgramItem(item)
-
-        viewModel.switchToProgram(item)
-
-        XCTAssertEqual(openedURL, item.sourceURL)
-    }
-
-    func testDeckStopStillUsesActivationSideEffect() {
-        let viewModel = makeViewModel()
-        let first = deckProgram(extension: "key")
-        let second = deckProgram(extension: "pptx")
+        let current = ProgramItem(title: "Current Deck", subtitle: "KEY")
+        let invalid = try deckProgram(extension: "key", contents: Data())
+        var invalidURL: URL?
         var stopCount = 0
-        viewModel.programActivationSideEffects.presentKeynote = { _ in }
-        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { invalidURL = $0 }
         viewModel.programActivationSideEffects.stopDeck = { stopCount += 1 }
-        viewModel.addProgramItems([first, second])
+        viewModel.addProgramItems([current, invalid])
+        setCurrentProgram(current, in: viewModel, programItems: [current, invalid])
 
-        viewModel.switchToProgram(first)
-        viewModel.switchToProgram(second)
+        viewModel.switchToProgram(invalid)
 
-        XCTAssertEqual(stopCount, 1)
+        XCTAssertEqual(invalidURL, invalid.sourceURL)
+        XCTAssertEqual(stopCount, 0)
+        XCTAssertEqual(viewModel.currentProgramItem?.id, current.id)
+        XCTAssertFalse(viewModel.runtime.actionLog.contains { $0.actionName == "operatorSelectedProgram" })
     }
 
-    func testDefaultWiringDoesNotWireMediaSeekHandlers() throws {
-        let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationSideEffectWiring.swift")
-        )
+    func testMediaTransportActionsDispatchRuntimeActionsWithoutPresentationSideEffects() throws {
+        let viewModel = makeViewModel()
+        let media = try mediaProgram()
+        var presentationEvents: [String] = []
+        viewModel.programActivationSideEffects.presentKeynote = { _ in presentationEvents.append("keynote") }
+        viewModel.programActivationSideEffects.openPPTX = { _ in presentationEvents.append("pptx") }
+        viewModel.programActivationSideEffects.stopDeck = { presentationEvents.append("stopDeck") }
+        viewModel.programActivationSideEffects.presentActiveDeck = { presentationEvents.append("activeDeck") }
+        setCurrentProgram(media, in: viewModel)
 
-        XCTAssertFalse(source.contains("programSeekToStart"))
-        XCTAssertFalse(source.contains("programRestartFromBeginning"))
-        XCTAssertFalse(source.contains("programSeekToEnd"))
-        XCTAssertFalse(source.contains("avCoordinator.seekToBeginning"))
-        XCTAssertFalse(source.contains("avCoordinator.restartFromBeginning"))
-        XCTAssertFalse(source.contains("avCoordinator.seekToEnd"))
+        viewModel.seekProgramItemToStart(media)
+        viewModel.seekProgramItemToEnd(media)
+        viewModel.returnCurrentMediaToStart()
+        viewModel.restartCurrentMediaFromBeginning()
+
+        XCTAssertEqual(actionCount("operatorSeekedCurrentMediaToStart", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorSeekedCurrentMediaToEnd", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorReturnedCurrentMediaToStart", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorRestartedCurrentMedia", in: viewModel), 1)
+        XCTAssertEqual(presentationEvents, [])
     }
 
-    func testInvalidDeckStillUsesActivationSideEffect() throws {
-        let source = try XCTUnwrap(
-            optionalRepositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+ProgramActivationRuntimeBridge.swift")
-        )
+    func testReturnToStartDoesNotDuplicateRestartDispatchOrSupportEvent() throws {
+        let viewModel = makeViewModel()
+        let media = try mediaProgram()
+        setCurrentProgram(media, in: viewModel)
 
-        XCTAssertTrue(source.contains("programActivationSideEffects.presentInvalidDeckAlert(url)"))
-        XCTAssertFalse(source.contains("invalidDeckHandler(url)"))
+        viewModel.returnCurrentMediaToStart()
+
+        XCTAssertEqual(actionCount("operatorReturnedCurrentMediaToStart", in: viewModel), 1)
+        XCTAssertEqual(actionCount("operatorRestartedCurrentMedia", in: viewModel), 0)
+        XCTAssertFalse(viewModel.supportEvents.contains { $0.kind == .mediaRestarted })
+    }
+
+    func testGroupedViewModelTestHooksRemainBehavioralExtensionPoint() {
+        let viewModel = makeViewModel()
+        var saveCount = 0
+        viewModel.testHooks.saveDataDidRun = { saveCount += 1 }
+
+        viewModel.saveData()
+        viewModel.saveData()
+
+        XCTAssertEqual(saveCount, 2)
     }
 
     private func makeViewModel() -> SwitcherViewModel {
+        let programActivation = ClosureProgramActivationPort()
+        let runtime = LiveRuntimeStore(
+            effectRunner: LiveRuntimeEffectRunner(
+                recordsOnly: false,
+                programActivation: programActivation
+            ),
+            environment: .productionProgramActivationOwning()
+        )
+        let viewModel = SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: isolatedDefaults(),
+            runtime: runtime
+        )
+        programActivation.executeHandler = { [weak viewModel] id, plan, context in
+            viewModel?.executeProgramActivationPlanFromRuntime(id: id, plan: plan, context: context)
+        }
+        viewModel.programActivationSideEffects.presentKeynote = { _ in }
+        viewModel.programActivationSideEffects.openPPTX = { _ in }
+        viewModel.programActivationSideEffects.stopDeck = {}
+        viewModel.programActivationSideEffects.presentActiveDeck = {}
+        viewModel.programActivationSideEffects.presentInvalidDeckAlert = { _ in }
+        return viewModel
+    }
+
+    private func setCurrentProgram(
+        _ item: ProgramItem,
+        in viewModel: SwitcherViewModel,
+        programItems: [ProgramItem]? = nil,
+        mediaIsPlaying: Bool = false
+    ) {
+        viewModel.applyCurrentProgramProjectionFromRuntime(item, switchedAt: Date())
+        viewModel.runtime.replaceStateForFacadeSync(
+            runtimeState(
+                for: item,
+                programItems: programItems ?? [item],
+                mediaIsPlaying: mediaIsPlaying
+            ),
+            clearActionLog: true
+        )
+    }
+
+    private func runtimeState(
+        for item: ProgramItem,
+        programItems: [ProgramItem],
+        mediaIsPlaying: Bool
+    ) -> LiveRuntimeState {
+        var state = LiveRuntimeState()
+        state.program.items = programItems
+        state.program.currentID = item.id
+        state.media.loadedURL = item.sourceURL
+        state.media.isPlaying = mediaIsPlaying
+        state.media.duration = 10
+        state.audio.routingContext.isCurrentProgramMediaSource = item.sourceKind == .media
+        state.audio.routingContext.isMediaPlaying = mediaIsPlaying
+        return state
+    }
+
+    private func actionCount(_ name: String, in viewModel: SwitcherViewModel) -> Int {
+        viewModel.runtime.actionLog.filter { $0.actionName == name }.count
+    }
+
+    private func deckProgram(extension pathExtension: String, contents: Data = Data("fixture".utf8)) throws -> ProgramItem {
+        ProgramItem(
+            title: "Deck",
+            subtitle: pathExtension.uppercased(),
+            sourceURL: try temporaryFile(ext: pathExtension, contents: contents)
+        )
+    }
+
+    private func mediaProgram() throws -> ProgramItem {
+        ProgramItem(
+            title: "Video",
+            subtitle: "VIDEO",
+            sourceURL: try temporaryFile(ext: "mp4", contents: Data("fixture".utf8))
+        )
+    }
+
+    private func temporaryFile(ext: String, contents: Data) throws -> URL {
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(ext)
+        try contents.write(to: url)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return url
+    }
+
+    private func isolatedDefaults() -> UserDefaults {
         let suiteName = "ViewModelActionHandlerWiringTests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defaults.removePersistentDomain(forName: suiteName)
-        return SwitcherViewModel(
-            loadPersistedData: false,
-            enableSystemVolumeObserver: false,
-            userDefaults: defaults
-        )
-    }
-
-    private func deckProgram(extension pathExtension: String) -> ProgramItem {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(UUID().uuidString)
-            .appendingPathExtension(pathExtension)
-        try? Data("fixture".utf8).write(to: url)
-        return ProgramItem(
-            title: "Deck",
-            subtitle: pathExtension.uppercased(),
-            sourceURL: url
-        )
-    }
-
-    private func viewModelSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
+        return defaults
     }
 }

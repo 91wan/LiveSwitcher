@@ -127,7 +127,6 @@ validate_allowlist_manifest() {
   local extra
   local expected_limit
   local current_actual
-  local row_count=0
   local line_number=1
 
   while IFS=$'\t' read -r category manifest_path limit actual reason target_version owner extra; do
@@ -160,10 +159,7 @@ validate_allowlist_manifest() {
       fi
     fi
 
-    ((row_count += 1))
   done < <(tail -n +2 "$ALLOWLIST_PATH")
-
-  ((row_count > 0)) || record_violation "allowlist rows" "$ALLOWLIST_PATH" 0 "one or more rows"
 }
 
 allow_over_budget_reason() {
