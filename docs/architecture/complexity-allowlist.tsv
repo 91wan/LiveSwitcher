@@ -1,5 +1,4 @@
 category	path	limit	actual	reason	target_version	owner
-test-file	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PersistentStateRuntimeLoadBoundaryTests.swift	500	552	legacy persistence load boundary matrix; split planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AppLaunchPolicyTests.swift	15	26	legacy launch source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AudioRuntimeReducerExtractionTests.swift	15	32	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/BGMRuntimeReducerExtractionTests.swift	15	21	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
@@ -7,7 +6,6 @@ source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/L
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeLayoutTests.swift	15	43	legacy live layout source-contract coverage; replacement in progress	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeMixerControlsTests.swift	15	32	legacy mixer source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/OverlayLivePreviewModelTests.swift	15	19	legacy overlay static coverage; replacement in progress	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PersistentStateRuntimeLoadBoundaryTests.swift	15	16	legacy persistence source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PreferencesRuntimeReducerExtractionTests.swift	15	16	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PresentationQueryRuntimeReducerExtractionTests.swift	15	19	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ProgramActivationSideEffectBoundaryTests.swift	15	16	side-effect boundary contract; replacement planned separately	v0.5.1	maintainers
