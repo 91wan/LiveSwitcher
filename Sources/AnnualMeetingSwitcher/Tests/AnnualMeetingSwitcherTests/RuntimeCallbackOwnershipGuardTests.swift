@@ -63,7 +63,7 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
     func testViewModelCallbackWiringDoesNotCheckRuntimeOwnership() throws {
         let mediaSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+MediaPlayback.swift")
         let mediaSetupBody = try XCTUnwrap(mediaSource.extractedRuntimeFunctionBody(named: "setupPlayerCoordinator"))
-        let bgmSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
+        let bgmSource = try bgmPlaybackSource()
         let bgmControlsSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMControls.swift")
         let combined = mediaSetupBody + "\n" + bgmSource + "\n" + bgmControlsSource
 
@@ -81,7 +81,7 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
     }
 
     func testViewModelBGMCallbackWiringStillDispatchesRuntimeCallbacks() throws {
-        let bgmRuntimeSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
+        let bgmRuntimeSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerProgress.swift")
         let bgmControlsSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMControls.swift")
 
         XCTAssertTrue(bgmRuntimeSource.contains(".bgmProgressUpdated(time: currentTime, duration: duration, generation: generation)"))
@@ -97,6 +97,18 @@ final class RuntimeCallbackOwnershipGuardTests: XCTestCase {
             .mediaReachedEnd(generation: 1),
             .mediaSeekCompleted(time: 1, generation: 1)
         ]
+    }
+
+    private func bgmPlaybackSource() throws -> String {
+        try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerPreparation.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerTransport.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerFade.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerProgress.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMFallbackPlayerBridge.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMGenerationGuard.swift"
+        ].map(repositorySource).joined(separator: "\n")
     }
 
     private var bgmCallbackActions: [LiveRuntimeAction] {

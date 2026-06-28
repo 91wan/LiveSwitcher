@@ -125,8 +125,8 @@ final class ViewModelBGMRuntimePlaybackBehaviorTests: XCTestCase {
     }
 
     func testSeekRuntimeBGMToBeginningSourceUsesSmoothingPolicyAndGenerationGuards() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
-        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "seekRuntimeBGMToBeginning"))
+        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerProgress.swift")
+        let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "seekRuntimeBGMToBeginningWithSmoothing"))
 
         XCTAssertTrue(body.contains("BGMReturnToStartSmoothingPolicy.plan"))
         XCTAssertTrue(body.contains("cleanupBag.bgmReturnToStartTask?.cancel()"))

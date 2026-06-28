@@ -156,7 +156,13 @@ final class ViewModelLiveOutputEncapsulationTests: XCTestCase {
     }
 
     func testBGMRuntimePlaybackUsesGenerationAccessors() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift")
+        let source = try [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel+BGMRuntimePlayback.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerPreparation.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerTransport.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMPlayerProgress.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/BGMPlayback/BGMFallbackPlayerBridge.swift"
+        ].map(repositorySource).joined(separator: "\n")
 
         [
             "setBGMTransitionGenerationForRuntime(generation)",
