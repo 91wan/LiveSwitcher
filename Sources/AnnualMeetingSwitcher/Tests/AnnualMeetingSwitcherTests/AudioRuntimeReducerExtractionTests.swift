@@ -83,6 +83,6 @@ final class AudioRuntimeReducerExtractionTests: XCTestCase {
     }
 
     private func liveReducerSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AudioRuntimeActionDispatcher.swift")
     }
 }

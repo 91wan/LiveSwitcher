@@ -25,10 +25,14 @@ final class AutomationCommandRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllAutomationCommandCasesHaveExplicitAutomationCommandOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift"
+        )
         let body = try caseBody(".automationScriptRequested(let script, let action)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.automationCommand, in: bridgeMode) else { break }"))
+        XCTAssertTrue(
+            body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.automationCommand, in: bridgeMode) else { return true }")
+        )
     }
 
     private func reduce(

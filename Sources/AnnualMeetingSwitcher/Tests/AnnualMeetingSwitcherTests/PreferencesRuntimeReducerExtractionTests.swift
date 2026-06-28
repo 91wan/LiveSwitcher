@@ -96,6 +96,6 @@ final class PreferencesRuntimeReducerExtractionTests: XCTestCase {
     }
 
     private func liveRuntimeReducerSource() throws -> String {
-        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PreferenceRuntimeActionDispatcher.swift")
     }
 }

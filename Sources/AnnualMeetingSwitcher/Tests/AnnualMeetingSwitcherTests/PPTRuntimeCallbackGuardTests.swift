@@ -43,7 +43,9 @@ final class PPTRuntimeCallbackGuardTests: XCTestCase {
     }
 
     func testAllPPTCallbackCasesHaveExplicitPPTOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PanicProjectionRuntimeActionDispatcher.swift"
+        )
 
         [
             "case .pptEventTapStarted:",
@@ -56,7 +58,10 @@ final class PPTRuntimeCallbackGuardTests: XCTestCase {
             }
             let endIndex = source.index(range.lowerBound, offsetBy: 260, limitedBy: source.endIndex) ?? source.endIndex
             let body = String(source[range.lowerBound..<endIndex])
-            XCTAssertTrue(body.contains("guard isRuntimeOwned(.ppt, in: bridgeMode) else { break }"), "\(casePattern) lacks .ppt guard")
+            XCTAssertTrue(
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.ppt, in: bridgeMode) else { return true }"),
+                "\(casePattern) lacks .ppt guard"
+            )
         }
     }
 

@@ -35,13 +35,13 @@ final class SupportRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesSupportEventRecorded() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/SupportRuntimeActionDispatcher.swift")
 
         XCTAssertTrue(source.contains("SupportRuntimeReducer.record("))
     }
 
     func testLiveRuntimeReducerDoesNotContainSupportMutationBody() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/SupportRuntimeActionDispatcher.swift")
 
         [
             "state.support.record(event:",

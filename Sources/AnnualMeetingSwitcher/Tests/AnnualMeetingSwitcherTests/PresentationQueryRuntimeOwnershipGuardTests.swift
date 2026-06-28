@@ -36,7 +36,9 @@ final class PresentationQueryRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllPresentationQueryCasesHaveExplicitPresentationQueryOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift"
+        )
 
         for casePattern in [
             ".operatorRequestedPresentationQuery(let id)",
@@ -46,7 +48,7 @@ final class PresentationQueryRuntimeOwnershipGuardTests: XCTestCase {
         ] {
             let body = try caseBody(casePattern, in: source)
             XCTAssertTrue(
-                body.contains("guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }"),
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"),
                 casePattern
             )
         }

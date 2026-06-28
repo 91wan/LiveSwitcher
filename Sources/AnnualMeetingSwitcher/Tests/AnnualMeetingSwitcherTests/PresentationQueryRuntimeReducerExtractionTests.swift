@@ -46,39 +46,39 @@ final class PresentationQueryRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesPresentationQueryRequest() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".operatorRequestedPresentationQuery(let id)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.request("))
     }
 
     func testLiveRuntimeReducerDelegatesPresentationQueryCompleted() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".presentationQueryCompleted(let id, let result)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.complete(id: id, result: result, state: &state)"))
     }
 
     func testLiveRuntimeReducerDelegatesPresentationQueryFailed() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".presentationQueryFailed(let id, let action, let sanitizedMessage)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.fail("))
     }
 
     func testLiveRuntimeReducerDelegatesPresentationQueryConsumed() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".presentationQueryResultConsumed(let id)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.presentationQuery, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.consumeResult(id: id, state: &state)"))
     }
 
     func testLiveRuntimeReducerDoesNotContainPresentationQueryMutationBodies() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let bodies = try [
             caseBody(".operatorRequestedPresentationQuery(let id)", in: source),
             caseBody(".presentationQueryCompleted(let id, let result)", in: source),
@@ -104,6 +104,10 @@ final class PresentationQueryRuntimeReducerExtractionTests: XCTestCase {
             throw XCTSkip("PresentationQueryRuntimeReducer.swift is missing")
         }
         return try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PresentationQueryRuntimeReducer.swift")
+    }
+
+    private func dispatcherSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift")
     }
 
     private func runtimeFile(_ name: String) -> String {

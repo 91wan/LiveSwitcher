@@ -37,7 +37,7 @@ final class PPTRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesPPTActionsAndDoesNotOwnMutationBodies() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PanicProjectionRuntimeActionDispatcher.swift")
         let reducerSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PPTRuntimeReducer.swift")
 
         XCTAssertTrue(reducerSource.contains("enum PPTRuntimeReducer"))

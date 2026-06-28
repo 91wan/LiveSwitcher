@@ -14,7 +14,9 @@ final class PanicRuntimeReducerPolicyTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesPanicToPanicRuntimeReducer() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try repositorySource(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PanicProjectionRuntimeActionDispatcher.swift"
+        )
 
         XCTAssertTrue(source.contains("PanicRuntimeReducer.setPanic"))
         XCTAssertTrue(source.contains("PanicRuntimeReducer.bgmPauseDelayElapsed"))

@@ -74,7 +74,9 @@ final class AutomationNoticeRuntimeOwnershipGuardTests: XCTestCase {
     }
 
     func testAllAutomationNoticeCasesHaveExplicitAutomationNoticeOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift"
+        )
 
         [
             "case .automationFailed(let action, let sanitizedMessage):",
@@ -88,7 +90,10 @@ final class AutomationNoticeRuntimeOwnershipGuardTests: XCTestCase {
             }
             let endIndex = source.index(range.lowerBound, offsetBy: 420, limitedBy: source.endIndex) ?? source.endIndex
             let body = String(source[range.lowerBound..<endIndex])
-            XCTAssertTrue(body.contains("guard isRuntimeOwned(.automationNotice, in: bridgeMode) else { break }"), "\(casePattern) lacks .automationNotice guard")
+            XCTAssertTrue(
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.automationNotice, in: bridgeMode) else { return true }"),
+                "\(casePattern) lacks .automationNotice guard"
+            )
         }
     }
 

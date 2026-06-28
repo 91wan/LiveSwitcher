@@ -14,15 +14,15 @@ final class AutomationCommandRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerDelegatesAutomationScriptRequested() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".automationScriptRequested(let script, let action)", in: source)
 
-        XCTAssertTrue(body.contains("guard isRuntimeOwned(.automationCommand, in: bridgeMode) else { break }"))
+        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.automationCommand, in: bridgeMode) else { return true }"))
         XCTAssertTrue(body.contains("AutomationCommandRuntimeReducer.requestScript("))
     }
 
     func testLiveRuntimeReducerDoesNotAppendRunAppleScriptDirectly() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try dispatcherSource()
         let body = try caseBody(".automationScriptRequested(let script, let action)", in: source)
 
         XCTAssertFalse(body.contains("effects.append(.runAppleScript"), body)
@@ -34,6 +34,10 @@ final class AutomationCommandRuntimeReducerExtractionTests: XCTestCase {
             throw XCTSkip("AutomationCommandRuntimeReducer.swift is missing")
         }
         return try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/AutomationCommandRuntimeReducer.swift")
+    }
+
+    private func dispatcherSource() throws -> String {
+        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift")
     }
 
     private func runtimeFile(_ name: String) -> String {

@@ -20,7 +20,7 @@ final class ProjectionRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testLiveRuntimeReducerRoutesProjectionActionsInsteadOfOwningMutationBodies() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/PanicProjectionRuntimeActionDispatcher.swift")
         let reducerSource = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProjectionRuntimeReducer.swift")
 
         XCTAssertTrue(source.contains("ProjectionRuntimeReducer.toggleProjection("))

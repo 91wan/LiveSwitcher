@@ -48,7 +48,7 @@ final class AudioRuntimeOwnershipGuardTests: XCTestCase {
 
     func testLiveRuntimeReducerGuardsAudioCasesWithAudioOwnership() throws {
         let source = try repositorySource(
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift"
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AudioRuntimeActionDispatcher.swift"
         )
         for start in [
             "case .operatorSelectedAudioStrategy",
@@ -63,9 +63,13 @@ final class AudioRuntimeOwnershipGuardTests: XCTestCase {
             "case .operatorSetSpeakerMode",
             "case .facadeAudioInputsChanged"
         ] {
-            let body = try XCTUnwrap(source.slice(from: start, to: "case ."), start)
+            let endToken = start == "case .facadeAudioInputsChanged" ? "default:" : "case ."
+            let body = try XCTUnwrap(source.slice(from: start, to: endToken), start)
 
-            XCTAssertTrue(body.contains("guard isRuntimeOwned(.audio, in: bridgeMode) else { break }"), start)
+            XCTAssertTrue(
+                body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.audio, in: bridgeMode) else { return true }"),
+                start
+            )
         }
     }
 

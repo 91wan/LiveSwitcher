@@ -71,7 +71,9 @@ final class BGMRuntimeCallbackOwnershipGuardTests: XCTestCase {
     }
 
     func testAllBGMCallbackCasesHaveExplicitBGMOwnershipGuard() throws {
-        let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/LiveRuntimeReducer.swift")
+        let source = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/BGMRuntimeActionDispatcher.swift"
+        )
 
         [
             ".bgmPlaybackChanged(let isPlaying, let generation)",
@@ -79,7 +81,11 @@ final class BGMRuntimeCallbackOwnershipGuardTests: XCTestCase {
             ".bgmFailed(let reason, let generation)",
             ".bgmProgressUpdated(let time, let duration, let generation)"
         ].forEach { casePattern in
-            assertCase(casePattern, in: source, contains: "guard isRuntimeOwned(.bgm, in: bridgeMode) else { break }")
+            assertCase(
+                casePattern,
+                in: source,
+                contains: "guard LiveRuntimeReducer.isRuntimeOwned(.bgm, in: bridgeMode) else { return true }"
+            )
         }
     }
 
