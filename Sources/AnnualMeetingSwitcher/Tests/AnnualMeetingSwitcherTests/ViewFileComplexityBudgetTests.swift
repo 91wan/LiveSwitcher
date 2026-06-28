@@ -23,9 +23,15 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
     func testComplexityBudgetAllowlistEntriesCarryReasons() throws {
         let script = try repoText("script/check_complexity_budget.sh")
         let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let rows = manifest.split(separator: "\n", omittingEmptySubsequences: true).dropFirst()
 
         XCTAssertTrue(script.contains("allow_over_budget_reason()"))
-        XCTAssertTrue(manifest.contains("planned separately"))
+        XCTAssertFalse(script.contains("one or more rows"))
+        for row in rows {
+            let columns = row.split(separator: "\t", omittingEmptySubsequences: false)
+            XCTAssertGreaterThan(columns.count, 4, String(row))
+            XCTAssertFalse(columns[4].isEmpty, String(row))
+        }
         XCTAssertFalse(script.contains("return 0 # allow"))
     }
 
@@ -101,7 +107,7 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
             total += Int(columns[3]) ?? 0
         }
 
-        XCTAssertLessThanOrEqual(total, 61)
+        XCTAssertLessThanOrEqual(total, 0)
     }
 
     func testRuntimeReducerExtractionSourceChecksAreRetired() throws {
@@ -140,6 +146,19 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
 
         for path in retiredPaths {
             XCTAssertFalse(manifest.contains(path), "\(path) should be covered by live surface behavior tests.")
+        }
+    }
+
+    func testFinalSourceContractChecksAreRetired() throws {
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let retiredPaths = [
+            "AppLaunchPolicyTests.swift",
+            "VideoLayerVisibilityTests.swift",
+            "ViewModelActionHandlerWiringTests.swift"
+        ]
+
+        for path in retiredPaths {
+            XCTAssertFalse(manifest.contains(path), "\(path) should be covered by final behavior tests.")
         }
     }
 

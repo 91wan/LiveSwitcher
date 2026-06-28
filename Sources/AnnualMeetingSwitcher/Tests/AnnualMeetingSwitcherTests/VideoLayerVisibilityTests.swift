@@ -1,3 +1,4 @@
+import AVKit
 import XCTest
 @testable import LiveSwitcher
 
@@ -395,59 +396,85 @@ final class VideoLayerVisibilityTests: XCTestCase {
         XCTAssertFalse(VideoLayerVisibilityModel.shouldShowOutputVideoLayer(sourceKind: .keynote, hasLoadedMedia: coordinator.hasLoadedMedia, isPlaying: true))
     }
 
-    func testOutputVideoPlayerVisibilitySubscribesToLoadedMediaAndPlayingState() throws {
-        let source = try sourceText("Output/OutputVideoPlayerView.swift")
+    func testVideoLayerVisibilityModelSeparatesMonitorAndOutputPolicies() {
+        let pausedMedia = VideoLayerVisibilityModel.make(
+            sourceKind: .media,
+            hasLoadedMedia: true,
+            isPlaying: false
+        )
+        let playingMedia = VideoLayerVisibilityModel.make(
+            sourceKind: .media,
+            hasLoadedMedia: true,
+            isPlaying: true
+        )
 
-        XCTAssertFalse(source.contains("isHidden = !coordinator.isPlaying"))
-        XCTAssertFalse(source.contains("view?.isHidden = !isPlaying"))
-        XCTAssertTrue(source.contains("avCoordinator.$hasLoadedMedia"))
-        XCTAssertTrue(source.contains("avCoordinator.$isPlaying"))
-        XCTAssertTrue(source.contains("isPlaying: coordinator.isPlaying"))
-        XCTAssertTrue(source.contains("isPlaying: isPlaying"))
-        XCTAssertTrue(source.contains("VideoLayerVisibilityModel"))
-        XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowOutputVideoLayer"))
-        XCTAssertFalse(source.contains("VideoLayerVisibilityModel.shouldShowVideoLayer"))
+        XCTAssertTrue(pausedMedia.shouldShowMonitorVideoLayer)
+        XCTAssertFalse(pausedMedia.shouldShowOutputVideoLayer)
+        XCTAssertTrue(playingMedia.shouldShowMonitorVideoLayer)
+        XCTAssertTrue(playingMedia.shouldShowOutputVideoLayer)
     }
 
-    func testOutputVideoPlayerVisibilityUsesCurrentProgramSourceKindNotLoadedURL() throws {
-        let source = try sourceText("Output/OutputView.swift")
+    func testVideoLayerVisibilityModelUsesCurrentProgramSourceKindNotLoadedURLAssumptions() {
+        let loadedHTML = VideoLayerVisibilityModel.make(
+            sourceKind: .html,
+            hasLoadedMedia: true,
+            isPlaying: true
+        )
+        let loadedDeck = VideoLayerVisibilityModel.make(
+            sourceKind: .pptx,
+            hasLoadedMedia: true,
+            isPlaying: true
+        )
+        let loadedMedia = VideoLayerVisibilityModel.make(
+            sourceKind: .media,
+            hasLoadedMedia: true,
+            isPlaying: true
+        )
 
-        XCTAssertTrue(source.contains("sourceKind: viewModel.currentProgramItem?.sourceKind"))
-        XCTAssertFalse(source.contains("sourceKind: coordinator.currentURL.map { _ in .media }"))
-        XCTAssertFalse(source.contains("sourceKind: avCoordinator.currentURL.map { _ in .media }"))
+        XCTAssertFalse(loadedHTML.shouldShowMonitorVideoLayer)
+        XCTAssertFalse(loadedHTML.shouldShowOutputVideoLayer)
+        XCTAssertFalse(loadedDeck.shouldShowMonitorVideoLayer)
+        XCTAssertFalse(loadedDeck.shouldShowOutputVideoLayer)
+        XCTAssertTrue(loadedMedia.shouldShowMonitorVideoLayer)
+        XCTAssertTrue(loadedMedia.shouldShowOutputVideoLayer)
     }
 
-    func testOutputVideoPlayerReadsPanicStateWhenVisibilityUpdates() throws {
-        let source = try sourceText("Output/OutputVideoPlayerView.swift")
+    func testOutputVisibilityCoordinatorAppliesLatestSourcePlayingAndPanicState() {
+        let coordinator = OutputVideoPlayerView.VisibilityCoordinator()
+        let view = AVPlayerView()
 
-        XCTAssertTrue(source.contains("isPanicModeProvider"))
-        XCTAssertTrue(source.contains("isPanicMode: isPanicModeProvider()"))
-        XCTAssertFalse(source.contains("private var isPanicMode = false"))
+        coordinator.update(
+            sourceKind: .media,
+            isPanicMode: false,
+            hasLoadedMedia: true,
+            isPlaying: false,
+            view: view
+        )
+        XCTAssertTrue(view.isHidden)
+
+        coordinator.update(
+            sourceKind: .media,
+            isPanicMode: true,
+            hasLoadedMedia: true,
+            isPlaying: false,
+            view: view
+        )
+        XCTAssertFalse(view.isHidden)
+
+        coordinator.update(
+            sourceKind: .html,
+            isPanicMode: true,
+            hasLoadedMedia: true,
+            isPlaying: true,
+            view: view
+        )
+        XCTAssertTrue(view.isHidden)
     }
 
-    func testProgramMonitorDoesNotMountVideoOnlyWhilePlaying() throws {
-        let source = try sourceText("Views/ProgramMonitor/ProgramMonitorMediaLayer.swift")
-
-        XCTAssertFalse(source.contains("if viewModel.avCoordinator.isPlaying {\n            VideoPlayerView"))
-        XCTAssertTrue(source.contains("VideoLayerVisibilityModel.shouldShowMonitorVideoLayer"))
-        XCTAssertFalse(source.contains("VideoLayerVisibilityModel.shouldShowOutputVideoLayer"))
-    }
-
-    private func sourceText(_ relativePath: String) throws -> String {
-        try LiveSwitcherTests.sourceText(relativePath, filePath: #filePath)
-    }
-
-    private func sourceURL(_ relativePath: String) throws -> URL {
-        var directory = URL(fileURLWithPath: #filePath)
-        while directory.pathComponents.count > 1 {
-            directory.deleteLastPathComponent()
-            let candidate = directory
-                .appendingPathComponent("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher")
-                .appendingPathComponent(relativePath)
-            if FileManager.default.fileExists(atPath: candidate.path) {
-                return candidate
-            }
-        }
-        throw XCTSkip("Could not locate \(relativePath) from test source path.")
+    func testMonitorPolicyKeepsPausedMediaVisibleWithoutOutputPlaybackRequirement() {
+        XCTAssertTrue(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .media, hasLoadedMedia: true))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .media, hasLoadedMedia: false))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: .html, hasLoadedMedia: true))
+        XCTAssertFalse(VideoLayerVisibilityModel.shouldShowMonitorVideoLayer(sourceKind: nil, hasLoadedMedia: true))
     }
 }
