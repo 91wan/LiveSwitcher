@@ -113,6 +113,31 @@ No v0.5.1 release is required.
 
 Patch release remains blocked unless a user-visible production-risk fix or delivery incident fix lands.
 
+## Post-stable core debt burn-down snapshot - 2026-06-28
+
+Post-v0.5.0 commits through `7884118` remain internal maintenance only. The
+latest post-stable slices extracted ViewModel runtime identity and
+projection/page-intercept private state, shrank the root ViewModel shell, split
+Audio runtime ownership and Persistent runtime load boundary test suites, and
+replaced the Live mode/run-desk source-string contracts with behavior/model
+tests.
+
+Current complexity allowlist snapshot:
+
+| Item | Value |
+|---|---:|
+| Allowlist rows | 12 |
+| Source-string allowlist rows | 12 |
+| Source-string actual total | 259 |
+
+Removed production/test-file debt entries: `ViewModel.swift`,
+`AudioRuntimeOwnershipTests.swift`, and
+`PersistentStateRuntimeLoadBoundaryTests.swift`.
+
+This snapshot does not change production behavior, UI, playback, projection,
+Panic, BGM, automation, packaging, signing, checksum, bundle identifier, app
+name, or minimum macOS version. No v0.5.1 release is required.
+
 ## Known limitations
 
 - The public build is not Apple-notarized.
