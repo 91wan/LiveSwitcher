@@ -2,11 +2,18 @@ import XCTest
 @testable import LiveSwitcher
 
 final class BGMRuntimeReducerHardeningTests: XCTestCase {
-    func testBGMRuntimeReducerMayCallRuntimeAudioHelpers() throws {
-        let source = try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift")
+    func testBGMRuntimeReducersMayCallRuntimeAudioHelpers() throws {
+        for path in [
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeSelectionReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePlaybackReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePanicReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeLibraryReducer.swift"
+        ] {
+            let source = try repositorySource(path)
 
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.recalculateAudio"))
+            XCTAssertTrue(source.contains("AudioRuntimeReducer.syncRoutingContextFromMirrorState"), path)
+            XCTAssertTrue(source.contains("AudioRuntimeReducer.recalculateAudio"), path)
+        }
     }
 
     func testViewModelFilesDoNotCallLiveRuntimeReducerRecalculateAudio() throws {

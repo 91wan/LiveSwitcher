@@ -7,7 +7,7 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testBGMRuntimeReducerOwnsBGMSelectionLogic() throws {
-        let source = try bgmReducerSource()
+        let source = try bgmSelectionReducerSource()
 
         XCTAssertTrue(source.contains("static func selectBGM"))
         XCTAssertTrue(source.contains("prepareBGM"))
@@ -15,7 +15,7 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testBGMRuntimeReducerOwnsBGMStopLogic() throws {
-        let source = try bgmReducerSource()
+        let source = try bgmPlaybackReducerSource()
 
         XCTAssertTrue(source.contains("static func stop"))
         XCTAssertTrue(source.contains("liveAudioFadeDuration"))
@@ -23,7 +23,7 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testBGMRuntimeReducerOwnsBGMReachedEndLogic() throws {
-        let source = try bgmReducerSource()
+        let source = try bgmPlaybackReducerSource()
 
         XCTAssertTrue(source.contains("static func reachedEnd"))
         XCTAssertTrue(source.contains("loopOne"))
@@ -31,7 +31,7 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
     }
 
     func testBGMRuntimeReducerOwnsAdjacentSelectionLogic() throws {
-        let source = try bgmReducerSource()
+        let source = try bgmSelectionReducerSource()
 
         XCTAssertTrue(source.contains("static func selectAdjacent"))
         XCTAssertTrue(source.contains("currentCategoryBGMItems"))
@@ -99,6 +99,14 @@ final class BGMRuntimeReducerExtractionTests: XCTestCase {
 
     private func bgmReducerSource() throws -> String {
         try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift")
+    }
+
+    private func bgmSelectionReducerSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeSelectionReducer.swift")
+    }
+
+    private func bgmPlaybackReducerSource() throws -> String {
+        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePlaybackReducer.swift")
     }
 
     private func liveReducerSource() throws -> String {

@@ -58,7 +58,10 @@ final class AudioRuntimeReducerExtractionTests: XCTestCase {
     func testDomainReducersCallAudioRuntimeReducerHelpers() throws {
         for path in [
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/MediaRuntimeReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGMRuntimeReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeSelectionReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePlaybackReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePanicReducer.swift",
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeLibraryReducer.swift",
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PanicRuntimeReducer.swift",
             "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramSelectionRuntimeReducer.swift"
         ] {
