@@ -101,7 +101,7 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
             total += Int(columns[3]) ?? 0
         }
 
-        XCTAssertLessThanOrEqual(total, 171)
+        XCTAssertLessThanOrEqual(total, 131)
     }
 
     func testRuntimeReducerExtractionSourceChecksAreRetired() throws {
@@ -115,6 +115,18 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
 
         for path in retiredPaths {
             XCTAssertFalse(manifest.contains(path), "\(path) should be covered by reducer behavior tests.")
+        }
+    }
+
+    func testProgramActivationSourceContractChecksAreRetired() throws {
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let retiredPaths = [
+            "ProgramActivationSideEffectBoundaryTests.swift",
+            "ProgramActivationSideEffectWiringTests.swift"
+        ]
+
+        for path in retiredPaths {
+            XCTAssertFalse(manifest.contains(path), "\(path) should be covered by program activation behavior tests.")
         }
     }
 
