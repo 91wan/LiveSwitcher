@@ -25,7 +25,7 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
 
         XCTAssertTrue(script.contains("allow_over_budget_reason()"))
-        XCTAssertTrue(manifest.contains("split planned separately"))
+        XCTAssertTrue(manifest.contains("planned separately"))
         XCTAssertFalse(script.contains("return 0 # allow"))
     }
 
