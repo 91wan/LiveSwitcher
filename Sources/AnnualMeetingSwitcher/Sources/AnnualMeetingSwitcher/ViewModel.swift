@@ -30,8 +30,7 @@ final class SwitcherViewModel {
 
     private(set) var currentProgramItem: ProgramItem?
     private(set) var currentProgramSwitchedAt: Date?
-    @ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks: Int?
-    @ObservationIgnored private var activeRuntimeMediaURLForCallbacks: URL?
+    @ObservationIgnored private var runtimeIdentityStore = ViewModelRuntimeIdentityStore()
     var needsMutedMediaStartupAfterClearedProgram = false
     private(set) var programItems: [ProgramItem] = []
     var showAgendaTimeline: Bool = false {
@@ -160,7 +159,6 @@ final class SwitcherViewModel {
     var bgmItems: [BGMItem] = []
     var currentBGMItem: BGMItem?
     var isBGMPlaying: Bool = false
-    @ObservationIgnored private var transientRuntimeBGMItem: BGMItem?
     var isBGMAudioTakeoverActive: Bool = false {
         didSet {
             guard oldValue != isBGMAudioTakeoverActive else { return }
@@ -254,9 +252,6 @@ final class SwitcherViewModel {
     private var cancellables = Set<AnyCancellable>()
     @ObservationIgnored let cleanupBag = ViewModelCleanupBag()
     private var bgmTransitionGeneration: Int = 0
-    @ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks: Int?
-    @ObservationIgnored private var activeRuntimeBGMItemIDForCallbacks: UUID?
-    @ObservationIgnored private var activeRuntimeBGMURLForCallbacks: URL?
     @ObservationIgnored private var activeBGMTimerGeneration: Int?
     @ObservationIgnored private var pendingPPTToggleSource: PPTModeToggleSource?
     var agendaReminderAcknowledgedItemIDs = Set<UUID>()
@@ -328,32 +323,19 @@ final class SwitcherViewModel {
     }
 
     func setActiveRuntimeMediaCallbackIdentity(generation: Int, url: URL) {
-        activeRuntimeMediaGenerationForCallbacks = generation
-        activeRuntimeMediaURLForCallbacks = url
+        runtimeIdentityStore.setActiveMedia(generation: generation, url: url)
     }
 
     func clearActiveRuntimeMediaCallbackIdentity(ifGeneration generation: Int) {
-        guard activeRuntimeMediaGenerationForCallbacks == generation else { return }
-
-        activeRuntimeMediaGenerationForCallbacks = nil
-        activeRuntimeMediaURLForCallbacks = nil
+        runtimeIdentityStore.clearActiveMedia(ifGeneration: generation)
     }
 
     func validatedRuntimeMediaCallbackGeneration() -> Int? {
-        guard let generation = activeRuntimeMediaGenerationForCallbacks else { return nil }
-
-        if let runtimeGeneration = runtimeBackedMediaGenerationForCallbackValidation {
-            guard generation == runtimeGeneration else { return nil }
-        }
-
-        guard let currentProgram = runtimeBackedCurrentProgramForMediaCallbackValidation,
-              currentProgram.sourceKind == .media
-        else { return nil }
-
-        guard currentProgram.sourceURL == activeRuntimeMediaURLForCallbacks else { return nil }
-        guard avCoordinator.currentURL == activeRuntimeMediaURLForCallbacks else { return nil }
-
-        return generation
+        runtimeIdentityStore.validatedMediaGeneration(
+            runtimeGeneration: runtimeBackedMediaGenerationForCallbackValidation,
+            currentProgram: runtimeBackedCurrentProgramForMediaCallbackValidation,
+            currentMediaURL: avCoordinator.currentURL
+        )
     }
 
     private var runtimeBackedCurrentProgramForMediaCallbackValidation: ProgramItem? {
@@ -369,29 +351,18 @@ final class SwitcherViewModel {
     }
 
     func setActiveRuntimeBGMCallbackIdentity(item: BGMItem, generation: Int) {
-        activeRuntimeBGMGenerationForCallbacks = generation
-        activeRuntimeBGMItemIDForCallbacks = item.id
-        activeRuntimeBGMURLForCallbacks = item.url
+        runtimeIdentityStore.setActiveBGM(item: item, generation: generation)
     }
 
     func clearActiveRuntimeBGMCallbackIdentity() {
-        activeRuntimeBGMGenerationForCallbacks = nil
-        activeRuntimeBGMItemIDForCallbacks = nil
-        activeRuntimeBGMURLForCallbacks = nil
+        runtimeIdentityStore.clearActiveBGM()
     }
 
     func validatedRuntimeBGMCallbackGeneration() -> Int? {
-        guard let generation = activeRuntimeBGMGenerationForCallbacks else { return nil }
-
-        if let runtimeGeneration = runtimeBackedBGMGenerationForCallbackValidation {
-            guard generation == runtimeGeneration else { return nil }
-        }
-
-        guard let currentBGM = runtimeBackedCurrentBGMItemForCallbackValidation else { return nil }
-        guard currentBGM.id == activeRuntimeBGMItemIDForCallbacks else { return nil }
-        guard currentBGM.url == activeRuntimeBGMURLForCallbacks else { return nil }
-
-        return generation
+        runtimeIdentityStore.validatedBGMGeneration(
+            runtimeGeneration: runtimeBackedBGMGenerationForCallbackValidation,
+            currentItem: runtimeBackedCurrentBGMItemForCallbackValidation
+        )
     }
 
     private var runtimeBackedCurrentBGMItemForCallbackValidation: BGMItem? {
@@ -407,30 +378,19 @@ final class SwitcherViewModel {
     }
 
     func includeTransientRuntimeBGMItem(_ item: BGMItem) {
-        transientRuntimeBGMItem = item
+        runtimeIdentityStore.includeTransientBGMItem(item)
     }
 
     func clearTransientRuntimeBGMItemIfNeeded(_ item: BGMItem) {
-        guard transientRuntimeBGMItem?.id == item.id else { return }
-        transientRuntimeBGMItem = nil
+        runtimeIdentityStore.clearTransientBGMItemIfNeeded(item)
     }
 
     func runtimeBGMItemsForSnapshot() -> [BGMItem] {
-        var items = bgmItems
-        if runtime.bridgeMode.owns(.bgm),
-           let currentRuntimeItem = runtime.state.bgm.currentItem,
-           !items.contains(where: { $0.id == currentRuntimeItem.id }) {
-            items.append(currentRuntimeItem)
-        }
-        if let currentBGMItem,
-           !items.contains(where: { $0.id == currentBGMItem.id }) {
-            items.append(currentBGMItem)
-        }
-        if let transientRuntimeBGMItem,
-           !items.contains(where: { $0.id == transientRuntimeBGMItem.id }) {
-            items.append(transientRuntimeBGMItem)
-        }
-        return items
+        runtimeIdentityStore.runtimeBGMItems(
+            libraryItems: bgmItems,
+            runtimeCurrentItem: runtime.bridgeMode.owns(.bgm) ? runtime.state.bgm.currentItem : nil,
+            facadeCurrentItem: currentBGMItem
+        )
     }
 
     var isPageInterceptEventTapActiveForRuntimeSnapshot: Bool {
@@ -554,11 +514,11 @@ final class SwitcherViewModel {
     }
 
     var activeRuntimeMediaCallbackGenerationForTesting: Int? {
-        activeRuntimeMediaGenerationForCallbacks
+        runtimeIdentityStore.activeMediaGeneration
     }
 
     var activeRuntimeMediaCallbackURLForTesting: URL? {
-        activeRuntimeMediaURLForCallbacks
+        runtimeIdentityStore.activeMediaURL
     }
 
     var bgmTransitionGenerationForTesting: Int {
@@ -574,15 +534,15 @@ final class SwitcherViewModel {
     }
 
     var activeRuntimeBGMCallbackGenerationForTesting: Int? {
-        activeRuntimeBGMGenerationForCallbacks
+        runtimeIdentityStore.activeBGMGeneration
     }
 
     var activeRuntimeBGMCallbackItemIDForTesting: UUID? {
-        activeRuntimeBGMItemIDForCallbacks
+        runtimeIdentityStore.activeBGMItemID
     }
 
     var activeRuntimeBGMCallbackURLForTesting: URL? {
-        activeRuntimeBGMURLForCallbacks
+        runtimeIdentityStore.activeBGMURL
     }
 
     func seedActiveRuntimeBGMCallbackForTesting(item: BGMItem, generation: Int) {

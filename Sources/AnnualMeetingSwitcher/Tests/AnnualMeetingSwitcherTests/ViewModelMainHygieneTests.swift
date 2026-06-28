@@ -57,11 +57,17 @@ final class ViewModelMainHygieneTests: XCTestCase {
         XCTAssertTrue(source.contains("var runtimeSpeakerModeDuckedRatio"))
     }
 
-    func testPrivateStorageWasNotWidenedToMoveAccessors() throws {
+    func testPrivateStorageRemainsEncapsulatedBehindMainViewModelStore() throws {
         let source = try viewModelSource()
+        let store = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"
+        )
 
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks"))
-        XCTAssertTrue(source.contains("@ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks"))
+        XCTAssertNotNil(source.range(of: "@ObservationIgnored private var runtimeIdentityStore"))
+        XCTAssertNil(source.range(of: "@ObservationIgnored private var activeRuntimeMediaGenerationForCallbacks"))
+        XCTAssertNil(source.range(of: "@ObservationIgnored private var activeRuntimeBGMGenerationForCallbacks"))
+        XCTAssertNotNil(store.range(of: "private(set) var activeMediaGeneration"))
+        XCTAssertNotNil(store.range(of: "private(set) var activeBGMGeneration"))
         XCTAssertTrue(source.contains("private let speakerModeDuckedRatio"))
         XCTAssertTrue(source.contains("private(set) var isExternalDisplayAvailable"))
     }

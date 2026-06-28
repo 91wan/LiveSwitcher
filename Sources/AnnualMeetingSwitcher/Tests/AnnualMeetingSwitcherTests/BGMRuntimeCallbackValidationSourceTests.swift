@@ -197,13 +197,17 @@ final class BGMRuntimeCallbackValidationSourceTests: XCTestCase {
     func testBGMCallbackValidationSourceUsesRuntimeBackedHelpers() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "validatedRuntimeBGMCallbackGeneration"))
+        let store = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"
+        )
 
         XCTAssertTrue(source.contains("runtimeBackedCurrentBGMItemForCallbackValidation"))
         XCTAssertTrue(source.contains("runtimeBackedBGMGenerationForCallbackValidation"))
+        XCTAssertTrue(body.contains("runtimeIdentityStore.validatedBGMGeneration"))
         XCTAssertFalse(body.contains("currentBGMItem?.id =="))
         XCTAssertFalse(body.contains("currentBGMItem?.url =="))
-        XCTAssertTrue(body.contains("currentBGM.id == activeRuntimeBGMItemIDForCallbacks"))
-        XCTAssertTrue(body.contains("currentBGM.url == activeRuntimeBGMURLForCallbacks"))
+        XCTAssertTrue(store.contains("currentItem.id == activeBGMItemID"))
+        XCTAssertTrue(store.contains("currentItem.url == activeBGMURL"))
     }
 
     private func makeViewModel(

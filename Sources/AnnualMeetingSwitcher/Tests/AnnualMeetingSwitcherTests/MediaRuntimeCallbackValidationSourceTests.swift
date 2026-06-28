@@ -160,11 +160,15 @@ final class MediaRuntimeCallbackValidationSourceTests: XCTestCase {
     func testMediaCallbackValidationSourceUsesRuntimeBackedHelpers() throws {
         let source = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
         let body = try XCTUnwrap(source.extractedRuntimeFunctionBody(named: "validatedRuntimeMediaCallbackGeneration"))
+        let store = try sourceText(
+            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel/Internal/ViewModelRuntimeIdentityStore.swift"
+        )
 
         XCTAssertTrue(source.contains("runtimeBackedCurrentProgramForMediaCallbackValidation"))
         XCTAssertTrue(source.contains("runtimeBackedMediaGenerationForCallbackValidation"))
+        XCTAssertTrue(body.contains("runtimeIdentityStore.validatedMediaGeneration"))
         XCTAssertFalse(body.contains("currentProgramItem?.sourceKind == .media"))
-        XCTAssertTrue(body.contains("currentProgram.sourceURL == activeRuntimeMediaURLForCallbacks"))
+        XCTAssertTrue(store.contains("currentProgram.sourceURL == activeMediaURL"))
     }
 
     private func makeViewModel(
