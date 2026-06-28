@@ -134,6 +134,7 @@ validate_allowlist_manifest() {
     [[ -z "$category$manifest_path$limit$actual$reason$target_version$owner${extra:-}" ]] && continue
 
     [[ -z "${extra:-}" ]] || record_violation "allowlist columns" "$ALLOWLIST_PATH:$line_number" 8 7
+    [[ "$category" != "source-contains" ]] || record_violation "source-contains allowlist row" "$ALLOWLIST_PATH:$line_number" "$category" "no source-contains rows"
     valid_category "$category" || record_violation "allowlist category" "$ALLOWLIST_PATH:$line_number" "$category" "known category"
     [[ -n "$manifest_path" ]] || record_violation "allowlist path" "$ALLOWLIST_PATH:$line_number" 0 "non-empty path"
     [[ -f "$manifest_path" ]] || record_violation "allowlist path exists" "$manifest_path" 0 "tracked file"

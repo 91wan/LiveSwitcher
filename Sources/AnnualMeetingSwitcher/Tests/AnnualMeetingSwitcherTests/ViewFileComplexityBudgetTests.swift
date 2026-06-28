@@ -66,6 +66,55 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         }
     }
 
+    func testSourceContractAllowlistDebtIsZero() throws {
+        let manifest = try repoText("docs/architecture/complexity-allowlist.tsv")
+        let rows = manifest.split(separator: "\n", omittingEmptySubsequences: true).dropFirst()
+        var sourceContractRows: [String] = []
+        var sourceContractActualTotal = 0
+
+        for row in rows {
+            let columns = row.split(separator: "\t", omittingEmptySubsequences: false).map(String.init)
+            guard columns.first == "source-contains" else {
+                continue
+            }
+            sourceContractRows.append(String(row))
+            sourceContractActualTotal += Int(columns[safe: 3] ?? "") ?? 0
+        }
+
+        XCTAssertEqual(sourceContractRows, [])
+        XCTAssertEqual(sourceContractActualTotal, 0)
+    }
+
+    func testComplexityBudgetRejectsSourceContractAllowlistRows() throws {
+        let fixtureRoot = try makeComplexityBudgetFixture(
+            allowlistRows: [
+                "source-contains\tSources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/NewSourceDebtTests.swift\t15\t16\tattempted source debt\tpost-stable\tmaintainers"
+            ]
+        )
+
+        let result = try runProcess(
+            repoURL("script/check_complexity_budget.sh"),
+            arguments: ["--dev"],
+            currentDirectory: fixtureRoot
+        )
+
+        XCTAssertNotEqual(result.exitCode, 0, result.output)
+        XCTAssertTrue(result.output.contains("source-contains allowlist row"), result.output)
+    }
+
+    func testComplexityBudgetFailsForNewOverBudgetSourceContractFile() throws {
+        let fixtureRoot = try makeComplexityBudgetFixture(allowlistRows: [])
+
+        let result = try runProcess(
+            repoURL("script/check_complexity_budget.sh"),
+            arguments: ["--dev"],
+            currentDirectory: fixtureRoot
+        )
+
+        XCTAssertNotEqual(result.exitCode, 0, result.output)
+        XCTAssertTrue(result.output.contains("source-contains"), result.output)
+    }
+
     func testComplexityBudgetClassifiesViewDirectoriesRecursively() throws {
         let script = try repoText("script/check_complexity_budget.sh")
 
@@ -170,6 +219,79 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
         try repoRoot().appendingPathComponent(relativePath)
     }
 
+    private func makeComplexityBudgetFixture(allowlistRows: [String]) throws -> URL {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ComplexityBudgetFixture-\(UUID().uuidString)")
+        addTeardownBlock {
+            try? FileManager.default.removeItem(at: root)
+        }
+
+        let allowlistURL = root.appendingPathComponent("docs/architecture/complexity-allowlist.tsv")
+        let testFileURL = root.appendingPathComponent(
+            "Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/NewSourceDebtTests.swift"
+        )
+        try FileManager.default.createDirectory(
+            at: allowlistURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try FileManager.default.createDirectory(
+            at: testFileURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        let header = "category\tpath\tlimit\tactual\treason\ttarget_version\towner"
+        try ([header] + allowlistRows).joined(separator: "\n").appending("\n")
+            .write(to: allowlistURL, atomically: true, encoding: .utf8)
+
+        let sourceContractLine = #"func check(_ source: String) { _ = source.contains("needle") }"#
+        try Array(repeating: sourceContractLine, count: 16)
+            .joined(separator: "\n")
+            .appending("\n")
+            .write(to: testFileURL, atomically: true, encoding: .utf8)
+
+        try runRequiredProcess(URL(fileURLWithPath: "/usr/bin/git"), arguments: ["init"], currentDirectory: root)
+        try runRequiredProcess(
+            URL(fileURLWithPath: "/usr/bin/git"),
+            arguments: ["add", "docs/architecture/complexity-allowlist.tsv", "Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/NewSourceDebtTests.swift"],
+            currentDirectory: root
+        )
+
+        return root
+    }
+
+    private func runRequiredProcess(
+        _ executableURL: URL,
+        arguments: [String],
+        currentDirectory: URL
+    ) throws {
+        let result = try runProcess(executableURL, arguments: arguments, currentDirectory: currentDirectory)
+        XCTAssertEqual(result.exitCode, 0, result.output)
+    }
+
+    private func runProcess(
+        _ executableURL: URL,
+        arguments: [String],
+        currentDirectory: URL
+    ) throws -> ProcessResult {
+        let process = Process()
+        process.executableURL = executableURL
+        process.arguments = arguments
+        process.currentDirectoryURL = currentDirectory
+
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+
+        try process.run()
+        process.waitUntilExit()
+
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        return ProcessResult(
+            exitCode: process.terminationStatus,
+            output: String(data: data, encoding: .utf8) ?? ""
+        )
+    }
+
     private func repoRoot() throws -> URL {
         var directory = URL(fileURLWithPath: #filePath)
         while directory.pathComponents.count > 1 {
@@ -182,5 +304,16 @@ final class ViewFileComplexityBudgetTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate repository root from test source path.")
+    }
+}
+
+private struct ProcessResult {
+    let exitCode: Int32
+    let output: String
+}
+
+private extension Array {
+    subscript(safe index: Index) -> Element? {
+        indices.contains(index) ? self[index] : nil
     }
 }
