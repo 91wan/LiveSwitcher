@@ -2,90 +2,145 @@ import XCTest
 @testable import LiveSwitcher
 
 final class AudioRuntimeReducerExtractionTests: XCTestCase {
-    func testAudioRuntimeReducerFileExists() throws {
-        _ = try audioReducerSource()
+    func testAudioFaderActionsClampRecalculateAndEmitRouting() {
+        let state = audioState(mediaPlaying: true, bgmPlaying: true)
+
+        let master = reduce(state, .operatorChangedMasterVolume(1.4))
+        XCTAssertEqual(master.state.audio.masterVolume, 1, accuracy: 0.0001)
+        XCTAssertEqual(master.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+        assertRoutingMatchesEngine(master.state)
+
+        let media = reduce(state, .operatorChangedMediaVolume(-0.2))
+        XCTAssertEqual(media.state.audio.mediaVolume, 0, accuracy: 0.0001)
+        XCTAssertEqual(media.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+        assertRoutingMatchesEngine(media.state)
+
+        let bgm = reduce(state, .operatorChangedBGMVolume(0.7))
+        XCTAssertEqual(bgm.state.audio.bgmVolume, 0.7, accuracy: 0.0001)
+        XCTAssertEqual(bgm.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+        assertRoutingMatchesEngine(bgm.state)
     }
 
-    func testAudioRuntimeReducerOwnsOperatorMutationLogic() throws {
-        let source = try audioReducerSource()
+    func testAudioMuteActionsRecalculateAndEmitFaderRouting() {
+        var state = audioState(mediaPlaying: true, bgmPlaying: true)
+        state.audio.strategy = .mixed
 
-        XCTAssertTrue(source.contains("static func selectStrategy"))
-        XCTAssertTrue(source.contains("static func changeMasterVolume"))
-        XCTAssertTrue(source.contains("static func changeMediaVolume"))
-        XCTAssertTrue(source.contains("static func changeBGMVolume"))
-        XCTAssertTrue(source.contains("static func changeMasterMute"))
-        XCTAssertTrue(source.contains("static func changeMediaMute"))
-        XCTAssertTrue(source.contains("static func changeBGMMute"))
-        XCTAssertTrue(source.contains("static func changeBGMTakeover"))
-        XCTAssertTrue(source.contains("static func toggleSpeakerMode"))
-        XCTAssertTrue(source.contains("static func setSpeakerMode"))
+        let masterMute = reduce(state, .operatorChangedMasterMute(true))
+        XCTAssertTrue(masterMute.state.audio.isMasterMuted)
+        XCTAssertEqual(masterMute.state.audio.effectiveMedia, 0, accuracy: 0.0001)
+        XCTAssertEqual(masterMute.state.audio.effectiveBGM, 0, accuracy: 0.0001)
+        XCTAssertEqual(masterMute.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+
+        let mediaMute = reduce(state, .operatorChangedMediaMute(true))
+        XCTAssertTrue(mediaMute.state.audio.isMediaMuted)
+        XCTAssertEqual(mediaMute.state.audio.effectiveMedia, 0, accuracy: 0.0001)
+        XCTAssertGreaterThan(mediaMute.state.audio.effectiveBGM, 0)
+        XCTAssertEqual(mediaMute.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
+
+        let bgmMute = reduce(state, .operatorChangedBGMMute(true))
+        XCTAssertTrue(bgmMute.state.audio.isBGMMuted)
+        XCTAssertGreaterThan(bgmMute.state.audio.effectiveMedia, 0)
+        XCTAssertEqual(bgmMute.state.audio.effectiveBGM, 0, accuracy: 0.0001)
+        XCTAssertEqual(bgmMute.effects, [.applyAudioRouting(reason: .operatorFaderChanged)])
     }
 
-    func testAudioRuntimeReducerOwnsRoutingHelpers() throws {
-        let source = try audioReducerSource()
+    func testSpeakerModeAndBGMTakeoverUseRuntimeRoutingRules() {
+        var state = audioState(mediaPlaying: true, bgmPlaying: true)
+        state.audio.strategy = .mixed
 
-        XCTAssertTrue(source.contains("internal static func recalculateAudio"))
-        XCTAssertTrue(source.contains("private static func initializeRoutingContextIfNeeded"))
-        XCTAssertTrue(source.contains("internal static func syncRoutingContextFromMirrorState"))
-        XCTAssertTrue(source.contains("internal static func applyFacadeSnapshot"))
+        let speaker = reduce(
+            state,
+            .operatorSetSpeakerMode(true),
+            environment: .fullRuntimeForTests(speakerModeDuckedRatio: 0.2)
+        )
+        XCTAssertTrue(speaker.state.audio.isSpeakerMode)
+        XCTAssertEqual(speaker.effects, [
+            .applyAudioRouting(reason: .speakerChanged),
+            .saveSpeakerMode(true)
+        ] as [LiveRuntimeEffect])
+        assertRoutingMatchesEngine(speaker.state, ratio: 0.2)
+
+        let takeover = reduce(state, .operatorChangedBGMTakeover(true))
+        XCTAssertTrue(takeover.state.audio.isBGMTakeoverActive)
+        XCTAssertEqual(takeover.state.audio.effectiveMedia, 0, accuracy: 0.0001)
+        XCTAssertGreaterThan(takeover.state.audio.effectiveBGM, 0)
+        XCTAssertEqual(takeover.effects, [.applyAudioRouting(reason: .limiterChanged)])
     }
 
-    func testLiveRuntimeReducerDelegatesAudioActions() throws {
-        let source = try liveReducerSource()
+    func testPanicRoutingForcesSilentEffectiveOutput() {
+        let mutation = reduce(
+            audioState(mediaPlaying: true, bgmPlaying: true),
+            .operatorSetPanic(true),
+            environment: .fullRuntimeForTests(liveAudioFadeDuration: 0)
+        )
 
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.selectStrategy"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeMasterVolume"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeMediaVolume"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeBGMVolume"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeMasterMute"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeMediaMute"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeBGMMute"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.changeBGMTakeover"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.toggleSpeakerMode"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.setSpeakerMode"))
-        XCTAssertTrue(source.contains("AudioRuntimeReducer.applyFacadeSnapshot"))
+        XCTAssertTrue(mutation.state.panic.isActive)
+        XCTAssertTrue(mutation.state.audio.routingContext.isPanicMode)
+        XCTAssertEqual(mutation.state.audio.effectiveMedia, 0, accuracy: 0.0001)
+        XCTAssertEqual(mutation.state.audio.effectiveBGM, 0, accuracy: 0.0001)
+        XCTAssertTrue(mutation.effects.contains(.applyAudioRouting(reason: .panicChanged)))
     }
 
-    func testLiveRuntimeReducerNoLongerDeclaresAudioHelpers() throws {
-        let source = try liveReducerSource()
+    func testFacadeAudioSnapshotAppliesMirrorInputsWithoutEmittingEffects() {
+        let snapshot = AudioFacadeSnapshot(
+            masterVolume: 0.4,
+            mediaVolume: 0.8,
+            bgmVolume: 0.2,
+            strategy: .mixed,
+            isMasterMuted: false,
+            isMediaMuted: false,
+            isBGMMuted: false,
+            isSpeakerMode: false,
+            isBGMTakeoverActive: false,
+            isPanicMode: false,
+            isCurrentProgramMediaSource: true,
+            isMediaPlaying: true,
+            isBGMPlaying: true
+        )
 
-        XCTAssertFalse(source.contains("internal static func recalculateAudio"))
-        XCTAssertFalse(source.contains("initializeAudioRoutingContextIfNeeded"))
-        XCTAssertFalse(source.contains("internal static func syncAudioRoutingContextFromMirrorState"))
-        XCTAssertFalse(source.contains("private static func applyAudioFacadeSnapshot"))
+        let mutation = reduce(
+            LiveRuntimeState(),
+            .facadeAudioInputsChanged(snapshot),
+            environment: .fullRuntimeForTests(speakerModeDuckedRatio: 0.25)
+        )
+
+        XCTAssertEqual(mutation.state.audio.routingContext.isCurrentProgramMediaSource, true)
+        XCTAssertEqual(mutation.state.audio.routingContext.isMediaPlaying, true)
+        XCTAssertEqual(mutation.state.audio.routingContext.isBGMPlaying, true)
+        XCTAssertEqual(mutation.state.audio.effectiveMedia, 0.32, accuracy: 0.0001)
+        XCTAssertEqual(mutation.state.audio.effectiveBGM, 0.08, accuracy: 0.0001)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testDomainReducersCallAudioRuntimeReducerHelpers() throws {
-        for path in [
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/MediaRuntimeReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeSelectionReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePlaybackReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimePanicReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/BGM/BGMRuntimeLibraryReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PanicRuntimeReducer.swift",
-            "Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/ProgramSelectionRuntimeReducer.swift"
-        ] {
-            let source = try repositorySource(path)
+    func testAudioActionsNoopWhenAudioBridgeIsNotRuntimeOwned() {
+        let state = audioState(mediaPlaying: true, bgmPlaying: true)
 
-            XCTAssertTrue(source.contains("AudioRuntimeReducer."), path)
-            XCTAssertFalse(source.contains("LiveRuntimeReducer.recalculateAudio"), path)
-            XCTAssertFalse(source.contains("LiveRuntimeReducer.syncAudioRoutingContextFromMirrorState"), path)
-        }
+        let mutation = reduce(
+            state,
+            .operatorChangedMasterVolume(0.2),
+            environment: .recordingOnlyForTests()
+        )
+
+        XCTAssertEqual(mutation.state, state)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testArchitectureDocsNoLongerMarkAudioReducerAsFutureWork() throws {
-        let docs = try repositorySource("docs/architecture/runtime-ownership.md")
-
-        XCTAssertTrue(docs.localizedStandardContains("AudioRuntimeReducer"))
-        XCTAssertFalse(docs.contains("AudioRuntimeReducer extraction remains future work"))
-        XCTAssertFalse(docs.contains("dedicated `AudioRuntimeReducer` extraction is planned as future work"))
+    private func reduce(
+        _ state: LiveRuntimeState,
+        _ action: LiveRuntimeAction,
+        environment: LiveRuntimeEnvironment = .fullRuntimeForTests()
+    ) -> LiveRuntimeMutation {
+        LiveRuntimeReducer.reduce(state: state, action: action, environment: environment)
     }
 
-    private func audioReducerSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/AudioRuntimeReducer.swift")
-    }
-
-    private func liveReducerSource() throws -> String {
-        try repositorySource("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AudioRuntimeActionDispatcher.swift")
+    private func assertRoutingMatchesEngine(
+        _ state: LiveRuntimeState,
+        ratio: Float = AudioRoutingDefaults.speakerModeDuckedRatio,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        let expected = AudioRoutingEngine.output(for: audioInput(from: state, ratio: ratio))
+        XCTAssertEqual(state.audio.effectiveMedia, expected.media, accuracy: 0.0001, file: file, line: line)
+        XCTAssertEqual(state.audio.effectiveBGM, expected.bgm, accuracy: 0.0001, file: file, line: line)
     }
 }

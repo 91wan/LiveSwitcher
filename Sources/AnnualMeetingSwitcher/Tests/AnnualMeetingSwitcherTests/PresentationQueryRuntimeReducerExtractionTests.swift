@@ -2,130 +2,140 @@ import XCTest
 @testable import LiveSwitcher
 
 final class PresentationQueryRuntimeReducerExtractionTests: XCTestCase {
-    func testPresentationQueryRuntimeReducerFileExists() {
-        XCTAssertTrue(FileManager.default.fileExists(atPath: runtimeFile("PresentationQueryRuntimeReducer.swift")))
+    func testRequestStartsActiveQueryClearsPriorResultAndFailureAndEmitsScan() {
+        let oldID = UUID()
+        let id = UUID()
+        var state = completedState(id: oldID, title: "Old")
+        state.presentationQuery.latestFailure = failure(oldID, message: "old failure")
+
+        let mutation = reduce(state, .operatorRequestedPresentationQuery(id: id))
+
+        XCTAssertEqual(mutation.state.presentationQuery.activeRequestID, id)
+        XCTAssertNil(mutation.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestResult)
+        XCTAssertNil(mutation.state.presentationQuery.latestFailure)
+        XCTAssertEqual(mutation.effects, [.scanPresentationQuery(id: id)])
     }
 
-    func testPresentationQueryRuntimeReducerOwnsRequestLogic() throws {
-        let source = try reducerSource()
+    func testCompletedQueryAcceptsOnlyActiveRequestAndClearsFailure() {
+        let id = UUID()
+        var state = activeState(id)
+        state.presentationQuery.latestFailure = failure(id, message: "old failure")
 
-        XCTAssertTrue(source.contains("static func request("))
-        XCTAssertTrue(source.contains("state.presentationQuery.activeRequestID = id"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestCompletedRequestID = nil"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestResult = nil"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestFailure = nil"))
-        XCTAssertTrue(source.contains("effects.append(.scanPresentationQuery(id: id))"))
+        let mutation = reduce(state, .presentationQueryCompleted(id: id, result: result("Opening")))
+
+        XCTAssertNil(mutation.state.presentationQuery.activeRequestID)
+        XCTAssertEqual(mutation.state.presentationQuery.latestCompletedRequestID, id)
+        XCTAssertEqual(mutation.state.presentationQuery.latestResult, result("Opening"))
+        XCTAssertNil(mutation.state.presentationQuery.latestFailure)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testPresentationQueryRuntimeReducerOwnsCompletionLogic() throws {
-        let source = try reducerSource()
+    func testFailedQueryAcceptsOnlyActiveRequestAndClearsResult() {
+        let id = UUID()
+        var state = activeState(id)
+        state.presentationQuery.latestCompletedRequestID = UUID()
+        state.presentationQuery.latestResult = result("Old")
 
-        XCTAssertTrue(source.contains("static func complete("))
-        XCTAssertTrue(source.contains("guard state.presentationQuery.activeRequestID == id else { return }"))
-        XCTAssertTrue(source.contains("state.presentationQuery.activeRequestID = nil"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestCompletedRequestID = id"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestResult = result"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestFailure = nil"))
+        let mutation = reduce(state, failureAction(id, message: "permissionDenied"))
+
+        XCTAssertNil(mutation.state.presentationQuery.activeRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(mutation.state.presentationQuery.latestResult)
+        XCTAssertEqual(mutation.state.presentationQuery.latestFailure, failure(id, message: "permissionDenied"))
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    func testPresentationQueryRuntimeReducerOwnsFailureLogic() throws {
-        let source = try reducerSource()
+    func testStaleSuccessAndFailureDoNotChangeCurrentQueryState() {
+        let active = UUID()
+        let stale = UUID()
+        var state = activeState(active)
+        state.presentationQuery.latestCompletedRequestID = UUID()
+        state.presentationQuery.latestResult = result("Existing")
+        state.presentationQuery.latestFailure = failure(UUID(), message: "existing")
 
-        XCTAssertTrue(source.contains("static func fail("))
-        XCTAssertTrue(source.contains("guard state.presentationQuery.activeRequestID == id else { return }"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestCompletedRequestID = nil"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestResult = nil"))
-        XCTAssertTrue(source.contains("state.presentationQuery.latestFailure = PresentationQueryFailure("))
+        let staleSuccess = reduce(state, .presentationQueryCompleted(id: stale, result: result("Stale")))
+        XCTAssertEqual(staleSuccess.state.presentationQuery, state.presentationQuery)
+
+        let staleFailure = reduce(state, failureAction(stale, message: "stale"))
+        XCTAssertEqual(staleFailure.state.presentationQuery, state.presentationQuery)
     }
 
-    func testPresentationQueryRuntimeReducerOwnsConsumeLogic() throws {
-        let source = try reducerSource()
+    func testConsumeResultDeduplicatesTrimsAndClearsMatchingLatestState() {
+        let first = UUID()
+        var state = reduce(.presentationQueryResultConsumed(id: first)).state
+        state = reduce(state, .presentationQueryResultConsumed(id: first)).state
+        XCTAssertEqual(state.presentationQuery.consumedRequestIDs, [first])
 
-        XCTAssertTrue(source.contains("static func consumeResult("))
-        XCTAssertTrue(source.contains("state.presentationQuery.markConsumed(id)"))
-    }
-
-    func testLiveRuntimeReducerDelegatesPresentationQueryRequest() throws {
-        let source = try dispatcherSource()
-        let body = try caseBody(".operatorRequestedPresentationQuery(let id)", in: source)
-
-        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
-        XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.request("))
-    }
-
-    func testLiveRuntimeReducerDelegatesPresentationQueryCompleted() throws {
-        let source = try dispatcherSource()
-        let body = try caseBody(".presentationQueryCompleted(let id, let result)", in: source)
-
-        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
-        XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.complete(id: id, result: result, state: &state)"))
-    }
-
-    func testLiveRuntimeReducerDelegatesPresentationQueryFailed() throws {
-        let source = try dispatcherSource()
-        let body = try caseBody(".presentationQueryFailed(let id, let action, let sanitizedMessage)", in: source)
-
-        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
-        XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.fail("))
-    }
-
-    func testLiveRuntimeReducerDelegatesPresentationQueryConsumed() throws {
-        let source = try dispatcherSource()
-        let body = try caseBody(".presentationQueryResultConsumed(let id)", in: source)
-
-        XCTAssertTrue(body.contains("guard LiveRuntimeReducer.isRuntimeOwned(.presentationQuery, in: bridgeMode) else { return true }"))
-        XCTAssertTrue(body.contains("PresentationQueryRuntimeReducer.consumeResult(id: id, state: &state)"))
-    }
-
-    func testLiveRuntimeReducerDoesNotContainPresentationQueryMutationBodies() throws {
-        let source = try dispatcherSource()
-        let bodies = try [
-            caseBody(".operatorRequestedPresentationQuery(let id)", in: source),
-            caseBody(".presentationQueryCompleted(let id, let result)", in: source),
-            caseBody(".presentationQueryFailed(let id, let action, let sanitizedMessage)", in: source),
-            caseBody(".presentationQueryResultConsumed(let id)", in: source)
-        ].joined(separator: "\n")
-
-        for forbidden in [
-            "state.presentationQuery.activeRequestID =",
-            "state.presentationQuery.latestCompletedRequestID =",
-            "state.presentationQuery.latestResult =",
-            "state.presentationQuery.latestFailure =",
-            "state.presentationQuery.markConsumed",
-            "PresentationQueryFailure(",
-            "effects.append(.scanPresentationQuery"
-        ] {
-            XCTAssertFalse(bodies.contains(forbidden), forbidden)
+        let ids = (0..<25).map { _ in UUID() }
+        for id in ids {
+            state = reduce(state, .presentationQueryResultConsumed(id: id)).state
         }
+        XCTAssertEqual(state.presentationQuery.consumedRequestIDs.count, PresentationQueryRuntimeState.consumedRequestLimit)
+        XCTAssertFalse(state.presentationQuery.hasConsumed(first))
+        XCTAssertFalse(state.presentationQuery.hasConsumed(ids[0]))
+        XCTAssertTrue(state.presentationQuery.hasConsumed(ids[24]))
+
+        let resultID = UUID()
+        let consumedResult = reduce(completedState(id: resultID, title: "Result"), .presentationQueryResultConsumed(id: resultID))
+        XCTAssertNil(consumedResult.state.presentationQuery.latestCompletedRequestID)
+        XCTAssertNil(consumedResult.state.presentationQuery.latestResult)
+
+        let failureID = UUID()
+        var failed = LiveRuntimeState()
+        failed.presentationQuery.latestFailure = failure(failureID, message: "denied")
+        let consumedFailure = reduce(failed, .presentationQueryResultConsumed(id: failureID))
+        XCTAssertNil(consumedFailure.state.presentationQuery.latestFailure)
     }
 
-    private func reducerSource() throws -> String {
-        guard FileManager.default.fileExists(atPath: runtimeFile("PresentationQueryRuntimeReducer.swift")) else {
-            throw XCTSkip("PresentationQueryRuntimeReducer.swift is missing")
-        }
-        return try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/PresentationQueryRuntimeReducer.swift")
+    func testPresentationQueryActionsNoopWhenBridgeDoesNotOwnQueryDomain() {
+        let state = LiveRuntimeState()
+        let id = UUID()
+
+        let mutation = reduce(
+            state,
+            .operatorRequestedPresentationQuery(id: id),
+            environment: .recordingOnlyForTests()
+        )
+
+        XCTAssertEqual(mutation.state, state)
+        XCTAssertTrue(mutation.effects.isEmpty)
     }
 
-    private func dispatcherSource() throws -> String {
-        try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Runtime/Reducers/AutomationRuntimeActionDispatcher.swift")
+    private func reduce(_ action: LiveRuntimeAction) -> LiveRuntimeMutation {
+        reduce(LiveRuntimeState(), action)
     }
 
-    private func runtimeFile(_ name: String) -> String {
-        let tests = URL(fileURLWithPath: #filePath)
-        return tests
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .deletingLastPathComponent()
-            .appendingPathComponent("Sources/AnnualMeetingSwitcher/Runtime/\(name)")
-            .path
+    private func reduce(
+        _ state: LiveRuntimeState,
+        _ action: LiveRuntimeAction,
+        environment: LiveRuntimeEnvironment = .productionPresentationQueryOwning()
+    ) -> LiveRuntimeMutation {
+        LiveRuntimeReducer.reduce(state: state, action: action, environment: environment)
     }
 
-    private func caseBody(_ casePattern: String, in source: String) throws -> String {
-        guard let range = source.range(of: "case \(casePattern):") else {
-            throw NSError(domain: "Missing case \(casePattern)", code: 1)
-        }
-        let nextCase = source[range.upperBound...].range(of: "\n        case ")
-        let end = nextCase?.lowerBound ?? source.endIndex
-        return String(source[range.lowerBound..<end])
+    private func activeState(_ id: UUID) -> LiveRuntimeState {
+        var state = LiveRuntimeState()
+        state.presentationQuery.activeRequestID = id
+        return state
+    }
+
+    private func completedState(id: UUID, title: String) -> LiveRuntimeState {
+        var state = LiveRuntimeState()
+        state.presentationQuery.latestCompletedRequestID = id
+        state.presentationQuery.latestResult = result(title)
+        return state
+    }
+
+    private func result(_ title: String) -> PresentationQueryResult {
+        PresentationQueryResult(openFilePaths: ["/tmp/show/\(title).key"], windowNames: ["\(title).key"])
+    }
+
+    private func failureAction(_ id: UUID, message: String) -> LiveRuntimeAction {
+        .presentationQueryFailed(id: id, action: "keynote.scan.windows", sanitizedMessage: message)
+    }
+
+    private func failure(_ id: UUID, message: String) -> PresentationQueryFailure {
+        PresentationQueryFailure(id: id, action: "keynote.scan.windows", sanitizedMessage: message)
     }
 }

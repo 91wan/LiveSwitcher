@@ -1,12 +1,8 @@
 category	path	limit	actual	reason	target_version	owner
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AppLaunchPolicyTests.swift	15	26	legacy launch source-contract coverage; replacement planned separately	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/AudioRuntimeReducerExtractionTests.swift	15	32	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/BGMRuntimeReducerExtractionTests.swift	15	21	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveBGMChooserViewTests.swift	15	19	legacy live chooser static coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/LiveModeMixerControlsTests.swift	15	32	legacy mixer source-contract coverage; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/OverlayLivePreviewModelTests.swift	15	19	legacy overlay static coverage; replacement in progress	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PreferencesRuntimeReducerExtractionTests.swift	15	16	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
-source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/PresentationQueryRuntimeReducerExtractionTests.swift	15	19	runtime reducer extraction contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ProgramActivationSideEffectBoundaryTests.swift	15	16	side-effect boundary contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/ProgramActivationSideEffectWiringTests.swift	15	24	side-effect wiring contract; replacement planned separately	v0.5.1	maintainers
 source-contains	Sources/AnnualMeetingSwitcher/Tests/AnnualMeetingSwitcherTests/VideoLayerVisibilityTests.swift	15	18	legacy video-layer source-contract coverage; replacement planned separately	v0.5.1	maintainers
