@@ -74,6 +74,16 @@ final class ReleaseEligibilityTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required after this burn-down"))
     }
 
+    func testPhoneLANRemoteStartsV06FeatureStreamWithoutPatchRelease() throws {
+        let document = try releaseEligibilityDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("Phone LAN remote control decision - 2026-06-28"))
+        XCTAssertTrue(document.localizedStandardContains("v0.6.0 feature stream"))
+        XCTAssertTrue(document.localizedStandardContains("does not trigger v0.5.1"))
+        XCTAssertTrue(document.localizedStandardContains("do not publish v0.6.0 without hardware rehearsal"))
+        XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required for the architecture decision"))
+    }
+
     private func releaseEligibilityDocument() throws -> String {
         try String(contentsOf: try releaseEligibilityURL(), encoding: .utf8)
     }

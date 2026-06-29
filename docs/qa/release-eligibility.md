@@ -65,3 +65,21 @@ No v0.5.1 release is required after this burn-down.
 
 Future post-stable cleanup should stop unless a concrete P0/P1,
 release-delivery issue, or user-visible stability fix lands.
+
+## Phone LAN remote control decision - 2026-06-28
+
+The phone LAN remote control decision starts a v0.6.0 feature stream.
+
+The architecture decision documents a future Web + Wi-Fi/LAN remote-control
+direction. It does not implement a server, mobile UI, pairing UI, command
+execution bridge, release package, signing change, checksum change, Bundle
+Identifier change, app-name change, minimum-macOS change, or public download
+change.
+
+This decision does not trigger v0.5.1.
+
+No v0.5.1 release is required for the architecture decision.
+
+Do not publish v0.6.0 without hardware rehearsal, security checklist PASS,
+support/log privacy checklist PASS, dedicated-router or hotspot acceptance PASS,
+release-candidate build/hash evidence, and explicit user approval.

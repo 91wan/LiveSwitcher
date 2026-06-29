@@ -17,6 +17,16 @@ Every product-surface proposal must answer these questions before implementation
 7. Could support reports leak customer content?
 8. Is there a chance to delete or merge an existing control?
 
+## Phone LAN Remote Boundary
+
+Phone LAN remote may invoke existing allowed Live Mode actions without adding new Mac Live Mode controls.
+
+Phone remote setup belongs outside Live Mode. Pairing, QR display, remote enable/disable, local URL display, token lifecycle controls, and session diagnostics must stay in setup/support surfaces.
+
+The phone remote is not a second switcher console. It may only expose a small approved subset of existing execution actions, must keep configuration/editing surfaces out of the phone UI, and must not bypass Runtime or ViewModel action boundaries.
+
+Dangerous remote actions require strong confirmation. Any remote action that changes external display output, Panic, fade-to-black, playback, or BGM behavior must enter the hardware/manual acceptance matrix in its implementation PR.
+
 ## Allowed Live Mode Actions
 
 The allowed Live Mode action list must stay in sync with `LiveModeSimplicityPolicy.allowedActions`.
