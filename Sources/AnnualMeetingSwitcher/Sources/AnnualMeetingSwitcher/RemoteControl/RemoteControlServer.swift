@@ -31,6 +31,7 @@ final class RemoteControlServer {
     private let tokenProvider: () throws -> RemoteControlToken
     private let snapshotProvider: () -> RemoteControlSnapshot
     private let commandContextProvider: () -> RemoteControlCommandValidationContext
+    private let commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult
     private var listener: RemoteControlListening?
     private var sessionStore = RemoteControlSessionStore()
     private var lastFailureReason: String?
@@ -58,12 +59,16 @@ final class RemoteControlServer {
         listenerFactory: @escaping ListenerFactory = { try RemoteControlNWListener(port: $0) },
         tokenProvider: @escaping () throws -> RemoteControlToken = { try RemoteControlTokenPolicy.makeToken() },
         snapshotProvider: @escaping () -> RemoteControlSnapshot,
-        commandContextProvider: @escaping () -> RemoteControlCommandValidationContext
+        commandContextProvider: @escaping () -> RemoteControlCommandValidationContext,
+        commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
+            .executed(RemoteControlCommandExecutionRecord(command: $0))
+        }
     ) {
         self.listenerFactory = listenerFactory
         self.tokenProvider = tokenProvider
         self.snapshotProvider = snapshotProvider
         self.commandContextProvider = commandContextProvider
+        self.commandExecutor = commandExecutor
     }
 
     deinit {
@@ -113,7 +118,7 @@ final class RemoteControlServer {
     }
 
     private func makeRequestHandler(token: RemoteControlToken) -> (String) -> Data {
-        { [snapshotProvider, commandContextProvider] rawRequest in
+        { [weak self, snapshotProvider] rawRequest in
             guard let request = RemoteControlHTTPParser.parse(rawRequest) else {
                 return RemoteControlHTTPWireCodec.serialize(.json(
                     statusCode: 400,
@@ -124,10 +129,43 @@ final class RemoteControlServer {
             let router = RemoteControlRequestRouter(
                 token: token,
                 snapshotProvider: snapshotProvider,
-                commandContextProvider: commandContextProvider
+                commandContextProvider: {
+                    self?.commandValidationContext() ?? Self.disabledCommandContext()
+                },
+                commandExecutor: {
+                    self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
+                }
             )
             return RemoteControlHTTPWireCodec.serialize(router.route(request))
         }
+    }
+
+    private func commandValidationContext() -> RemoteControlCommandValidationContext {
+        var context = commandContextProvider()
+        context.isRemoteEnabled = context.isRemoteEnabled && isEnabled
+        context.acceptedCommandIDs.formUnion(sessionStore.acceptedCommandIDs)
+        context.dangerConfirmationExpirations.merge(sessionStore.dangerConfirmationExpirations) { current, _ in
+            current
+        }
+        return context
+    }
+
+    private func executeAcceptedCommand(
+        _ command: RemoteControlAcceptedCommand
+    ) -> RemoteControlCommandExecutionResult {
+        guard sessionStore.markCommandIDIfNew(command.id) else {
+            return .rejected(.duplicateCommandID)
+        }
+        return commandExecutor(command)
+    }
+
+    private static func disabledCommandContext() -> RemoteControlCommandValidationContext {
+        RemoteControlCommandValidationContext(
+            isRemoteEnabled: false,
+            acceptedCommandIDs: [],
+            dangerConfirmationExpirations: [:],
+            now: Date()
+        )
     }
 
     private func fail(reason: String) -> RemoteControlServerEnableResult {

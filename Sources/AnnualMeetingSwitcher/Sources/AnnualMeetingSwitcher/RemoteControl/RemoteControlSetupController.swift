@@ -16,6 +16,15 @@ final class RemoteControlSetupController {
     @ObservationIgnored var portProvider: () -> UInt16? = {
         RemoteControlPortPolicy.makeSessionPort()
     }
+    @ObservationIgnored var snapshotProvider: () -> RemoteControlSnapshot = {
+        RemoteControlSnapshot.remoteSetupPlaceholder
+    }
+    @ObservationIgnored var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = { _ in
+        .rejected(.remoteDisabled)
+    }
+    @ObservationIgnored var nowProvider: () -> Date = {
+        Date()
+    }
     @ObservationIgnored private var server: RemoteControlServer?
 
     deinit {
@@ -63,29 +72,31 @@ final class RemoteControlSetupController {
             return RemoteControlServer(
                 listenerFactory: listenerFactory,
                 tokenProvider: tokenProvider,
-                snapshotProvider: { RemoteControlSnapshot.remoteSetupPlaceholder },
-                commandContextProvider: Self.commandContextBeforeExecutionBridge
+                snapshotProvider: snapshotProvider,
+                commandContextProvider: commandContext,
+                commandExecutor: commandExecutor
             )
         }
 
         return RemoteControlServer(
             tokenProvider: tokenProvider,
-            snapshotProvider: { RemoteControlSnapshot.remoteSetupPlaceholder },
-            commandContextProvider: Self.commandContextBeforeExecutionBridge
+            snapshotProvider: snapshotProvider,
+            commandContextProvider: commandContext,
+            commandExecutor: commandExecutor
         )
     }
 
-    private static func commandContextBeforeExecutionBridge() -> RemoteControlCommandValidationContext {
+    private func commandContext() -> RemoteControlCommandValidationContext {
         RemoteControlCommandValidationContext(
-            isRemoteEnabled: false,
+            isRemoteEnabled: true,
             acceptedCommandIDs: [],
             dangerConfirmationExpirations: [:],
-            now: Date()
+            now: nowProvider()
         )
     }
 }
 
-private extension RemoteControlSnapshot {
+extension RemoteControlSnapshot {
     static var remoteSetupPlaceholder: RemoteControlSnapshot {
         RemoteControlSnapshot(
             connectionState: .enabled,

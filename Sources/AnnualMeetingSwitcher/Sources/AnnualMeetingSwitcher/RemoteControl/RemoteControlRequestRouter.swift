@@ -4,6 +4,9 @@ struct RemoteControlRequestRouter {
     var token: RemoteControlToken
     var snapshotProvider: () -> RemoteControlSnapshot
     var commandContextProvider: () -> RemoteControlCommandValidationContext
+    var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
+        .executed(RemoteControlCommandExecutionRecord(command: $0))
+    }
 
     func route(_ request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
         guard isSafePath(request.path) else {
@@ -93,7 +96,7 @@ struct RemoteControlRequestRouter {
                 kind: kind,
                 confirmation: dangerConfirmation(from: payload)
             )
-            return validationResponse(
+            return commandExecutionResponse(
                 RemoteControlCommandPolicy.validate(
                     command,
                     context: commandContextProvider()
@@ -104,17 +107,29 @@ struct RemoteControlRequestRouter {
         }
     }
 
-    private func validationResponse(
+    private func commandExecutionResponse(
         _ result: RemoteControlCommandValidationResult
     ) -> RemoteControlHTTPResponse {
         switch result {
         case .accepted(let command):
+            return executionResponse(commandExecutor(command))
+        case .rejected(let rejection):
+            return rejectionResponse(rejection)
+        }
+    }
+
+    private func executionResponse(
+        _ result: RemoteControlCommandExecutionResult
+    ) -> RemoteControlHTTPResponse {
+        switch result {
+        case .executed(let record):
             return .json(statusCode: 202, [
                 ("accepted", true),
-                ("id", command.id.uuidString),
-                ("kind", command.kind.rawValue),
-                ("liveModeAction", command.liveModeAction.rawValue),
-                ("dangerous", command.isDangerous)
+                ("executed", true),
+                ("id", record.id.uuidString),
+                ("action", record.action),
+                ("liveModeAction", record.liveModeAction),
+                ("dangerous", record.isDangerous)
             ])
         case .rejected(let rejection):
             return rejectionResponse(rejection)

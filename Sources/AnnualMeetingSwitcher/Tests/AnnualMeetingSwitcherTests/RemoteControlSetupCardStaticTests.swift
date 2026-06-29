@@ -102,7 +102,7 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         XCTAssertFalse(harness.viewModel.remoteControlSetup.state.statusText.contains("token-1"))
     }
 
-    func testViewModelRemoteCommandContextRemainsDisabledBeforeExecutionBridge() {
+    func testViewModelRemoteCommandBridgeAcceptsCommandsAfterEnable() {
         let harness = RemoteControlSetupHarness()
         harness.viewModel.remoteControlSetup.enable()
 
@@ -114,8 +114,11 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         {"id":"11111111-1111-1111-1111-111111111111","kind":"takeNext"}
         """)
 
-        XCTAssertTrue(response?.contains("HTTP/1.1 409 Conflict") == true)
-        XCTAssertTrue(response?.contains(#""error":"remoteDisabled""#) == true)
+        XCTAssertTrue(response?.contains("HTTP/1.1 202 Accepted") == true)
+        XCTAssertTrue(response?.contains(#""executed":true"#) == true)
+        XCTAssertTrue(response?.contains(#""action":"takeNext""#) == true)
+        XCTAssertFalse(response?.contains("remoteDisabled") == true)
+        XCTAssertFalse(response?.contains("token-1") == true)
     }
 }
 
