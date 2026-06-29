@@ -303,6 +303,7 @@ final class SwitcherViewModel {
         }
         bgmDelegate.viewModel = self // V21 Fix #1: 绑定 delegate
         syncRuntimeStateFromFacade(clearActionLog: true)
+        configureRemoteControlCommandBridge()
     }
 
     deinit {

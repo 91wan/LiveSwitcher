@@ -78,9 +78,13 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertTrue(response.bodyText.contains(#""currentBGMTitle":"Walk In""#))
     }
 
-    func testCommandRouteAcceptsSafeCommandsWithoutExecutingSideEffects() throws {
+    func testCommandRouteExecutesSafeCommandsThroughInjectedExecutor() throws {
         let id = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
-        let router = router()
+        var executedCommands: [RemoteControlAcceptedCommand] = []
+        let router = router(commandExecutor: { command in
+            executedCommands.append(command)
+            return .executed(RemoteControlCommandExecutionRecord(command: command))
+        })
         let requestBody = #"{"id":"\#(id.uuidString)","kind":"takeNext"}"#.data(using: .utf8)!
 
         let response = router.route(.post(
@@ -90,8 +94,10 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         ))
 
         XCTAssertEqual(response.statusCode, 202)
+        XCTAssertEqual(executedCommands.map(\.kind), [.takeNext])
         XCTAssertTrue(response.bodyText.contains(#""accepted":true"#))
-        XCTAssertTrue(response.bodyText.contains(#""kind":"takeNext""#))
+        XCTAssertTrue(response.bodyText.contains(#""executed":true"#))
+        XCTAssertTrue(response.bodyText.contains(#""action":"takeNext""#))
         XCTAssertTrue(response.bodyText.contains(#""liveModeAction":"takeNext""#))
     }
 
@@ -109,7 +115,10 @@ final class RemoteControlRequestRouterTests: XCTestCase {
 
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
-        context: RemoteControlCommandValidationContext? = nil
+        context: RemoteControlCommandValidationContext? = nil,
+        commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
+            .executed(RemoteControlCommandExecutionRecord(command: $0))
+        }
     ) -> RemoteControlRequestRouter {
         RemoteControlRequestRouter(
             token: RemoteControlToken(value: "token-1"),
@@ -123,7 +132,8 @@ final class RemoteControlRequestRouterTests: XCTestCase {
                     dangerConfirmationExpirations: [:],
                     now: Date(timeIntervalSince1970: 100)
                 )
-            }
+            },
+            commandExecutor: commandExecutor
         )
     }
 
