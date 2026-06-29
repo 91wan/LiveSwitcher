@@ -46,6 +46,18 @@ final class ProductSurfaceGateTests: XCTestCase {
         XCTAssertTrue(document.contains("external display hardware acceptance"))
     }
 
+    func testPhoneLANRemoteDecisionKeepsRemoteInsideExistingLiveActions() throws {
+        let gate = try productSurfaceGateText()
+        let decision = try repositoryText("docs/architecture/phone-lan-remote.md")
+
+        XCTAssertTrue(gate.contains("Phone LAN remote may invoke existing allowed Live Mode actions without adding new Mac Live Mode controls."))
+        XCTAssertTrue(gate.contains("Phone remote setup belongs outside Live Mode."))
+        XCTAssertTrue(decision.localizedStandardContains("Web + Wi-Fi/LAN"))
+        XCTAssertTrue(decision.localizedStandardContains("Bluetooth is rejected for the MVP"))
+        XCTAssertTrue(decision.localizedStandardContains("native iOS app MVP is rejected"))
+        XCTAssertTrue(decision.localizedStandardContains("No v0.5.1 release is triggered"))
+    }
+
     private func productSurfaceGateText() throws -> String {
         try repositoryText("docs/architecture/product-surface-gate.md")
     }

@@ -73,6 +73,37 @@ final class LiveModeSimplicityPolicyTests: XCTestCase {
         }
     }
 
+    func testPhoneLANRemoteOnlyInvokesExistingAllowedLiveActions() throws {
+        let document = try repositoryText("docs/architecture/phone-lan-remote.md")
+        let remoteActionTokens = [
+            "takeNext",
+            "toggleCurrentMediaPlayback",
+            "returnCurrentMediaToStart",
+            "bgmPlayPause",
+            "bgmPrevious",
+            "bgmNext",
+            "toggleSpeakerMode",
+            "toggleFadeToBlack",
+            "togglePanic"
+        ]
+        let allowedLiveActions = Set(LiveModeSimplicityPolicy.allowedActions.map(\.rawValue))
+
+        for action in remoteActionTokens {
+            XCTAssertTrue(
+                allowedLiveActions.contains(action),
+                "Remote action must already be an allowed Live Mode action: \(action)"
+            )
+            XCTAssertTrue(
+                document.contains(action),
+                "Missing remote action token: \(action)"
+            )
+        }
+
+        XCTAssertTrue(document.localizedStandardContains("remote projection toggle is not in the MVP"))
+        XCTAssertTrue(document.localizedStandardContains("remote arbitrary source switching is not in the MVP"))
+        XCTAssertTrue(document.localizedStandardContains("does not add Mac Live Mode controls"))
+    }
+
     private func repositoryText(_ relativePath: String) throws -> String {
         try String(contentsOf: repositoryRoot().appendingPathComponent(relativePath), encoding: .utf8)
     }
