@@ -4,6 +4,7 @@ struct RemoteControlRequestRouter {
     var token: RemoteControlToken
     var snapshotProvider: () -> RemoteControlSnapshot
     var commandContextProvider: () -> RemoteControlCommandValidationContext
+    var dangerConfirmationIssuer: () -> RemoteDangerConfirmationChallenge? = { nil }
     var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
         .executed(RemoteControlCommandExecutionRecord(command: $0))
     }
@@ -42,12 +43,17 @@ struct RemoteControlRequestRouter {
             return withAuthorizedRequest(request) {
                 commandResponse(for: request)
             }
+        case (.post, "/api/danger-confirmation"):
+            return withAuthorizedRequest(request) {
+                dangerConfirmationResponse()
+            }
         case (.post, "/api/session/close"):
             return withAuthorizedRequest(request) {
                 .json(statusCode: 202, [("closeRequested", true)])
             }
         case (_, "/api/snapshot"),
              (_, "/api/command"),
+             (_, "/api/danger-confirmation"),
              (_, "/api/session/close"),
              (_, "/health"),
              (_, "/"),
@@ -79,6 +85,19 @@ struct RemoteControlRequestRouter {
         encoder.outputFormatting = [.sortedKeys]
         let data = (try? encoder.encode(snapshotProvider())) ?? Data("{}".utf8)
         return .jsonData(statusCode: 200, data)
+    }
+
+    private func dangerConfirmationResponse() -> RemoteControlHTTPResponse {
+        guard let challenge = dangerConfirmationIssuer() else {
+            return rejectionResponse(.remoteDisabled)
+        }
+
+        return .json(statusCode: 202, [
+            ("nonce", challenge.nonce),
+            ("issuedAt", challenge.issuedAt.timeIntervalSince1970),
+            ("expiresAt", challenge.expiresAt.timeIntervalSince1970),
+            ("minimumHoldDuration", RemoteControlCommandPolicy.minimumDangerHoldDuration)
+        ])
     }
 
     private func commandResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {

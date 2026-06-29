@@ -132,6 +132,9 @@ final class RemoteControlServer {
                 commandContextProvider: {
                     self?.commandValidationContext() ?? Self.disabledCommandContext()
                 },
+                dangerConfirmationIssuer: {
+                    self?.issueDangerConfirmation()
+                },
                 commandExecutor: {
                     self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
                 }
@@ -148,6 +151,18 @@ final class RemoteControlServer {
             current
         }
         return context
+    }
+
+    private func issueDangerConfirmation() -> RemoteDangerConfirmationChallenge? {
+        guard isEnabled else {
+            return nil
+        }
+
+        return sessionStore.issueDangerConfirmation(
+            nonce: UUID().uuidString,
+            now: commandContextProvider().now,
+            ttl: 5
+        )
     }
 
     private func executeAcceptedCommand(
