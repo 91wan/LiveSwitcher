@@ -9,12 +9,98 @@ enum RemoteControlStaticPage {
       <link rel="stylesheet" href="/remote.css">
     </head>
     <body>
-      <main>
-        <header>
-          <p id="connection">未连接</p>
-          <h1>LiveSwitcher Remote</h1>
+      <main class="remote-shell">
+        <header class="hero">
+          <div>
+            <p class="eyebrow">LiveSwitcher</p>
+            <h1>手机遥控</h1>
+          </div>
+          <p id="connection-state" class="status-chip">连接中</p>
         </header>
-        <section id="snapshot" aria-live="polite"></section>
+
+        <section id="reconnect-banner" class="reconnect-banner" hidden>
+          重新连接中，请确认手机仍在同一局域网。
+        </section>
+
+        <section id="snapshot" class="snapshot-grid" aria-live="polite">
+          <article class="snapshot-card current-card">
+            <span class="label">当前节目</span>
+            <strong id="current-title">未选中</strong>
+            <span id="media-state" class="subtle">媒体未播放</span>
+          </article>
+          <article class="snapshot-card">
+            <span class="label">下一节目</span>
+            <strong id="next-title">无下一项</strong>
+            <span id="broadcast-state" class="subtle">未直播</span>
+          </article>
+          <article class="snapshot-card">
+            <span class="label">BGM</span>
+            <strong id="bgm-title">未选择</strong>
+            <span id="bgm-state" class="subtle">未播放</span>
+          </article>
+          <article class="snapshot-card">
+            <span class="label">状态</span>
+            <strong id="blackout-state">正常</strong>
+            <span id="speaker-state" class="subtle">主讲人模式关闭</span>
+          </article>
+        </section>
+
+        <p id="disabled-reason" class="disabled-reason" hidden></p>
+
+        <section class="control-section" aria-label="节目控制">
+          <button class="command-button primary" data-command="takeNext">
+            <span>切下一项</span>
+            <small>执行当前待播节目</small>
+          </button>
+        </section>
+
+        <section class="control-grid" aria-label="媒体与 BGM 控制">
+          <button class="command-button" data-command="toggleCurrentMediaPlayback">
+            <span>播放/暂停</span>
+            <small>当前媒体</small>
+          </button>
+          <button class="command-button" data-command="returnCurrentMediaToStart">
+            <span>回到开头</span>
+            <small>当前媒体</small>
+          </button>
+          <button class="command-button" data-command="selectPreviousBGM">
+            <span>上一首</span>
+            <small>BGM</small>
+          </button>
+          <button class="command-button" data-command="toggleBGMPlayback">
+            <span>BGM 播放</span>
+            <small>播放/暂停</small>
+          </button>
+          <button class="command-button" data-command="selectNextBGM">
+            <span>下一首</span>
+            <small>BGM</small>
+          </button>
+          <button class="command-button" data-command="toggleSpeakerMode">
+            <span>主讲人</span>
+            <small>模式切换</small>
+          </button>
+        </section>
+
+        <section class="danger-zone" aria-label="危险控制">
+          <button
+            class="command-button danger"
+            data-command="toggleFadeToBlack"
+            data-dangerous="true"
+            data-hold-ms="1200"
+          >
+            <span>长按切黑</span>
+            <small>按住直到确认</small>
+          </button>
+          <button
+            class="command-button danger panic"
+            data-command="togglePanic"
+            data-dangerous="true"
+            data-hold-ms="1200"
+          >
+            <span>长按紧急切黑</span>
+            <small>按住直到确认</small>
+          </button>
+        </section>
       </main>
       <script src="/remote.js"></script>
     </body>
@@ -25,47 +111,402 @@ enum RemoteControlStaticPage {
     :root {
       color-scheme: dark;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-      background: #111317;
+      background: #0f1218;
       color: #f8fafc;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    * {
+      box-sizing: border-box;
     }
 
     body {
       margin: 0;
       min-height: 100vh;
-      background: #111317;
+      background: linear-gradient(180deg, #171b24 0%, #0f1218 100%);
     }
 
-    main {
+    button {
+      font: inherit;
+    }
+
+    .remote-shell {
+      width: min(100%, 560px);
+      min-height: 100vh;
+      margin: 0 auto;
       display: grid;
       gap: 16px;
-      padding: 20px;
+      padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
     }
 
-    #snapshot {
-      min-height: 72px;
-      border: 1px solid #2a3444;
-      border-radius: 12px;
-      padding: 16px;
-      background: #181d25;
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      padding-top: 4px;
+    }
+
+    .eyebrow,
+    .label,
+    .subtle,
+    .command-button small {
+      color: #a9b4c8;
+    }
+
+    .eyebrow {
+      margin: 0 0 4px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 11vw, 3rem);
+      line-height: 0.96;
+      letter-spacing: 0;
+    }
+
+    .status-chip {
+      margin: 0;
+      min-width: 88px;
+      padding: 10px 12px;
+      border: 1px solid rgba(149, 164, 190, 0.24);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #dbeafe;
+      font-size: 0.92rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .reconnect-banner,
+    .disabled-reason {
+      border: 1px solid rgba(250, 204, 21, 0.38);
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(113, 63, 18, 0.44);
+      color: #fde68a;
+      font-weight: 800;
+    }
+
+    .reconnect-banner[hidden],
+    .disabled-reason[hidden] {
+      display: none;
+    }
+
+    .snapshot-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .snapshot-card {
+      min-height: 112px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      border: 1px solid rgba(149, 164, 190, 0.2);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(25, 32, 44, 0.78);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .current-card {
+      border-color: rgba(96, 165, 250, 0.48);
+      background: rgba(30, 50, 74, 0.9);
+    }
+
+    .snapshot-card strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 1.15rem;
+      line-height: 1.15;
+    }
+
+    .label,
+    .subtle,
+    .command-button small {
+      font-size: 0.82rem;
+      font-weight: 760;
+      letter-spacing: 0;
+    }
+
+    .control-section,
+    .control-grid,
+    .danger-zone {
+      display: grid;
+      gap: 10px;
+    }
+
+    .control-grid,
+    .danger-zone {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .command-button {
+      min-height: 64px;
+      display: grid;
+      align-content: center;
+      gap: 4px;
+      border: 1px solid rgba(117, 138, 171, 0.3);
+      border-radius: 18px;
+      padding: 14px;
+      background: #263244;
+      color: #f8fafc;
+      text-align: left;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .command-button span {
+      font-size: 1.05rem;
+      font-weight: 850;
+      line-height: 1.1;
+      overflow-wrap: anywhere;
+    }
+
+    .command-button.primary {
+      min-height: 76px;
+      background: linear-gradient(135deg, #2f88ff 0%, #55b8ff 100%);
+      border-color: rgba(147, 197, 253, 0.7);
+      color: white;
+    }
+
+    .command-button.primary small {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .command-button.danger {
+      background: #3a2426;
+      border-color: rgba(248, 113, 113, 0.54);
+    }
+
+    .command-button.panic {
+      background: #402326;
+    }
+
+    .command-button.is-holding {
+      outline: 3px solid rgba(248, 113, 113, 0.45);
+      outline-offset: 2px;
+    }
+
+    .command-button:disabled {
+      opacity: 0.44;
+      filter: grayscale(0.2);
+    }
+
+    .command-button:not(:disabled):active {
+      transform: translateY(1px);
+    }
+
+    @media (max-width: 360px) {
+      .snapshot-grid,
+      .control-grid,
+      .danger-zone {
+        grid-template-columns: 1fr;
+      }
     }
     """
 
     static let javascript = """
     const token = new URLSearchParams(location.hash.slice(1)).get("token") || "";
-    const headers = () => ({ Authorization: `Bearer ${token}` });
-    const snapshot = document.querySelector("#snapshot");
-    const connection = document.querySelector("#connection");
+    const commandButtons = Array.from(document.querySelectorAll("[data-command]"));
+    const reconnectBanner = document.querySelector("#reconnect-banner");
+    const connectionState = document.querySelector("#connection-state");
+    const disabledReason = document.querySelector("#disabled-reason");
+
+    function headers(contentType) {
+      const value = { Authorization: `Bearer ${token}` };
+      if (contentType) {
+        value["Content-Type"] = contentType;
+      }
+      return value;
+    }
+
+    function setText(id, value) {
+      const element = document.querySelector(`#${id}`);
+      if (element) {
+        element.textContent = value;
+      }
+    }
+
+    function commandID() {
+      if (window.crypto && crypto.randomUUID) {
+        return crypto.randomUUID();
+      }
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function connectionCopy(state) {
+      switch (state) {
+      case "connected":
+        return "已连接";
+      case "enabled":
+        return "等待连接";
+      case "readOnly":
+        return "只读连接";
+      default:
+        return "未连接";
+      }
+    }
+
+    function blackoutCopy(data) {
+      if (data.isPanicActive) {
+        return "紧急切黑";
+      }
+      if (data.isFadeToBlackActive) {
+        return "切黑中";
+      }
+      return "正常";
+    }
+
+    function setReconnect(visible) {
+      reconnectBanner.hidden = !visible;
+    }
+
+    function updateButtonStates(data, online) {
+      const disabledByCommand = {
+        takeNext: !data || !data.nextProgramTitle,
+        toggleCurrentMediaPlayback: !data || !data.canToggleCurrentMedia,
+        returnCurrentMediaToStart: !data || !data.canReturnCurrentMediaToStart,
+        toggleBGMPlayback: !data || (!data.currentBGMTitle && !data.canSelectPreviousBGM && !data.canSelectNextBGM),
+        selectPreviousBGM: !data || !data.canSelectPreviousBGM,
+        selectNextBGM: !data || !data.canSelectNextBGM,
+        toggleSpeakerMode: !data,
+        toggleFadeToBlack: !data,
+        togglePanic: !data
+      };
+
+      commandButtons.forEach((button) => {
+        const command = button.dataset.command;
+        button.disabled = !token || !online || Boolean(data?.disabledReason) || Boolean(disabledByCommand[command]);
+      });
+    }
+
+    function renderSnapshot(data) {
+      connectionState.textContent = connectionCopy(data.connectionState);
+      setText("current-title", data.currentProgramTitle || "未选中");
+      setText("next-title", data.nextProgramTitle || "无下一项");
+      setText("bgm-title", data.currentBGMTitle || "未选择");
+      setText("media-state", data.isCurrentMediaPlaying ? "媒体播放中" : "媒体已暂停");
+      setText("broadcast-state", data.isBroadcasting ? "正在直播" : "未直播");
+      setText("bgm-state", data.isBGMPlaying ? "BGM 播放中" : "BGM 已暂停");
+      setText("blackout-state", blackoutCopy(data));
+      setText("speaker-state", data.isSpeakerMode ? "主讲人模式开启" : "主讲人模式关闭");
+      disabledReason.hidden = !data.disabledReason;
+      disabledReason.textContent = data.disabledReason || "";
+      updateButtonStates(data, true);
+      setReconnect(false);
+    }
 
     async function refreshSnapshot() {
-      const response = await fetch("/api/snapshot", { headers: headers() });
-      if (!response.ok) {
-        connection.textContent = "连接已断开";
+      if (!token) {
+        connectionState.textContent = "缺少 token";
+        setReconnect(true);
+        updateButtonStates(null, false);
         return;
       }
-      const data = await response.json();
-      connection.textContent = data.connectionState || "connected";
-      snapshot.textContent = `${data.currentProgramTitle || "未选中"} / ${data.nextProgramTitle || "无下一项"}`;
+
+      try {
+        const response = await fetch("/api/snapshot", { headers: headers() });
+        if (!response.ok) {
+          throw new Error("snapshot failed");
+        }
+        renderSnapshot(await response.json());
+      } catch (error) {
+        connectionState.textContent = "连接断开";
+        setReconnect(true);
+        updateButtonStates(null, false);
+      }
     }
+
+    async function sendCommand(kind, confirmation) {
+      const payload = { id: commandID(), kind };
+      if (confirmation) {
+        payload.confirmation = confirmation;
+      }
+
+      const response = await fetch("/api/command", {
+        method: "POST",
+        headers: headers("application/json"),
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        setReconnect(true);
+        return;
+      }
+      await refreshSnapshot();
+    }
+
+    async function issueDangerConfirmation() {
+      const response = await fetch("/api/danger-confirmation", {
+        method: "POST",
+        headers: headers("application/json"),
+        body: "{}"
+      });
+      if (!response.ok) {
+        throw new Error("danger confirmation failed");
+      }
+      return response.json();
+    }
+
+    function clearDangerHold(button) {
+      if (button.holdTimer) {
+        clearTimeout(button.holdTimer);
+      }
+      button.holdTimer = null;
+      button.classList.remove("is-holding");
+    }
+
+    function startDangerHold(event) {
+      const button = event.currentTarget;
+      if (button.disabled) {
+        return;
+      }
+      event.preventDefault();
+      clearDangerHold(button);
+
+      const startedAt = Date.now();
+      const holdMS = Number(button.dataset.holdMs || 1200);
+      button.classList.add("is-holding");
+      button.setPointerCapture?.(event.pointerId);
+      button.holdTimer = setTimeout(async () => {
+        try {
+          const challenge = await issueDangerConfirmation();
+          await sendCommand(button.dataset.command, {
+            nonce: challenge.nonce,
+            holdDuration: (Date.now() - startedAt) / 1000
+          });
+        } catch (error) {
+          setReconnect(true);
+        } finally {
+          clearDangerHold(button);
+        }
+      }, holdMS);
+    }
+
+    commandButtons.forEach((button) => {
+      if (button.dataset.dangerous === "true") {
+        button.addEventListener("pointerdown", startDangerHold);
+        button.addEventListener("pointerup", () => clearDangerHold(button));
+        button.addEventListener("pointercancel", () => clearDangerHold(button));
+        button.addEventListener("pointerleave", () => clearDangerHold(button));
+        button.addEventListener("click", (event) => event.preventDefault());
+        return;
+      }
+
+      button.addEventListener("click", () => {
+        if (!button.disabled) {
+          sendCommand(button.dataset.command);
+        }
+      });
+    });
 
     setInterval(refreshSnapshot, 1000);
     refreshSnapshot();

@@ -36,6 +36,23 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         XCTAssertEqual(harness.executedCommands.map(\.kind), [.takeNext])
     }
 
+    func testServerIssuedDangerConfirmationEnablesLongPressDangerousCommand() throws {
+        let harness = RemoteCommandServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+
+        let challengeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest()))
+        XCTAssertTrue(challengeResponse.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertFalse(challengeResponse.contains("token-1"))
+
+        let nonce = try nonce(fromHTTPResponse: challengeResponse)
+        let commandResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerousCommandRequest(nonce: nonce)))
+
+        XCTAssertTrue(commandResponse.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(commandResponse.contains(#""action":"togglePanic""#))
+        XCTAssertTrue(commandResponse.contains(#""dangerous":true"#))
+        XCTAssertEqual(harness.executedCommands.map(\.kind), [.togglePanic])
+    }
+
     func testSetupControllerEnablesCommandExecutionBridge() throws {
         let harness = RemoteControlSetupExecutionHarness()
         let current = try videoProgram(title: "Current")
@@ -133,6 +150,33 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         \r
         {"id":"\(id.uuidString)","kind":"\(kind)"}
         """
+    }
+
+    private func rawDangerConfirmationRequest() -> String {
+        """
+        POST /api/danger-confirmation HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: 2\r
+        \r
+        {}
+        """
+    }
+
+    private func rawDangerousCommandRequest(nonce: String) -> String {
+        """
+        POST /api/command HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: 160\r
+        \r
+        {"id":"\(fixedCommandID.uuidString)","kind":"togglePanic","confirmation":{"nonce":"\(nonce)","holdDuration":1.2}}
+        """
+    }
+
+    private func nonce(fromHTTPResponse rawResponse: String) throws -> String {
+        let body = try XCTUnwrap(rawResponse.components(separatedBy: "\r\n\r\n").last)
+        let data = try XCTUnwrap(body.data(using: .utf8))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        return try XCTUnwrap(object["nonce"] as? String)
     }
 
     private func accepted(_ kind: RemoteControlCommandKind) -> RemoteControlAcceptedCommand {

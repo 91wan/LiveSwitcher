@@ -47,7 +47,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertEqual(page.header("content-type"), "text/html; charset=utf-8")
         XCTAssertTrue(page.bodyText.contains("LiveSwitcher Remote"))
         XCTAssertTrue(page.bodyText.contains(#"id="snapshot""#))
-        XCTAssertFalse(page.bodyText.contains("data-command"))
+        XCTAssertTrue(page.bodyText.contains("data-command"))
         XCTAssertFalse(page.bodyText.localizedStandardContains("https://"))
         XCTAssertFalse(page.bodyText.localizedStandardContains("http://"))
 
@@ -60,7 +60,8 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertEqual(js.header("content-type"), "application/javascript; charset=utf-8")
         XCTAssertTrue(js.bodyText.contains("/api/snapshot"))
         XCTAssertTrue(js.bodyText.contains("Authorization"))
-        XCTAssertFalse(js.bodyText.contains("/api/command"))
+        XCTAssertTrue(js.bodyText.contains("/api/command"))
+        XCTAssertTrue(js.bodyText.contains("/api/danger-confirmation"))
         XCTAssertFalse(js.bodyText.localizedStandardContains("https://"))
     }
 
@@ -101,6 +102,34 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertTrue(response.bodyText.contains(#""liveModeAction":"takeNext""#))
     }
 
+    func testDangerConfirmationRouteRequiresAuthAndIssuesNonce() {
+        var issuedNonceCount = 0
+        let router = router(dangerConfirmationIssuer: {
+            issuedNonceCount += 1
+            return RemoteDangerConfirmationChallenge(
+                nonce: "nonce-1",
+                issuedAt: Date(timeIntervalSince1970: 100),
+                expiresAt: Date(timeIntervalSince1970: 105)
+            )
+        })
+
+        let unauthorized = router.route(.post("/api/danger-confirmation"))
+        XCTAssertEqual(unauthorized.statusCode, 401)
+        XCTAssertEqual(issuedNonceCount, 0)
+
+        let response = router.route(.post(
+            "/api/danger-confirmation",
+            headers: ["Authorization": "Bearer token-1"]
+        ))
+
+        XCTAssertEqual(response.statusCode, 202)
+        XCTAssertEqual(issuedNonceCount, 1)
+        XCTAssertTrue(response.bodyText.contains(#""nonce":"nonce-1""#))
+        XCTAssertTrue(response.bodyText.contains(#""minimumHoldDuration":1"#))
+        XCTAssertTrue(response.bodyText.contains(#""expiresAt":105"#))
+        XCTAssertFalse(response.bodyText.contains("token-1"))
+    }
+
     func testSessionCloseRouteRequiresAuthAndReturnsCloseDecisionOnly() {
         let router = router()
 
@@ -116,6 +145,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
         context: RemoteControlCommandValidationContext? = nil,
+        dangerConfirmationIssuer: @escaping () -> RemoteDangerConfirmationChallenge? = { nil },
         commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
             .executed(RemoteControlCommandExecutionRecord(command: $0))
         }
@@ -133,6 +163,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
                     now: Date(timeIntervalSince1970: 100)
                 )
             },
+            dangerConfirmationIssuer: dangerConfirmationIssuer,
             commandExecutor: commandExecutor
         )
     }
