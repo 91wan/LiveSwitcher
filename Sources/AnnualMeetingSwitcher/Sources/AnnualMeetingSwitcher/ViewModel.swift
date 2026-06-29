@@ -229,6 +229,8 @@ final class SwitcherViewModel {
     let keynoteController = KeynoteController()
     let avCoordinator = AVPlayerCoordinator()
 
+    let remoteControlSetup = RemoteControlSetupController()
+
     // MARK: - 推流窗口
 
     @ObservationIgnored var projectionOutputStore = ViewModelProjectionOutputStore()

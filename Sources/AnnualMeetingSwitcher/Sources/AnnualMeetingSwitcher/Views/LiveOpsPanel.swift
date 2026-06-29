@@ -29,6 +29,12 @@ struct LiveOpsPanel: View {
 
                 outputCard
                 switchToLiveCard
+                RemoteControlSetupCard(
+                    state: viewModel.remoteControlSetup.state,
+                    onEnable: { viewModel.remoteControlSetup.enable() },
+                    onDisable: { viewModel.remoteControlSetup.disable() },
+                    onCopyURL: { viewModel.remoteControlSetup.copyPairingURL() }
+                )
                 CornerLogoCard()
             }
         }

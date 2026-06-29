@@ -92,7 +92,7 @@ final class RemoteControlServer {
             }
 
             let endpoint = RemoteControlServerEndpoint(
-                port: newListener.port ?? port ?? 0,
+                port: resolvedEndpointPort(listenerPort: newListener.port, requestedPort: port),
                 token: token
             )
             sessionStore.enable(token: token, now: now)
@@ -136,6 +136,13 @@ final class RemoteControlServer {
         sessionStore.disable()
         lastFailureReason = reason
         return .failed(RemoteControlServerFailure(reason: reason))
+    }
+
+    private func resolvedEndpointPort(listenerPort: UInt16?, requestedPort: UInt16?) -> UInt16 {
+        guard let listenerPort, listenerPort != 0 else {
+            return requestedPort ?? 0
+        }
+        return listenerPort
     }
 
     private func handleListenerFailure() {
