@@ -8,16 +8,32 @@ struct RemoteControlSetupState: Equatable {
         case failed
     }
 
+    enum FailureReason: Equatable {
+        case noLocalNetworkAddress
+        case portUnavailable
+
+        var diagnosticMessage: String {
+            switch self {
+            case .noLocalNetworkAddress:
+                return "未找到局域网地址，请确认 Mac 已连接 Wi‑Fi 或有线局域网"
+            case .portUnavailable:
+                return "端口启动失败，请关闭遥控后重试，或检查端口占用"
+            }
+        }
+    }
+
     var status: Status
     var host: String?
     var port: UInt16?
     var pairingURL: String?
+    var failureReason: FailureReason? = nil
 
     static let disabled = RemoteControlSetupState(
         status: .disabled,
         host: nil,
         port: nil,
-        pairingURL: nil
+        pairingURL: nil,
+        failureReason: nil
     )
 
     var isEnabled: Bool {
@@ -38,6 +54,25 @@ struct RemoteControlSetupState: Equatable {
         case .failed:
             return "启动失败"
         }
+    }
+
+    var diagnosticMessages: [String] {
+        var messages = [
+            "推荐使用专用 5GHz 路由器，现场稳定性更高",
+            "Mac 和手机需连接同一 Wi‑Fi",
+            "公共 Wi‑Fi 可能启用 AP isolation，手机会显示已连接但无法控制"
+        ]
+
+        switch status {
+        case .disabled:
+            break
+        case .enabled:
+            messages.append("如果网络变化，请关闭并重新开启遥控后重新扫码")
+        case .failed:
+            messages.append(failureReason?.diagnosticMessage ?? "启动失败，请检查局域网或端口占用")
+        }
+
+        return messages
     }
 
 }

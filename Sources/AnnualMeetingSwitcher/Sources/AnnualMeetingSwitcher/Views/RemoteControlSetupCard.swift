@@ -37,6 +37,10 @@ struct RemoteControlSetupCard: View {
             } else {
                 disabledDetails
             }
+            RemoteControlSetupDiagnosticList(
+                messages: state.diagnosticMessages,
+                isFailure: state.status == .failed
+            )
         }
         .padding(LiveOpsLayoutMetrics.cardPadding)
         .background(
@@ -87,7 +91,7 @@ struct RemoteControlSetupCard: View {
     }
 
     private var disabledDetails: some View {
-        Text(state.status == .failed ? "请检查局域网或端口占用" : "同一局域网手机扫码连接")
+        Text(state.status == .failed ? "启动失败，请按提示排查" : "同一局域网手机扫码连接")
             .font(StudioTheme.caption())
             .foregroundStyle(state.status == .failed ? StudioTheme.Tone.live : StudioTheme.textSecondary)
             .lineLimit(2)
@@ -108,6 +112,29 @@ struct RemoteControlSetupCard: View {
             try? await Task.sleep(nanoseconds: 1_200_000_000)
             didCopyURL = false
         }
+    }
+}
+
+private struct RemoteControlSetupDiagnosticList: View {
+    let messages: [String]
+    let isFailure: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(messages, id: \.self) { message in
+                HStack(alignment: .top, spacing: 6) {
+                    Circle()
+                        .fill(isFailure ? StudioTheme.Tone.live : StudioTheme.textTertiary)
+                        .frame(width: 4, height: 4)
+                        .padding(.top, 6)
+                    Text(message)
+                        .font(StudioTheme.caption())
+                        .foregroundStyle(isFailure ? StudioTheme.Tone.live : StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .padding(.top, 2)
     }
 }
 

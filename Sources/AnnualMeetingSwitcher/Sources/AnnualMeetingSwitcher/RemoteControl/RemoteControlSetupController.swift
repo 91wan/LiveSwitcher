@@ -35,7 +35,13 @@ final class RemoteControlSetupController {
         disable()
 
         guard let host = localAddressProvider() else {
-            state = RemoteControlSetupState(status: .failed, host: nil, port: nil, pairingURL: nil)
+            state = RemoteControlSetupState(
+                status: .failed,
+                host: nil,
+                port: nil,
+                pairingURL: nil,
+                failureReason: .noLocalNetworkAddress
+            )
             return
         }
 
@@ -51,7 +57,13 @@ final class RemoteControlSetupController {
             )
         case .failed:
             server = nil
-            state = RemoteControlSetupState(status: .failed, host: nil, port: nil, pairingURL: nil)
+            state = RemoteControlSetupState(
+                status: .failed,
+                host: nil,
+                port: nil,
+                pairingURL: nil,
+                failureReason: .portUnavailable
+            )
         }
     }
 
