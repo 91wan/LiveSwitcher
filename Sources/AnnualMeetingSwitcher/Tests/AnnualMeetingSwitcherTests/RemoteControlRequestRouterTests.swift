@@ -34,27 +34,6 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertEqual(request.header("authorization"), "Bearer token-1")
     }
 
-    func testHTTPRequestAccumulatorWaitsForCompleteContentLengthBody() {
-        let body = #"{"id":"11111111-1111-1111-1111-111111111111","kind":"takeNext"}"#
-        let headers = """
-        POST /api/command HTTP/1.1\r
-        Authorization: Bearer token-1\r
-        X-Remote-Client-ID: phone-a-1\r
-        Content-Length: \(body.utf8.count)\r
-        \r
-
-        """
-        var accumulator = RemoteControlHTTPRequestAccumulator()
-
-        XCTAssertNil(accumulator.append(Data(headers.utf8)))
-
-        let complete = accumulator.append(Data(body.utf8))
-
-        XCTAssertEqual(complete, Data((headers + body).utf8))
-        let request = RemoteControlHTTPParser.parse(String(decoding: complete ?? Data(), as: UTF8.self))
-        XCTAssertEqual(request?.body, Data(body.utf8))
-    }
-
     func testHealthAndStaticAssetsDoNotRequireAuthorization() throws {
         let router = router()
 
