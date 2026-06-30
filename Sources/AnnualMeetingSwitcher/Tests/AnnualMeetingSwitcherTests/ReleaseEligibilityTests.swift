@@ -84,6 +84,17 @@ final class ReleaseEligibilityTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("No v0.5.1 release is required for the architecture decision"))
     }
 
+    func testV060ReleaseReadinessRequiresDraftAndExplicitApproval() throws {
+        let document = try releaseEligibilityDocument()
+
+        XCTAssertTrue(document.localizedStandardContains("v0.6.0 release readiness decision - 2026-06-30"))
+        XCTAssertTrue(document.localizedStandardContains("release-readiness PR is allowed"))
+        XCTAssertTrue(document.localizedStandardContains("must remain Draft"))
+        XCTAssertTrue(document.localizedStandardContains("Do not tag or create a GitHub Release"))
+        XCTAssertTrue(document.localizedStandardContains("release-candidate build/hash evidence"))
+        XCTAssertTrue(document.localizedStandardContains("explicit user approval"))
+    }
+
     private func releaseEligibilityDocument() throws -> String {
         try String(contentsOf: try releaseEligibilityURL(), encoding: .utf8)
     }

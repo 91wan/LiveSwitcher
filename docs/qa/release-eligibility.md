@@ -83,3 +83,14 @@ No v0.5.1 release is required for the architecture decision.
 Do not publish v0.6.0 without hardware rehearsal, security checklist PASS,
 support/log privacy checklist PASS, dedicated-router or hotspot acceptance PASS,
 release-candidate build/hash evidence, and explicit user approval.
+
+## v0.6.0 release readiness decision - 2026-06-30
+
+The phone LAN remote feature stream has completed the approved hardening and
+hardware rehearsal slices. A v0.6.0 release-readiness PR is allowed after the
+operator accepted the hardware rehearsal and the app icon refresh landed.
+
+This does not publish v0.6.0 by itself. The readiness PR must remain Draft until
+maintainer review is complete. Do not tag or create a GitHub Release until
+release-candidate build/hash evidence and explicit user approval are both
+recorded.

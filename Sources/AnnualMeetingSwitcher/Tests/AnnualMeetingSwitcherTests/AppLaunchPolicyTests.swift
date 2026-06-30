@@ -5,7 +5,7 @@ import XCTest
 final class AppLaunchPolicyTests: XCTestCase {
     func testApplicationIdentityConfigurationMatchesReleaseContract() {
         XCTAssertEqual(AppConfiguration.appName, "LiveSwitcher")
-        XCTAssertEqual(AppConfiguration.appVersion, "0.5.0")
+        XCTAssertEqual(AppConfiguration.appVersion, "0.6.0")
         XCTAssertEqual(AppConfiguration.bundleIdentifier, "com.91wan.liveswitcher")
         XCTAssertEqual(AppConfiguration.wpsBundleIdentifier, "com.kingsoft.wpsoffice.mac")
         XCTAssertEqual(AppConfiguration.minWindowWidth, 1360)

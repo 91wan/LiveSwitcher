@@ -18,9 +18,9 @@ English | [中文](README_ZH.md) | [Install](#install) | [FAQ](#faq)
 
 ## Screenshots
 
-![LiveSwitcher v0.5.0 console](docs/assets/readme/live-console-v0.5.0.png)
+![LiveSwitcher v0.6.0 console](docs/assets/readme/live-console-v0.6.0.png)
 
-_Current v0.5.0 console shown with demo data._
+_Current v0.6.0 console shown with demo data._
 
 ## What It Does
 
@@ -40,14 +40,14 @@ Download the latest release zip from [Releases](https://github.com/91wan/LiveSwi
 Current release asset:
 
 ```text
-LiveSwitcher-macOS-v0.5.0.zip
-LiveSwitcher-macOS-v0.5.0.zip.sha256
+LiveSwitcher-macOS-v0.6.0.zip
+LiveSwitcher-macOS-v0.6.0.zip.sha256
 ```
 
 Verify the checksum before opening the app:
 
 ```bash
-shasum -a 256 -c LiveSwitcher-macOS-v0.5.0.zip.sha256
+shasum -a 256 -c LiveSwitcher-macOS-v0.6.0.zip.sha256
 ```
 
 Important: the public build is source-available, ad-hoc signed, and **not notarized**. On first launch, macOS Gatekeeper may block it. Open **System Settings -> Privacy & Security -> Open Anyway**, or build from source locally. A notarized build will require Apple Developer ID signing credentials and notarytool secrets.
@@ -62,18 +62,21 @@ LiveSwitcher can run without special permissions for basic playlist and monitor 
 | Apple Events | Required when controlling Keynote or compatible presentation apps. |
 | Microphone | Reserved for audio-monitoring workflows. |
 
-## What's New in v0.5.0
+## What's New in v0.6.0
 
-- More reliable Media and BGM switching: stale player callbacks can no longer overwrite the active program or track.
-- Safer BGM library editing: removing or reordering tracks updates live playback state immediately without ghost tracks.
-- Stronger Panic, projection, and PPT lifecycle handling for delayed audio pauses, display loss, and EventTap state.
-- Program queue, selection, activation, persistence, and audio routing now keep one authoritative live state.
-- Preflight, Safety Cockpit, and sanitized Support Reports provide a clearer release and incident workflow.
-- A canonical Release Candidate rehearsal gate now covers hardware, permissions, privacy, and long-running playback.
+- Phone LAN remote control lets a single controller phone run the approved Live Mode actions from the local network.
+- The remote stays LAN-only, token-protected, and off by default; read-only phones can see state but cannot execute commands.
+- Action-specific command feedback on the phone shows which command completed or failed during rapid taps.
+- Remote media/program controls share one visual role while BGM controls remain visually distinct.
+- Dangerous actions still require long-press plus server confirmation, and single taps cannot trigger blackout or Panic.
+- Setup diagnostics explain same-Wi-Fi, dedicated-router/hotspot, AP-isolation, missing-address, and port-failure states.
+- Hardware rehearsal records iPhone Safari, dedicated router, Mac hotspot, AP-isolation graceful fail, token rotation, external-output blackout, and 60-minute soak evidence.
+- The guarded Previous Item remote command remains outside v0.6.0 and stays in the backlog.
+- The app icon has been refreshed for the v0.6.0 candidate.
 
-See [`docs/qa/release-hygiene-v0.5.0.md`](docs/qa/release-hygiene-v0.5.0.md) for the v0.5.0 release notes and trust gates.
+See [`docs/qa/release-hygiene-v0.6.0.md`](docs/qa/release-hygiene-v0.6.0.md) for the v0.6.0 release notes and trust gates.
 
-中文维护说明：`v0.5.0` 的重点不是新增现场功能，而是冻结当前 runtime ownership 架构，并把发布流程收紧到可复验的候选包和 Draft Release。
+中文维护说明：`v0.6.0` 的重点是本地局域网手机遥控，发布流程仍要求可复验的候选包、硬件验收、显式人工批准和 Draft Release。
 
 ## Live Preflight
 
@@ -88,9 +91,9 @@ Use `Copy Support` or `Save Support...` when reporting a bug. Support reports ar
 Related guides:
 
 - [Release Candidate rehearsal](docs/qa/release-candidate-rehearsal.md)
-- [v0.5.0 release acceptance](docs/qa/release-acceptance-v0.5.0.md)
-- [v0.5.0 release hygiene](docs/qa/release-hygiene-v0.5.0.md)
-- [v0.5.0 workspace guard](docs/qa/workspace-guard-v0.5.0.md)
+- [v0.6.0 release readiness](docs/qa/release-readiness-v0.6.0.md)
+- [v0.6.0 release hygiene](docs/qa/release-hygiene-v0.6.0.md)
+- [v0.6.0 workspace guard](docs/qa/workspace-guard-v0.6.0.md)
 - [Current UI verification](docs/qa/ui-current-main.md)
 - [Runtime ownership](docs/architecture/runtime-ownership.md)
 - [Live Mode simplicity rules](docs/architecture/live-mode-simplicity-rules.md)

@@ -1,17 +1,42 @@
 # Release Hygiene - v0.6.0
 
-This document records the release-hygiene state after the final phone LAN remote
-UI smoke closeout. It is release-readiness evidence only. It does not approve a
-tag, GitHub Release, release asset, checksum publication, or app publication.
+This document records the release-hygiene state for the LiveSwitcher v0.6.0
+phone LAN remote feature stream after the final phone UI smoke closeout. It is
+release-readiness evidence only. It does not approve a tag, GitHub Release,
+release asset, checksum publication, or app publication.
 
-## Scope
+## LiveSwitcher v0.6.0 Scope
 
-- v0.6.0 remains focused on the phone LAN remote stream.
+v0.6.0 adds the phone LAN remote-control MVP for live operators who need a
+simple, local, browser-based control surface from a phone on the same network.
+The remote is not a second switcher console; it exposes only approved Live Mode
+execution actions.
+
+The remote control stream includes:
+
+- QR/local URL pairing from the Mac operator surface.
+- LAN-only HTTP server with no cloud relay, no public internet remote, no UPnP,
+  and no port mapping.
+- Session token rotation and token invalidation when remote control is closed.
+- Single controller ownership; later clients become read-only.
+- Command ID hardening for iPhone Safari on non-secure LAN origins.
+- Issue #448 action-specific command feedback, including visible success,
+  pending, and failure messages on the phone without leaking sensitive values.
+- Issue #450 program/media color roles: Take Next, current media actions,
+  current program, and next program share one media/program role while BGM
+  remains visually distinct.
+- Issue #449 Previous Item remains out of scope for v0.6.0; adding that command
+  stays a backlog item after this release.
 - Final phone UI smoke after #448 / #450 is recorded in
   `docs/qa/phone-lan-remote-hardware-results-v0.6.0.md`.
-- PR #454 is explicitly excluded from v0.6.0.
-- Issue #449 remains backlog and is not part of the v0.6.0 release candidate.
-- Android Chrome remains unverified for this closeout.
+- Long-press and server confirmation for Fade To Black and Panic.
+- Setup diagnostics for same-Wi-Fi, dedicated router, Mac hotspot, public Wi-Fi
+  AP isolation, missing local network address, port failure, and network
+  changes.
+
+The allowed remote actions are Take Next, current media play/pause, return
+current media to start, BGM play/pause, BGM previous, BGM next, speaker mode,
+Fade To Black, and Panic.
 
 ## Release Stack Boundaries
 
@@ -24,8 +49,51 @@ tag, GitHub Release, release asset, checksum publication, or app publication.
 | PR #454 ImageGen / top chrome UI exploration | Excluded from v0.6.0 |
 | Android Chrome | Unverified |
 
+## Reliability And Privacy
+
+The release keeps the remote HTTP layer outside direct ViewModel mutation.
+Remote command execution remains routed through existing app action boundaries.
+Support reports, diagnostics, and logs must not include token values, nonce
+values, controller client IDs, phone addresses, local file paths, raw media
+filenames, screenshots, program titles, BGM titles, overlay text, or customer
+content.
+
+Hardware rehearsal evidence is recorded in
+[`phone-lan-remote-hardware-results-v0.6.0.md`](phone-lan-remote-hardware-results-v0.6.0.md).
+The recorded iPhone, router/hotspot, AP-isolation, token-rotation, external
+output blackout, final phone UI smoke, and 60-minute soak gates are accepted.
+Android Chrome remains unverified for this closeout.
+
+## Install
+
+Download `LiveSwitcher-macOS-v0.6.0.zip` and
+`LiveSwitcher-macOS-v0.6.0.zip.sha256` from the GitHub Release, then verify with
+`shasum -a 256 -c LiveSwitcher-macOS-v0.6.0.zip.sha256`. Unzip the app and move
+`LiveSwitcher.app` to `/Applications`.
+
+## Requirements And Permissions
+
+LiveSwitcher requires macOS 14 or later and has been tested on Apple Silicon.
+Accessibility permission is required for PPT EventTap/page-clicker interception.
+Apple Events permission is required for Keynote and WPS automation. Microphone
+access is reserved for audio-monitoring workflows.
+
+## Release Trust
+
+The public build is source-available, ad-hoc signed, and not notarized. The
+Release workflow must read `VERSION`, require the tag version to match
+`VERSION`, require the tag commit to equal `origin/main`, run the release gates,
+package with `ditto`, verify the extracted app, and upload both the zip and
+checksum assets as a draft release.
+
+The v0.6.0 release trust model remains tag/main equality plus CI workflow
+evidence, release asset checksum verification, and extracted app verification.
+It does not promise byte-for-byte local rebuild reproducibility.
+
 ## Prohibited Actions
 
+- PR #454 is explicitly excluded from v0.6.0.
+- Issue #449 remains backlog and is not part of the v0.6.0 release candidate.
 - Do not merge PR #454 into v0.6.0.
 - Do not rebase PR #454 into the release stack.
 - Do not include PR #454 in v0.6.0 release notes, artifact audit, approval
@@ -35,15 +103,26 @@ tag, GitHub Release, release asset, checksum publication, or app publication.
   projection toggles, remote editing, or remote configuration.
 - No tag, GitHub Release, release asset, or checksum publication is approved by this document.
 
-## Privacy Limits
+## Readiness Boundary
 
-Release hygiene records and support evidence must not include token values,
-nonce values, controller client IDs, phone addresses, customer content, real
-program names, real BGM names, local file paths, raw diagnostics, screenshots, or
-videos.
+This release-readiness PR prepares version and documentation state only. No
+release or tag is created by this readiness PR, and no release asset is uploaded
+by hand. Final publication still requires release-candidate build/hash evidence,
+explicit user approval, a tag that points at `origin/main`, and a passing GitHub
+Release workflow that creates a draft release.
+
+For automated release-readiness checks: no release or tag is created by this readiness PR.
 
 ## Current Release Gate
 
 v0.6.0 remains blocked until the release-readiness PR, artifact audit PR, and
-approval package PR are refreshed against the final candidate source and the user
-explicitly approves publication.
+approval package PR are refreshed against the final candidate source and the
+user explicitly approves publication.
+
+## Known Limitations
+
+- The public build is not Apple-notarized.
+- Phone remote control is LAN-only and depends on local network routing.
+- Public Wi-Fi with AP isolation is expected to fail gracefully.
+- Android Chrome hardware coverage remains unverified.
+- Keynote/WPS behavior depends on installed app versions and macOS permissions.
