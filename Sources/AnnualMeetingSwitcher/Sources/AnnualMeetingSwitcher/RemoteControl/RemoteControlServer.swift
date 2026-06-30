@@ -305,15 +305,39 @@ private final class RemoteControlNWListener: RemoteControlListening {
 
     private func handle(_ connection: NWConnection) {
         connection.start(queue: queue)
-        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, _, _ in
-            let responseData = self?.responseData(for: data) ?? RemoteControlHTTPWireCodec.serialize(.json(
-                statusCode: 500,
-                [("error", "serverUnavailable")]
-            ))
-            connection.send(content: responseData, completion: .contentProcessed { _ in
+        receiveRequest(on: connection, accumulator: RemoteControlHTTPRequestAccumulator())
+    }
+
+    private func receiveRequest(
+        on connection: NWConnection,
+        accumulator: RemoteControlHTTPRequestAccumulator
+    ) {
+        var nextAccumulator = accumulator
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { [weak self] data, _, isComplete, _ in
+            guard let self else {
                 connection.cancel()
-            })
+                return
+            }
+
+            if let data, !data.isEmpty, let requestData = nextAccumulator.append(data) {
+                self.sendResponse(for: requestData, on: connection)
+                return
+            }
+
+            if isComplete {
+                self.sendResponse(for: nil, on: connection)
+                return
+            }
+
+            self.receiveRequest(on: connection, accumulator: nextAccumulator)
         }
+    }
+
+    private func sendResponse(for data: Data?, on connection: NWConnection) {
+        let responseData = responseData(for: data)
+        connection.send(content: responseData, completion: .contentProcessed { _ in
+            connection.cancel()
+        })
     }
 
     private func responseData(for data: Data?) -> Data {
@@ -327,6 +351,58 @@ private final class RemoteControlNWListener: RemoteControlListening {
         }
 
         return requestHandler(rawRequest)
+    }
+}
+
+struct RemoteControlHTTPRequestAccumulator {
+    private static let headerTerminator = Data("\r\n\r\n".utf8)
+    private var buffer = Data()
+    private let maxByteCount: Int
+
+    init(maxByteCount: Int = 65_536) {
+        self.maxByteCount = maxByteCount
+    }
+
+    mutating func append(_ data: Data) -> Data? {
+        buffer.append(data)
+        if buffer.count > maxByteCount {
+            return buffer
+        }
+        return completeRequestData()
+    }
+
+    private func completeRequestData() -> Data? {
+        guard let headerRange = buffer.range(of: Self.headerTerminator) else {
+            return nil
+        }
+
+        let bodyStartIndex = headerRange.upperBound
+        guard let contentLength = contentLength(in: buffer[..<headerRange.lowerBound]) else {
+            return Data(buffer[..<bodyStartIndex])
+        }
+
+        let expectedByteCount = bodyStartIndex + contentLength
+        guard buffer.count >= expectedByteCount else {
+            return nil
+        }
+
+        return Data(buffer[..<expectedByteCount])
+    }
+
+    private func contentLength(in headerData: Data.SubSequence) -> Int? {
+        let headerText = String(decoding: headerData, as: UTF8.self)
+        for line in headerText.components(separatedBy: "\r\n") {
+            guard let separator = line.firstIndex(of: ":") else {
+                continue
+            }
+            let key = line[..<separator].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard key.localizedCaseInsensitiveCompare("Content-Length") == .orderedSame else {
+                continue
+            }
+            let value = line[line.index(after: separator)...].trimmingCharacters(in: .whitespacesAndNewlines)
+            return Int(value).flatMap { $0 >= 0 ? $0 : nil }
+        }
+        return nil
     }
 }
 
