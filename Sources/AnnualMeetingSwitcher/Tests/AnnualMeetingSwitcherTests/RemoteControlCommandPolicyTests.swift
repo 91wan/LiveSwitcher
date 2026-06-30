@@ -46,6 +46,7 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
         let validChallenge = RemoteDangerConfirmationChallenge(
             nonce: "nonce-1",
             commandKind: .togglePanic,
+            clientID: RemoteControlClientID(value: "phone-a-1"),
             issuedAt: now.addingTimeInterval(-1.2),
             expiresAt: now.addingTimeInterval(5),
             consumedAt: nil
@@ -54,6 +55,7 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
             isRemoteEnabled: true,
             acceptedCommandIDs: [],
             dangerConfirmationChallenges: ["nonce-1": validChallenge],
+            clientID: RemoteControlClientID(value: "phone-a-1"),
             now: now
         )
 
@@ -79,11 +81,13 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                         "early": RemoteDangerConfirmationChallenge(
                             nonce: "early",
                             commandKind: .togglePanic,
+                            clientID: RemoteControlClientID(value: "phone-a-1"),
                             issuedAt: now.addingTimeInterval(-0.2),
                             expiresAt: now.addingTimeInterval(5),
                             consumedAt: nil
                         )
                     ],
+                    clientID: RemoteControlClientID(value: "phone-a-1"),
                     now: now
                 )
             ),
@@ -134,11 +138,13 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                         "consumed": RemoteDangerConfirmationChallenge(
                             nonce: "consumed",
                             commandKind: .togglePanic,
+                            clientID: RemoteControlClientID(value: "phone-a-1"),
                             issuedAt: now.addingTimeInterval(-1.2),
                             expiresAt: now.addingTimeInterval(5),
                             consumedAt: now.addingTimeInterval(-0.1)
                         )
                     ],
+                    clientID: RemoteControlClientID(value: "phone-a-1"),
                     now: now
                 )
             ),
@@ -171,15 +177,35 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                         "expired": RemoteDangerConfirmationChallenge(
                             nonce: "expired",
                             commandKind: .togglePanic,
+                            clientID: RemoteControlClientID(value: "phone-a-1"),
                             issuedAt: now.addingTimeInterval(-1.2),
                             expiresAt: now.addingTimeInterval(-1),
                             consumedAt: nil
                         )
                     ],
+                    clientID: RemoteControlClientID(value: "phone-a-1"),
                     now: now
                 )
             ),
             .rejected(.expiredDangerConfirmation)
+        )
+
+        XCTAssertEqual(
+            RemoteControlCommandPolicy.validate(
+                RemoteControlCommand(
+                    id: commandID,
+                    kind: .togglePanic,
+                    confirmation: RemoteDangerConfirmation(nonce: "nonce-1")
+                ),
+                context: RemoteControlCommandValidationContext(
+                    isRemoteEnabled: true,
+                    acceptedCommandIDs: [],
+                    dangerConfirmationChallenges: ["nonce-1": validChallenge],
+                    clientID: RemoteControlClientID(value: "phone-b-1"),
+                    now: now
+                )
+            ),
+            .rejected(.mismatchedDangerConfirmationClient)
         )
     }
 

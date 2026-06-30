@@ -50,6 +50,7 @@ final class RemoteControlTokenPolicyTests: XCTestCase {
         let challenge = store.issueDangerConfirmation(
             nonce: "nonce-1",
             commandKind: .togglePanic,
+            clientID: nil,
             now: Date(timeIntervalSince1970: 100),
             ttl: 5
         )

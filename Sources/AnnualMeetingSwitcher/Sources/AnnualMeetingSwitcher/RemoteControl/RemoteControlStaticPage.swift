@@ -22,6 +22,10 @@ enum RemoteControlStaticPage {
           重新连接中，请确认手机仍在同一局域网。
         </section>
 
+        <section id="read-only-banner" class="reconnect-banner" hidden>
+          已有手机正在控制，本机只读
+        </section>
+
         <section id="snapshot" class="snapshot-grid" aria-live="polite">
           <article class="snapshot-card current-card">
             <span class="label">当前节目</span>
@@ -46,6 +50,7 @@ enum RemoteControlStaticPage {
         </section>
 
         <p id="disabled-reason" class="disabled-reason" hidden></p>
+        <p id="command-status" class="command-status" role="status">最近命令：待命</p>
 
         <section class="control-section" aria-label="节目控制">
           <button class="command-button primary" data-command="takeNext">
@@ -183,13 +188,28 @@ enum RemoteControlStaticPage {
     }
 
     .reconnect-banner,
-    .disabled-reason {
+    .disabled-reason,
+    .command-status {
       border: 1px solid rgba(250, 204, 21, 0.38);
       border-radius: 16px;
       padding: 12px 14px;
       background: rgba(113, 63, 18, 0.44);
       color: #fde68a;
       font-weight: 800;
+    }
+
+    .command-status {
+      margin: 0;
+      border-color: rgba(96, 165, 250, 0.34);
+      background: rgba(30, 50, 74, 0.58);
+      color: #bfdbfe;
+      font-size: 0.95rem;
+    }
+
+    .command-status.is-error {
+      border-color: rgba(248, 113, 113, 0.5);
+      background: rgba(69, 26, 26, 0.58);
+      color: #fecaca;
     }
 
     .reconnect-banner[hidden],
@@ -315,13 +335,34 @@ enum RemoteControlStaticPage {
 
     static let javascript = """
     const token = new URLSearchParams(location.hash.slice(1)).get("token") || "";
+    const clientIDStorageKey = "LiveSwitcher.remote.controllerClientID";
+    const clientID = storedClientID();
+    let clientRole = "pending";
+    let claimPromise = null;
     const commandButtons = Array.from(document.querySelectorAll("[data-command]"));
     const reconnectBanner = document.querySelector("#reconnect-banner");
+    const readOnlyBanner = document.querySelector("#read-only-banner");
     const connectionState = document.querySelector("#connection-state");
     const disabledReason = document.querySelector("#disabled-reason");
+    const commandStatus = document.querySelector("#command-status");
+
+    function storedClientID() {
+      try {
+        const existing = sessionStorage.getItem(clientIDStorageKey);
+        if (existing) {
+          return existing;
+        }
+        const value = commandID();
+        sessionStorage.setItem(clientIDStorageKey, value);
+        return value;
+      } catch (error) {
+        return commandID();
+      }
+    }
 
     function headers(contentType) {
       const value = { Authorization: `Bearer ${token}` };
+      value["X-Remote-Client-ID"] = clientID;
       if (contentType) {
         value["Content-Type"] = contentType;
       }
@@ -335,11 +376,43 @@ enum RemoteControlStaticPage {
       }
     }
 
-    function commandID() {
+    function setCommandStatus(message, isError = false) {
+      commandStatus.textContent = message;
+      commandStatus.classList.toggle("is-error", isError);
+    }
+
+    function commandFailureCopy(errorCode) {
+      switch (errorCode) {
+      case "clientNotController":
+      case "missingControllerClientID":
+        return "只读连接，不能控制";
+      default:
+        return `命令失败：${errorCode}`;
+      }
+    }
+
+    function uuidV4() {
       if (window.crypto && crypto.randomUUID) {
         return crypto.randomUUID();
       }
-      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+      const bytes = new Uint8Array(16);
+      if (window.crypto && crypto.getRandomValues) {
+        crypto.getRandomValues(bytes);
+      } else {
+        for (let index = 0; index < bytes.length; index += 1) {
+          bytes[index] = Math.floor(Math.random() * 256);
+        }
+      }
+
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+      return `${hex[0]}${hex[1]}${hex[2]}${hex[3]}-${hex[4]}${hex[5]}-${hex[6]}${hex[7]}-${hex[8]}${hex[9]}-${hex[10]}${hex[11]}${hex[12]}${hex[13]}${hex[14]}${hex[15]}`;
+    }
+
+    function commandID() {
+      return uuidV4();
     }
 
     function connectionCopy(state) {
@@ -369,6 +442,38 @@ enum RemoteControlStaticPage {
       reconnectBanner.hidden = !visible;
     }
 
+    async function claimSession() {
+      if (!token || clientRole !== "pending") {
+        return;
+      }
+      if (claimPromise) {
+        return claimPromise;
+      }
+
+      claimPromise = fetch("/api/session/claim", {
+        method: "POST",
+        headers: headers("application/json"),
+        body: JSON.stringify({ clientID })
+      })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (response.status === 409 && payload.role === "readOnly") {
+            clientRole = "readOnly";
+            readOnlyBanner.hidden = false;
+            return;
+          }
+          if (!response.ok) {
+            throw new Error("session claim failed");
+          }
+          clientRole = payload.role || "controller";
+          readOnlyBanner.hidden = clientRole !== "readOnly";
+        })
+        .finally(() => {
+          claimPromise = null;
+        });
+      return claimPromise;
+    }
+
     function updateButtonStates(data, online) {
       const disabledByCommand = {
         takeNext: !data || !data.nextProgramTitle,
@@ -384,12 +489,12 @@ enum RemoteControlStaticPage {
 
       commandButtons.forEach((button) => {
         const command = button.dataset.command;
-        button.disabled = !token || !online || Boolean(data?.disabledReason) || Boolean(disabledByCommand[command]);
+        button.disabled = clientRole !== "controller" || !token || !online || Boolean(data?.disabledReason) || Boolean(disabledByCommand[command]);
       });
     }
 
     function renderSnapshot(data) {
-      connectionState.textContent = connectionCopy(data.connectionState);
+      connectionState.textContent = clientRole === "readOnly" ? "只读连接" : connectionCopy(data.connectionState);
       setText("current-title", data.currentProgramTitle || "未选中");
       setText("next-title", data.nextProgramTitle || "无下一项");
       setText("bgm-title", data.currentBGMTitle || "未选择");
@@ -398,8 +503,9 @@ enum RemoteControlStaticPage {
       setText("bgm-state", data.isBGMPlaying ? "BGM 播放中" : "BGM 已暂停");
       setText("blackout-state", blackoutCopy(data));
       setText("speaker-state", data.isSpeakerMode ? "主讲人模式开启" : "主讲人模式关闭");
-      disabledReason.hidden = !data.disabledReason;
-      disabledReason.textContent = data.disabledReason || "";
+      const reason = clientRole === "readOnly" ? "已有手机正在控制，本机只读" : (data.disabledReason || "");
+      disabledReason.hidden = !reason;
+      disabledReason.textContent = reason;
       updateButtonStates(data, true);
       setReconnect(false);
     }
@@ -413,6 +519,7 @@ enum RemoteControlStaticPage {
       }
 
       try {
+        await claimSession();
         const response = await fetch("/api/snapshot", { headers: headers() });
         if (!response.ok) {
           throw new Error("snapshot failed");
@@ -426,34 +533,85 @@ enum RemoteControlStaticPage {
     }
 
     async function sendCommand(kind, confirmation) {
+      await claimSession();
+      if (clientRole !== "controller") {
+        readOnlyBanner.hidden = false;
+        setCommandStatus("只读连接，不能控制", true);
+        updateButtonStates(null, false);
+        return;
+      }
+
       const payload = { id: commandID(), kind };
       if (confirmation) {
         payload.confirmation = confirmation;
       }
 
-      const response = await fetch("/api/command", {
-        method: "POST",
-        headers: headers("application/json"),
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
+      setCommandStatus("最近命令已发送");
+      let response;
+      try {
+        response = await fetch("/api/command", {
+          method: "POST",
+          headers: headers("application/json"),
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        setCommandStatus("网络断开", true);
         setReconnect(true);
         return;
       }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const errorCode = payload.error || "unknown";
+        setCommandStatus(commandFailureCopy(errorCode), true);
+        if (errorCode === "clientNotController" || errorCode === "missingControllerClientID") {
+          readOnlyBanner.hidden = false;
+        }
+        return;
+      }
+      setCommandStatus("最近命令已执行");
       await refreshSnapshot();
     }
 
     async function issueDangerConfirmation(kind) {
-      const response = await fetch("/api/danger-confirmation", {
-        method: "POST",
-        headers: headers("application/json"),
-        body: JSON.stringify({ kind })
-      });
+      await claimSession();
+      if (clientRole !== "controller") {
+        readOnlyBanner.hidden = false;
+        setCommandStatus("只读连接，不能控制", true);
+        throw new Error("client is read only");
+      }
+
+      let response;
+      try {
+        response = await fetch("/api/danger-confirmation", {
+          method: "POST",
+          headers: headers("application/json"),
+          body: JSON.stringify({ kind })
+        });
+      } catch (error) {
+        setCommandStatus("网络断开", true);
+        setReconnect(true);
+        throw error;
+      }
       if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const errorCode = payload.error || "unknown";
+        setCommandStatus(commandFailureCopy(errorCode), true);
         throw new Error("danger confirmation failed");
       }
       return response.json();
+    }
+
+    function activateCommandButton(button, event) {
+      event?.preventDefault();
+      const lastActivatedAt = Number(button.lastActivatedAt || 0);
+      if (Date.now() - lastActivatedAt < 350) {
+        return;
+      }
+      button.lastActivatedAt = Date.now();
+      if (!button.disabled) {
+        sendCommand(button.dataset.command);
+      }
     }
 
     function clearDangerHold(button) {
@@ -517,11 +675,9 @@ enum RemoteControlStaticPage {
         return;
       }
 
-      button.addEventListener("click", () => {
-        if (!button.disabled) {
-          sendCommand(button.dataset.command);
-        }
-      });
+      button.addEventListener("pointerup", (event) => activateCommandButton(button, event));
+      button.addEventListener("touchend", (event) => activateCommandButton(button, event));
+      button.addEventListener("click", (event) => activateCommandButton(button, event));
     });
 
     setInterval(refreshSnapshot, 1000);

@@ -26,6 +26,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
     func testServerRecordsAcceptedCommandIDsAndRejectsDuplicateBeforeExecution() throws {
         let harness = RemoteCommandServerHarness()
         _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest())
 
         let first = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(id: fixedCommandID)))
         let duplicate = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(id: fixedCommandID)))
@@ -36,9 +37,73 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         XCTAssertEqual(harness.executedCommands.map(\.kind), [.takeNext])
     }
 
+    func testServerAllowsOnlyClaimedControllerClientToExecuteCommands() throws {
+        let harness = RemoteCommandServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+
+        let controllerClaim = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-a-1")))
+        let secondClaim = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-b-1")))
+        let missingClient = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            clientID: nil
+        )))
+        let readOnlyClient = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(
+            id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+            clientID: "phone-b-1"
+        )))
+        let controllerCommand = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(
+            id: fixedCommandID,
+            clientID: "phone-a-1"
+        )))
+
+        XCTAssertTrue(controllerClaim.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(controllerClaim.contains(#""role":"controller""#))
+        XCTAssertTrue(secondClaim.contains("HTTP/1.1 409 Conflict"))
+        XCTAssertTrue(secondClaim.contains(#""role":"readOnly""#))
+        XCTAssertTrue(missingClient.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(missingClient.contains(#""error":"missingControllerClientID""#))
+        XCTAssertTrue(readOnlyClient.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(readOnlyClient.contains(#""error":"clientNotController""#))
+        XCTAssertTrue(controllerCommand.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertEqual(harness.executedCommands.map(\.kind), [.takeNext])
+    }
+
+    func testReadOnlyClientCannotCloseRemoteSession() throws {
+        let harness = RemoteCommandServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-a-1"))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-b-1"))
+
+        let readOnlyClose = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(clientID: "phone-b-1")))
+        let controllerCommand = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(
+            id: fixedCommandID,
+            clientID: "phone-a-1"
+        )))
+
+        XCTAssertTrue(readOnlyClose.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(readOnlyClose.contains(#""error":"clientNotController""#))
+        XCTAssertTrue(controllerCommand.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(harness.server.isEnabled)
+    }
+
+    func testReadOnlyClientCannotIssueDangerConfirmation() throws {
+        let harness = RemoteCommandServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-a-1"))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest(clientID: "phone-b-1"))
+
+        let readOnlyChallenge = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest(clientID: "phone-b-1")))
+        let controllerChallenge = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest(clientID: "phone-a-1")))
+
+        XCTAssertTrue(readOnlyChallenge.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(readOnlyChallenge.contains(#""error":"clientNotController""#))
+        XCTAssertTrue(controllerChallenge.contains("HTTP/1.1 202 Accepted"))
+    }
+
     func testServerIssuedDangerConfirmationEnablesLongPressDangerousCommand() throws {
         let harness = RemoteCommandServerHarness()
         _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest())
 
         let challengeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest()))
         XCTAssertTrue(challengeResponse.contains("HTTP/1.1 202 Accepted"))
@@ -57,6 +122,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
     func testServerConsumesDangerConfirmationNonceAfterSuccessfulCommand() throws {
         let harness = RemoteCommandServerHarness()
         _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest())
 
         let challengeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest()))
         let nonce = try nonce(fromHTTPResponse: challengeResponse)
@@ -86,6 +152,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         )
 
         harness.viewModel.remoteControlSetup.enable()
+        _ = harness.createdListeners.first?.respond(to: rawSessionClaimRequest())
         let response = harness.createdListeners.first?.respond(to: rawCommandRequest(id: fixedCommandID))
 
         XCTAssertTrue(response?.contains("HTTP/1.1 202 Accepted") == true)
@@ -163,29 +230,59 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         )
     }
 
-    private func rawCommandRequest(id: UUID, kind: String = "takeNext") -> String {
+    private func rawSessionClaimRequest(clientID: String = "phone-a-1") -> String {
+        let body = #"{"clientID":"\#(clientID)"}"#
+        return """
+        POST /api/session/claim HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: \(body.utf8.count)\r
+        \r
+        \(body)
         """
+    }
+
+    private func rawCommandRequest(
+        id: UUID,
+        kind: String = "takeNext",
+        clientID: String? = "phone-a-1"
+    ) -> String {
+        let clientHeader = clientID.map { "X-Remote-Client-ID: \($0)\r\n" } ?? ""
+        return """
         POST /api/command HTTP/1.1\r
         Authorization: Bearer token-1\r
+        \(clientHeader)\
         Content-Length: 65\r
         \r
         {"id":"\(id.uuidString)","kind":"\(kind)"}
         """
     }
 
-    private func rawDangerConfirmationRequest() -> String {
+    private func rawDangerConfirmationRequest(clientID: String = "phone-a-1") -> String {
         """
         POST /api/danger-confirmation HTTP/1.1\r
         Authorization: Bearer token-1\r
+        X-Remote-Client-ID: \(clientID)\r
         Content-Length: 22\r
         \r
         {"kind":"togglePanic"}
         """
     }
 
+    private func rawSessionCloseRequest(clientID: String = "phone-a-1") -> String {
+        """
+        POST /api/session/close HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        X-Remote-Client-ID: \(clientID)\r
+        Content-Length: 2\r
+        \r
+        {}
+        """
+    }
+
     private func rawDangerousCommandRequest(
         id: UUID? = nil,
         kind: String = "togglePanic",
+        clientID: String = "phone-a-1",
         nonce: String
     ) -> String {
         let commandID = id ?? fixedCommandID
@@ -193,6 +290,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         return """
         POST /api/command HTTP/1.1\r
         Authorization: Bearer token-1\r
+        X-Remote-Client-ID: \(clientID)\r
         Content-Length: \(body.utf8.count)\r
         \r
         \(body)

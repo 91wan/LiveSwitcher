@@ -79,6 +79,78 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("reconnect"))
     }
 
+    func testCommandIDFallbackAlwaysGeneratesUUIDShapedValuesForInsecureLANBrowsers() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("function uuidV4()"))
+        XCTAssertTrue(javascript.contains("crypto.getRandomValues"))
+        XCTAssertTrue(javascript.contains("bytes[6] = (bytes[6] & 0x0f) | 0x40"))
+        XCTAssertTrue(javascript.contains("bytes[8] = (bytes[8] & 0x3f) | 0x80"))
+        XCTAssertTrue(javascript.contains("padStart(2, \"0\")"))
+        XCTAssertTrue(javascript.contains("return uuidV4();"))
+        XCTAssertFalse(javascript.contains("`${Date.now()}-${Math.random().toString(16).slice(2)}`"))
+    }
+
+    func testNonDangerButtonsUseTouchAndClickFallbackActivationForPhoneTaps() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("function activateCommandButton(button, event)"))
+        XCTAssertTrue(javascript.contains("button.lastActivatedAt"))
+        XCTAssertTrue(javascript.contains("Date.now() - lastActivatedAt < 350"))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("pointerup", (event) => activateCommandButton(button, event))"#))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("touchend", (event) => activateCommandButton(button, event))"#))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("click", (event) => activateCommandButton(button, event))"#))
+        XCTAssertFalse(javascript.contains(#"button.addEventListener("click", () => {"#))
+    }
+
+    func testJavascriptClaimsSingleControllerAndPersistsClientID() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("sessionStorage"))
+        XCTAssertTrue(javascript.contains("LiveSwitcher.remote.controllerClientID"))
+        XCTAssertTrue(javascript.contains("/api/session/claim"))
+        XCTAssertTrue(javascript.contains("claimSession"))
+        XCTAssertTrue(javascript.contains("X-Remote-Client-ID"))
+        XCTAssertTrue(javascript.contains("clientID"))
+        XCTAssertTrue(javascript.contains("clientRole"))
+    }
+
+    func testReadOnlyClientDisablesCommandsButKeepsSnapshotVisible() {
+        let html = RemoteControlStaticPage.html
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(html.contains("已有手机正在控制，本机只读"))
+        XCTAssertTrue(javascript.contains(#"clientRole === "readOnly""#))
+        XCTAssertTrue(javascript.contains("只读连接"))
+        XCTAssertTrue(javascript.contains("updateButtonStates(data, true)"))
+        XCTAssertTrue(javascript.contains(#"clientRole !== "controller""#))
+        XCTAssertFalse(javascript.contains(#"snapshot.hidden = true"#))
+    }
+
+    func testCommandsWaitForControllerClaimBeforePosting() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("async function sendCommand(kind, confirmation)"))
+        XCTAssertTrue(javascript.contains("await claimSession();"))
+        XCTAssertTrue(javascript.contains(#"if (clientRole !== "controller")"#))
+        XCTAssertTrue(javascript.contains(#"return;"#))
+    }
+
+    func testCommandPostFailuresAreVisibleWithoutLeakingSensitiveValues() {
+        let html = RemoteControlStaticPage.html
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(html.contains(#"id="command-status""#))
+        XCTAssertTrue(javascript.contains("const commandStatus"))
+        XCTAssertTrue(javascript.contains("最近命令已执行"))
+        XCTAssertTrue(javascript.contains("命令失败："))
+        XCTAssertTrue(javascript.contains("只读连接，不能控制"))
+        XCTAssertTrue(javascript.contains("网络断开"))
+        XCTAssertTrue(javascript.contains("payload.error || \"unknown\""))
+        XCTAssertFalse(javascript.contains("command-status-token"))
+        XCTAssertFalse(javascript.contains("command-status-nonce"))
+    }
+
     func testStaticPageDoesNotIntroduceBuildStepOrExternalRuntimeReferences() {
         XCTAssertFalse(allStaticAssets.localizedStandardContains("<script src=\"https://"))
         XCTAssertFalse(allStaticAssets.localizedStandardContains("<link href=\"https://"))
