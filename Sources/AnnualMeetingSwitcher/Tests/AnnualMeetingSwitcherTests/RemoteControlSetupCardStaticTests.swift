@@ -15,6 +15,23 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         XCTAssertTrue(source.contains("局域网地址"))
     }
 
+    func testSetupCardSourceContainsLANDiagnosticsWithoutVisibleToken() throws {
+        let source = try [
+            "Views/RemoteControlSetupCard.swift",
+            "RemoteControl/RemoteControlSetupState.swift"
+        ].map { try sourceText($0) }.joined(separator: "\n")
+
+        XCTAssertTrue(source.contains("专用 5GHz 路由器"))
+        XCTAssertTrue(source.contains("同一 Wi‑Fi"))
+        XCTAssertTrue(source.contains("公共 Wi‑Fi"))
+        XCTAssertTrue(source.contains("AP isolation"))
+        XCTAssertTrue(source.contains("网络变化"))
+        XCTAssertTrue(source.contains("未找到局域网地址"))
+        XCTAssertTrue(source.contains("端口启动失败"))
+        XCTAssertFalse(source.contains("Text(pairingURL)"))
+        XCTAssertFalse(source.contains("Text(state.pairingURL"))
+    }
+
     func testSetupCardIsMountedInSetupRailButNotLiveModeConfiguration() throws {
         let setupRail = try sourceText("Views/LiveOpsPanel.swift")
         let liveMode = try [
@@ -51,6 +68,22 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         XCTAssertFalse(ports.contains(0))
     }
 
+    func testSetupDiagnosticsDoNotExposePairingToken() {
+        let state = RemoteControlSetupState(
+            status: .enabled,
+            host: "192.168.1.23",
+            port: 41888,
+            pairingURL: "http://192.168.1.23:41888/#token=secret-token"
+        )
+
+        let diagnostics = state.diagnosticMessages.joined(separator: "\n")
+
+        XCTAssertTrue(diagnostics.contains("专用 5GHz 路由器"))
+        XCTAssertTrue(diagnostics.contains("网络变化"))
+        XCTAssertFalse(diagnostics.contains("secret-token"))
+        XCTAssertFalse(diagnostics.localizedCaseInsensitiveContains("token"))
+    }
+
     func testViewModelRemoteControlIsDisabledByDefault() {
         let harness = RemoteControlSetupHarness()
 
@@ -78,6 +111,28 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
 
         XCTAssertEqual(harness.viewModel.remoteControlSetup.state.displayAddress, "192.168.1.23:41888")
         XCTAssertEqual(harness.viewModel.remoteControlSetup.state.pairingURL, "http://192.168.1.23:41888/#token=token-1")
+    }
+
+    func testViewModelEnableRemoteControlFailsWithNoLocalNetworkAddressReason() {
+        let harness = RemoteControlSetupHarness()
+        harness.viewModel.remoteControlSetup.localAddressProvider = { nil }
+
+        harness.viewModel.remoteControlSetup.enable()
+
+        XCTAssertEqual(harness.viewModel.remoteControlSetup.state.status, .failed)
+        XCTAssertEqual(harness.viewModel.remoteControlSetup.state.failureReason, .noLocalNetworkAddress)
+        XCTAssertNil(harness.viewModel.remoteControlSetup.state.pairingURL)
+    }
+
+    func testViewModelEnableRemoteControlFailsWithPortUnavailableReason() {
+        let harness = RemoteControlSetupHarness()
+        harness.nextListenerShouldFailStart = true
+
+        harness.viewModel.remoteControlSetup.enable()
+
+        XCTAssertEqual(harness.viewModel.remoteControlSetup.state.status, .failed)
+        XCTAssertEqual(harness.viewModel.remoteControlSetup.state.failureReason, .portUnavailable)
+        XCTAssertNil(harness.viewModel.remoteControlSetup.state.pairingURL)
     }
 
     func testViewModelDisableRemoteControlStopsServerAndClearsPairingURL() {
