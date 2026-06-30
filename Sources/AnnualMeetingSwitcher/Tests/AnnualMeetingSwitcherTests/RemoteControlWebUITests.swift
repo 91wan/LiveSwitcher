@@ -79,6 +79,15 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("reconnect"))
     }
 
+    func testNonDangerButtonsUsePointerActivationForPhoneTaps() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("function activateCommandButton(button, event)"))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("pointerup", (event) => activateCommandButton(button, event))"#))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("click", (event) => event.preventDefault())"#))
+        XCTAssertFalse(javascript.contains(#"button.addEventListener("click", () => {"#))
+    }
+
     func testJavascriptClaimsSingleControllerAndPersistsClientID() {
         let javascript = RemoteControlStaticPage.javascript
 

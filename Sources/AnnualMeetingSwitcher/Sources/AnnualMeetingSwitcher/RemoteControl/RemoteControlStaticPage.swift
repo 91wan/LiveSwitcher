@@ -514,6 +514,13 @@ enum RemoteControlStaticPage {
       return response.json();
     }
 
+    function activateCommandButton(button, event) {
+      event?.preventDefault();
+      if (!button.disabled) {
+        sendCommand(button.dataset.command);
+      }
+    }
+
     function clearDangerHold(button) {
       if (button.holdTimer) {
         clearTimeout(button.holdTimer);
@@ -575,11 +582,8 @@ enum RemoteControlStaticPage {
         return;
       }
 
-      button.addEventListener("click", () => {
-        if (!button.disabled) {
-          sendCommand(button.dataset.command);
-        }
-      });
+      button.addEventListener("pointerup", (event) => activateCommandButton(button, event));
+      button.addEventListener("click", (event) => event.preventDefault());
     });
 
     setInterval(refreshSnapshot, 1000);
