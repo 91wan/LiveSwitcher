@@ -5,6 +5,7 @@ struct RemoteControlRequestRouter {
     var snapshotProvider: () -> RemoteControlSnapshot
     var commandContextProvider: () -> RemoteControlCommandValidationContext
     var dangerConfirmationIssuer: (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil }
+    var sessionCloseHandler: () -> RemoteControlSessionCloseResult = { .remoteDisabled }
     var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
         .executed(RemoteControlCommandExecutionRecord(command: $0))
     }
@@ -49,7 +50,7 @@ struct RemoteControlRequestRouter {
             }
         case (.post, "/api/session/close"):
             return withAuthorizedRequest(request) {
-                .json(statusCode: 202, [("closeRequested", true)])
+                sessionCloseResponse()
             }
         case (_, "/api/snapshot"),
              (_, "/api/command"),
@@ -112,6 +113,18 @@ struct RemoteControlRequestRouter {
         case .rejected(let rejection):
             return rejectionResponse(rejection)
         }
+    }
+
+    private func sessionCloseResponse() -> RemoteControlHTTPResponse {
+        let result = sessionCloseHandler()
+        guard result.closed else {
+            return rejectionResponse(.remoteDisabled)
+        }
+
+        return .json(statusCode: 202, [
+            ("closeRequested", true),
+            ("closed", true)
+        ])
     }
 
     private func commandExecutionResponse(

@@ -100,15 +100,70 @@ final class RemoteControlServerLifecycleTests: XCTestCase {
         XCTAssertNil(harness.server.activeEndpoint)
         XCTAssertFalse(harness.server.redactedDiagnosticsSummary.contains("token-1"))
     }
+
+    func testSessionCloseRequestDisablesServerAndInvalidatesOldToken() throws {
+        let harness = ServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+
+        let closeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(token: "token-1")))
+
+        XCTAssertTrue(closeResponse.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(closeResponse.contains(#""closeRequested":true"#))
+        XCTAssertTrue(closeResponse.contains(#""closed":true"#))
+        XCTAssertFalse(closeResponse.contains("token-1"))
+        XCTAssertFalse(harness.server.isEnabled)
+        XCTAssertNil(harness.server.activeSession)
+        XCTAssertNil(harness.server.activeEndpoint)
+        XCTAssertEqual(harness.createdListeners.first?.cancelCallCount, 1)
+
+        let oldTokenSnapshot = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSnapshotRequest(token: "token-1")))
+        XCTAssertTrue(oldTokenSnapshot.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(oldTokenSnapshot.contains(#""error":"invalidAuthorization""#))
+        XCTAssertFalse(oldTokenSnapshot.contains("Opening"))
+        XCTAssertFalse(oldTokenSnapshot.contains("token-1"))
+    }
+
+    func testSessionCloseClearsAcceptedCommandIDsAndDangerConfirmations() throws {
+        let harness = ServerHarness()
+        harness.tokens = [
+            RemoteControlToken(value: "token-1"),
+            RemoteControlToken(value: "token-2")
+        ]
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        let commandID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
+
+        let firstCommand = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(token: "token-1", id: commandID)))
+        let challengeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest(token: "token-1")))
+        let nonce = try nonce(fromHTTPResponse: challengeResponse)
+        let closeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(token: "token-1")))
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 200))
+
+        let reusedCommandID = try XCTUnwrap(harness.createdListeners.last?.respond(to: rawCommandRequest(token: "token-2", id: commandID)))
+        let oldNonceCommand = try XCTUnwrap(harness.createdListeners.last?.respond(to: rawDangerousCommandRequest(token: "token-2", nonce: nonce)))
+
+        XCTAssertTrue(firstCommand.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(closeResponse.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(reusedCommandID.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertFalse(reusedCommandID.contains("duplicateCommandID"))
+        XCTAssertTrue(oldNonceCommand.contains("HTTP/1.1 409 Conflict"))
+        XCTAssertTrue(oldNonceCommand.contains(#""error":"unknownDangerConfirmation""#))
+    }
 }
 
 private final class ServerHarness {
     var createdListeners: [FakeRemoteControlListener] = []
     var nextListenerShouldFailStart = false
+    var tokens = [RemoteControlToken(value: "token-1")]
 
     lazy var server = RemoteControlServer(
         listenerFactory: makeListener(port:),
-        tokenProvider: { RemoteControlToken(value: "token-1") },
+        tokenProvider: { [weak self] in
+            guard let self else { return RemoteControlToken(value: "token-1") }
+            if self.tokens.count > 1 {
+                return self.tokens.removeFirst()
+            }
+            return self.tokens.first ?? RemoteControlToken(value: "token-1")
+        },
         snapshotProvider: snapshot,
         commandContextProvider: commandContext
     )
@@ -198,4 +253,63 @@ private final class FakeRemoteControlListener: RemoteControlListening {
 
 private enum FakeListenerError: Error {
     case startFailed
+}
+
+private func rawSnapshotRequest(token: String) -> String {
+    """
+    GET /api/snapshot HTTP/1.1\r
+    Authorization: Bearer \(token)\r
+    \r
+
+    """
+}
+
+private func rawSessionCloseRequest(token: String) -> String {
+    """
+    POST /api/session/close HTTP/1.1\r
+    Authorization: Bearer \(token)\r
+    Content-Length: 2\r
+    \r
+    {}
+    """
+}
+
+private func rawCommandRequest(token: String, id: UUID, kind: String = "takeNext") -> String {
+    let body = #"{"id":"\#(id.uuidString)","kind":"\#(kind)"}"#
+    return """
+    POST /api/command HTTP/1.1\r
+    Authorization: Bearer \(token)\r
+    Content-Length: \(body.utf8.count)\r
+    \r
+    \(body)
+    """
+}
+
+private func rawDangerConfirmationRequest(token: String) -> String {
+    let body = #"{"kind":"togglePanic"}"#
+    return """
+    POST /api/danger-confirmation HTTP/1.1\r
+    Authorization: Bearer \(token)\r
+    Content-Length: \(body.utf8.count)\r
+    \r
+    \(body)
+    """
+}
+
+private func rawDangerousCommandRequest(token: String, nonce: String) -> String {
+    let body = #"{"id":"22222222-2222-2222-2222-222222222222","kind":"togglePanic","confirmation":{"nonce":"\#(nonce)"}}"#
+    return """
+    POST /api/command HTTP/1.1\r
+    Authorization: Bearer \(token)\r
+    Content-Length: \(body.utf8.count)\r
+    \r
+    \(body)
+    """
+}
+
+private func nonce(fromHTTPResponse rawResponse: String) throws -> String {
+    let body = try XCTUnwrap(rawResponse.components(separatedBy: "\r\n\r\n").last)
+    let data = try XCTUnwrap(body.data(using: .utf8))
+    let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+    return try XCTUnwrap(object["nonce"] as? String)
 }

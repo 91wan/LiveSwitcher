@@ -5,6 +5,13 @@ struct RemoteControlSession: Equatable {
     var createdAt: Date
 }
 
+struct RemoteControlSessionCloseResult: Equatable {
+    var closed: Bool
+
+    static let closed = RemoteControlSessionCloseResult(closed: true)
+    static let remoteDisabled = RemoteControlSessionCloseResult(closed: false)
+}
+
 struct RemoteDangerConfirmationChallenge: Equatable {
     var nonce: String
     var commandKind: RemoteControlCommandKind

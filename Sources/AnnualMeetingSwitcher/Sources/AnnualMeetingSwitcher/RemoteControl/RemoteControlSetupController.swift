@@ -74,6 +74,7 @@ final class RemoteControlSetupController {
                 tokenProvider: tokenProvider,
                 snapshotProvider: snapshotProvider,
                 commandContextProvider: commandContext,
+                sessionCloseObserver: remoteSessionClosed,
                 commandExecutor: commandExecutor
             )
         }
@@ -82,8 +83,16 @@ final class RemoteControlSetupController {
             tokenProvider: tokenProvider,
             snapshotProvider: snapshotProvider,
             commandContextProvider: commandContext,
+            sessionCloseObserver: remoteSessionClosed,
             commandExecutor: commandExecutor
         )
+    }
+
+    private func remoteSessionClosed() {
+        Task { @MainActor [weak self] in
+            self?.server = nil
+            self?.state = .disabled
+        }
     }
 
     private func commandContext() -> RemoteControlCommandValidationContext {
