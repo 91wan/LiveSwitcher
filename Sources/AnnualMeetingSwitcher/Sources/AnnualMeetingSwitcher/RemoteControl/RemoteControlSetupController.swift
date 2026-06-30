@@ -90,7 +90,7 @@ final class RemoteControlSetupController {
         RemoteControlCommandValidationContext(
             isRemoteEnabled: true,
             acceptedCommandIDs: [],
-            dangerConfirmationExpirations: [:],
+            dangerConfirmationChallenges: [:],
             now: nowProvider()
         )
     }

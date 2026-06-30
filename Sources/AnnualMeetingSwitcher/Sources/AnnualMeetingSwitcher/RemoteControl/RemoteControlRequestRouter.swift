@@ -4,7 +4,7 @@ struct RemoteControlRequestRouter {
     var token: RemoteControlToken
     var snapshotProvider: () -> RemoteControlSnapshot
     var commandContextProvider: () -> RemoteControlCommandValidationContext
-    var dangerConfirmationIssuer: () -> RemoteDangerConfirmationChallenge? = { nil }
+    var dangerConfirmationIssuer: (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil }
     var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
         .executed(RemoteControlCommandExecutionRecord(command: $0))
     }
@@ -45,7 +45,7 @@ struct RemoteControlRequestRouter {
             }
         case (.post, "/api/danger-confirmation"):
             return withAuthorizedRequest(request) {
-                dangerConfirmationResponse()
+                dangerConfirmationResponse(for: request)
             }
         case (.post, "/api/session/close"):
             return withAuthorizedRequest(request) {
@@ -87,40 +87,28 @@ struct RemoteControlRequestRouter {
         return .jsonData(statusCode: 200, data)
     }
 
-    private func dangerConfirmationResponse() -> RemoteControlHTTPResponse {
-        guard let challenge = dangerConfirmationIssuer() else {
-            return rejectionResponse(.remoteDisabled)
-        }
-
-        return .json(statusCode: 202, [
-            ("nonce", challenge.nonce),
-            ("issuedAt", challenge.issuedAt.timeIntervalSince1970),
-            ("expiresAt", challenge.expiresAt.timeIntervalSince1970),
-            ("minimumHoldDuration", RemoteControlCommandPolicy.minimumDangerHoldDuration)
-        ])
-    }
-
-    private func commandResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
+    private func dangerConfirmationResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
         guard let payload = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
-              let idText = payload["id"] as? String,
-              let id = UUID(uuidString: idText),
               let kindText = payload["kind"] as? String else {
-            return .json(statusCode: 400, [("error", "invalidCommandJSON")])
+            return .json(statusCode: 400, [("error", "invalidDangerConfirmationJSON")])
         }
 
         switch RemoteControlCommandPolicy.resolveKind(kindText) {
         case .allowed(let kind):
-            let command = RemoteControlCommand(
-                id: id,
-                kind: kind,
-                confirmation: dangerConfirmation(from: payload)
-            )
-            return commandExecutionResponse(
-                RemoteControlCommandPolicy.validate(
-                    command,
-                    context: commandContextProvider()
-                )
-            )
+            guard kind.isDangerous else {
+                return rejectionResponse(.dangerConfirmationNotRequired)
+            }
+
+            guard let challenge = dangerConfirmationIssuer(kind) else {
+                return rejectionResponse(.remoteDisabled)
+            }
+
+            return .json(statusCode: 202, [
+                ("nonce", challenge.nonce),
+                ("issuedAt", challenge.issuedAt.timeIntervalSince1970),
+                ("expiresAt", challenge.expiresAt.timeIntervalSince1970),
+                ("minimumHoldDuration", RemoteControlCommandPolicy.minimumDangerHoldDuration)
+            ])
         case .rejected(let rejection):
             return rejectionResponse(rejection)
         }
@@ -155,6 +143,32 @@ struct RemoteControlRequestRouter {
         }
     }
 
+    private func commandResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
+        guard let payload = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
+              let idText = payload["id"] as? String,
+              let id = UUID(uuidString: idText),
+              let kindText = payload["kind"] as? String else {
+            return .json(statusCode: 400, [("error", "invalidCommandJSON")])
+        }
+
+        switch RemoteControlCommandPolicy.resolveKind(kindText) {
+        case .allowed(let kind):
+            let command = RemoteControlCommand(
+                id: id,
+                kind: kind,
+                confirmation: dangerConfirmation(from: payload)
+            )
+            return commandExecutionResponse(
+                RemoteControlCommandPolicy.validate(
+                    command,
+                    context: commandContextProvider()
+                )
+            )
+        case .rejected(let rejection):
+            return rejectionResponse(rejection)
+        }
+    }
+
     private func rejectionResponse(
         _ rejection: RemoteControlCommandRejection
     ) -> RemoteControlHTTPResponse {
@@ -172,7 +186,10 @@ struct RemoteControlRequestRouter {
              .missingDangerConfirmation,
              .unknownDangerConfirmation,
              .expiredDangerConfirmation,
-             .insufficientDangerHoldDuration:
+             .consumedDangerConfirmation,
+             .mismatchedDangerConfirmationKind,
+             .insufficientDangerHoldDuration,
+             .dangerConfirmationNotRequired:
             return 409
         }
     }
@@ -189,8 +206,14 @@ struct RemoteControlRequestRouter {
             return "unknownDangerConfirmation"
         case .expiredDangerConfirmation:
             return "expiredDangerConfirmation"
+        case .consumedDangerConfirmation:
+            return "consumedDangerConfirmation"
+        case .mismatchedDangerConfirmationKind:
+            return "mismatchedDangerConfirmationKind"
         case .insufficientDangerHoldDuration:
             return "insufficientDangerHoldDuration"
+        case .dangerConfirmationNotRequired:
+            return "dangerConfirmationNotRequired"
         case .forbiddenConfigurationCommand:
             return "forbiddenConfigurationCommand"
         case .commandNotInRemoteMVP:
@@ -202,12 +225,11 @@ struct RemoteControlRequestRouter {
 
     private func dangerConfirmation(from payload: [String: Any]) -> RemoteDangerConfirmation? {
         guard let object = payload["confirmation"] as? [String: Any],
-              let nonce = object["nonce"] as? String,
-              let holdDuration = object["holdDuration"] as? Double else {
+              let nonce = object["nonce"] as? String else {
             return nil
         }
 
-        return RemoteDangerConfirmation(nonce: nonce, holdDuration: holdDuration)
+        return RemoteDangerConfirmation(nonce: nonce)
     }
 
     private func isSafePath(_ path: String) -> Bool {

@@ -57,7 +57,10 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("setTimeout"))
         XCTAssertTrue(javascript.contains("clearTimeout"))
         XCTAssertTrue(javascript.contains("/api/danger-confirmation"))
-        XCTAssertTrue(javascript.contains("holdDuration"))
+        XCTAssertTrue(javascript.contains("issueDangerConfirmation(button.dataset.command)"))
+        XCTAssertTrue(javascript.contains(#"body: JSON.stringify({ kind })"#))
+        XCTAssertTrue(javascript.contains("nonce: challenge.nonce"))
+        XCTAssertFalse(javascript.contains("holdDuration"))
     }
 
     func testJavascriptReadsFragmentTokenPollsSnapshotAndPostsCommands() {

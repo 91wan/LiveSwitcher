@@ -444,11 +444,11 @@ enum RemoteControlStaticPage {
       await refreshSnapshot();
     }
 
-    async function issueDangerConfirmation() {
+    async function issueDangerConfirmation(kind) {
       const response = await fetch("/api/danger-confirmation", {
         method: "POST",
         headers: headers("application/json"),
-        body: "{}"
+        body: JSON.stringify({ kind })
       });
       if (!response.ok) {
         throw new Error("danger confirmation failed");
@@ -461,6 +461,7 @@ enum RemoteControlStaticPage {
         clearTimeout(button.holdTimer);
       }
       button.holdTimer = null;
+      button.holdActive = false;
       button.classList.remove("is-holding");
     }
 
@@ -472,23 +473,38 @@ enum RemoteControlStaticPage {
       event.preventDefault();
       clearDangerHold(button);
 
-      const startedAt = Date.now();
       const holdMS = Number(button.dataset.holdMs || 1200);
       button.classList.add("is-holding");
+      button.holdActive = true;
       button.setPointerCapture?.(event.pointerId);
-      button.holdTimer = setTimeout(async () => {
-        try {
-          const challenge = await issueDangerConfirmation();
-          await sendCommand(button.dataset.command, {
-            nonce: challenge.nonce,
-            holdDuration: (Date.now() - startedAt) / 1000
-          });
-        } catch (error) {
+      const startedAt = Date.now();
+      issueDangerConfirmation(button.dataset.command)
+        .then((challenge) => {
+          if (!button.holdActive) {
+            return;
+          }
+          const serverHoldMS = Number(challenge.minimumHoldDuration || 1) * 1000;
+          const requiredHoldMS = Math.max(holdMS, serverHoldMS);
+          const elapsedMS = Date.now() - startedAt;
+          button.holdTimer = setTimeout(async () => {
+            if (!button.holdActive) {
+              return;
+            }
+            try {
+              await sendCommand(button.dataset.command, {
+                nonce: challenge.nonce
+              });
+            } catch (error) {
+              setReconnect(true);
+            } finally {
+              clearDangerHold(button);
+            }
+          }, Math.max(0, requiredHoldMS - elapsedMS));
+        })
+        .catch(() => {
           setReconnect(true);
-        } finally {
           clearDangerHold(button);
-        }
-      }, holdMS);
+        });
     }
 
     commandButtons.forEach((button) => {
