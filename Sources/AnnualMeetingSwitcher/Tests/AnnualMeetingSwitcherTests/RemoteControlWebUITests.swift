@@ -79,12 +79,15 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("reconnect"))
     }
 
-    func testNonDangerButtonsUsePointerActivationForPhoneTaps() {
+    func testNonDangerButtonsUseTouchAndClickFallbackActivationForPhoneTaps() {
         let javascript = RemoteControlStaticPage.javascript
 
         XCTAssertTrue(javascript.contains("function activateCommandButton(button, event)"))
+        XCTAssertTrue(javascript.contains("button.lastActivatedAt"))
+        XCTAssertTrue(javascript.contains("Date.now() - lastActivatedAt < 350"))
         XCTAssertTrue(javascript.contains(#"button.addEventListener("pointerup", (event) => activateCommandButton(button, event))"#))
-        XCTAssertTrue(javascript.contains(#"button.addEventListener("click", (event) => event.preventDefault())"#))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("touchend", (event) => activateCommandButton(button, event))"#))
+        XCTAssertTrue(javascript.contains(#"button.addEventListener("click", (event) => activateCommandButton(button, event))"#))
         XCTAssertFalse(javascript.contains(#"button.addEventListener("click", () => {"#))
     }
 
@@ -110,6 +113,15 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("updateButtonStates(data, true)"))
         XCTAssertTrue(javascript.contains(#"clientRole !== "controller""#))
         XCTAssertFalse(javascript.contains(#"snapshot.hidden = true"#))
+    }
+
+    func testCommandsWaitForControllerClaimBeforePosting() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("async function sendCommand(kind, confirmation)"))
+        XCTAssertTrue(javascript.contains("await claimSession();"))
+        XCTAssertTrue(javascript.contains(#"if (clientRole !== "controller")"#))
+        XCTAssertTrue(javascript.contains(#"return;"#))
     }
 
     func testStaticPageDoesNotIntroduceBuildStepOrExternalRuntimeReferences() {

@@ -484,6 +484,13 @@ enum RemoteControlStaticPage {
     }
 
     async function sendCommand(kind, confirmation) {
+      await claimSession();
+      if (clientRole !== "controller") {
+        readOnlyBanner.hidden = false;
+        updateButtonStates(null, false);
+        return;
+      }
+
       const payload = { id: commandID(), kind };
       if (confirmation) {
         payload.confirmation = confirmation;
@@ -516,6 +523,11 @@ enum RemoteControlStaticPage {
 
     function activateCommandButton(button, event) {
       event?.preventDefault();
+      const lastActivatedAt = Number(button.lastActivatedAt || 0);
+      if (Date.now() - lastActivatedAt < 350) {
+        return;
+      }
+      button.lastActivatedAt = Date.now();
       if (!button.disabled) {
         sendCommand(button.dataset.command);
       }
@@ -583,7 +595,8 @@ enum RemoteControlStaticPage {
       }
 
       button.addEventListener("pointerup", (event) => activateCommandButton(button, event));
-      button.addEventListener("click", (event) => event.preventDefault());
+      button.addEventListener("touchend", (event) => activateCommandButton(button, event));
+      button.addEventListener("click", (event) => activateCommandButton(button, event));
     });
 
     setInterval(refreshSnapshot, 1000);
