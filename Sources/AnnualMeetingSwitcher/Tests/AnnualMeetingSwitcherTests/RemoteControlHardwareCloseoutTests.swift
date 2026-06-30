@@ -37,6 +37,22 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Dangerous actions require long-press plus server confirmation nonce."))
     }
 
+    func testPhoneLANRemoteHardwareResultsRecordOperatorAcceptedMatrix() throws {
+        let document = try hardwareResultsDocument()
+        let rows = hardwareMatrixRows(in: document)
+
+        XCTAssertTrue(document.contains("# Phone LAN Remote Hardware Results - v0.6.0 PR-6"))
+        XCTAssertTrue(document.localizedStandardContains("Operator acceptance"))
+        XCTAssertTrue(document.localizedStandardContains("Automated tests are not hardware evidence."))
+        XCTAssertFalse(document.localizedStandardContains("PASS from automated tests"))
+
+        XCTAssertEqual(rows.count, expectedHardwareRows.count)
+        for expectedRow in expectedHardwareRows where expectedRow != "Android Chrome connects by QR" {
+            XCTAssertEqual(rows[expectedRow], "PASS", expectedRow)
+        }
+        XCTAssertEqual(rows["Android Chrome connects by QR"], "BLOCKED")
+    }
+
     private var expectedHardwareRows: [String] {
         [
             "Dedicated 5GHz router, iPhone Safari connects by QR",
@@ -60,7 +76,17 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
 
     private func hardwareMatrixRows(in document: String) -> [String: String] {
         var rows: [String: String] = [:]
+        var isInHardwareMatrix = false
         for line in document.split(separator: "\n").map(String.init) {
+            if line == "## Hardware Matrix" {
+                isInHardwareMatrix = true
+                continue
+            }
+            if isInHardwareMatrix, line.hasPrefix("## ") {
+                break
+            }
+            guard isInHardwareMatrix else { continue }
+
             let cells = line
                 .split(separator: "|", omittingEmptySubsequences: false)
                 .dropFirst()
@@ -79,6 +105,13 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
     private func rehearsalDocument() throws -> String {
         try String(
             contentsOf: repositoryRoot().appendingPathComponent("docs/qa/phone-lan-remote-rehearsal.md"),
+            encoding: .utf8
+        )
+    }
+
+    private func hardwareResultsDocument() throws -> String {
+        try String(
+            contentsOf: repositoryRoot().appendingPathComponent("docs/qa/phone-lan-remote-hardware-results-v0.6.0.md"),
             encoding: .utf8
         )
     }
