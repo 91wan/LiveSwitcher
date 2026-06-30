@@ -16,6 +16,24 @@ struct RemoteControlClientID: Codable, Equatable, Hashable {
     var value: String
 }
 
+enum RemoteControlClientIDPolicy {
+    private static let lengthRange = 8...80
+    private static let allowedCharacters = CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-")
+
+    static func normalized(_ value: String?) -> RemoteControlClientID? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              lengthRange.contains(trimmed.count) else {
+            return nil
+        }
+
+        guard trimmed.unicodeScalars.allSatisfy({ allowedCharacters.contains($0) }) else {
+            return nil
+        }
+
+        return RemoteControlClientID(value: trimmed)
+    }
+}
+
 enum RemoteControlClientRole: String, Codable {
     case controller
     case readOnly
@@ -30,6 +48,7 @@ enum RemoteControlSessionClaimResult: Equatable {
 struct RemoteDangerConfirmationChallenge: Equatable {
     var nonce: String
     var commandKind: RemoteControlCommandKind
+    var clientID: RemoteControlClientID? = nil
     var issuedAt: Date
     var expiresAt: Date
     var consumedAt: Date?
@@ -87,6 +106,7 @@ struct RemoteControlSessionStore {
     mutating func issueDangerConfirmation(
         nonce: String,
         commandKind: RemoteControlCommandKind,
+        clientID: RemoteControlClientID?,
         now: Date,
         ttl: TimeInterval
     ) -> RemoteDangerConfirmationChallenge {
@@ -94,6 +114,7 @@ struct RemoteControlSessionStore {
         let challenge = RemoteDangerConfirmationChallenge(
             nonce: nonce,
             commandKind: commandKind,
+            clientID: clientID,
             issuedAt: now,
             expiresAt: expiresAt,
             consumedAt: nil

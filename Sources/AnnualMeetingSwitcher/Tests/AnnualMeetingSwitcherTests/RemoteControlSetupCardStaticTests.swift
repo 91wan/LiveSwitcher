@@ -106,20 +106,22 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         let harness = RemoteControlSetupHarness()
         harness.viewModel.remoteControlSetup.enable()
 
+        let claimBody = #"{"clientID":"phone-a-1"}"#
         _ = harness.createdListeners.first?.respond(to: """
         POST /api/session/claim HTTP/1.1\r
         Authorization: Bearer token-1\r
-        Content-Length: 22\r
+        Content-Length: \(claimBody.utf8.count)\r
         \r
-        {"clientID":"phone-a"}
+        \(claimBody)
         """)
+        let commandBody = #"{"id":"11111111-1111-1111-1111-111111111111","kind":"takeNext"}"#
         let response = harness.createdListeners.first?.respond(to: """
         POST /api/command HTTP/1.1\r
         Authorization: Bearer token-1\r
-        X-Remote-Client-ID: phone-a\r
-        Content-Length: 65\r
+        X-Remote-Client-ID: phone-a-1\r
+        Content-Length: \(commandBody.utf8.count)\r
         \r
-        {"id":"11111111-1111-1111-1111-111111111111","kind":"takeNext"}
+        \(commandBody)
         """)
 
         XCTAssertTrue(response?.contains("HTTP/1.1 202 Accepted") == true)
@@ -133,12 +135,22 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         let harness = RemoteControlSetupHarness()
         harness.viewModel.remoteControlSetup.enable()
 
+        let claimBody = #"{"clientID":"phone-a-1"}"#
+        _ = harness.createdListeners.first?.respond(to: """
+        POST /api/session/claim HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: \(claimBody.utf8.count)\r
+        \r
+        \(claimBody)
+        """)
+        let closeBody = "{}"
         let response = harness.createdListeners.first?.respond(to: """
         POST /api/session/close HTTP/1.1\r
         Authorization: Bearer token-1\r
-        Content-Length: 2\r
+        X-Remote-Client-ID: phone-a-1\r
+        Content-Length: \(closeBody.utf8.count)\r
         \r
-        {}
+        \(closeBody)
         """)
         await Task.yield()
 

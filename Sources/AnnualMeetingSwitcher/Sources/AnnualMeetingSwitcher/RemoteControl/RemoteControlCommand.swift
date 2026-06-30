@@ -82,6 +82,7 @@ struct RemoteControlCommandValidationContext: Equatable {
     var isRemoteEnabled: Bool
     var acceptedCommandIDs: Set<UUID>
     var dangerConfirmationChallenges: [String: RemoteDangerConfirmationChallenge]
+    var clientID: RemoteControlClientID? = nil
     var now: Date
 }
 
@@ -110,6 +111,7 @@ enum RemoteControlCommandRejection: Equatable {
     case unknownCommand
     case missingControllerClientID
     case clientNotController
+    case mismatchedDangerConfirmationClient
 }
 
 enum RemoteControlCommandPolicy {
@@ -158,6 +160,10 @@ enum RemoteControlCommandPolicy {
 
             guard challenge.commandKind == command.kind else {
                 return .rejected(.mismatchedDangerConfirmationKind)
+            }
+
+            guard challenge.clientID == nil || challenge.clientID == context.clientID else {
+                return .rejected(.mismatchedDangerConfirmationClient)
             }
 
             guard context.now <= challenge.expiresAt else {

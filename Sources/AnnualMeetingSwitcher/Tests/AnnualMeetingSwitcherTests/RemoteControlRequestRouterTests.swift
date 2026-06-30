@@ -105,25 +105,50 @@ final class RemoteControlRequestRouterTests: XCTestCase {
     func testDangerConfirmationRouteRequiresAuthAndDangerousKindThenIssuesBoundNonce() {
         var issuedKinds: [RemoteControlCommandKind] = []
         var issuedNonceCount = 0
-        let router = router(dangerConfirmationIssuer: { kind in
+        let router = router(dangerConfirmationIssuer: { kind, clientID in
             issuedKinds.append(kind)
+            XCTAssertEqual(clientID, RemoteControlClientID(value: "phone-a-1"))
             issuedNonceCount += 1
             return RemoteDangerConfirmationChallenge(
                 nonce: "nonce-1",
                 commandKind: kind,
+                clientID: clientID,
                 issuedAt: Date(timeIntervalSince1970: 100),
                 expiresAt: Date(timeIntervalSince1970: 105),
                 consumedAt: nil
             )
-        })
+        }, requiresControllerClientID: true, canExecuteCommandFromClient: { $0.value == "phone-a-1" })
 
         let unauthorized = router.route(.post("/api/danger-confirmation"))
         XCTAssertEqual(unauthorized.statusCode, 401)
         XCTAssertEqual(issuedNonceCount, 0)
 
-        let response = router.route(.post(
+        let missingClient = router.route(.post(
             "/api/danger-confirmation",
             headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"kind":"togglePanic"}"#.utf8)
+        ))
+        XCTAssertEqual(missingClient.statusCode, 403)
+        XCTAssertTrue(missingClient.bodyText.contains("missingControllerClientID"))
+
+        let readOnly = router.route(.post(
+            "/api/danger-confirmation",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-b-1"
+            ],
+            body: Data(#"{"kind":"togglePanic"}"#.utf8)
+        ))
+        XCTAssertEqual(readOnly.statusCode, 403)
+        XCTAssertTrue(readOnly.bodyText.contains("clientNotController"))
+        XCTAssertEqual(issuedNonceCount, 0)
+
+        let response = router.route(.post(
+            "/api/danger-confirmation",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-a-1"
+            ],
             body: Data(#"{"kind":"togglePanic"}"#.utf8)
         ))
 
@@ -137,7 +162,10 @@ final class RemoteControlRequestRouterTests: XCTestCase {
 
         let safeKind = router.route(.post(
             "/api/danger-confirmation",
-            headers: ["Authorization": "Bearer token-1"],
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-a-1"
+            ],
             body: Data(#"{"kind":"takeNext"}"#.utf8)
         ))
 
@@ -214,20 +242,46 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertTrue(executedCommands.isEmpty)
     }
 
-    func testSessionCloseRouteRequiresAuthAndInvokesCloseHandler() {
+    func testSessionCloseRouteRequiresAuthAndControllerClientWhenConfigured() {
         var closeCallCount = 0
-        let router = router(sessionCloseHandler: {
-            closeCallCount += 1
-            return .closed
-        })
+        let router = router(
+            sessionCloseHandler: {
+                closeCallCount += 1
+                return .closed
+            },
+            requiresControllerClientID: true,
+            canExecuteCommandFromClient: { $0.value == "phone-a-1" }
+        )
 
         let unauthorized = router.route(.post("/api/session/close"))
         XCTAssertEqual(unauthorized.statusCode, 401)
         XCTAssertEqual(closeCallCount, 0)
 
-        let response = router.route(.post(
+        let missingClient = router.route(.post(
             "/api/session/close",
             headers: ["Authorization": "Bearer token-1"]
+        ))
+        XCTAssertEqual(missingClient.statusCode, 403)
+        XCTAssertTrue(missingClient.bodyText.contains("missingControllerClientID"))
+        XCTAssertEqual(closeCallCount, 0)
+
+        let readOnly = router.route(.post(
+            "/api/session/close",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-b-1"
+            ]
+        ))
+        XCTAssertEqual(readOnly.statusCode, 403)
+        XCTAssertTrue(readOnly.bodyText.contains("clientNotController"))
+        XCTAssertEqual(closeCallCount, 0)
+
+        let response = router.route(.post(
+            "/api/session/close",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-a-1"
+            ]
         ))
 
         XCTAssertEqual(response.statusCode, 202)
@@ -241,12 +295,12 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         var claimedIDs: [RemoteControlClientID] = []
         let router = router(sessionClaimHandler: { clientID in
             claimedIDs.append(clientID)
-            return clientID.value == "phone-a" ? .controller : .readOnly
+            return clientID.value == "phone-a-1" ? .controller : .readOnly
         })
 
         let unauthorized = router.route(.post(
             "/api/session/claim",
-            body: Data(#"{"clientID":"phone-a"}"#.utf8)
+            body: Data(#"{"clientID":"phone-a-1"}"#.utf8)
         ))
         XCTAssertEqual(unauthorized.statusCode, 401)
         XCTAssertTrue(claimedIDs.isEmpty)
@@ -254,12 +308,12 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         let controller = router.route(.post(
             "/api/session/claim",
             headers: ["Authorization": "Bearer token-1"],
-            body: Data(#"{"clientID":"phone-a"}"#.utf8)
+            body: Data(#"{"clientID":"phone-a-1"}"#.utf8)
         ))
         let readOnly = router.route(.post(
             "/api/session/claim",
             headers: ["Authorization": "Bearer token-1"],
-            body: Data(#"{"clientID":"phone-b"}"#.utf8)
+            body: Data(#"{"clientID":"phone-b-1"}"#.utf8)
         ))
 
         XCTAssertEqual(controller.statusCode, 202)
@@ -272,9 +326,34 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertFalse(controller.bodyText.contains("token-1"))
         XCTAssertFalse(readOnly.bodyText.contains("token-1"))
         XCTAssertEqual(claimedIDs, [
-            RemoteControlClientID(value: "phone-a"),
-            RemoteControlClientID(value: "phone-b")
+            RemoteControlClientID(value: "phone-a-1"),
+            RemoteControlClientID(value: "phone-b-1")
         ])
+    }
+
+    func testSessionClaimRejectsMalformedClientIDsWithoutEchoingRawValue() {
+        var claimedIDs: [RemoteControlClientID] = []
+        let router = router(sessionClaimHandler: { clientID in
+            claimedIDs.append(clientID)
+            return .controller
+        })
+
+        for rawClientID in ["", "   ", "short", "phone\nclient", String(repeating: "a", count: 81)] {
+            let body = #"{"clientID":"\#(rawClientID)"}"#.data(using: .utf8)!
+            let response = router.route(.post(
+                "/api/session/claim",
+                headers: ["Authorization": "Bearer token-1"],
+                body: body
+            ))
+
+            XCTAssertEqual(response.statusCode, 400)
+            XCTAssertTrue(response.bodyText.contains("invalidSessionClaimJSON"))
+            if !rawClientID.isEmpty {
+                XCTAssertFalse(response.bodyText.contains(rawClientID))
+            }
+        }
+
+        XCTAssertTrue(claimedIDs.isEmpty)
     }
 
     func testCommandRouteRequiresClaimedControllerClientWhenConfigured() {
@@ -282,7 +361,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         var executedCommands: [RemoteControlAcceptedCommand] = []
         let router = router(
             requiresControllerClientID: true,
-            canExecuteCommandFromClient: { $0 == RemoteControlClientID(value: "phone-a") },
+            canExecuteCommandFromClient: { $0 == RemoteControlClientID(value: "phone-a-1") },
             commandExecutor: { command in
                 executedCommands.append(command)
                 return .executed(RemoteControlCommandExecutionRecord(command: command))
@@ -299,7 +378,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
             "/api/command",
             headers: [
                 "Authorization": "Bearer token-1",
-                "X-Remote-Client-ID": "phone-b"
+                "X-Remote-Client-ID": "phone-b-1"
             ],
             body: body
         ))
@@ -307,7 +386,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
             "/api/command",
             headers: [
                 "Authorization": "Bearer token-1",
-                "X-Remote-Client-ID": "phone-a"
+                "X-Remote-Client-ID": "phone-a-1"
             ],
             body: body
         ))
@@ -323,7 +402,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
         context: RemoteControlCommandValidationContext? = nil,
-        dangerConfirmationIssuer: @escaping (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil },
+        dangerConfirmationIssuer: @escaping (RemoteControlCommandKind, RemoteControlClientID?) -> RemoteDangerConfirmationChallenge? = { _, _ in nil },
         sessionCloseHandler: @escaping () -> RemoteControlSessionCloseResult = { .remoteDisabled },
         sessionClaimHandler: @escaping (RemoteControlClientID) -> RemoteControlSessionClaimResult = { _ in .remoteDisabled },
         requiresControllerClientID: Bool = false,

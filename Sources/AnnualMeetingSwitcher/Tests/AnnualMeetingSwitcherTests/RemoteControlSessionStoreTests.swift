@@ -2,6 +2,19 @@ import XCTest
 @testable import LiveSwitcher
 
 final class RemoteControlSessionStoreTests: XCTestCase {
+    func testClientIDPolicyAcceptsSafeIDsAndRejectsMalformedValues() {
+        let uuid = "00000000-0000-4000-8000-000000000001"
+
+        XCTAssertEqual(RemoteControlClientIDPolicy.normalized(uuid), RemoteControlClientID(value: uuid))
+        XCTAssertEqual(RemoteControlClientIDPolicy.normalized(" phone-A_1 "), RemoteControlClientID(value: "phone-A_1"))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized(""))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized("   "))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized("short"))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized("phone\nclient"))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized(String(repeating: "a", count: 81)))
+        XCTAssertNil(RemoteControlClientIDPolicy.normalized("phone<script>"))
+    }
+
     func testFirstClientClaimsControllerAndSameClientCanReclaim() {
         var store = RemoteControlSessionStore()
         let clientID = RemoteControlClientID(value: "phone-a")

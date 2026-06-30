@@ -104,6 +104,7 @@ final class RemoteControlServerLifecycleTests: XCTestCase {
     func testSessionCloseRequestDisablesServerAndInvalidatesOldToken() throws {
         let harness = ServerHarness()
         _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionClaimRequest(token: "token-1")))
 
         let closeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(token: "token-1")))
 
@@ -121,6 +122,34 @@ final class RemoteControlServerLifecycleTests: XCTestCase {
         XCTAssertTrue(oldTokenSnapshot.contains(#""error":"invalidAuthorization""#))
         XCTAssertFalse(oldTokenSnapshot.contains("Opening"))
         XCTAssertFalse(oldTokenSnapshot.contains("token-1"))
+    }
+
+    func testSessionCloseRequiresControllerClientAndLeavesReadOnlySessionEnabled() throws {
+        let harness = ServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        _ = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionClaimRequest(token: "token-1", clientID: "phone-a-1")))
+        _ = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionClaimRequest(token: "token-1", clientID: "phone-b-1")))
+
+        let missingClient = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(
+            token: "token-1",
+            clientID: nil
+        )))
+        let readOnlyClient = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawSessionCloseRequest(
+            token: "token-1",
+            clientID: "phone-b-1"
+        )))
+        let controllerCommand = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawCommandRequest(
+            token: "token-1",
+            id: UUID(uuidString: "33333333-3333-3333-3333-333333333333")!,
+            clientID: "phone-a-1"
+        )))
+
+        XCTAssertTrue(missingClient.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(missingClient.contains(#""error":"missingControllerClientID""#))
+        XCTAssertTrue(readOnlyClient.contains("HTTP/1.1 403 Forbidden"))
+        XCTAssertTrue(readOnlyClient.contains(#""error":"clientNotController""#))
+        XCTAssertTrue(controllerCommand.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(harness.server.isEnabled)
     }
 
     func testSessionCloseClearsAcceptedCommandIDsAndDangerConfirmations() throws {
@@ -284,17 +313,19 @@ private func rawSnapshotRequest(token: String) -> String {
     """
 }
 
-private func rawSessionCloseRequest(token: String) -> String {
-    """
+private func rawSessionCloseRequest(token: String, clientID: String? = "phone-a-1") -> String {
+    let clientHeader = clientID.map { "X-Remote-Client-ID: \($0)\r\n" } ?? ""
+    return """
     POST /api/session/close HTTP/1.1\r
     Authorization: Bearer \(token)\r
+    \(clientHeader)\
     Content-Length: 2\r
     \r
     {}
     """
 }
 
-private func rawSessionClaimRequest(token: String, clientID: String = "phone-a") -> String {
+private func rawSessionClaimRequest(token: String, clientID: String = "phone-a-1") -> String {
     let body = #"{"clientID":"\#(clientID)"}"#
     return """
     POST /api/session/claim HTTP/1.1\r
@@ -309,7 +340,7 @@ private func rawCommandRequest(
     token: String,
     id: UUID,
     kind: String = "takeNext",
-    clientID: String = "phone-a"
+    clientID: String = "phone-a-1"
 ) -> String {
     let body = #"{"id":"\#(id.uuidString)","kind":"\#(kind)"}"#
     return """
@@ -322,18 +353,19 @@ private func rawCommandRequest(
     """
 }
 
-private func rawDangerConfirmationRequest(token: String) -> String {
+private func rawDangerConfirmationRequest(token: String, clientID: String = "phone-a-1") -> String {
     let body = #"{"kind":"togglePanic"}"#
     return """
     POST /api/danger-confirmation HTTP/1.1\r
     Authorization: Bearer \(token)\r
+    X-Remote-Client-ID: \(clientID)\r
     Content-Length: \(body.utf8.count)\r
     \r
     \(body)
     """
 }
 
-private func rawDangerousCommandRequest(token: String, nonce: String, clientID: String = "phone-a") -> String {
+private func rawDangerousCommandRequest(token: String, nonce: String, clientID: String = "phone-a-1") -> String {
     let body = #"{"id":"22222222-2222-2222-2222-222222222222","kind":"togglePanic","confirmation":{"nonce":"\#(nonce)"}}"#
     return """
     POST /api/command HTTP/1.1\r

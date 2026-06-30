@@ -143,8 +143,8 @@ final class RemoteControlServer {
                 commandContextProvider: {
                     self?.commandValidationContext() ?? Self.disabledCommandContext()
                 },
-                dangerConfirmationIssuer: { kind in
-                    self?.issueDangerConfirmation(kind: kind)
+                dangerConfirmationIssuer: { kind, clientID in
+                    self?.issueDangerConfirmation(kind: kind, clientID: clientID)
                 },
                 sessionCloseHandler: {
                     guard self?.isEnabled == true else {
@@ -190,7 +190,10 @@ final class RemoteControlServer {
         return context
     }
 
-    private func issueDangerConfirmation(kind: RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? {
+    private func issueDangerConfirmation(
+        kind: RemoteControlCommandKind,
+        clientID: RemoteControlClientID?
+    ) -> RemoteDangerConfirmationChallenge? {
         guard isEnabled else {
             return nil
         }
@@ -198,6 +201,7 @@ final class RemoteControlServer {
         return sessionStore.issueDangerConfirmation(
             nonce: UUID().uuidString,
             commandKind: kind,
+            clientID: clientID,
             now: commandContextProvider().now,
             ttl: 5
         )

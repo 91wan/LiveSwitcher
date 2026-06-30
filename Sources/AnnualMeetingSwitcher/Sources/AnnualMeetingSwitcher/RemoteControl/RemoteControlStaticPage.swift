@@ -50,6 +50,7 @@ enum RemoteControlStaticPage {
         </section>
 
         <p id="disabled-reason" class="disabled-reason" hidden></p>
+        <p id="command-status" class="command-status" role="status">最近命令：待命</p>
 
         <section class="control-section" aria-label="节目控制">
           <button class="command-button primary" data-command="takeNext">
@@ -187,13 +188,28 @@ enum RemoteControlStaticPage {
     }
 
     .reconnect-banner,
-    .disabled-reason {
+    .disabled-reason,
+    .command-status {
       border: 1px solid rgba(250, 204, 21, 0.38);
       border-radius: 16px;
       padding: 12px 14px;
       background: rgba(113, 63, 18, 0.44);
       color: #fde68a;
       font-weight: 800;
+    }
+
+    .command-status {
+      margin: 0;
+      border-color: rgba(96, 165, 250, 0.34);
+      background: rgba(30, 50, 74, 0.58);
+      color: #bfdbfe;
+      font-size: 0.95rem;
+    }
+
+    .command-status.is-error {
+      border-color: rgba(248, 113, 113, 0.5);
+      background: rgba(69, 26, 26, 0.58);
+      color: #fecaca;
     }
 
     .reconnect-banner[hidden],
@@ -319,7 +335,7 @@ enum RemoteControlStaticPage {
 
     static let javascript = """
     const token = new URLSearchParams(location.hash.slice(1)).get("token") || "";
-    const clientIDStorageKey = "LiveSwitcher.remote.clientID";
+    const clientIDStorageKey = "LiveSwitcher.remote.controllerClientID";
     const clientID = storedClientID();
     let clientRole = "pending";
     let claimPromise = null;
@@ -328,15 +344,16 @@ enum RemoteControlStaticPage {
     const readOnlyBanner = document.querySelector("#read-only-banner");
     const connectionState = document.querySelector("#connection-state");
     const disabledReason = document.querySelector("#disabled-reason");
+    const commandStatus = document.querySelector("#command-status");
 
     function storedClientID() {
       try {
-        const existing = localStorage.getItem(clientIDStorageKey);
+        const existing = sessionStorage.getItem(clientIDStorageKey);
         if (existing) {
           return existing;
         }
         const value = commandID();
-        localStorage.setItem(clientIDStorageKey, value);
+        sessionStorage.setItem(clientIDStorageKey, value);
         return value;
       } catch (error) {
         return commandID();
@@ -359,11 +376,43 @@ enum RemoteControlStaticPage {
       }
     }
 
-    function commandID() {
+    function setCommandStatus(message, isError = false) {
+      commandStatus.textContent = message;
+      commandStatus.classList.toggle("is-error", isError);
+    }
+
+    function commandFailureCopy(errorCode) {
+      switch (errorCode) {
+      case "clientNotController":
+      case "missingControllerClientID":
+        return "只读连接，不能控制";
+      default:
+        return `命令失败：${errorCode}`;
+      }
+    }
+
+    function uuidV4() {
       if (window.crypto && crypto.randomUUID) {
         return crypto.randomUUID();
       }
-      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+      const bytes = new Uint8Array(16);
+      if (window.crypto && crypto.getRandomValues) {
+        crypto.getRandomValues(bytes);
+      } else {
+        for (let index = 0; index < bytes.length; index += 1) {
+          bytes[index] = Math.floor(Math.random() * 256);
+        }
+      }
+
+      bytes[6] = (bytes[6] & 0x0f) | 0x40;
+      bytes[8] = (bytes[8] & 0x3f) | 0x80;
+      const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+      return `${hex[0]}${hex[1]}${hex[2]}${hex[3]}-${hex[4]}${hex[5]}-${hex[6]}${hex[7]}-${hex[8]}${hex[9]}-${hex[10]}${hex[11]}${hex[12]}${hex[13]}${hex[14]}${hex[15]}`;
+    }
+
+    function commandID() {
+      return uuidV4();
     }
 
     function connectionCopy(state) {
@@ -487,6 +536,7 @@ enum RemoteControlStaticPage {
       await claimSession();
       if (clientRole !== "controller") {
         readOnlyBanner.hidden = false;
+        setCommandStatus("只读连接，不能控制", true);
         updateButtonStates(null, false);
         return;
       }
@@ -496,26 +546,57 @@ enum RemoteControlStaticPage {
         payload.confirmation = confirmation;
       }
 
-      const response = await fetch("/api/command", {
-        method: "POST",
-        headers: headers("application/json"),
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
+      setCommandStatus("最近命令已发送");
+      let response;
+      try {
+        response = await fetch("/api/command", {
+          method: "POST",
+          headers: headers("application/json"),
+          body: JSON.stringify(payload)
+        });
+      } catch (error) {
+        setCommandStatus("网络断开", true);
         setReconnect(true);
         return;
       }
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const errorCode = payload.error || "unknown";
+        setCommandStatus(commandFailureCopy(errorCode), true);
+        if (errorCode === "clientNotController" || errorCode === "missingControllerClientID") {
+          readOnlyBanner.hidden = false;
+        }
+        return;
+      }
+      setCommandStatus("最近命令已执行");
       await refreshSnapshot();
     }
 
     async function issueDangerConfirmation(kind) {
-      const response = await fetch("/api/danger-confirmation", {
-        method: "POST",
-        headers: headers("application/json"),
-        body: JSON.stringify({ kind })
-      });
+      await claimSession();
+      if (clientRole !== "controller") {
+        readOnlyBanner.hidden = false;
+        setCommandStatus("只读连接，不能控制", true);
+        throw new Error("client is read only");
+      }
+
+      let response;
+      try {
+        response = await fetch("/api/danger-confirmation", {
+          method: "POST",
+          headers: headers("application/json"),
+          body: JSON.stringify({ kind })
+        });
+      } catch (error) {
+        setCommandStatus("网络断开", true);
+        setReconnect(true);
+        throw error;
+      }
       if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const errorCode = payload.error || "unknown";
+        setCommandStatus(commandFailureCopy(errorCode), true);
         throw new Error("danger confirmation failed");
       }
       return response.json();
