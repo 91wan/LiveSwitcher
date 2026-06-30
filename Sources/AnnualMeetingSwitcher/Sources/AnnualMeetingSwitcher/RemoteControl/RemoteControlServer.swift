@@ -319,13 +319,24 @@ private final class RemoteControlNWListener: RemoteControlListening {
                 return
             }
 
-            if let data, !data.isEmpty, let requestData = nextAccumulator.append(data) {
-                self.sendResponse(for: requestData, on: connection)
-                return
+            if let data, !data.isEmpty {
+                switch nextAccumulator.append(data) {
+                case .waiting:
+                    break
+                case .complete(let requestData):
+                    self.sendResponse(for: .complete(requestData), on: connection)
+                    return
+                case .malformed:
+                    self.sendResponse(for: .malformed, on: connection)
+                    return
+                case .oversized:
+                    self.sendResponse(for: .oversized, on: connection)
+                    return
+                }
             }
 
             if isComplete {
-                self.sendResponse(for: nil, on: connection)
+                self.sendResponse(for: .malformed, on: connection)
                 return
             }
 
@@ -333,15 +344,32 @@ private final class RemoteControlNWListener: RemoteControlListening {
         }
     }
 
-    private func sendResponse(for data: Data?, on connection: NWConnection) {
-        let responseData = responseData(for: data)
+    private func sendResponse(for result: RemoteControlHTTPRequestReceiveResult, on connection: NWConnection) {
+        let responseData = responseData(for: result)
         connection.send(content: responseData, completion: .contentProcessed { _ in
             connection.cancel()
         })
     }
 
-    private func responseData(for data: Data?) -> Data {
-        guard let data,
+    private func responseData(for result: RemoteControlHTTPRequestReceiveResult) -> Data {
+        switch result {
+        case .complete(let data):
+            return responseData(forCompleteRequest: data)
+        case .malformed:
+            return RemoteControlHTTPWireCodec.serialize(.json(
+                statusCode: 400,
+                [("error", "invalidRequest")]
+            ))
+        case .oversized:
+            return RemoteControlHTTPWireCodec.serialize(.json(
+                statusCode: 413,
+                [("error", "requestTooLarge")]
+            ))
+        }
+    }
+
+    private func responseData(forCompleteRequest data: Data) -> Data {
+        guard
               let rawRequest = String(data: data, encoding: .utf8),
               let requestHandler else {
             return RemoteControlHTTPWireCodec.serialize(.json(
@@ -354,6 +382,19 @@ private final class RemoteControlNWListener: RemoteControlListening {
     }
 }
 
+private enum RemoteControlHTTPRequestReceiveResult {
+    case complete(Data)
+    case malformed
+    case oversized
+}
+
+enum RemoteControlHTTPRequestAccumulationResult: Equatable {
+    case waiting
+    case complete(Data)
+    case malformed
+    case oversized
+}
+
 struct RemoteControlHTTPRequestAccumulator {
     private static let headerTerminator = Data("\r\n\r\n".utf8)
     private var buffer = Data()
@@ -363,33 +404,41 @@ struct RemoteControlHTTPRequestAccumulator {
         self.maxByteCount = maxByteCount
     }
 
-    mutating func append(_ data: Data) -> Data? {
+    mutating func append(_ data: Data) -> RemoteControlHTTPRequestAccumulationResult {
         buffer.append(data)
         if buffer.count > maxByteCount {
-            return buffer
+            return .oversized
         }
         return completeRequestData()
     }
 
-    private func completeRequestData() -> Data? {
+    private func completeRequestData() -> RemoteControlHTTPRequestAccumulationResult {
         guard let headerRange = buffer.range(of: Self.headerTerminator) else {
-            return nil
+            return .waiting
         }
 
         let bodyStartIndex = headerRange.upperBound
-        guard let contentLength = contentLength(in: buffer[..<headerRange.lowerBound]) else {
-            return Data(buffer[..<bodyStartIndex])
-        }
+        switch contentLength(in: buffer[..<headerRange.lowerBound]) {
+        case .absent:
+            return .complete(Data(buffer[..<bodyStartIndex]))
+        case .malformed:
+            return .malformed
+        case .valid(let contentLength):
+            guard bodyStartIndex <= maxByteCount,
+                  contentLength <= maxByteCount - bodyStartIndex else {
+                return .oversized
+            }
 
-        let expectedByteCount = bodyStartIndex + contentLength
-        guard buffer.count >= expectedByteCount else {
-            return nil
-        }
+            let expectedByteCount = bodyStartIndex + contentLength
+            guard buffer.count >= expectedByteCount else {
+                return .waiting
+            }
 
-        return Data(buffer[..<expectedByteCount])
+            return .complete(Data(buffer[..<expectedByteCount]))
+        }
     }
 
-    private func contentLength(in headerData: Data.SubSequence) -> Int? {
+    private func contentLength(in headerData: Data.SubSequence) -> ContentLength {
         let headerText = String(decoding: headerData, as: UTF8.self)
         for line in headerText.components(separatedBy: "\r\n") {
             guard let separator = line.firstIndex(of: ":") else {
@@ -400,9 +449,18 @@ struct RemoteControlHTTPRequestAccumulator {
                 continue
             }
             let value = line[line.index(after: separator)...].trimmingCharacters(in: .whitespacesAndNewlines)
-            return Int(value).flatMap { $0 >= 0 ? $0 : nil }
+            guard let length = Int(value), length >= 0 else {
+                return .malformed
+            }
+            return .valid(length)
         }
-        return nil
+        return .absent
+    }
+
+    private enum ContentLength {
+        case absent
+        case valid(Int)
+        case malformed
     }
 }
 
@@ -445,6 +503,8 @@ enum RemoteControlHTTPWireCodec {
             return "Method Not Allowed"
         case 409:
             return "Conflict"
+        case 413:
+            return "Payload Too Large"
         default:
             return "Internal Server Error"
         }
