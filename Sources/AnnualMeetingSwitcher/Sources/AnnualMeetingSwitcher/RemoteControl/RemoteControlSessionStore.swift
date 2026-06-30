@@ -12,6 +12,21 @@ struct RemoteControlSessionCloseResult: Equatable {
     static let remoteDisabled = RemoteControlSessionCloseResult(closed: false)
 }
 
+struct RemoteControlClientID: Codable, Equatable, Hashable {
+    var value: String
+}
+
+enum RemoteControlClientRole: String, Codable {
+    case controller
+    case readOnly
+}
+
+enum RemoteControlSessionClaimResult: Equatable {
+    case controller
+    case readOnly
+    case remoteDisabled
+}
+
 struct RemoteDangerConfirmationChallenge: Equatable {
     var nonce: String
     var commandKind: RemoteControlCommandKind
@@ -22,6 +37,7 @@ struct RemoteDangerConfirmationChallenge: Equatable {
 
 struct RemoteControlSessionStore {
     private(set) var activeSession: RemoteControlSession?
+    private(set) var controllerClientID: RemoteControlClientID?
     private(set) var acceptedCommandIDs: Set<UUID> = []
     private(set) var dangerConfirmationChallenges: [String: RemoteDangerConfirmationChallenge] = [:]
 
@@ -31,14 +47,33 @@ struct RemoteControlSessionStore {
 
     mutating func enable(token: RemoteControlToken, now: Date) {
         activeSession = RemoteControlSession(token: token, createdAt: now)
+        controllerClientID = nil
         acceptedCommandIDs.removeAll()
         dangerConfirmationChallenges.removeAll()
     }
 
     mutating func disable() {
         activeSession = nil
+        controllerClientID = nil
         acceptedCommandIDs.removeAll()
         dangerConfirmationChallenges.removeAll()
+    }
+
+    mutating func claimController(clientID: RemoteControlClientID) -> RemoteControlSessionClaimResult {
+        guard isEnabled else {
+            return .remoteDisabled
+        }
+
+        guard let currentController = controllerClientID else {
+            controllerClientID = clientID
+            return .controller
+        }
+
+        return currentController == clientID ? .controller : .readOnly
+    }
+
+    func canExecuteCommand(from clientID: RemoteControlClientID) -> Bool {
+        isEnabled && controllerClientID == clientID
     }
 
     mutating func markCommandIDIfNew(_ id: UUID) -> Bool {

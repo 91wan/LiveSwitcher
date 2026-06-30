@@ -153,6 +153,13 @@ final class RemoteControlServer {
                     shouldCloseSession = true
                     return .closed
                 },
+                sessionClaimHandler: { clientID in
+                    self?.sessionStore.claimController(clientID: clientID) ?? .remoteDisabled
+                },
+                requiresControllerClientID: true,
+                canExecuteCommandFromClient: { clientID in
+                    self?.sessionStore.canExecuteCommand(from: clientID) == true
+                },
                 commandExecutor: {
                     self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
                 }

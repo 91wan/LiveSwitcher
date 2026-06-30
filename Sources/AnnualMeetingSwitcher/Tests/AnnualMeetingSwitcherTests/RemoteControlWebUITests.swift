@@ -79,6 +79,30 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(javascript.contains("reconnect"))
     }
 
+    func testJavascriptClaimsSingleControllerAndPersistsClientID() {
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(javascript.contains("localStorage"))
+        XCTAssertTrue(javascript.contains("LiveSwitcher.remote.clientID"))
+        XCTAssertTrue(javascript.contains("/api/session/claim"))
+        XCTAssertTrue(javascript.contains("claimSession"))
+        XCTAssertTrue(javascript.contains("X-Remote-Client-ID"))
+        XCTAssertTrue(javascript.contains("clientID"))
+        XCTAssertTrue(javascript.contains("clientRole"))
+    }
+
+    func testReadOnlyClientDisablesCommandsButKeepsSnapshotVisible() {
+        let html = RemoteControlStaticPage.html
+        let javascript = RemoteControlStaticPage.javascript
+
+        XCTAssertTrue(html.contains("已有手机正在控制，本机只读"))
+        XCTAssertTrue(javascript.contains(#"clientRole === "readOnly""#))
+        XCTAssertTrue(javascript.contains("只读连接"))
+        XCTAssertTrue(javascript.contains("updateButtonStates(data, true)"))
+        XCTAssertTrue(javascript.contains(#"clientRole !== "controller""#))
+        XCTAssertFalse(javascript.contains(#"snapshot.hidden = true"#))
+    }
+
     func testStaticPageDoesNotIntroduceBuildStepOrExternalRuntimeReferences() {
         XCTAssertFalse(allStaticAssets.localizedStandardContains("<script src=\"https://"))
         XCTAssertFalse(allStaticAssets.localizedStandardContains("<link href=\"https://"))

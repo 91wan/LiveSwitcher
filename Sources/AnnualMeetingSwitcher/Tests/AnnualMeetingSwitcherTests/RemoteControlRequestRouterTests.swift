@@ -237,11 +237,97 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertEqual(closeCallCount, 1)
     }
 
+    func testSessionClaimRouteRequiresAuthAndRejectsSecondController() {
+        var claimedIDs: [RemoteControlClientID] = []
+        let router = router(sessionClaimHandler: { clientID in
+            claimedIDs.append(clientID)
+            return clientID.value == "phone-a" ? .controller : .readOnly
+        })
+
+        let unauthorized = router.route(.post(
+            "/api/session/claim",
+            body: Data(#"{"clientID":"phone-a"}"#.utf8)
+        ))
+        XCTAssertEqual(unauthorized.statusCode, 401)
+        XCTAssertTrue(claimedIDs.isEmpty)
+
+        let controller = router.route(.post(
+            "/api/session/claim",
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"clientID":"phone-a"}"#.utf8)
+        ))
+        let readOnly = router.route(.post(
+            "/api/session/claim",
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"clientID":"phone-b"}"#.utf8)
+        ))
+
+        XCTAssertEqual(controller.statusCode, 202)
+        XCTAssertTrue(controller.bodyText.contains(#""claimed":true"#))
+        XCTAssertTrue(controller.bodyText.contains(#""role":"controller""#))
+        XCTAssertEqual(readOnly.statusCode, 409)
+        XCTAssertTrue(readOnly.bodyText.contains(#""claimed":false"#))
+        XCTAssertTrue(readOnly.bodyText.contains(#""role":"readOnly""#))
+        XCTAssertTrue(readOnly.bodyText.contains("controllerAlreadyClaimed"))
+        XCTAssertFalse(controller.bodyText.contains("token-1"))
+        XCTAssertFalse(readOnly.bodyText.contains("token-1"))
+        XCTAssertEqual(claimedIDs, [
+            RemoteControlClientID(value: "phone-a"),
+            RemoteControlClientID(value: "phone-b")
+        ])
+    }
+
+    func testCommandRouteRequiresClaimedControllerClientWhenConfigured() {
+        let id = UUID(uuidString: "00000000-0000-0000-0000-000000000987")!
+        var executedCommands: [RemoteControlAcceptedCommand] = []
+        let router = router(
+            requiresControllerClientID: true,
+            canExecuteCommandFromClient: { $0 == RemoteControlClientID(value: "phone-a") },
+            commandExecutor: { command in
+                executedCommands.append(command)
+                return .executed(RemoteControlCommandExecutionRecord(command: command))
+            }
+        )
+        let body = Data(#"{"id":"\#(id.uuidString)","kind":"takeNext"}"#.utf8)
+
+        let missing = router.route(.post(
+            "/api/command",
+            headers: ["Authorization": "Bearer token-1"],
+            body: body
+        ))
+        let readOnly = router.route(.post(
+            "/api/command",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-b"
+            ],
+            body: body
+        ))
+        let controller = router.route(.post(
+            "/api/command",
+            headers: [
+                "Authorization": "Bearer token-1",
+                "X-Remote-Client-ID": "phone-a"
+            ],
+            body: body
+        ))
+
+        XCTAssertEqual(missing.statusCode, 403)
+        XCTAssertTrue(missing.bodyText.contains("missingControllerClientID"))
+        XCTAssertEqual(readOnly.statusCode, 403)
+        XCTAssertTrue(readOnly.bodyText.contains("clientNotController"))
+        XCTAssertEqual(controller.statusCode, 202)
+        XCTAssertEqual(executedCommands.map(\.kind), [.takeNext])
+    }
+
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
         context: RemoteControlCommandValidationContext? = nil,
         dangerConfirmationIssuer: @escaping (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil },
         sessionCloseHandler: @escaping () -> RemoteControlSessionCloseResult = { .remoteDisabled },
+        sessionClaimHandler: @escaping (RemoteControlClientID) -> RemoteControlSessionClaimResult = { _ in .remoteDisabled },
+        requiresControllerClientID: Bool = false,
+        canExecuteCommandFromClient: @escaping (RemoteControlClientID) -> Bool = { _ in true },
         commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
             .executed(RemoteControlCommandExecutionRecord(command: $0))
         }
@@ -261,6 +347,9 @@ final class RemoteControlRequestRouterTests: XCTestCase {
             },
             dangerConfirmationIssuer: dangerConfirmationIssuer,
             sessionCloseHandler: sessionCloseHandler,
+            sessionClaimHandler: sessionClaimHandler,
+            requiresControllerClientID: requiresControllerClientID,
+            canExecuteCommandFromClient: canExecuteCommandFromClient,
             commandExecutor: commandExecutor
         )
     }

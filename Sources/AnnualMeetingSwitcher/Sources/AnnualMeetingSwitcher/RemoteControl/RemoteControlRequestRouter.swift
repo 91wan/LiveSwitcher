@@ -6,6 +6,9 @@ struct RemoteControlRequestRouter {
     var commandContextProvider: () -> RemoteControlCommandValidationContext
     var dangerConfirmationIssuer: (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil }
     var sessionCloseHandler: () -> RemoteControlSessionCloseResult = { .remoteDisabled }
+    var sessionClaimHandler: (RemoteControlClientID) -> RemoteControlSessionClaimResult = { _ in .remoteDisabled }
+    var requiresControllerClientID = false
+    var canExecuteCommandFromClient: (RemoteControlClientID) -> Bool = { _ in true }
     var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
         .executed(RemoteControlCommandExecutionRecord(command: $0))
     }
@@ -44,6 +47,10 @@ struct RemoteControlRequestRouter {
             return withAuthorizedRequest(request) {
                 commandResponse(for: request)
             }
+        case (.post, "/api/session/claim"):
+            return withAuthorizedRequest(request) {
+                sessionClaimResponse(for: request)
+            }
         case (.post, "/api/danger-confirmation"):
             return withAuthorizedRequest(request) {
                 dangerConfirmationResponse(for: request)
@@ -54,6 +61,7 @@ struct RemoteControlRequestRouter {
             }
         case (_, "/api/snapshot"),
              (_, "/api/command"),
+             (_, "/api/session/claim"),
              (_, "/api/danger-confirmation"),
              (_, "/api/session/close"),
              (_, "/health"),
@@ -127,6 +135,30 @@ struct RemoteControlRequestRouter {
         ])
     }
 
+    private func sessionClaimResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
+        guard let payload = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
+              let rawClientID = payload["clientID"] as? String,
+              let clientID = normalizedClientID(rawClientID) else {
+            return .json(statusCode: 400, [("error", "invalidSessionClaimJSON")])
+        }
+
+        switch sessionClaimHandler(clientID) {
+        case .controller:
+            return .json(statusCode: 202, [
+                ("claimed", true),
+                ("role", RemoteControlClientRole.controller.rawValue)
+            ])
+        case .readOnly:
+            return .json(statusCode: 409, [
+                ("claimed", false),
+                ("role", RemoteControlClientRole.readOnly.rawValue),
+                ("error", "controllerAlreadyClaimed")
+            ])
+        case .remoteDisabled:
+            return rejectionResponse(.remoteDisabled)
+        }
+    }
+
     private func commandExecutionResponse(
         _ result: RemoteControlCommandValidationResult
     ) -> RemoteControlHTTPResponse {
@@ -157,6 +189,10 @@ struct RemoteControlRequestRouter {
     }
 
     private func commandResponse(for request: RemoteControlHTTPRequest) -> RemoteControlHTTPResponse {
+        if let rejection = controllerClientRejection(for: request) {
+            return rejectionResponse(rejection)
+        }
+
         guard let payload = try? JSONSerialization.jsonObject(with: request.body) as? [String: Any],
               let idText = payload["id"] as? String,
               let id = UUID(uuidString: idText),
@@ -182,6 +218,18 @@ struct RemoteControlRequestRouter {
         }
     }
 
+    private func controllerClientRejection(for request: RemoteControlHTTPRequest) -> RemoteControlCommandRejection? {
+        guard requiresControllerClientID else {
+            return nil
+        }
+
+        guard let clientID = normalizedClientID(request.header("x-remote-client-id")) else {
+            return .missingControllerClientID
+        }
+
+        return canExecuteCommandFromClient(clientID) ? nil : .clientNotController
+    }
+
     private func rejectionResponse(
         _ rejection: RemoteControlCommandRejection
     ) -> RemoteControlHTTPResponse {
@@ -190,7 +238,7 @@ struct RemoteControlRequestRouter {
 
     private func statusCode(for rejection: RemoteControlCommandRejection) -> Int {
         switch rejection {
-        case .forbiddenConfigurationCommand, .commandNotInRemoteMVP:
+        case .forbiddenConfigurationCommand, .commandNotInRemoteMVP, .missingControllerClientID, .clientNotController:
             return 403
         case .unknownCommand:
             return 400
@@ -233,6 +281,10 @@ struct RemoteControlRequestRouter {
             return "commandNotInRemoteMVP"
         case .unknownCommand:
             return "unknownCommand"
+        case .missingControllerClientID:
+            return "missingControllerClientID"
+        case .clientNotController:
+            return "clientNotController"
         }
     }
 
@@ -243,6 +295,14 @@ struct RemoteControlRequestRouter {
         }
 
         return RemoteDangerConfirmation(nonce: nonce)
+    }
+
+    private func normalizedClientID(_ value: String?) -> RemoteControlClientID? {
+        guard let trimmed = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !trimmed.isEmpty else {
+            return nil
+        }
+        return RemoteControlClientID(value: trimmed)
     }
 
     private func isSafePath(_ path: String) -> Bool {

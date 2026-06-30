@@ -108,6 +108,8 @@ enum RemoteControlCommandRejection: Equatable {
     case forbiddenConfigurationCommand
     case commandNotInRemoteMVP
     case unknownCommand
+    case missingControllerClientID
+    case clientNotController
 }
 
 enum RemoteControlCommandPolicy {

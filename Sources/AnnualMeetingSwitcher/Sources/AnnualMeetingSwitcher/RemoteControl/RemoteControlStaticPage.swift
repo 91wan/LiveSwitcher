@@ -22,6 +22,10 @@ enum RemoteControlStaticPage {
           重新连接中，请确认手机仍在同一局域网。
         </section>
 
+        <section id="read-only-banner" class="reconnect-banner" hidden>
+          已有手机正在控制，本机只读
+        </section>
+
         <section id="snapshot" class="snapshot-grid" aria-live="polite">
           <article class="snapshot-card current-card">
             <span class="label">当前节目</span>
@@ -315,13 +319,33 @@ enum RemoteControlStaticPage {
 
     static let javascript = """
     const token = new URLSearchParams(location.hash.slice(1)).get("token") || "";
+    const clientIDStorageKey = "LiveSwitcher.remote.clientID";
+    const clientID = storedClientID();
+    let clientRole = "pending";
+    let claimPromise = null;
     const commandButtons = Array.from(document.querySelectorAll("[data-command]"));
     const reconnectBanner = document.querySelector("#reconnect-banner");
+    const readOnlyBanner = document.querySelector("#read-only-banner");
     const connectionState = document.querySelector("#connection-state");
     const disabledReason = document.querySelector("#disabled-reason");
 
+    function storedClientID() {
+      try {
+        const existing = localStorage.getItem(clientIDStorageKey);
+        if (existing) {
+          return existing;
+        }
+        const value = commandID();
+        localStorage.setItem(clientIDStorageKey, value);
+        return value;
+      } catch (error) {
+        return commandID();
+      }
+    }
+
     function headers(contentType) {
       const value = { Authorization: `Bearer ${token}` };
+      value["X-Remote-Client-ID"] = clientID;
       if (contentType) {
         value["Content-Type"] = contentType;
       }
@@ -369,6 +393,38 @@ enum RemoteControlStaticPage {
       reconnectBanner.hidden = !visible;
     }
 
+    async function claimSession() {
+      if (!token || clientRole !== "pending") {
+        return;
+      }
+      if (claimPromise) {
+        return claimPromise;
+      }
+
+      claimPromise = fetch("/api/session/claim", {
+        method: "POST",
+        headers: headers("application/json"),
+        body: JSON.stringify({ clientID })
+      })
+        .then(async (response) => {
+          const payload = await response.json().catch(() => ({}));
+          if (response.status === 409 && payload.role === "readOnly") {
+            clientRole = "readOnly";
+            readOnlyBanner.hidden = false;
+            return;
+          }
+          if (!response.ok) {
+            throw new Error("session claim failed");
+          }
+          clientRole = payload.role || "controller";
+          readOnlyBanner.hidden = clientRole !== "readOnly";
+        })
+        .finally(() => {
+          claimPromise = null;
+        });
+      return claimPromise;
+    }
+
     function updateButtonStates(data, online) {
       const disabledByCommand = {
         takeNext: !data || !data.nextProgramTitle,
@@ -384,12 +440,12 @@ enum RemoteControlStaticPage {
 
       commandButtons.forEach((button) => {
         const command = button.dataset.command;
-        button.disabled = !token || !online || Boolean(data?.disabledReason) || Boolean(disabledByCommand[command]);
+        button.disabled = clientRole !== "controller" || !token || !online || Boolean(data?.disabledReason) || Boolean(disabledByCommand[command]);
       });
     }
 
     function renderSnapshot(data) {
-      connectionState.textContent = connectionCopy(data.connectionState);
+      connectionState.textContent = clientRole === "readOnly" ? "只读连接" : connectionCopy(data.connectionState);
       setText("current-title", data.currentProgramTitle || "未选中");
       setText("next-title", data.nextProgramTitle || "无下一项");
       setText("bgm-title", data.currentBGMTitle || "未选择");
@@ -398,8 +454,9 @@ enum RemoteControlStaticPage {
       setText("bgm-state", data.isBGMPlaying ? "BGM 播放中" : "BGM 已暂停");
       setText("blackout-state", blackoutCopy(data));
       setText("speaker-state", data.isSpeakerMode ? "主讲人模式开启" : "主讲人模式关闭");
-      disabledReason.hidden = !data.disabledReason;
-      disabledReason.textContent = data.disabledReason || "";
+      const reason = clientRole === "readOnly" ? "已有手机正在控制，本机只读" : (data.disabledReason || "");
+      disabledReason.hidden = !reason;
+      disabledReason.textContent = reason;
       updateButtonStates(data, true);
       setReconnect(false);
     }
@@ -413,6 +470,7 @@ enum RemoteControlStaticPage {
       }
 
       try {
+        await claimSession();
         const response = await fetch("/api/snapshot", { headers: headers() });
         if (!response.ok) {
           throw new Error("snapshot failed");

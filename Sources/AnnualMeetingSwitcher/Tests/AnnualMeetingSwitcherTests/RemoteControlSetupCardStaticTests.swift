@@ -106,9 +106,17 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         let harness = RemoteControlSetupHarness()
         harness.viewModel.remoteControlSetup.enable()
 
+        _ = harness.createdListeners.first?.respond(to: """
+        POST /api/session/claim HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: 22\r
+        \r
+        {"clientID":"phone-a"}
+        """)
         let response = harness.createdListeners.first?.respond(to: """
         POST /api/command HTTP/1.1\r
         Authorization: Bearer token-1\r
+        X-Remote-Client-ID: phone-a\r
         Content-Length: 65\r
         \r
         {"id":"11111111-1111-1111-1111-111111111111","kind":"takeNext"}
