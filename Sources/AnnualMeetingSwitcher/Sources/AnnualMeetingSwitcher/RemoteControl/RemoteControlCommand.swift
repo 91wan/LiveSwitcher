@@ -68,7 +68,6 @@ enum RemoteControlCommandKind: String, Codable, CaseIterable {
 
 struct RemoteDangerConfirmation: Codable, Equatable {
     var nonce: String
-    var holdDuration: TimeInterval
 }
 
 struct RemoteControlAcceptedCommand: Equatable {
@@ -76,12 +75,13 @@ struct RemoteControlAcceptedCommand: Equatable {
     var kind: RemoteControlCommandKind
     var liveModeAction: LiveModeActionKind
     var isDangerous: Bool
+    var dangerConfirmationNonce: String? = nil
 }
 
 struct RemoteControlCommandValidationContext: Equatable {
     var isRemoteEnabled: Bool
     var acceptedCommandIDs: Set<UUID>
-    var dangerConfirmationExpirations: [String: Date]
+    var dangerConfirmationChallenges: [String: RemoteDangerConfirmationChallenge]
     var now: Date
 }
 
@@ -101,7 +101,10 @@ enum RemoteControlCommandRejection: Equatable {
     case missingDangerConfirmation
     case unknownDangerConfirmation
     case expiredDangerConfirmation
+    case consumedDangerConfirmation
+    case mismatchedDangerConfirmationKind
     case insufficientDangerHoldDuration
+    case dangerConfirmationNotRequired
     case forbiddenConfigurationCommand
     case commandNotInRemoteMVP
     case unknownCommand
@@ -143,15 +146,23 @@ enum RemoteControlCommandPolicy {
                 return .rejected(.missingDangerConfirmation)
             }
 
-            guard let expiresAt = context.dangerConfirmationExpirations[confirmation.nonce] else {
+            guard let challenge = context.dangerConfirmationChallenges[confirmation.nonce] else {
                 return .rejected(.unknownDangerConfirmation)
             }
 
-            guard context.now <= expiresAt else {
+            guard challenge.consumedAt == nil else {
+                return .rejected(.consumedDangerConfirmation)
+            }
+
+            guard challenge.commandKind == command.kind else {
+                return .rejected(.mismatchedDangerConfirmationKind)
+            }
+
+            guard context.now <= challenge.expiresAt else {
                 return .rejected(.expiredDangerConfirmation)
             }
 
-            guard confirmation.holdDuration >= minimumDangerHoldDuration else {
+            guard context.now.timeIntervalSince(challenge.issuedAt) >= minimumDangerHoldDuration else {
                 return .rejected(.insufficientDangerHoldDuration)
             }
         }
@@ -160,7 +171,8 @@ enum RemoteControlCommandPolicy {
             id: command.id,
             kind: command.kind,
             liveModeAction: command.kind.liveModeAction,
-            isDangerous: command.kind.isDangerous
+            isDangerous: command.kind.isDangerous,
+            dangerConfirmationNonce: command.confirmation?.nonce
         ))
     }
 }

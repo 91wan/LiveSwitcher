@@ -102,14 +102,18 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertTrue(response.bodyText.contains(#""liveModeAction":"takeNext""#))
     }
 
-    func testDangerConfirmationRouteRequiresAuthAndIssuesNonce() {
+    func testDangerConfirmationRouteRequiresAuthAndDangerousKindThenIssuesBoundNonce() {
+        var issuedKinds: [RemoteControlCommandKind] = []
         var issuedNonceCount = 0
-        let router = router(dangerConfirmationIssuer: {
+        let router = router(dangerConfirmationIssuer: { kind in
+            issuedKinds.append(kind)
             issuedNonceCount += 1
             return RemoteDangerConfirmationChallenge(
                 nonce: "nonce-1",
+                commandKind: kind,
                 issuedAt: Date(timeIntervalSince1970: 100),
-                expiresAt: Date(timeIntervalSince1970: 105)
+                expiresAt: Date(timeIntervalSince1970: 105),
+                consumedAt: nil
             )
         })
 
@@ -119,15 +123,95 @@ final class RemoteControlRequestRouterTests: XCTestCase {
 
         let response = router.route(.post(
             "/api/danger-confirmation",
-            headers: ["Authorization": "Bearer token-1"]
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"kind":"togglePanic"}"#.utf8)
         ))
 
         XCTAssertEqual(response.statusCode, 202)
         XCTAssertEqual(issuedNonceCount, 1)
+        XCTAssertEqual(issuedKinds, [.togglePanic])
         XCTAssertTrue(response.bodyText.contains(#""nonce":"nonce-1""#))
         XCTAssertTrue(response.bodyText.contains(#""minimumHoldDuration":1"#))
         XCTAssertTrue(response.bodyText.contains(#""expiresAt":105"#))
         XCTAssertFalse(response.bodyText.contains("token-1"))
+
+        let safeKind = router.route(.post(
+            "/api/danger-confirmation",
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"kind":"takeNext"}"#.utf8)
+        ))
+
+        XCTAssertEqual(safeKind.statusCode, 409)
+        XCTAssertTrue(safeKind.bodyText.contains("dangerConfirmationNotRequired"))
+    }
+
+    func testCommandRouteAcceptsNonceOnlyDangerConfirmationAfterServerElapsedHold() {
+        let id = UUID(uuidString: "00000000-0000-0000-0000-000000000456")!
+        var executedCommands: [RemoteControlAcceptedCommand] = []
+        let router = router(
+            context: RemoteControlCommandValidationContext(
+                isRemoteEnabled: true,
+                acceptedCommandIDs: [],
+                dangerConfirmationChallenges: [
+                    "nonce-1": RemoteDangerConfirmationChallenge(
+                        nonce: "nonce-1",
+                        commandKind: .togglePanic,
+                        issuedAt: Date(timeIntervalSince1970: 98.8),
+                        expiresAt: Date(timeIntervalSince1970: 105),
+                        consumedAt: nil
+                    )
+                ],
+                now: Date(timeIntervalSince1970: 100)
+            ),
+            commandExecutor: { command in
+                executedCommands.append(command)
+                return .executed(RemoteControlCommandExecutionRecord(command: command))
+            }
+        )
+
+        let response = router.route(.post(
+            "/api/command",
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"id":"\#(id.uuidString)","kind":"togglePanic","confirmation":{"nonce":"nonce-1"}}"#.utf8)
+        ))
+
+        XCTAssertEqual(response.statusCode, 202)
+        XCTAssertEqual(executedCommands.map(\.dangerConfirmationNonce), ["nonce-1"])
+    }
+
+    func testCommandRouteRejectsSpoofedHoldDurationBeforeServerElapsedHold() {
+        let id = UUID(uuidString: "00000000-0000-0000-0000-000000000789")!
+        var executedCommands: [RemoteControlAcceptedCommand] = []
+        let router = router(
+            context: RemoteControlCommandValidationContext(
+                isRemoteEnabled: true,
+                acceptedCommandIDs: [],
+                dangerConfirmationChallenges: [
+                    "nonce-1": RemoteDangerConfirmationChallenge(
+                        nonce: "nonce-1",
+                        commandKind: .togglePanic,
+                        issuedAt: Date(timeIntervalSince1970: 99.8),
+                        expiresAt: Date(timeIntervalSince1970: 105),
+                        consumedAt: nil
+                    )
+                ],
+                now: Date(timeIntervalSince1970: 100)
+            ),
+            commandExecutor: { command in
+                executedCommands.append(command)
+                return .executed(RemoteControlCommandExecutionRecord(command: command))
+            }
+        )
+
+        let response = router.route(.post(
+            "/api/command",
+            headers: ["Authorization": "Bearer token-1"],
+            body: Data(#"{"id":"\#(id.uuidString)","kind":"togglePanic","confirmation":{"nonce":"nonce-1","holdDuration":99.0}}"#.utf8)
+        ))
+
+        XCTAssertEqual(response.statusCode, 409)
+        XCTAssertTrue(response.bodyText.contains("insufficientDangerHoldDuration"))
+        XCTAssertTrue(executedCommands.isEmpty)
     }
 
     func testSessionCloseRouteRequiresAuthAndReturnsCloseDecisionOnly() {
@@ -145,7 +229,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
         context: RemoteControlCommandValidationContext? = nil,
-        dangerConfirmationIssuer: @escaping () -> RemoteDangerConfirmationChallenge? = { nil },
+        dangerConfirmationIssuer: @escaping (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil },
         commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
             .executed(RemoteControlCommandExecutionRecord(command: $0))
         }
@@ -159,7 +243,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
                 context ?? RemoteControlCommandValidationContext(
                     isRemoteEnabled: true,
                     acceptedCommandIDs: [],
-                    dangerConfirmationExpirations: [:],
+                    dangerConfirmationChallenges: [:],
                     now: Date(timeIntervalSince1970: 100)
                 )
             },

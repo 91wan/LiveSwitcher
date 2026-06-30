@@ -7,14 +7,16 @@ struct RemoteControlSession: Equatable {
 
 struct RemoteDangerConfirmationChallenge: Equatable {
     var nonce: String
+    var commandKind: RemoteControlCommandKind
     var issuedAt: Date
     var expiresAt: Date
+    var consumedAt: Date?
 }
 
 struct RemoteControlSessionStore {
     private(set) var activeSession: RemoteControlSession?
     private(set) var acceptedCommandIDs: Set<UUID> = []
-    private(set) var dangerConfirmationExpirations: [String: Date] = [:]
+    private(set) var dangerConfirmationChallenges: [String: RemoteDangerConfirmationChallenge] = [:]
 
     var isEnabled: Bool {
         activeSession != nil
@@ -23,13 +25,13 @@ struct RemoteControlSessionStore {
     mutating func enable(token: RemoteControlToken, now: Date) {
         activeSession = RemoteControlSession(token: token, createdAt: now)
         acceptedCommandIDs.removeAll()
-        dangerConfirmationExpirations.removeAll()
+        dangerConfirmationChallenges.removeAll()
     }
 
     mutating func disable() {
         activeSession = nil
         acceptedCommandIDs.removeAll()
-        dangerConfirmationExpirations.removeAll()
+        dangerConfirmationChallenges.removeAll()
     }
 
     mutating func markCommandIDIfNew(_ id: UUID) -> Bool {
@@ -42,19 +44,39 @@ struct RemoteControlSessionStore {
 
     mutating func issueDangerConfirmation(
         nonce: String,
+        commandKind: RemoteControlCommandKind,
         now: Date,
         ttl: TimeInterval
     ) -> RemoteDangerConfirmationChallenge {
         let expiresAt = now.addingTimeInterval(ttl)
-        dangerConfirmationExpirations[nonce] = expiresAt
-        return RemoteDangerConfirmationChallenge(
+        let challenge = RemoteDangerConfirmationChallenge(
             nonce: nonce,
+            commandKind: commandKind,
             issuedAt: now,
-            expiresAt: expiresAt
+            expiresAt: expiresAt,
+            consumedAt: nil
         )
+        dangerConfirmationChallenges[nonce] = challenge
+        return challenge
     }
 
     func dangerConfirmationExpiration(for nonce: String) -> Date? {
-        dangerConfirmationExpirations[nonce]
+        dangerConfirmationChallenges[nonce]?.expiresAt
+    }
+
+    func dangerConfirmation(for nonce: String) -> RemoteDangerConfirmationChallenge? {
+        dangerConfirmationChallenges[nonce]
+    }
+
+    @discardableResult
+    mutating func consumeDangerConfirmation(nonce: String, now: Date) -> Bool {
+        guard var challenge = dangerConfirmationChallenges[nonce],
+              challenge.consumedAt == nil else {
+            return false
+        }
+
+        challenge.consumedAt = now
+        dangerConfirmationChallenges[nonce] = challenge
+        return true
     }
 }

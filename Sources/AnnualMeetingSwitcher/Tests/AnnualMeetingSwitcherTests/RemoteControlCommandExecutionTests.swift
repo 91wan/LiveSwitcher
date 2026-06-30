@@ -45,11 +45,32 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         XCTAssertFalse(challengeResponse.contains("token-1"))
 
         let nonce = try nonce(fromHTTPResponse: challengeResponse)
+        harness.now = Date(timeIntervalSince1970: 101.2)
         let commandResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerousCommandRequest(nonce: nonce)))
 
         XCTAssertTrue(commandResponse.contains("HTTP/1.1 202 Accepted"))
         XCTAssertTrue(commandResponse.contains(#""action":"togglePanic""#))
         XCTAssertTrue(commandResponse.contains(#""dangerous":true"#))
+        XCTAssertEqual(harness.executedCommands.map(\.kind), [.togglePanic])
+    }
+
+    func testServerConsumesDangerConfirmationNonceAfterSuccessfulCommand() throws {
+        let harness = RemoteCommandServerHarness()
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+
+        let challengeResponse = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerConfirmationRequest()))
+        let nonce = try nonce(fromHTTPResponse: challengeResponse)
+
+        harness.now = Date(timeIntervalSince1970: 101.2)
+        let first = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerousCommandRequest(nonce: nonce)))
+        let replay = try XCTUnwrap(harness.createdListeners.first?.respond(to: rawDangerousCommandRequest(
+            id: UUID(uuidString: "22222222-2222-2222-2222-222222222222")!,
+            nonce: nonce
+        )))
+
+        XCTAssertTrue(first.contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(replay.contains("HTTP/1.1 409 Conflict"))
+        XCTAssertTrue(replay.contains(#""error":"consumedDangerConfirmation""#))
         XCTAssertEqual(harness.executedCommands.map(\.kind), [.togglePanic])
     }
 
@@ -126,7 +147,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
                 RemoteControlCommandValidationContext(
                     isRemoteEnabled: true,
                     acceptedCommandIDs: [],
-                    dangerConfirmationExpirations: [:],
+                    dangerConfirmationChallenges: [:],
                     now: Date(timeIntervalSince1970: 100)
                 )
             },
@@ -156,19 +177,25 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
         """
         POST /api/danger-confirmation HTTP/1.1\r
         Authorization: Bearer token-1\r
-        Content-Length: 2\r
+        Content-Length: 22\r
         \r
-        {}
+        {"kind":"togglePanic"}
         """
     }
 
-    private func rawDangerousCommandRequest(nonce: String) -> String {
-        """
+    private func rawDangerousCommandRequest(
+        id: UUID? = nil,
+        kind: String = "togglePanic",
+        nonce: String
+    ) -> String {
+        let commandID = id ?? fixedCommandID
+        let body = #"{"id":"\#(commandID.uuidString)","kind":"\#(kind)","confirmation":{"nonce":"\#(nonce)"}}"#
+        return """
         POST /api/command HTTP/1.1\r
         Authorization: Bearer token-1\r
-        Content-Length: 160\r
+        Content-Length: \(body.utf8.count)\r
         \r
-        {"id":"\(fixedCommandID.uuidString)","kind":"togglePanic","confirmation":{"nonce":"\(nonce)","holdDuration":1.2}}
+        \(body)
         """
     }
 
@@ -234,6 +261,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
 private final class RemoteCommandServerHarness {
     var createdListeners: [FakeRemoteCommandListener] = []
     var executedCommands: [RemoteControlAcceptedCommand] = []
+    var now = Date(timeIntervalSince1970: 100)
 
     lazy var server = RemoteControlServer(
         listenerFactory: makeListener(port:),
@@ -243,8 +271,8 @@ private final class RemoteCommandServerHarness {
             RemoteControlCommandValidationContext(
                 isRemoteEnabled: true,
                 acceptedCommandIDs: [],
-                dangerConfirmationExpirations: [:],
-                now: Date(timeIntervalSince1970: 100)
+                dangerConfirmationChallenges: [:],
+                now: self.now
             )
         },
         commandExecutor: { [weak self] command in

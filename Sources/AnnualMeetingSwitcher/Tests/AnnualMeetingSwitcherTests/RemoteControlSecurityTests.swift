@@ -103,7 +103,7 @@ final class RemoteControlSecurityTests: XCTestCase {
                 RemoteControlCommandValidationContext(
                     isRemoteEnabled: true,
                     acceptedCommandIDs: [],
-                    dangerConfirmationExpirations: [:],
+                    dangerConfirmationChallenges: [:],
                     now: Date(timeIntervalSince1970: 100)
                 )
             }

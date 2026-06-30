@@ -40,13 +40,20 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
         )
     }
 
-    func testDangerousCommandsRequireFreshConfirmationAndHoldDuration() {
+    func testDangerousCommandsRequireServerIssuedFreshMatchingUnconsumedConfirmation() {
         let now = Date(timeIntervalSince1970: 100)
         let commandID = UUID()
+        let validChallenge = RemoteDangerConfirmationChallenge(
+            nonce: "nonce-1",
+            commandKind: .togglePanic,
+            issuedAt: now.addingTimeInterval(-1.2),
+            expiresAt: now.addingTimeInterval(5),
+            consumedAt: nil
+        )
         let context = RemoteControlCommandValidationContext(
             isRemoteEnabled: true,
             acceptedCommandIDs: [],
-            dangerConfirmationExpirations: ["nonce-1": now.addingTimeInterval(5)],
+            dangerConfirmationChallenges: ["nonce-1": validChallenge],
             now: now
         )
 
@@ -63,9 +70,22 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 RemoteControlCommand(
                     id: commandID,
                     kind: .togglePanic,
-                    confirmation: RemoteDangerConfirmation(nonce: "nonce-1", holdDuration: 0.2)
+                    confirmation: RemoteDangerConfirmation(nonce: "early")
                 ),
-                context: context
+                context: RemoteControlCommandValidationContext(
+                    isRemoteEnabled: true,
+                    acceptedCommandIDs: [],
+                    dangerConfirmationChallenges: [
+                        "early": RemoteDangerConfirmationChallenge(
+                            nonce: "early",
+                            commandKind: .togglePanic,
+                            issuedAt: now.addingTimeInterval(-0.2),
+                            expiresAt: now.addingTimeInterval(5),
+                            consumedAt: nil
+                        )
+                    ],
+                    now: now
+                )
             ),
             .rejected(.insufficientDangerHoldDuration)
         )
@@ -75,7 +95,7 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 RemoteControlCommand(
                     id: commandID,
                     kind: .togglePanic,
-                    confirmation: RemoteDangerConfirmation(nonce: "nonce-1", holdDuration: 1.2)
+                    confirmation: RemoteDangerConfirmation(nonce: "nonce-1")
                 ),
                 context: context
             ),
@@ -83,7 +103,8 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 id: commandID,
                 kind: .togglePanic,
                 liveModeAction: .togglePanic,
-                isDangerous: true
+                isDangerous: true,
+                dangerConfirmationNonce: "nonce-1"
             ))
         )
 
@@ -91,8 +112,45 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
             RemoteControlCommandPolicy.validate(
                 RemoteControlCommand(
                     id: commandID,
+                    kind: .toggleFadeToBlack,
+                    confirmation: RemoteDangerConfirmation(nonce: "nonce-1")
+                ),
+                context: context
+            ),
+            .rejected(.mismatchedDangerConfirmationKind)
+        )
+
+        XCTAssertEqual(
+            RemoteControlCommandPolicy.validate(
+                RemoteControlCommand(
+                    id: commandID,
                     kind: .togglePanic,
-                    confirmation: RemoteDangerConfirmation(nonce: "missing", holdDuration: 1.2)
+                    confirmation: RemoteDangerConfirmation(nonce: "consumed")
+                ),
+                context: RemoteControlCommandValidationContext(
+                    isRemoteEnabled: true,
+                    acceptedCommandIDs: [],
+                    dangerConfirmationChallenges: [
+                        "consumed": RemoteDangerConfirmationChallenge(
+                            nonce: "consumed",
+                            commandKind: .togglePanic,
+                            issuedAt: now.addingTimeInterval(-1.2),
+                            expiresAt: now.addingTimeInterval(5),
+                            consumedAt: now.addingTimeInterval(-0.1)
+                        )
+                    ],
+                    now: now
+                )
+            ),
+            .rejected(.consumedDangerConfirmation)
+        )
+
+        XCTAssertEqual(
+            RemoteControlCommandPolicy.validate(
+                RemoteControlCommand(
+                    id: commandID,
+                    kind: .togglePanic,
+                    confirmation: RemoteDangerConfirmation(nonce: "missing")
                 ),
                 context: context
             ),
@@ -104,12 +162,20 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 RemoteControlCommand(
                     id: commandID,
                     kind: .togglePanic,
-                    confirmation: RemoteDangerConfirmation(nonce: "expired", holdDuration: 1.2)
+                    confirmation: RemoteDangerConfirmation(nonce: "expired")
                 ),
                 context: RemoteControlCommandValidationContext(
                     isRemoteEnabled: true,
                     acceptedCommandIDs: [],
-                    dangerConfirmationExpirations: ["expired": now.addingTimeInterval(-1)],
+                    dangerConfirmationChallenges: [
+                        "expired": RemoteDangerConfirmationChallenge(
+                            nonce: "expired",
+                            commandKind: .togglePanic,
+                            issuedAt: now.addingTimeInterval(-1.2),
+                            expiresAt: now.addingTimeInterval(-1),
+                            consumedAt: nil
+                        )
+                    ],
                     now: now
                 )
             ),
@@ -127,7 +193,7 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 context: RemoteControlCommandValidationContext(
                     isRemoteEnabled: false,
                     acceptedCommandIDs: [],
-                    dangerConfirmationExpirations: [:],
+                    dangerConfirmationChallenges: [:],
                     now: now
                 )
             ),
@@ -140,7 +206,7 @@ final class RemoteControlCommandPolicyTests: XCTestCase {
                 context: RemoteControlCommandValidationContext(
                     isRemoteEnabled: true,
                     acceptedCommandIDs: [id],
-                    dangerConfirmationExpirations: [:],
+                    dangerConfirmationChallenges: [:],
                     now: now
                 )
             ),

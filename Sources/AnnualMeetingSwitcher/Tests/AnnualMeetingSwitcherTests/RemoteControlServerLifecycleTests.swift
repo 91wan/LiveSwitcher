@@ -148,7 +148,7 @@ private final class ServerHarness {
         RemoteControlCommandValidationContext(
             isRemoteEnabled: true,
             acceptedCommandIDs: [],
-            dangerConfirmationExpirations: [:],
+            dangerConfirmationChallenges: [:],
             now: Date(timeIntervalSince1970: 100)
         )
     }

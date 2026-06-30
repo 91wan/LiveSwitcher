@@ -132,8 +132,8 @@ final class RemoteControlServer {
                 commandContextProvider: {
                     self?.commandValidationContext() ?? Self.disabledCommandContext()
                 },
-                dangerConfirmationIssuer: {
-                    self?.issueDangerConfirmation()
+                dangerConfirmationIssuer: { kind in
+                    self?.issueDangerConfirmation(kind: kind)
                 },
                 commandExecutor: {
                     self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
@@ -147,19 +147,20 @@ final class RemoteControlServer {
         var context = commandContextProvider()
         context.isRemoteEnabled = context.isRemoteEnabled && isEnabled
         context.acceptedCommandIDs.formUnion(sessionStore.acceptedCommandIDs)
-        context.dangerConfirmationExpirations.merge(sessionStore.dangerConfirmationExpirations) { current, _ in
+        context.dangerConfirmationChallenges.merge(sessionStore.dangerConfirmationChallenges) { current, _ in
             current
         }
         return context
     }
 
-    private func issueDangerConfirmation() -> RemoteDangerConfirmationChallenge? {
+    private func issueDangerConfirmation(kind: RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? {
         guard isEnabled else {
             return nil
         }
 
         return sessionStore.issueDangerConfirmation(
             nonce: UUID().uuidString,
+            commandKind: kind,
             now: commandContextProvider().now,
             ttl: 5
         )
@@ -171,6 +172,10 @@ final class RemoteControlServer {
         guard sessionStore.markCommandIDIfNew(command.id) else {
             return .rejected(.duplicateCommandID)
         }
+        if let nonce = command.dangerConfirmationNonce,
+           !sessionStore.consumeDangerConfirmation(nonce: nonce, now: commandContextProvider().now) {
+            return .rejected(.consumedDangerConfirmation)
+        }
         return commandExecutor(command)
     }
 
@@ -178,7 +183,7 @@ final class RemoteControlServer {
         RemoteControlCommandValidationContext(
             isRemoteEnabled: false,
             acceptedCommandIDs: [],
-            dangerConfirmationExpirations: [:],
+            dangerConfirmationChallenges: [:],
             now: Date()
         )
     }
