@@ -120,6 +120,25 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         XCTAssertFalse(response?.contains("remoteDisabled") == true)
         XCTAssertFalse(response?.contains("token-1") == true)
     }
+
+    func testViewModelRemoteSessionCloseDisablesSetupState() async {
+        let harness = RemoteControlSetupHarness()
+        harness.viewModel.remoteControlSetup.enable()
+
+        let response = harness.createdListeners.first?.respond(to: """
+        POST /api/session/close HTTP/1.1\r
+        Authorization: Bearer token-1\r
+        Content-Length: 2\r
+        \r
+        {}
+        """)
+        await Task.yield()
+
+        XCTAssertTrue(response?.contains("HTTP/1.1 202 Accepted") == true)
+        XCTAssertFalse(harness.viewModel.remoteControlSetup.state.isEnabled)
+        XCTAssertNil(harness.viewModel.remoteControlSetup.state.pairingURL)
+        XCTAssertEqual(harness.createdListeners.first?.cancelCallCount, 1)
+    }
 }
 
 @MainActor

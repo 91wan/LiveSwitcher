@@ -32,6 +32,7 @@ final class RemoteControlServer {
     private let snapshotProvider: () -> RemoteControlSnapshot
     private let commandContextProvider: () -> RemoteControlCommandValidationContext
     private let commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult
+    private let sessionCloseObserver: () -> Void
     private var listener: RemoteControlListening?
     private var sessionStore = RemoteControlSessionStore()
     private var lastFailureReason: String?
@@ -60,6 +61,7 @@ final class RemoteControlServer {
         tokenProvider: @escaping () throws -> RemoteControlToken = { try RemoteControlTokenPolicy.makeToken() },
         snapshotProvider: @escaping () -> RemoteControlSnapshot,
         commandContextProvider: @escaping () -> RemoteControlCommandValidationContext,
+        sessionCloseObserver: @escaping () -> Void = {},
         commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
             .executed(RemoteControlCommandExecutionRecord(command: $0))
         }
@@ -68,6 +70,7 @@ final class RemoteControlServer {
         self.tokenProvider = tokenProvider
         self.snapshotProvider = snapshotProvider
         self.commandContextProvider = commandContextProvider
+        self.sessionCloseObserver = sessionCloseObserver
         self.commandExecutor = commandExecutor
     }
 
@@ -126,6 +129,14 @@ final class RemoteControlServer {
                 ))
             }
 
+            guard self?.acceptsRequest(request, token: token) == true else {
+                return RemoteControlHTTPWireCodec.serialize(.json(
+                    statusCode: 403,
+                    [("error", "invalidAuthorization")]
+                ))
+            }
+
+            var shouldCloseSession = false
             let router = RemoteControlRequestRouter(
                 token: token,
                 snapshotProvider: snapshotProvider,
@@ -135,12 +146,31 @@ final class RemoteControlServer {
                 dangerConfirmationIssuer: { kind in
                     self?.issueDangerConfirmation(kind: kind)
                 },
+                sessionCloseHandler: {
+                    guard self?.isEnabled == true else {
+                        return .remoteDisabled
+                    }
+                    shouldCloseSession = true
+                    return .closed
+                },
                 commandExecutor: {
                     self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
                 }
             )
-            return RemoteControlHTTPWireCodec.serialize(router.route(request))
+            let data = RemoteControlHTTPWireCodec.serialize(router.route(request))
+            if shouldCloseSession {
+                self?.closeSessionAfterResponse()
+            }
+            return data
         }
+    }
+
+    private func acceptsRequest(_ request: RemoteControlHTTPRequest, token: RemoteControlToken) -> Bool {
+        guard request.path.hasPrefix("/api/") else {
+            return true
+        }
+
+        return isEnabled && activeSession?.token == token
     }
 
     private func commandValidationContext() -> RemoteControlCommandValidationContext {
@@ -177,6 +207,15 @@ final class RemoteControlServer {
             return .rejected(.consumedDangerConfirmation)
         }
         return commandExecutor(command)
+    }
+
+    private func closeSessionAfterResponse() {
+        guard isEnabled else {
+            return
+        }
+
+        disable()
+        sessionCloseObserver()
     }
 
     private static func disabledCommandContext() -> RemoteControlCommandValidationContext {

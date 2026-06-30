@@ -214,8 +214,16 @@ final class RemoteControlRequestRouterTests: XCTestCase {
         XCTAssertTrue(executedCommands.isEmpty)
     }
 
-    func testSessionCloseRouteRequiresAuthAndReturnsCloseDecisionOnly() {
-        let router = router()
+    func testSessionCloseRouteRequiresAuthAndInvokesCloseHandler() {
+        var closeCallCount = 0
+        let router = router(sessionCloseHandler: {
+            closeCallCount += 1
+            return .closed
+        })
+
+        let unauthorized = router.route(.post("/api/session/close"))
+        XCTAssertEqual(unauthorized.statusCode, 401)
+        XCTAssertEqual(closeCallCount, 0)
 
         let response = router.route(.post(
             "/api/session/close",
@@ -224,12 +232,16 @@ final class RemoteControlRequestRouterTests: XCTestCase {
 
         XCTAssertEqual(response.statusCode, 202)
         XCTAssertTrue(response.bodyText.contains(#""closeRequested":true"#))
+        XCTAssertTrue(response.bodyText.contains(#""closed":true"#))
+        XCTAssertFalse(response.bodyText.contains("token-1"))
+        XCTAssertEqual(closeCallCount, 1)
     }
 
     private func router(
         snapshot: RemoteControlSnapshot? = nil,
         context: RemoteControlCommandValidationContext? = nil,
         dangerConfirmationIssuer: @escaping (RemoteControlCommandKind) -> RemoteDangerConfirmationChallenge? = { _ in nil },
+        sessionCloseHandler: @escaping () -> RemoteControlSessionCloseResult = { .remoteDisabled },
         commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
             .executed(RemoteControlCommandExecutionRecord(command: $0))
         }
@@ -248,6 +260,7 @@ final class RemoteControlRequestRouterTests: XCTestCase {
                 )
             },
             dangerConfirmationIssuer: dangerConfirmationIssuer,
+            sessionCloseHandler: sessionCloseHandler,
             commandExecutor: commandExecutor
         )
     }
