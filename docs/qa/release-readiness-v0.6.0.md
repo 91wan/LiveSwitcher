@@ -68,7 +68,8 @@ Still out of scope:
 | Android Chrome | BLOCKED as unavailable | Android Chrome was optional when available and no Android-specific device result was provided. |
 | Security checklist PASS | PASS | Token, client id, command id, nonce, and read-only policy tests are green. |
 | Support/log privacy checklist PASS | PASS | Support/log surfaces must not include token, full phone IP, local paths, raw media filenames, program titles, BGM titles, screenshots, or customer content. |
-| Release-candidate build/hash evidence | PENDING | Must be recorded after the Draft PR is ready and before any final tag/release action. |
+| Release-candidate build/hash evidence | PASS | See `release-artifact-audit-v0.6.0.md`. |
+| Final approval package | PASS | See `release-approval-package-v0.6.0.md`; it does not publish the release. |
 | Explicit user approval | PENDING | Required after this readiness PR is reviewed. |
 
 ## Release Stop Rules

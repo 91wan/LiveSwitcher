@@ -14,6 +14,7 @@ final class V060ReleaseReadinessTests: XCTestCase {
             XCTAssertTrue(document.contains("LiveSwitcher-macOS-v0.6.0.zip.sha256"))
             XCTAssertTrue(document.contains("docs/assets/readme/live-console-v0.6.0.png"))
             XCTAssertTrue(document.contains("docs/qa/release-hygiene-v0.6.0.md"))
+            XCTAssertTrue(document.contains("docs/qa/release-approval-package-v0.6.0.md"))
             XCTAssertTrue(document.contains("docs/qa/workspace-guard-v0.6.0.md"))
         }
     }
@@ -30,6 +31,7 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("security checklist PASS"))
         XCTAssertTrue(document.localizedStandardContains("support/log privacy checklist PASS"))
         XCTAssertTrue(document.localizedStandardContains("release-candidate build/hash evidence"))
+        XCTAssertTrue(document.localizedStandardContains("release-approval-package-v0.6.0.md"))
         XCTAssertTrue(document.localizedStandardContains("phone-lan-remote-hardware-results-v0.6.0.md"))
         XCTAssertTrue(document.localizedStandardContains("Final phone UI smoke after #448 / #450"))
         XCTAssertTrue(document.localizedStandardContains("final-phone-ui-smoke-after-448--450"))
@@ -110,5 +112,43 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertFalse(document.contains("166bbbe41f901c5796d72878f8963a2b55d50f8a13097b3b2915c4a3768a9a3f"))
         XCTAssertFalse(document.contains("b3f7271e6ff30952817b759e415e88bc12272d6672d9691dbe3f484e53a28e50"))
         XCTAssertFalse(document.contains("7db3810f509964589a4104622a91b65a56993f2e2f5007668ed5b598d2634d9f"))
+    }
+
+    func testV060FinalApprovalPackageCollectsReleaseDecisionInputs() throws {
+        let document = try repositorySource("docs/qa/release-approval-package-v0.6.0.md")
+        let hygiene = try repositorySource("docs/qa/release-hygiene-v0.6.0.md")
+
+        XCTAssertTrue(document.contains("# LiveSwitcher v0.6.0 Final Approval Package"))
+        XCTAssertTrue(document.contains("Candidate source SHA | `faf664680800171cf48181063a4510a5e119b06e`"))
+        XCTAssertTrue(document.contains("Artifact audit SHA | `cf8c607e7ee31deeb0016a47106f3ccc6a12b878`"))
+        XCTAssertTrue(document.localizedStandardContains("Target SHA for PR-6 publication"))
+        XCTAssertTrue(document.localizedStandardContains("TBD after the release stack is merged to origin/main"))
+        XCTAssertTrue(document.localizedStandardContains("release notes"))
+        XCTAssertTrue(document.localizedStandardContains("Final phone UI smoke after #448 / #450"))
+        XCTAssertTrue(document.localizedStandardContains("final-phone-ui-smoke-after-448--450"))
+        XCTAssertTrue(document.localizedStandardContains("phone-lan-remote-hardware-results-v0.6.0.md"))
+        XCTAssertTrue(document.localizedStandardContains("release-artifact-audit-v0.6.0.md"))
+        XCTAssertTrue(document.localizedStandardContains("Android Chrome"))
+        XCTAssertTrue(document.localizedStandardContains("Unverified"))
+        XCTAssertTrue(document.localizedStandardContains("Issue #449"))
+        XCTAssertTrue(document.localizedStandardContains("not part of v0.6.0"))
+        XCTAssertTrue(document.localizedStandardContains("PR #454"))
+        XCTAssertTrue(document.localizedStandardContains("explicitly excluded"))
+        XCTAssertTrue(document.contains("cf617288dd0e34bd753dfaa2c5f997f8756668c41b71de9a5e919aee1a98fbbb"))
+        XCTAssertTrue(document.localizedStandardContains("No automatic publication"))
+        XCTAssertTrue(document.localizedStandardContains("do not tag"))
+        XCTAssertTrue(document.localizedStandardContains("do not create a GitHub Release"))
+        XCTAssertTrue(document.localizedStandardContains("do not upload release assets"))
+        XCTAssertTrue(document.localizedStandardContains("批准发布 v0.6.0"))
+        XCTAssertTrue(hygiene.localizedStandardContains("release-approval-package-v0.6.0.md"))
+        XCTAssertTrue(hygiene.localizedStandardContains("no automatic publication rule"))
+
+        XCTAssertFalse(document.contains("6e0adf68b80b19adae3ef56020b07c100f4088e0"))
+        XCTAssertFalse(document.contains("113132a9b9aab3e96a37e6bd7249dce4a87c6dad"))
+        XCTAssertFalse(document.contains("166bbbe41f901c5796d72878f8963a2b55d50f8a13097b3b2915c4a3768a9a3f"))
+        XCTAssertFalse(document.contains("b3f7271e6ff30952817b759e415e88bc12272d6672d9691dbe3f484e53a28e50"))
+        XCTAssertFalse(document.localizedStandardContains("Tag created: yes"))
+        XCTAssertFalse(document.localizedStandardContains("GitHub Release created: yes"))
+        XCTAssertFalse(document.localizedStandardContains("Artifact uploaded: yes"))
     }
 }

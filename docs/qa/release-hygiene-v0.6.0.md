@@ -132,6 +132,16 @@ This audit does not upload the local zip and does not replace the final GitHub
 Release workflow. Final publication still requires explicit user approval and a
 tag that points at `origin/main`.
 
+## Final Approval Package
+
+The maintainer-facing approval summary is recorded in
+[`release-approval-package-v0.6.0.md`](release-approval-package-v0.6.0.md).
+It lists the current release notes, hardware evidence, final phone UI smoke,
+candidate source SHA, artifact audit SHA, artifact hash evidence, known
+limitations, Android Chrome unverified status, Issue #449 deferral, PR #454
+exclusion, and the no automatic publication rule. It does not publish the
+release.
+
 ## Known Limitations
 
 - The public build is not Apple-notarized.
