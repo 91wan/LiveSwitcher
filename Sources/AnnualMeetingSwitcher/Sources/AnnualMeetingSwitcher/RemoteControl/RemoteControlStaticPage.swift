@@ -345,6 +345,18 @@ enum RemoteControlStaticPage {
     const connectionState = document.querySelector("#connection-state");
     const disabledReason = document.querySelector("#disabled-reason");
     const commandStatus = document.querySelector("#command-status");
+    let latestSnapshot = null;
+    const commandLabels = {
+      takeNext: "切下一项",
+      toggleCurrentMediaPlayback: "播放/暂停",
+      returnCurrentMediaToStart: "回到开头",
+      toggleBGMPlayback: "BGM 播放/暂停",
+      selectPreviousBGM: "上一首",
+      selectNextBGM: "下一首",
+      toggleSpeakerMode: "主讲人模式",
+      toggleFadeToBlack: "切黑",
+      togglePanic: "紧急切黑"
+    };
 
     function storedClientID() {
       try {
@@ -381,14 +393,47 @@ enum RemoteControlStaticPage {
       commandStatus.classList.toggle("is-error", isError);
     }
 
-    function commandFailureCopy(errorCode) {
+    function commandLabel(kind) {
+      return commandLabels[kind] || "命令";
+    }
+
+    function safeErrorCopy(errorCode) {
       switch (errorCode) {
       case "clientNotController":
       case "missingControllerClientID":
         return "只读连接，不能控制";
+      case "networkDisconnected":
+        return "网络断开";
       default:
-        return `命令失败：${errorCode}`;
+        return errorCode;
       }
+    }
+
+    function commandPendingCopy(kind) {
+      return `${commandLabel(kind)} 发送中`;
+    }
+
+    function commandSuccessCopy(kind, data = latestSnapshot) {
+      if (kind === "toggleCurrentMediaPlayback" && data) {
+        return data.isCurrentMediaPlaying ? "媒体暂停 已执行" : "媒体播放 已执行";
+      }
+      if (kind === "toggleBGMPlayback" && data) {
+        return data.isBGMPlaying ? "BGM 暂停 已执行" : "BGM 播放 已执行";
+      }
+      if (kind === "toggleSpeakerMode" && data) {
+        return data.isSpeakerMode ? "主讲人模式 已关" : "主讲人模式 已开";
+      }
+      if (kind === "toggleFadeToBlack" && data) {
+        return data.isFadeToBlackActive ? "切黑 已解除" : "切黑 已开启";
+      }
+      if (kind === "togglePanic" && data) {
+        return data.isPanicActive ? "紧急切黑 已解除" : "紧急切黑 已开启";
+      }
+      return `${commandLabel(kind)} 已执行`;
+    }
+
+    function commandFailureCopy(kind, errorCode) {
+      return `${commandLabel(kind)} 失败：${safeErrorCopy(errorCode)}`;
     }
 
     function uuidV4() {
@@ -494,6 +539,7 @@ enum RemoteControlStaticPage {
     }
 
     function renderSnapshot(data) {
+      latestSnapshot = data;
       connectionState.textContent = clientRole === "readOnly" ? "只读连接" : connectionCopy(data.connectionState);
       setText("current-title", data.currentProgramTitle || "未选中");
       setText("next-title", data.nextProgramTitle || "无下一项");
@@ -536,7 +582,7 @@ enum RemoteControlStaticPage {
       await claimSession();
       if (clientRole !== "controller") {
         readOnlyBanner.hidden = false;
-        setCommandStatus("只读连接，不能控制", true);
+        setCommandStatus(commandFailureCopy(kind, "clientNotController"), true);
         updateButtonStates(null, false);
         return;
       }
@@ -546,7 +592,7 @@ enum RemoteControlStaticPage {
         payload.confirmation = confirmation;
       }
 
-      setCommandStatus("最近命令已发送");
+      setCommandStatus(commandPendingCopy(kind));
       let response;
       try {
         response = await fetch("/api/command", {
@@ -555,7 +601,7 @@ enum RemoteControlStaticPage {
           body: JSON.stringify(payload)
         });
       } catch (error) {
-        setCommandStatus("网络断开", true);
+        setCommandStatus(commandFailureCopy(kind, "networkDisconnected"), true);
         setReconnect(true);
         return;
       }
@@ -563,13 +609,13 @@ enum RemoteControlStaticPage {
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         const errorCode = payload.error || "unknown";
-        setCommandStatus(commandFailureCopy(errorCode), true);
+        setCommandStatus(commandFailureCopy(kind, errorCode), true);
         if (errorCode === "clientNotController" || errorCode === "missingControllerClientID") {
           readOnlyBanner.hidden = false;
         }
         return;
       }
-      setCommandStatus("最近命令已执行");
+      setCommandStatus(commandSuccessCopy(kind));
       await refreshSnapshot();
     }
 
@@ -577,7 +623,7 @@ enum RemoteControlStaticPage {
       await claimSession();
       if (clientRole !== "controller") {
         readOnlyBanner.hidden = false;
-        setCommandStatus("只读连接，不能控制", true);
+        setCommandStatus(commandFailureCopy(kind, "clientNotController"), true);
         throw new Error("client is read only");
       }
 
@@ -589,14 +635,14 @@ enum RemoteControlStaticPage {
           body: JSON.stringify({ kind })
         });
       } catch (error) {
-        setCommandStatus("网络断开", true);
+        setCommandStatus(commandFailureCopy(kind, "networkDisconnected"), true);
         setReconnect(true);
         throw error;
       }
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
         const errorCode = payload.error || "unknown";
-        setCommandStatus(commandFailureCopy(errorCode), true);
+        setCommandStatus(commandFailureCopy(kind, errorCode), true);
         throw new Error("danger confirmation failed");
       }
       return response.json();
