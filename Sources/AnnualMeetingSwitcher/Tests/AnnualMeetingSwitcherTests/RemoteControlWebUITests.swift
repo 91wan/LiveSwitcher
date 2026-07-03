@@ -42,6 +42,44 @@ final class RemoteControlWebUITests: XCTestCase {
         XCTAssertTrue(css.contains("min-height: 64px"))
     }
 
+    func testMediaProgramControlsShareRoleAndBGMControlsStayDistinct() {
+        let html = RemoteControlStaticPage.html
+        let css = RemoteControlStaticPage.css
+
+        XCTAssertTrue(html.contains(#"<article class="snapshot-card program-status current-card">"#))
+        XCTAssertTrue(html.contains(#"<article class="snapshot-card program-status next-card">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button primary program-action" data-command="takeNext">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button program-action" data-command="toggleCurrentMediaPlayback">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button program-action" data-command="returnCurrentMediaToStart">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button bgm-action" data-command="selectPreviousBGM">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button bgm-action" data-command="toggleBGMPlayback">"#))
+        XCTAssertTrue(html.contains(#"<button class="command-button bgm-action" data-command="selectNextBGM">"#))
+
+        XCTAssertTrue(css.contains(".program-action"))
+        XCTAssertTrue(css.contains(".program-status"))
+        XCTAssertTrue(css.contains(".bgm-action"))
+        XCTAssertTrue(css.contains(".command-button:disabled"))
+        XCTAssertTrue(css.contains(".command-button.danger"))
+        XCTAssertTrue(css.contains(".command-button.panic"))
+
+        XCTAssertFalse(html.contains(#"data-command="previousProgram""#))
+        XCTAssertFalse(html.contains(#"data-command="selectPreviousProgram""#))
+        XCTAssertFalse(html.contains(#"data-command="takePrevious""#))
+        XCTAssertFalse(html.contains(#"class="command-button danger program-action""#))
+        XCTAssertFalse(html.contains(#"class="command-button danger bgm-action""#))
+    }
+
+    func testSnapshotTitlesAreClampedSoLongBGMNamesDoNotStretchRemotePage() {
+        let css = RemoteControlStaticPage.css
+
+        XCTAssertTrue(css.contains(".snapshot-card strong"))
+        XCTAssertTrue(css.contains("display: -webkit-box"))
+        XCTAssertTrue(css.contains("-webkit-box-orient: vertical"))
+        XCTAssertTrue(css.contains("-webkit-line-clamp: 2"))
+        XCTAssertTrue(css.contains("overflow: hidden"))
+        XCTAssertTrue(css.contains("overflow-wrap: anywhere"))
+    }
+
     func testDangerousControlsRequireLongPressAndServerConfirmation() {
         let html = RemoteControlStaticPage.html
         let javascript = RemoteControlStaticPage.javascript

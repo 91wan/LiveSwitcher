@@ -27,12 +27,12 @@ enum RemoteControlStaticPage {
         </section>
 
         <section id="snapshot" class="snapshot-grid" aria-live="polite">
-          <article class="snapshot-card current-card">
+          <article class="snapshot-card program-status current-card">
             <span class="label">当前节目</span>
             <strong id="current-title">未选中</strong>
             <span id="media-state" class="subtle">媒体未播放</span>
           </article>
-          <article class="snapshot-card">
+          <article class="snapshot-card program-status next-card">
             <span class="label">下一节目</span>
             <strong id="next-title">无下一项</strong>
             <span id="broadcast-state" class="subtle">未直播</span>
@@ -53,30 +53,30 @@ enum RemoteControlStaticPage {
         <p id="command-status" class="command-status" role="status">最近命令：待命</p>
 
         <section class="control-section" aria-label="节目控制">
-          <button class="command-button primary" data-command="takeNext">
+          <button class="command-button primary program-action" data-command="takeNext">
             <span>切下一项</span>
             <small>执行当前待播节目</small>
           </button>
         </section>
 
         <section class="control-grid" aria-label="媒体与 BGM 控制">
-          <button class="command-button" data-command="toggleCurrentMediaPlayback">
+          <button class="command-button program-action" data-command="toggleCurrentMediaPlayback">
             <span>播放/暂停</span>
             <small>当前媒体</small>
           </button>
-          <button class="command-button" data-command="returnCurrentMediaToStart">
+          <button class="command-button program-action" data-command="returnCurrentMediaToStart">
             <span>回到开头</span>
             <small>当前媒体</small>
           </button>
-          <button class="command-button" data-command="selectPreviousBGM">
+          <button class="command-button bgm-action" data-command="selectPreviousBGM">
             <span>上一首</span>
             <small>BGM</small>
           </button>
-          <button class="command-button" data-command="toggleBGMPlayback">
+          <button class="command-button bgm-action" data-command="toggleBGMPlayback">
             <span>BGM 播放</span>
             <small>播放/暂停</small>
           </button>
-          <button class="command-button" data-command="selectNextBGM">
+          <button class="command-button bgm-action" data-command="selectNextBGM">
             <span>下一首</span>
             <small>BGM</small>
           </button>
@@ -235,13 +235,27 @@ enum RemoteControlStaticPage {
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
     }
 
-    .current-card {
+    .program-status {
       border-color: rgba(96, 165, 250, 0.48);
       background: rgba(30, 50, 74, 0.9);
     }
 
+    .program-status .label {
+      color: #bfdbfe;
+    }
+
+    .current-card {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 0 1px rgba(96, 165, 250, 0.18);
+    }
+
     .snapshot-card strong {
       min-width: 0;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
       overflow-wrap: anywhere;
       font-size: 1.15rem;
       line-height: 1.15;
@@ -299,6 +313,26 @@ enum RemoteControlStaticPage {
 
     .command-button.primary small {
       color: rgba(255, 255, 255, 0.78);
+    }
+
+    .command-button.program-action {
+      background: linear-gradient(135deg, #2f88ff 0%, #55b8ff 100%);
+      border-color: rgba(147, 197, 253, 0.7);
+      color: white;
+    }
+
+    .command-button.program-action small {
+      color: rgba(255, 255, 255, 0.78);
+    }
+
+    .command-button.bgm-action {
+      background: #243b3f;
+      border-color: rgba(52, 211, 153, 0.34);
+      color: #ecfdf5;
+    }
+
+    .command-button.bgm-action small {
+      color: #a7f3d0;
     }
 
     .command-button.danger {
