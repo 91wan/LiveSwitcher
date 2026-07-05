@@ -224,8 +224,12 @@ struct NavigationTabButton: View {
             .padding(.horizontal, 16)
             .frame(height: StudioTheme.controlHeightL)
             .background(
-                Capsule(style: .continuous)
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
                     .fill(isSelected ? StudioTheme.Action.primary : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .stroke(isSelected ? StudioTheme.Action.primary.opacity(0.36) : Color.clear, lineWidth: 1)
             )
         }
         .buttonStyle(.plain)

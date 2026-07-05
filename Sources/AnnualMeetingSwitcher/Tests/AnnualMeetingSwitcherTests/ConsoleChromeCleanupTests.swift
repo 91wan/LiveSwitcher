@@ -55,6 +55,20 @@ final class ConsoleChromeCleanupTests: XCTestCase {
         XCTAssertTrue(toolbar.contains("PPT"))
     }
 
+    func testTopChromeUsesCompactSegmentedControlSurface() throws {
+        let navigationBar = try sourceText("Views/AppShell/PrimaryNavigationBar.swift")
+        let modeCluster = try sourceText("Views/AppShell/ConsoleModeCluster.swift")
+        let components = try sourceText("Views/Theme/StudioTheme+Components.swift")
+
+        XCTAssertTrue(navigationBar.contains("StudioTheme.Surface.raised.opacity(0.92)"))
+        XCTAssertTrue(navigationBar.contains("StudioTheme.hairline"))
+        XCTAssertFalse(navigationBar.contains("StudioTheme.Surface.base.opacity(0.55)"))
+        XCTAssertTrue(modeCluster.contains("RoundedRectangle(cornerRadius: StudioTheme.radiusL"))
+        XCTAssertFalse(modeCluster.contains("Capsule(style: .continuous).fill(StudioTheme.Surface.base)"))
+        XCTAssertTrue(components.contains("struct NavigationTabButton"))
+        XCTAssertTrue(components.contains("RoundedRectangle(cornerRadius: StudioTheme.radiusM"))
+    }
+
     func testGlobalArrowShortcutsRequirePresentationControl() throws {
         let monitor = try sourceText("Views/AppShell/GlobalKeyMonitor.swift")
 

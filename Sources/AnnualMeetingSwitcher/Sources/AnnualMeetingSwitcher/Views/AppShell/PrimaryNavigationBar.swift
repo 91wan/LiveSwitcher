@@ -50,7 +50,8 @@ struct PrimaryNavigationBar: View {
         .padding(.top, ConsoleChromeLayoutMetrics.navigationBarTopPadding)
         .padding(.bottom, ConsoleChromeLayoutMetrics.navigationBarBottomPadding)
         .frame(minHeight: ConsoleChromeLayoutMetrics.navigationBarMinHeight)
-        .background(StudioTheme.Surface.base.opacity(0.55))
-        .overlay(Divider(), alignment: .bottom)
+        .background(StudioTheme.Surface.raised.opacity(0.92))
+        .overlay(Rectangle().fill(StudioTheme.hairline).frame(height: 1), alignment: .bottom)
+        .shadow(color: StudioTheme.shadowSoft, radius: 10, x: 0, y: 4)
     }
 }

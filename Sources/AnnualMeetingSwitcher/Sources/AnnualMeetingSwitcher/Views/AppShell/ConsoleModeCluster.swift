@@ -19,8 +19,14 @@ struct ConsoleModeCluster: View {
             }
         }
         .padding(5)
-        .background(Capsule(style: .continuous).fill(StudioTheme.Surface.base))
-        .overlay(Capsule(style: .continuous).stroke(StudioTheme.borderSubtle, lineWidth: 1))
+        .background(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .fill(StudioTheme.Surface.base)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: StudioTheme.radiusL, style: .continuous)
+                .stroke(StudioTheme.borderSubtle, lineWidth: 1)
+        )
     }
 
     @ViewBuilder
@@ -64,7 +70,10 @@ struct ConsoleModeCluster: View {
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
             .frame(height: StudioTheme.controlHeightL)
-            .background(Capsule(style: .continuous).fill(StudioTheme.Action.primary))
+            .background(
+                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
+                    .fill(StudioTheme.Action.primary)
+            )
         }
         .buttonStyle(.plain)
         .menuIndicator(.hidden)
