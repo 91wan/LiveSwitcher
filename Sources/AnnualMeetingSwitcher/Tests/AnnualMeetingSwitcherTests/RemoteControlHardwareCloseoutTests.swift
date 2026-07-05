@@ -53,6 +53,33 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
         XCTAssertEqual(rows["Android Chrome connects by QR"], "BLOCKED")
     }
 
+    func testFinalPhoneUIVisualSmokeAfterFeedbackAndColorFixesIsRecorded() throws {
+        let document = try hardwareResultsDocument()
+        let rows = finalPhoneUISmokeRows(in: document)
+
+        XCTAssertTrue(document.localizedStandardContains("Final Phone UI Smoke After #448 / #450"))
+        XCTAssertTrue(document.localizedStandardContains("operator-reported iPhone Safari visual acceptance"))
+        XCTAssertTrue(document.localizedStandardContains("Codex did not independently run a real-phone visual test for these rows."))
+
+        XCTAssertEqual(rows.count, expectedFinalPhoneUISmokeRows.count)
+        for expectedRow in expectedFinalPhoneUISmokeRows {
+            XCTAssertEqual(rows[expectedRow], "PASS", expectedRow)
+        }
+    }
+
+    func testV060ReleaseHygieneRecordsFinalPhoneSmokeAndExcludesUIPR() throws {
+        let document = try releaseHygieneDocument()
+
+        XCTAssertTrue(document.contains("# Release Hygiene - v0.6.0"))
+        XCTAssertTrue(document.localizedStandardContains("Final phone UI smoke after #448 / #450"))
+        XCTAssertTrue(document.localizedStandardContains("PR #454 is explicitly excluded from v0.6.0"))
+        XCTAssertTrue(document.localizedStandardContains("Issue #449 remains backlog"))
+        XCTAssertTrue(document.localizedStandardContains("Android Chrome remains unverified"))
+        XCTAssertTrue(document.localizedStandardContains("No tag, GitHub Release, release asset, or checksum publication is approved by this document."))
+        XCTAssertFalse(document.localizedStandardContains("token="))
+        XCTAssertFalse(document.localizedStandardContains("192.168."))
+    }
+
     private var expectedHardwareRows: [String] {
         [
             "Dedicated 5GHz router, iPhone Safari connects by QR",
@@ -74,18 +101,39 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
         ]
     }
 
+    private var expectedFinalPhoneUISmokeRows: [String] {
+        [
+            "iPhone Safari shows action-specific success for Take Next",
+            "iPhone Safari shows action-specific BGM feedback",
+            "iPhone Safari shows read-only failure clearly",
+            "Rapid taps produce distinguishable latest-command feedback",
+            "Program/media controls visually group together",
+            "BGM controls remain visually distinct",
+            "Long program/BGM titles do not stretch the page",
+            "Panic/FTB danger buttons remain visually separate"
+        ]
+    }
+
     private func hardwareMatrixRows(in document: String) -> [String: String] {
+        matrixRows(in: document, sectionTitle: "## Hardware Matrix")
+    }
+
+    private func finalPhoneUISmokeRows(in document: String) -> [String: String] {
+        matrixRows(in: document, sectionTitle: "## Final Phone UI Smoke After #448 / #450")
+    }
+
+    private func matrixRows(in document: String, sectionTitle: String) -> [String: String] {
         var rows: [String: String] = [:]
-        var isInHardwareMatrix = false
+        var isInMatrix = false
         for line in document.split(separator: "\n").map(String.init) {
-            if line == "## Hardware Matrix" {
-                isInHardwareMatrix = true
+            if line == sectionTitle {
+                isInMatrix = true
                 continue
             }
-            if isInHardwareMatrix, line.hasPrefix("## ") {
+            if isInMatrix, line.hasPrefix("## ") {
                 break
             }
-            guard isInHardwareMatrix else { continue }
+            guard isInMatrix else { continue }
 
             let cells = line
                 .split(separator: "|", omittingEmptySubsequences: false)
@@ -112,6 +160,13 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
     private func hardwareResultsDocument() throws -> String {
         try String(
             contentsOf: repositoryRoot().appendingPathComponent("docs/qa/phone-lan-remote-hardware-results-v0.6.0.md"),
+            encoding: .utf8
+        )
+    }
+
+    private func releaseHygieneDocument() throws -> String {
+        try String(
+            contentsOf: repositoryRoot().appendingPathComponent("docs/qa/release-hygiene-v0.6.0.md"),
             encoding: .utf8
         )
     }

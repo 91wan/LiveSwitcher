@@ -48,10 +48,33 @@ paths in this record.
 | Mac sleep/network change safe | PASS |
 | 60-minute soak with phone connected | PASS |
 
+## Final Phone UI Smoke After #448 / #450
+
+This section records operator-reported iPhone Safari visual acceptance after the
+#448 action-specific feedback closeout and the #450 media/BGM visual grouping
+closeout. Codex did not independently run a real-phone visual test for these rows.
+
+No screenshots, raw logs, token values, phone IP addresses, customer content,
+program titles, BGM titles, or local file paths are included in this record.
+
+| Scenario | Result |
+| --- | --- |
+| iPhone Safari shows action-specific success for Take Next | PASS |
+| iPhone Safari shows action-specific BGM feedback | PASS |
+| iPhone Safari shows read-only failure clearly | PASS |
+| Rapid taps produce distinguishable latest-command feedback | PASS |
+| Program/media controls visually group together | PASS |
+| BGM controls remain visually distinct | PASS |
+| Long program/BGM titles do not stretch the page | PASS |
+| Panic/FTB danger buttons remain visually separate | PASS |
+
 ## Evidence Notes
 
 - iPhone Safari QR pairing, command execution, token rotation, and reconnect
   behavior were accepted by direct operator hardware testing.
+- Final phone UI feedback wording, media action grouping, BGM visual separation,
+  long-title containment, and dangerous-action separation were accepted by
+  operator-reported iPhone Safari visual testing after #448 and #450.
 - External output FTB and Panic blackout were accepted by direct operator
   observation on the external output path.
 - Public Wi-Fi AP isolation was accepted as graceful fail behavior by direct
