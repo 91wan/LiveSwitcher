@@ -161,9 +161,9 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertTrue(document.contains("v0.6.0 tag SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
         XCTAssertTrue(document.localizedStandardContains("tag == publication target | PASS"))
         XCTAssertTrue(document.localizedStandardContains("Audit PR base SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
-        XCTAssertTrue(document.localizedStandardContains("Audit PR head SHA | `5f2d3d472561f7e61063f44476e9b70bac9b610e`"))
-        XCTAssertTrue(document.localizedStandardContains("audit docs are post-publication evidence"))
-        XCTAssertTrue(document.localizedStandardContains("not part of the released artifact"))
+        XCTAssertTrue(document.localizedStandardContains("post-publication docs/tests evidence"))
+        XCTAssertTrue(document.localizedStandardContains("not part of the v0.6.0 released artifact"))
+        XCTAssertTrue(document.localizedStandardContains("Use PR #456 metadata for review-head identity"))
         XCTAssertTrue(document.localizedStandardContains("Release state | released-complete"))
         XCTAssertTrue(document.localizedStandardContains("GitHub Release exists | yes"))
         XCTAssertTrue(document.localizedStandardContains("Release draft | no"))
@@ -188,5 +188,8 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertFalse(document.localizedStandardContains("Main SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
         XCTAssertFalse(document.localizedStandardContains("tag == main | PASS"))
         XCTAssertFalse(document.localizedStandardContains("origin/main / v0.6.0"))
+        XCTAssertFalse(document.localizedStandardContains("Audit PR head SHA"))
+        XCTAssertFalse(document.contains("5f2d3d472561f7e61063f44476e9b70bac9b610e"))
+        XCTAssertFalse(document.contains("6034d1e7c9e6609d898dc00cb87a3c59d5ad9112"))
     }
 }

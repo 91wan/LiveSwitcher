@@ -13,8 +13,8 @@ assets, or change production code.
 | v0.6.0 tag SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
 | tag == publication target | PASS |
 | Audit PR base SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
-| Audit PR head SHA | `5f2d3d472561f7e61063f44476e9b70bac9b610e` |
-| Audit PR relation to tag | audit docs are post-publication evidence and are not part of the released artifact |
+| Audit PR relation to tag | post-publication docs/tests evidence, not part of the v0.6.0 released artifact |
+| Audit PR review-head identity | Use PR #456 metadata for review-head identity |
 | VERSION | `0.6.0` |
 | GitHub Release publication | GitHub Release is published |
 | GitHub Release exists | yes |
