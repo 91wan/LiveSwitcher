@@ -2,8 +2,8 @@
 
 This document records the release-hygiene state for the LiveSwitcher v0.6.0
 phone LAN remote feature stream after publication. v0.6.0 is
-released-complete: the `v0.6.0` tag points at `origin/main`, the GitHub Release
-is published, and the release zip checksum verifies with
+released-complete: the `v0.6.0` tag points at the approved publication target,
+the GitHub Release is published, and the release zip checksum verifies with
 `LiveSwitcher-macOS-v0.6.0.zip: OK`.
 
 ## LiveSwitcher v0.6.0 Scope
@@ -88,8 +88,9 @@ with `ditto`, verified the extracted app, and uploaded both the zip and
 checksum assets. The GitHub Release is published at
 https://github.com/91wan/LiveSwitcher/releases/tag/v0.6.0.
 
-The v0.6.0 release trust model remains tag/main equality plus CI workflow
-evidence, release asset checksum verification, and extracted app verification.
+The v0.6.0 release trust model remains tag/publication-target equality plus CI
+workflow evidence, release asset checksum verification, and extracted app
+verification.
 It does not promise byte-for-byte local rebuild reproducibility.
 
 ## Prohibited Actions
@@ -111,6 +112,8 @@ It does not promise byte-for-byte local rebuild reproducibility.
 The release-readiness, artifact-audit, final-approval, and publication-audit
 records are now historical evidence for the completed v0.6.0 release. The
 published release target is `1498da8d11777cd4e52ce0740dc52d47ca602bb3`.
+Post-publication audit documentation may advance `main`; the v0.6.0 tag should
+remain on the approved publication target.
 
 For automated release-readiness checks: the release is now complete; do not
 create or mutate tags or release assets from readiness PRs.

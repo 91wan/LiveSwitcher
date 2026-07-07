@@ -20,8 +20,10 @@ GitHub Releases, or release assets.
 | Release draft | `false` |
 | Release prerelease | `false` |
 
-The final `v0.6.0` tag and `origin/main` both resolve to
-`1498da8d11777cd4e52ce0740dc52d47ca602bb3`.
+The `v0.6.0` tag points to the approved publication target SHA
+`1498da8d11777cd4e52ce0740dc52d47ca602bb3`. This approval and audit
+documentation may live after the release target and is not part of the v0.6.0
+app artifact.
 
 ## Release Notes
 

@@ -9,9 +9,12 @@ assets, or change production code.
 | Check | Result |
 | --- | --- |
 | Release state | released-complete |
-| Main SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
+| Publication target SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
 | v0.6.0 tag SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
-| tag == main | PASS |
+| tag == publication target | PASS |
+| Audit PR base SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3` |
+| Audit PR head SHA | `5f2d3d472561f7e61063f44476e9b70bac9b610e` |
+| Audit PR relation to tag | audit docs are post-publication evidence and are not part of the released artifact |
 | VERSION | `0.6.0` |
 | GitHub Release publication | GitHub Release is published |
 | GitHub Release exists | yes |
@@ -72,10 +75,14 @@ LiveSwitcher-macOS-v0.6.0.zip: OK
 git fetch origin --tags
 git status --short
 git rev-parse HEAD
+git rev-parse origin/main
 cat VERSION
 git rev-parse v0.5.0^{commit}
 git rev-parse v0.6.0^{commit}
-test "$(git rev-parse HEAD)" = "$(git rev-parse v0.6.0^{commit})"
+
+PUBLICATION_TARGET_SHA=1498da8d11777cd4e52ce0740dc52d47ca602bb3
+test "$(git rev-parse v0.6.0^{commit})" = "$PUBLICATION_TARGET_SHA"
+git merge-base --is-ancestor v0.6.0 HEAD
 
 gh release view v0.6.0 --json tagName,isDraft,isPrerelease,name,url,assets,targetCommitish,createdAt,publishedAt
 

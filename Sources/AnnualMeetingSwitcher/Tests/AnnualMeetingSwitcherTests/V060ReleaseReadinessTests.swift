@@ -78,7 +78,7 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertTrue(hygiene.contains("# LiveSwitcher v0.6.0"))
         XCTAssertTrue(hygiene.localizedStandardContains("phone LAN remote"))
         XCTAssertTrue(hygiene.localizedStandardContains("source-available, ad-hoc signed, and not notarized"))
-        XCTAssertTrue(hygiene.localizedStandardContains("tag/main equality"))
+        XCTAssertTrue(hygiene.localizedStandardContains("tag/publication-target equality"))
         XCTAssertTrue(hygiene.localizedStandardContains("released-complete"))
         XCTAssertTrue(hygiene.localizedStandardContains("GitHub Release is published"))
         XCTAssertTrue(hygiene.localizedStandardContains("LiveSwitcher-macOS-v0.6.0.zip: OK"))
@@ -157,9 +157,13 @@ final class V060ReleaseReadinessTests: XCTestCase {
         let document = try repositorySource("docs/qa/release-publication-audit-v0.6.0.md")
 
         XCTAssertTrue(document.contains("# LiveSwitcher v0.6.0 Publication State Audit"))
-        XCTAssertTrue(document.contains("Main SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
+        XCTAssertTrue(document.contains("Publication target SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
         XCTAssertTrue(document.contains("v0.6.0 tag SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
-        XCTAssertTrue(document.localizedStandardContains("tag == main | PASS"))
+        XCTAssertTrue(document.localizedStandardContains("tag == publication target | PASS"))
+        XCTAssertTrue(document.localizedStandardContains("Audit PR base SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
+        XCTAssertTrue(document.localizedStandardContains("Audit PR head SHA | `5f2d3d472561f7e61063f44476e9b70bac9b610e`"))
+        XCTAssertTrue(document.localizedStandardContains("audit docs are post-publication evidence"))
+        XCTAssertTrue(document.localizedStandardContains("not part of the released artifact"))
         XCTAssertTrue(document.localizedStandardContains("Release state | released-complete"))
         XCTAssertTrue(document.localizedStandardContains("GitHub Release exists | yes"))
         XCTAssertTrue(document.localizedStandardContains("Release draft | no"))
@@ -181,5 +185,8 @@ final class V060ReleaseReadinessTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("Issue #449"))
         XCTAssertTrue(document.localizedStandardContains("backlog"))
         XCTAssertTrue(document.localizedStandardContains("Next action | No release action required"))
+        XCTAssertFalse(document.localizedStandardContains("Main SHA | `1498da8d11777cd4e52ce0740dc52d47ca602bb3`"))
+        XCTAssertFalse(document.localizedStandardContains("tag == main | PASS"))
+        XCTAssertFalse(document.localizedStandardContains("origin/main / v0.6.0"))
     }
 }
