@@ -75,7 +75,7 @@ final class RemoteControlHardwareCloseoutTests: XCTestCase {
         XCTAssertTrue(document.localizedStandardContains("PR #454 is explicitly excluded from v0.6.0"))
         XCTAssertTrue(document.localizedStandardContains("Issue #449 remains backlog"))
         XCTAssertTrue(document.localizedStandardContains("Android Chrome remains unverified"))
-        XCTAssertTrue(document.localizedStandardContains("No tag, GitHub Release, release asset, or checksum publication is approved by this document."))
+        XCTAssertTrue(document.localizedStandardContains("Do not mutate the v0.6.0 tag, GitHub Release, release asset, or checksum"))
         XCTAssertFalse(document.localizedStandardContains("token="))
         XCTAssertFalse(document.localizedStandardContains("192.168."))
     }

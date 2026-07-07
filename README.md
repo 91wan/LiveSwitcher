@@ -94,6 +94,7 @@ Related guides:
 - [v0.6.0 release readiness](docs/qa/release-readiness-v0.6.0.md)
 - [v0.6.0 release hygiene](docs/qa/release-hygiene-v0.6.0.md)
 - [v0.6.0 final approval package](docs/qa/release-approval-package-v0.6.0.md)
+- [v0.6.0 publication audit](docs/qa/release-publication-audit-v0.6.0.md)
 - [v0.6.0 workspace guard](docs/qa/workspace-guard-v0.6.0.md)
 - [Current UI verification](docs/qa/ui-current-main.md)
 - [Runtime ownership](docs/architecture/runtime-ownership.md)
