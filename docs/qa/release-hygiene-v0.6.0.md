@@ -1,9 +1,10 @@
 # Release Hygiene - v0.6.0
 
 This document records the release-hygiene state for the LiveSwitcher v0.6.0
-phone LAN remote feature stream after the final phone UI smoke closeout. It is
-release-readiness evidence only. It does not approve a tag, GitHub Release,
-release asset, checksum publication, or app publication.
+phone LAN remote feature stream after publication. v0.6.0 is
+released-complete: the `v0.6.0` tag points at `origin/main`, the GitHub Release
+is published, and the release zip checksum verifies with
+`LiveSwitcher-macOS-v0.6.0.zip: OK`.
 
 ## LiveSwitcher v0.6.0 Scope
 
@@ -81,10 +82,11 @@ access is reserved for audio-monitoring workflows.
 ## Release Trust
 
 The public build is source-available, ad-hoc signed, and not notarized. The
-Release workflow must read `VERSION`, require the tag version to match
-`VERSION`, require the tag commit to equal `origin/main`, run the release gates,
-package with `ditto`, verify the extracted app, and upload both the zip and
-checksum assets as a draft release.
+Release workflow read `VERSION`, required the tag version to match `VERSION`,
+required the tag commit to equal `origin/main`, ran the release gates, packaged
+with `ditto`, verified the extracted app, and uploaded both the zip and
+checksum assets. The GitHub Release is published at
+https://github.com/91wan/LiveSwitcher/releases/tag/v0.6.0.
 
 The v0.6.0 release trust model remains tag/main equality plus CI workflow
 evidence, release asset checksum verification, and extracted app verification.
@@ -101,23 +103,21 @@ It does not promise byte-for-byte local rebuild reproducibility.
 - Do not add #449 Previous Item behavior to v0.6.0.
 - Do not add new phone remote commands, arbitrary source switching, remote
   projection toggles, remote editing, or remote configuration.
-- No tag, GitHub Release, release asset, or checksum publication is approved by this document.
+- Do not mutate the v0.6.0 tag, GitHub Release, release asset, or checksum
+  after publication without a new explicit release-maintenance approval.
 
 ## Readiness Boundary
 
-This release-readiness PR prepares version and documentation state only. No
-release or tag is created by this readiness PR, and no release asset is uploaded
-by hand. Final publication still requires release-candidate build/hash evidence,
-explicit user approval, a tag that points at `origin/main`, and a passing GitHub
-Release workflow that creates a draft release.
+The release-readiness, artifact-audit, final-approval, and publication-audit
+records are now historical evidence for the completed v0.6.0 release. The
+published release target is `1498da8d11777cd4e52ce0740dc52d47ca602bb3`.
 
-For automated release-readiness checks: no release or tag is created by this readiness PR.
+For automated release-readiness checks: the release is now complete; do not
+create or mutate tags or release assets from readiness PRs.
 
 ## Current Release Gate
 
-v0.6.0 remains blocked until the release-readiness PR, artifact audit PR, and
-approval package PR are refreshed against the final candidate source and the
-user explicitly approves publication.
+v0.6.0 is released-complete. No release action is required.
 
 ## Candidate Artifact Audit
 
@@ -128,19 +128,19 @@ audit covers app launch verification, the v0.6.0 app bundle metadata,
 binary hash, max-depth-3 app file-list hash, AppIcon hash, zip hash, and
 checksum verification.
 
-This audit does not upload the local zip and does not replace the final GitHub
-Release workflow. Final publication still requires explicit user approval and a
-tag that points at `origin/main`.
+The local candidate audit remains historical pre-publication evidence. The
+published release asset is recorded separately in
+[`release-publication-audit-v0.6.0.md`](release-publication-audit-v0.6.0.md).
 
 ## Final Approval Package
 
 The maintainer-facing approval summary is recorded in
 [`release-approval-package-v0.6.0.md`](release-approval-package-v0.6.0.md).
 It lists the current release notes, hardware evidence, final phone UI smoke,
-candidate source SHA, artifact audit SHA, artifact hash evidence, known
-limitations, Android Chrome unverified status, Issue #449 deferral, PR #454
-exclusion, and the no automatic publication rule. It does not publish the
-release.
+candidate source SHA, artifact audit SHA, published release hash evidence,
+known limitations, Android Chrome unverified status, Issue #449 deferral, and
+PR #454 exclusion. The publication state is recorded in
+[`release-publication-audit-v0.6.0.md`](release-publication-audit-v0.6.0.md).
 
 ## Known Limitations
 

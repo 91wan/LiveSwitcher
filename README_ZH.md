@@ -96,6 +96,7 @@ English maintainer note: `v0.6.0` focuses on the local phone LAN remote while ke
 - [v0.6.0 发布准备记录](docs/qa/release-readiness-v0.6.0.md)
 - [v0.6.0 发布卫生检查](docs/qa/release-hygiene-v0.6.0.md)
 - [v0.6.0 最终审批包](docs/qa/release-approval-package-v0.6.0.md)
+- [v0.6.0 发布状态审计](docs/qa/release-publication-audit-v0.6.0.md)
 - [v0.6.0 工作区门禁](docs/qa/workspace-guard-v0.6.0.md)
 - [当前 UI 验证](docs/qa/ui-current-main.md)
 - [Runtime ownership](docs/architecture/runtime-ownership.md)
