@@ -119,6 +119,19 @@ v0.6.0 remains blocked until the release-readiness PR, artifact audit PR, and
 approval package PR are refreshed against the final candidate source and the
 user explicitly approves publication.
 
+## Candidate Artifact Audit
+
+Local candidate artifact evidence is recorded in
+[`release-artifact-audit-v0.6.0.md`](release-artifact-audit-v0.6.0.md). The
+audit covers app launch verification, the v0.6.0 app bundle metadata,
+`build_v33.sh`, Info.plist linting, ad-hoc code signature verification, app
+binary hash, max-depth-3 app file-list hash, AppIcon hash, zip hash, and
+checksum verification.
+
+This audit does not upload the local zip and does not replace the final GitHub
+Release workflow. Final publication still requires explicit user approval and a
+tag that points at `origin/main`.
+
 ## Known Limitations
 
 - The public build is not Apple-notarized.
