@@ -18,9 +18,9 @@
 
 ## 截图
 
-![LiveSwitcher v0.5.0 控制台](docs/assets/readme/live-console-v0.5.0.png)
+![LiveSwitcher v0.6.0 控制台](docs/assets/readme/live-console-v0.6.0.png)
 
-_当前 v0.5.0 控制台，使用脱敏 demo 数据。_
+_当前 v0.6.0 控制台，使用脱敏 demo 数据。_
 
 ## 项目说明
 
@@ -40,14 +40,14 @@ LiveSwitcher 把现场常用的节目列表、演示软件、音乐播放器和�
 当前发布资产：
 
 ```text
-LiveSwitcher-macOS-v0.5.0.zip
-LiveSwitcher-macOS-v0.5.0.zip.sha256
+LiveSwitcher-macOS-v0.6.0.zip
+LiveSwitcher-macOS-v0.6.0.zip.sha256
 ```
 
 打开 App 前可以先校验 checksum：
 
 ```bash
-shasum -a 256 -c LiveSwitcher-macOS-v0.5.0.zip.sha256
+shasum -a 256 -c LiveSwitcher-macOS-v0.6.0.zip.sha256
 ```
 
 注意：当前公开构建是 source-available、ad-hoc 签名，且 **未经过 Apple notarization**。首次启动时 macOS Gatekeeper 可能会拦截。可以到 **系统设置 -> 隐私与安全性 -> 仍要打开** 放行，或从源码本地构建。后续 notarized 版本需要 Apple Developer ID 证书和 notarytool 凭据。
@@ -62,18 +62,21 @@ LiveSwitcher 的基础播放列表和监看流程不需要特殊权限。部分�
 | Apple Events | 控制 Keynote 或兼容演示软件时需要。 |
 | 麦克风 | 为音频监听类流程保留。 |
 
-## v0.5.0 更新
+## v0.6.0 更新
 
-- Media 与 BGM 快速切换更可靠，旧播放器回调不会再覆盖当前节目或曲目。
-- BGM 曲库删除和重排会立即同步现场播放状态，不再产生幽灵曲目。
-- Panic、投射和 PPT 生命周期更严格，覆盖延迟暂停、外屏断开和 EventTap 状态。
-- 节目队列、当前节目、激活、持久化和音频路由使用单一权威现场状态。
-- Preflight、安全台和脱敏 Support Report 提供更清晰的发布与故障复盘流程。
-- 新增统一 RC 演练门禁，覆盖硬件、权限、隐私和长时间播放。
+- 手机 LAN 遥控允许单一控制端手机在同一局域网内执行已批准的现场动作。
+- 遥控保持 LAN-only、token 保护、默认关闭；只读手机可看状态但不能执行命令。
+- 手机端命令反馈改为具体命令反馈，连续点按时能区分哪个命令完成或失败。
+- 媒体/节目控件统一视觉角色，BGM 控件继续保持独立颜色语义。
+- 危险动作仍需要长按和服务端确认，单击不会触发切黑或紧急切黑。
+- 设置诊断会提示同一 Wi-Fi、专用路由器/热点、AP isolation、无局域网地址和端口失败等状态。
+- 硬件验收记录覆盖 iPhone Safari、专用路由器、Mac 热点、AP isolation graceful fail、token rotation、外接屏切黑和 60 分钟 soak。
+- “切上一项”远程命令不包含在 v0.6.0，继续留在 backlog。
+- v0.6.0 候选版本更新了 App 图标。
 
-v0.5.0 发布说明和可信门禁见 [`docs/qa/release-hygiene-v0.5.0.md`](docs/qa/release-hygiene-v0.5.0.md)。
+v0.6.0 发布说明和可信门禁见 [`docs/qa/release-hygiene-v0.6.0.md`](docs/qa/release-hygiene-v0.6.0.md)。
 
-English maintainer note: `v0.5.0` freezes the current runtime ownership architecture and tightens release flow around reproducible candidate artifacts and Draft Releases.
+English maintainer note: `v0.6.0` focuses on the local phone LAN remote while keeping release flow gated by reproducible candidate artifacts, hardware acceptance, explicit user approval, and Draft Releases.
 
 ## 现场检查
 
@@ -90,9 +93,9 @@ English maintainer note: `v0.5.0` freezes the current runtime ownership architec
 当前验收入口：
 
 - [Release Candidate 演练](docs/qa/release-candidate-rehearsal.md)
-- [v0.5.0 发布验收记录](docs/qa/release-acceptance-v0.5.0.md)
-- [v0.5.0 发布卫生检查](docs/qa/release-hygiene-v0.5.0.md)
-- [v0.5.0 工作区门禁](docs/qa/workspace-guard-v0.5.0.md)
+- [v0.6.0 发布准备记录](docs/qa/release-readiness-v0.6.0.md)
+- [v0.6.0 发布卫生检查](docs/qa/release-hygiene-v0.6.0.md)
+- [v0.6.0 工作区门禁](docs/qa/workspace-guard-v0.6.0.md)
 - [当前 UI 验证](docs/qa/ui-current-main.md)
 - [Runtime ownership](docs/architecture/runtime-ownership.md)
 - [Live Mode simplicity rules](docs/architecture/live-mode-simplicity-rules.md)
