@@ -47,7 +47,7 @@ Fade To Black, and Panic.
 | #450 media/BGM color grouping | Closed by PR #452 |
 | Final phone UI smoke after #448 / #450 | Recorded as operator-reported iPhone Safari PASS |
 | #449 guarded previous item command | Deferred to backlog |
-| PR #454 ImageGen / top chrome UI exploration | Excluded from v0.6.0 |
+| PR #454 ImageGen / top chrome exploration | Closed without merge; excluded from v0.6.0; no code accepted |
 | Android Chrome | Unverified |
 
 ## Reliability And Privacy
@@ -97,8 +97,9 @@ It does not promise byte-for-byte local rebuild reproducibility.
 
 - PR #454 is explicitly excluded from v0.6.0.
 - Issue #449 remains backlog and is not part of the v0.6.0 release candidate.
-- Do not merge PR #454 into v0.6.0.
-- Do not rebase PR #454 into the release stack.
+- Do not resurrect, cherry-pick, or treat PR #454 as accepted v0.6.0 code.
+- Any future console redesign must start from current main under a new approved UI
+  contract.
 - Do not include PR #454 in v0.6.0 release notes, artifact audit, approval
   package, or release candidate source.
 - Do not add #449 Previous Item behavior to v0.6.0.
