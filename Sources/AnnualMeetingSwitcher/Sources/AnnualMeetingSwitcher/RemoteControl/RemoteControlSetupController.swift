@@ -41,7 +41,7 @@ final class RemoteControlSetupController {
             return
         }
 
-        let remoteServer = makeServer()
+        let remoteServer = makeServer(localHost: host)
         switch remoteServer.enable(port: portProvider()) {
         case .started(let endpoint):
             server = remoteServer
@@ -75,7 +75,7 @@ final class RemoteControlSetupController {
         NSPasteboard.general.setString(pairingURL, forType: .string)
     }
 
-    private func makeServer() -> RemoteControlServer {
+    private func makeServer(localHost: String) -> RemoteControlServer {
         if let listenerFactory {
             return RemoteControlServer(
                 listenerFactory: listenerFactory,
@@ -88,6 +88,7 @@ final class RemoteControlSetupController {
         }
 
         return RemoteControlServer(
+            localHost: localHost,
             tokenProvider: tokenProvider,
             snapshotProvider: snapshotProvider,
             commandContextProvider: commandContext,
