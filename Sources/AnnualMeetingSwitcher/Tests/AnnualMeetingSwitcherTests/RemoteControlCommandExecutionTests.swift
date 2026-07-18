@@ -356,6 +356,7 @@ final class RemoteControlCommandExecutionTests: XCTestCase {
     }
 }
 
+@MainActor
 private final class RemoteCommandServerHarness {
     var createdListeners: [FakeRemoteCommandListener] = []
     var executedCommands: [RemoteControlAcceptedCommand] = []
