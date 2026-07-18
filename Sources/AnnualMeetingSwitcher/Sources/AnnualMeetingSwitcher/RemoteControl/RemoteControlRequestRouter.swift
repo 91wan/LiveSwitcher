@@ -87,7 +87,7 @@ struct RemoteControlRequestRouter {
             return .json(statusCode: 401, [("error", "missingAuthorization")])
         }
 
-        guard authorization == "Bearer \(token.value)" else {
+        guard token.matchesBearerAuthorization(authorization) else {
             return .json(statusCode: 403, [("error", "invalidAuthorization")])
         }
 
