@@ -62,8 +62,8 @@ LiveSwitcher-macOS-v0.6.0.zip: OK
 
 | Item | State |
 | --- | --- |
-| PR #454 | open Draft, CI failed, excluded from v0.6.0 |
-| Issue #449 | backlog, not included in v0.6.0 |
+| PR #454 | excluded from v0.6.0; closed without merge after publication; no code accepted |
+| Issue #449 | not included in v0.6.0; tracked separately as an enhancement backlog item |
 | Production code changes in this audit | none |
 | Tag mutation in this audit | none |
 | Release asset mutation in this audit | none |
