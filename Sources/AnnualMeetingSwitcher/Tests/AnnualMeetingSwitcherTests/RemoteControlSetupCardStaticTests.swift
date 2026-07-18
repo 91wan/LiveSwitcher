@@ -48,6 +48,15 @@ final class RemoteControlSetupCardStaticTests: XCTestCase {
         XCTAssertFalse(liveMode.contains("复制链接"))
     }
 
+    func testProductionSetupBindsServerToAdvertisedLocalHost() throws {
+        let source = try sourceText("RemoteControl/RemoteControlSetupController.swift")
+
+        XCTAssertTrue([
+            "let remoteServer = makeServer(localHost: host)",
+            "RemoteControlServer(\n            localHost: localHost,"
+        ].allSatisfy { source.range(of: $0) != nil })
+    }
+
     func testPairingURLKeepsTokenInFragment() {
         let url = RemoteControlPairingURLBuilder.pairingURL(
             host: "192.168.1.23",

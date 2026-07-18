@@ -58,8 +58,28 @@ final class RemoteControlServer {
         ].joined(separator: ",")
     }
 
+    convenience init(
+        localHost: String,
+        tokenProvider: @escaping () throws -> RemoteControlToken = { try RemoteControlTokenPolicy.makeToken() },
+        snapshotProvider: @escaping () -> RemoteControlSnapshot,
+        commandContextProvider: @escaping () -> RemoteControlCommandValidationContext,
+        sessionCloseObserver: @escaping () -> Void = {},
+        commandExecutor: @escaping (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
+            .executed(RemoteControlCommandExecutionRecord(command: $0))
+        }
+    ) {
+        self.init(
+            listenerFactory: { try RemoteControlNWListener(port: $0, localHost: localHost) },
+            tokenProvider: tokenProvider,
+            snapshotProvider: snapshotProvider,
+            commandContextProvider: commandContextProvider,
+            sessionCloseObserver: sessionCloseObserver,
+            commandExecutor: commandExecutor
+        )
+    }
+
     init(
-        listenerFactory: @escaping ListenerFactory = { try RemoteControlNWListener(port: $0) },
+        listenerFactory: @escaping ListenerFactory,
         tokenProvider: @escaping () throws -> RemoteControlToken = { try RemoteControlTokenPolicy.makeToken() },
         snapshotProvider: @escaping () -> RemoteControlSnapshot,
         commandContextProvider: @escaping () -> RemoteControlCommandValidationContext,
@@ -276,6 +296,30 @@ final class RemoteControlServer {
     }
 }
 
+struct RemoteControlNWListenerConfiguration {
+    let parameters: NWParameters
+    let listenerPort: NWEndpoint.Port
+
+    static func make(localHost: String, port: UInt16?) throws -> RemoteControlNWListenerConfiguration {
+        // A bound listener needs a concrete port: requiredLocalEndpoint with port 0 (.any)
+        // fails at listener start with EINVAL.
+        guard let port, port != 0, let listenerPort = NWEndpoint.Port(rawValue: port) else {
+            throw RemoteControlNWListenerError.invalidPort
+        }
+
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
+        parameters.requiredLocalEndpoint = .hostPort(
+            host: NWEndpoint.Host(localHost),
+            port: listenerPort
+        )
+        return RemoteControlNWListenerConfiguration(
+            parameters: parameters,
+            listenerPort: listenerPort
+        )
+    }
+}
+
 private final class RemoteControlNWListener: RemoteControlListening {
     private let listener: NWListener
     private let queue = DispatchQueue(label: "LiveSwitcher.RemoteControlServer")
@@ -286,19 +330,14 @@ private final class RemoteControlNWListener: RemoteControlListening {
         listener.port?.rawValue
     }
 
-    init(port: UInt16?) throws {
-        let parameters = NWParameters.tcp
-        parameters.allowLocalEndpointReuse = true
-        let listenerPort: NWEndpoint.Port
-        if let port {
-            guard let requestedPort = NWEndpoint.Port(rawValue: port) else {
-                throw RemoteControlNWListenerError.invalidPort
-            }
-            listenerPort = requestedPort
-        } else {
-            listenerPort = .any
-        }
-        listener = try NWListener(using: parameters, on: listenerPort)
+    init(port: UInt16?, localHost: String) throws {
+        let configuration = try RemoteControlNWListenerConfiguration.make(
+            localHost: localHost,
+            port: port
+        )
+        // NWListener(using:on:) rejects parameters that already carry a
+        // requiredLocalEndpoint with EINVAL; the endpoint supplies the port.
+        listener = try NWListener(using: configuration.parameters)
     }
 
     func start() throws {

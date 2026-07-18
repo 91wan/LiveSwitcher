@@ -1,9 +1,34 @@
 import Foundation
+import Network
 import XCTest
 @testable import LiveSwitcher
 
 @MainActor
 final class RemoteControlServerLifecycleTests: XCTestCase {
+    func testProductionListenerParametersBindToAdvertisedLocalEndpoint() throws {
+        let configuration = try RemoteControlNWListenerConfiguration.make(
+            localHost: "192.168.1.23",
+            port: 41_888
+        )
+
+        XCTAssertEqual(configuration.listenerPort.rawValue, 41_888)
+        XCTAssertEqual(
+            configuration.parameters.requiredLocalEndpoint,
+            .hostPort(host: "192.168.1.23", port: configuration.listenerPort)
+        )
+    }
+
+    func testProductionListenerConfigurationRequiresConcretePort() {
+        XCTAssertThrowsError(try RemoteControlNWListenerConfiguration.make(
+            localHost: "192.168.1.23",
+            port: nil
+        ))
+        XCTAssertThrowsError(try RemoteControlNWListenerConfiguration.make(
+            localHost: "192.168.1.23",
+            port: 0
+        ))
+    }
+
     func testServerIsDisabledByDefault() {
         let harness = ServerHarness()
 
