@@ -59,4 +59,21 @@ final class RemoteControlSessionStoreTests: XCTestCase {
         XCTAssertNil(store.controllerClientID)
         XCTAssertFalse(store.canExecuteCommand(from: clientID))
     }
+
+    func testAcceptedCommandIDHistoryRetainsOnlyTheNewestReplayWindow() {
+        var store = RemoteControlSessionStore()
+        store.enable(token: RemoteControlToken(value: "token-1"), now: Date(timeIntervalSince1970: 100))
+        let commandIDs = (0...RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs).map { _ in UUID() }
+
+        commandIDs.dropLast().forEach { id in
+            XCTAssertTrue(store.markCommandIDIfNew(id))
+        }
+        XCTAssertFalse(store.markCommandIDIfNew(commandIDs[RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs - 1]))
+
+        XCTAssertTrue(store.markCommandIDIfNew(commandIDs.last!))
+        XCTAssertEqual(store.acceptedCommandIDs.count, RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs)
+        XCTAssertFalse(store.acceptedCommandIDs.contains(commandIDs[0]))
+        XCTAssertTrue(store.markCommandIDIfNew(commandIDs[0]))
+        XCTAssertEqual(store.acceptedCommandIDs.count, RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs)
+    }
 }
