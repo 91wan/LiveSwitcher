@@ -162,6 +162,24 @@ final class RuntimeActionLogPolicyTests: XCTestCase {
         XCTAssertTrue(runtime.actionLog.contains { $0.actionName == "projectionExternalDisplayLost" })
     }
 
+    func testActionLogRetainsOnlyTheNewestEntriesWithinPolicyLimit() {
+        let runtime = LiveRuntimeStore(
+            effectRunner: .recording(),
+            environment: LiveRuntimeEnvironment(bridgeMode: .audioOwned)
+        )
+        runtime.dispatch(.automationFailed(action: "first", sanitizedMessage: "failed"))
+
+        for _ in 0..<LiveRuntimeActionLogPolicy.maxEntries {
+            runtime.dispatch(.automationNoticeDismissed)
+        }
+        runtime.dispatch(.projectionExternalDisplayLost)
+
+        XCTAssertEqual(runtime.actionLog.count, LiveRuntimeActionLogPolicy.maxEntries)
+        XCTAssertFalse(runtime.actionLog.contains { $0.actionName == "automationFailed" })
+        XCTAssertEqual(runtime.actionLog.first?.actionName, "automationNoticeDismissed")
+        XCTAssertEqual(runtime.actionLog.last?.actionName, "projectionExternalDisplayLost")
+    }
+
     private func audioSnapshot() -> AudioFacadeSnapshot {
         AudioFacadeSnapshot(
             masterVolume: 0.5,

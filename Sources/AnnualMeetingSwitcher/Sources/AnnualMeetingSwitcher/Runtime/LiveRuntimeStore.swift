@@ -59,6 +59,9 @@ final class LiveRuntimeStore {
                     newStateSummary: Self.summary(for: state)
                 )
             )
+            if actionLog.count > LiveRuntimeActionLogPolicy.maxEntries {
+                actionLog.removeFirst(actionLog.count - LiveRuntimeActionLogPolicy.maxEntries)
+            }
         }
         effectRunner.run(
             mutation.effects,
@@ -152,6 +155,8 @@ final class LiveRuntimeStore {
 }
 
 enum LiveRuntimeActionLogPolicy {
+    static let maxEntries = 4_096
+
     static func shouldLog(_ action: LiveRuntimeAction) -> Bool {
         switch action {
         case .facadeAudioInputsChanged,
