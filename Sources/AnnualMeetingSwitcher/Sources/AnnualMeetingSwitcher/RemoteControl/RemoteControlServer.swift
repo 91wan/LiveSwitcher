@@ -24,6 +24,7 @@ enum RemoteControlServerEnableResult: Equatable {
     case failed(RemoteControlServerFailure)
 }
 
+@MainActor
 final class RemoteControlServer {
     typealias ListenerFactory = (UInt16?) throws -> RemoteControlListening
 
@@ -34,6 +35,7 @@ final class RemoteControlServer {
     private let commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult
     private let sessionCloseObserver: () -> Void
     private var listener: RemoteControlListening?
+    private var listenerGeneration: UUID?
     private var sessionStore = RemoteControlSessionStore()
     private var lastFailureReason: String?
 
@@ -87,9 +89,12 @@ final class RemoteControlServer {
         do {
             let token = try tokenProvider()
             let newListener = try listenerFactory(port)
+            let generation = UUID()
             newListener.requestHandler = makeRequestHandler(token: token)
             newListener.failureHandler = { [weak self] in
-                self?.handleListenerFailure()
+                RemoteControlMainActorExecutor.run {
+                    self?.handleListenerFailure(generation: generation)
+                }
             }
 
             do {
@@ -105,6 +110,7 @@ final class RemoteControlServer {
             )
             sessionStore.enable(token: token, now: now)
             listener = newListener
+            listenerGeneration = generation
             activeEndpoint = endpoint
             lastFailureReason = nil
             return .started(endpoint)
@@ -116,12 +122,13 @@ final class RemoteControlServer {
     func disable() {
         listener?.cancel()
         listener = nil
+        listenerGeneration = nil
         activeEndpoint = nil
         sessionStore.disable()
     }
 
     private func makeRequestHandler(token: RemoteControlToken) -> (String) -> Data {
-        { [weak self, snapshotProvider] rawRequest in
+        { [weak self] rawRequest in
             guard let request = RemoteControlHTTPParser.parse(rawRequest) else {
                 return RemoteControlHTTPWireCodec.serialize(.json(
                     statusCode: 400,
@@ -129,47 +136,57 @@ final class RemoteControlServer {
                 ))
             }
 
-            guard self?.acceptsRequest(request, token: token) == true else {
-                return RemoteControlHTTPWireCodec.serialize(.json(
-                    statusCode: 403,
-                    [("error", "invalidAuthorization")]
-                ))
-            }
-
-            var shouldCloseSession = false
-            let router = RemoteControlRequestRouter(
-                token: token,
-                snapshotProvider: snapshotProvider,
-                commandContextProvider: {
-                    self?.commandValidationContext() ?? Self.disabledCommandContext()
-                },
-                dangerConfirmationIssuer: { kind, clientID in
-                    self?.issueDangerConfirmation(kind: kind, clientID: clientID)
-                },
-                sessionCloseHandler: {
-                    guard self?.isEnabled == true else {
-                        return .remoteDisabled
-                    }
-                    shouldCloseSession = true
-                    return .closed
-                },
-                sessionClaimHandler: { clientID in
-                    self?.sessionStore.claimController(clientID: clientID) ?? .remoteDisabled
-                },
-                requiresControllerClientID: true,
-                canExecuteCommandFromClient: { clientID in
-                    self?.sessionStore.canExecuteCommand(from: clientID) == true
-                },
-                commandExecutor: {
-                    self?.executeAcceptedCommand($0) ?? .rejected(.remoteDisabled)
+            // The listener queue may wait for MainActor; MainActor must never wait for the listener queue.
+            return RemoteControlMainActorExecutor.run {
+                guard let self else {
+                    return RemoteControlHTTPWireCodec.serialize(.json(
+                        statusCode: 403,
+                        [("error", "invalidAuthorization")]
+                    ))
                 }
-            )
-            let data = RemoteControlHTTPWireCodec.serialize(router.route(request))
-            if shouldCloseSession {
-                self?.closeSessionAfterResponse()
+                return self.responseData(for: request, token: token)
             }
-            return data
         }
+    }
+
+    private func responseData(
+        for request: RemoteControlHTTPRequest,
+        token: RemoteControlToken
+    ) -> Data {
+        guard acceptsRequest(request, token: token) else {
+            return RemoteControlHTTPWireCodec.serialize(.json(
+                statusCode: 403,
+                [("error", "invalidAuthorization")]
+            ))
+        }
+
+        var shouldCloseSession = false
+        let router = RemoteControlRequestRouter(
+            token: token,
+            snapshotProvider: snapshotProvider,
+            commandContextProvider: commandValidationContext,
+            dangerConfirmationIssuer: issueDangerConfirmation,
+            sessionCloseHandler: {
+                guard self.isEnabled else {
+                    return .remoteDisabled
+                }
+                shouldCloseSession = true
+                return .closed
+            },
+            sessionClaimHandler: { clientID in
+                self.sessionStore.claimController(clientID: clientID)
+            },
+            requiresControllerClientID: true,
+            canExecuteCommandFromClient: { clientID in
+                self.sessionStore.canExecuteCommand(from: clientID)
+            },
+            commandExecutor: executeAcceptedCommand
+        )
+        let data = RemoteControlHTTPWireCodec.serialize(router.route(request))
+        if shouldCloseSession {
+            closeSessionAfterResponse()
+        }
+        return data
     }
 
     private func acceptsRequest(_ request: RemoteControlHTTPRequest, token: RemoteControlToken) -> Bool {
@@ -229,17 +246,9 @@ final class RemoteControlServer {
         sessionCloseObserver()
     }
 
-    private static func disabledCommandContext() -> RemoteControlCommandValidationContext {
-        RemoteControlCommandValidationContext(
-            isRemoteEnabled: false,
-            acceptedCommandIDs: [],
-            dangerConfirmationChallenges: [:],
-            now: Date()
-        )
-    }
-
     private func fail(reason: String) -> RemoteControlServerEnableResult {
         listener = nil
+        listenerGeneration = nil
         activeEndpoint = nil
         sessionStore.disable()
         lastFailureReason = reason
@@ -253,9 +262,14 @@ final class RemoteControlServer {
         return listenerPort
     }
 
-    private func handleListenerFailure() {
+    private func handleListenerFailure(generation: UUID) {
+        guard listenerGeneration == generation else {
+            return
+        }
+
         listener?.cancel()
         listener = nil
+        listenerGeneration = nil
         activeEndpoint = nil
         sessionStore.disable()
         lastFailureReason = "listenerFailed"

@@ -146,7 +146,7 @@ extension SwitcherViewModel {
     }
 }
 
-private enum RemoteControlMainActorExecutor {
+enum RemoteControlMainActorExecutor {
     static func run<T>(_ operation: @MainActor () -> T) -> T {
         if Thread.isMainThread {
             return MainActor.assumeIsolated(operation)

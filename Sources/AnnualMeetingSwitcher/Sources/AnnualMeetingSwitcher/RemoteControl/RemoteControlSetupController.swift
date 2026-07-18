@@ -27,10 +27,6 @@ final class RemoteControlSetupController {
     }
     @ObservationIgnored private var server: RemoteControlServer?
 
-    deinit {
-        server?.disable()
-    }
-
     func enable() {
         disable()
 

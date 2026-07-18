@@ -2,6 +2,7 @@ import Foundation
 import XCTest
 @testable import LiveSwitcher
 
+@MainActor
 final class RemoteControlServerLifecycleTests: XCTestCase {
     func testServerIsDisabledByDefault() {
         let harness = ServerHarness()
@@ -197,12 +198,63 @@ final class RemoteControlServerLifecycleTests: XCTestCase {
         XCTAssertTrue(newTokenClaim.contains("HTTP/1.1 202 Accepted"))
         XCTAssertTrue(newTokenClaim.contains(#""role":"controller""#))
     }
+
+    func testCrossQueueCommandRequestExecutesOnMainThread() async throws {
+        let harness = ServerHarness()
+        var commandExecutedOnMainThread = false
+        harness.commandExecutor = { command in
+            commandExecutedOnMainThread = Thread.isMainThread
+            return .executed(RemoteControlCommandExecutionRecord(command: command))
+        }
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        let listener = try XCTUnwrap(harness.createdListeners.first)
+        _ = try XCTUnwrap(listener.respond(to: rawSessionClaimRequest(token: "token-1")))
+        let responseReceived = expectation(description: "cross-queue command response")
+        var response: String?
+
+        listener.respondOffQueue(to: rawCommandRequest(
+            token: "token-1",
+            id: UUID(uuidString: "44444444-4444-4444-4444-444444444444")!
+        )) {
+            response = $0
+            responseReceived.fulfill()
+        }
+
+        await fulfillment(of: [responseReceived], timeout: 1)
+        XCTAssertTrue(try XCTUnwrap(response).contains("HTTP/1.1 202 Accepted"))
+        XCTAssertTrue(commandExecutedOnMainThread)
+    }
+
+    func testLateFailureFromReplacedListenerDoesNotDisableNewSession() async throws {
+        let harness = ServerHarness()
+        harness.tokens = [
+            RemoteControlToken(value: "token-1"),
+            RemoteControlToken(value: "token-2")
+        ]
+        _ = harness.server.enable(port: 41888, now: Date(timeIntervalSince1970: 100))
+        let replacedListener = try XCTUnwrap(harness.createdListeners.first)
+        _ = harness.server.enable(port: 41889, now: Date(timeIntervalSince1970: 200))
+        let failureDelivered = expectation(description: "replaced listener failure delivered")
+
+        replacedListener.failRuntimeOffQueue {
+            failureDelivered.fulfill()
+        }
+
+        await fulfillment(of: [failureDelivered], timeout: 1)
+        XCTAssertTrue(harness.server.isEnabled)
+        XCTAssertEqual(harness.server.activeSession?.token.value, "token-2")
+        XCTAssertEqual(harness.server.activeEndpoint?.port, 41889)
+    }
 }
 
+@MainActor
 private final class ServerHarness {
     var createdListeners: [FakeRemoteControlListener] = []
     var nextListenerShouldFailStart = false
     var tokens = [RemoteControlToken(value: "token-1")]
+    var commandExecutor: (RemoteControlAcceptedCommand) -> RemoteControlCommandExecutionResult = {
+        .executed(RemoteControlCommandExecutionRecord(command: $0))
+    }
 
     lazy var server = RemoteControlServer(
         listenerFactory: makeListener(port:),
@@ -214,7 +266,10 @@ private final class ServerHarness {
             return self.tokens.first ?? RemoteControlToken(value: "token-1")
         },
         snapshotProvider: snapshot,
-        commandContextProvider: commandContext
+        commandContextProvider: commandContext,
+        commandExecutor: { [weak self] command in
+            self?.commandExecutor(command) ?? .rejected(.remoteDisabled)
+        }
     )
 
     func makeListener(port: UInt16?) throws -> RemoteControlListening {
@@ -266,6 +321,7 @@ private final class FakeRemoteControlListener: RemoteControlListening {
     var failureHandler: (() -> Void)?
     private(set) var startCallCount = 0
     private(set) var cancelCallCount = 0
+    private let callbackQueue = DispatchQueue(label: "LiveSwitcherTests.RemoteControlListener")
 
     var port: UInt16? {
         boundPort
@@ -297,6 +353,22 @@ private final class FakeRemoteControlListener: RemoteControlListening {
 
     func failRuntime() {
         failureHandler?()
+    }
+
+    func respondOffQueue(to rawRequest: String, completion: @escaping (String?) -> Void) {
+        let handler = requestHandler
+        callbackQueue.async {
+            let data = handler?(rawRequest)
+            completion(data.flatMap { String(data: $0, encoding: .utf8) })
+        }
+    }
+
+    func failRuntimeOffQueue(completion: @escaping () -> Void) {
+        let handler = failureHandler
+        callbackQueue.async {
+            handler?()
+            completion()
+        }
     }
 }
 
