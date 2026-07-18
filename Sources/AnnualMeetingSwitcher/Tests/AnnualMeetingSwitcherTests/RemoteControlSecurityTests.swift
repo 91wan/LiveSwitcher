@@ -26,6 +26,13 @@ final class RemoteControlSecurityTests: XCTestCase {
         XCTAssertTrue(response.bodyText.contains("invalidAuthorization"))
     }
 
+    func testRouterUsesConstantTimeBearerTokenMatcher() throws {
+        let source = try sourceText("RemoteControl/RemoteControlRequestRouter.swift")
+
+        XCTAssertTrue(source.contains("token.matchesBearerAuthorization(authorization)"))
+        XCTAssertFalse(source.contains("authorization == \"Bearer "))
+    }
+
     func testBadJSONReturnsSafeError() {
         let router = router()
 

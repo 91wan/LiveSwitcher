@@ -25,6 +25,29 @@ final class RemoteControlTokenPolicyTests: XCTestCase {
         XCTAssertNotEqual(first, second)
     }
 
+    func testBearerAuthorizationMatcherAcceptsOnlyExactTokenBytes() {
+        let token = RemoteControlToken(value: "abcdef")
+
+        XCTAssertTrue(token.matchesBearerAuthorization("Bearer abcdef"))
+        [
+            "Bearer xbcdef",
+            "Bearer abxdef",
+            "Bearer abcdex",
+            "Bearer abcde",
+            "Bearer abcdefx",
+            "bearer abcdef",
+            "abcdef"
+        ].forEach { authorization in
+            XCTAssertFalse(token.matchesBearerAuthorization(authorization), authorization)
+        }
+    }
+
+    func testBearerAuthorizationMatcherUsesSystemTimingSafeByteComparison() throws {
+        let source = try sourceText("RemoteControl/RemoteControlTokenPolicy.swift")
+
+        XCTAssertTrue(source.contains("timingsafe_bcmp"))
+    }
+
     func testSessionEnableRotatesTokenAndClearsCommandHistory() throws {
         var store = RemoteControlSessionStore()
         let first = try RemoteControlTokenPolicy.makeToken(bytes: Array(repeating: 1, count: 32))

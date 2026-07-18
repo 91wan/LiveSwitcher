@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 struct RemoteControlToken: Codable, Equatable, CustomStringConvertible {
@@ -9,6 +10,37 @@ struct RemoteControlToken: Codable, Equatable, CustomStringConvertible {
 
     var redactedDescription: String {
         "<remote-token-redacted>"
+    }
+
+    func matchesBearerAuthorization(_ authorization: String) -> Bool {
+        RemoteControlConstantTimeComparison.matches(
+            authorization,
+            expected: "Bearer \(value)"
+        )
+    }
+}
+
+private enum RemoteControlConstantTimeComparison {
+    static func matches(_ candidate: String, expected: String) -> Bool {
+        let candidateBytes = Array(candidate.utf8)
+        let expectedBytes = Array(expected.utf8)
+        var normalizedCandidate = Array(repeating: UInt8.zero, count: expectedBytes.count)
+        let copiedByteCount = min(candidateBytes.count, expectedBytes.count)
+
+        for index in 0..<copiedByteCount {
+            normalizedCandidate[index] = candidateBytes[index]
+        }
+
+        let bytesMatch = normalizedCandidate.withUnsafeBytes { candidateBuffer in
+            expectedBytes.withUnsafeBytes { expectedBuffer in
+                timingsafe_bcmp(
+                    candidateBuffer.baseAddress,
+                    expectedBuffer.baseAddress,
+                    expectedBytes.count
+                ) == 0
+            }
+        }
+        return bytesMatch && candidateBytes.count == expectedBytes.count
     }
 }
 
