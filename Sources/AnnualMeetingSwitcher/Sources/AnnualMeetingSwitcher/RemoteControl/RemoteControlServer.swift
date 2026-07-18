@@ -301,19 +301,14 @@ struct RemoteControlNWListenerConfiguration {
     let listenerPort: NWEndpoint.Port
 
     static func make(localHost: String, port: UInt16?) throws -> RemoteControlNWListenerConfiguration {
-        let parameters = NWParameters.tcp
-        parameters.allowLocalEndpointReuse = true
-
-        let listenerPort: NWEndpoint.Port
-        if let port {
-            guard let requestedPort = NWEndpoint.Port(rawValue: port) else {
-                throw RemoteControlNWListenerError.invalidPort
-            }
-            listenerPort = requestedPort
-        } else {
-            listenerPort = .any
+        // A bound listener needs a concrete port: requiredLocalEndpoint with port 0 (.any)
+        // fails at listener start with EINVAL.
+        guard let port, port != 0, let listenerPort = NWEndpoint.Port(rawValue: port) else {
+            throw RemoteControlNWListenerError.invalidPort
         }
 
+        let parameters = NWParameters.tcp
+        parameters.allowLocalEndpointReuse = true
         parameters.requiredLocalEndpoint = .hostPort(
             host: NWEndpoint.Host(localHost),
             port: listenerPort
@@ -340,10 +335,9 @@ private final class RemoteControlNWListener: RemoteControlListening {
             localHost: localHost,
             port: port
         )
-        listener = try NWListener(
-            using: configuration.parameters,
-            on: configuration.listenerPort
-        )
+        // NWListener(using:on:) rejects parameters that already carry a
+        // requiredLocalEndpoint with EINVAL; the endpoint supplies the port.
+        listener = try NWListener(using: configuration.parameters)
     }
 
     func start() throws {

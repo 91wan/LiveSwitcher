@@ -18,17 +18,15 @@ final class RemoteControlServerLifecycleTests: XCTestCase {
         )
     }
 
-    func testProductionListenerParametersBindEphemeralPortToAdvertisedLocalEndpoint() throws {
-        let configuration = try RemoteControlNWListenerConfiguration.make(
+    func testProductionListenerConfigurationRequiresConcretePort() {
+        XCTAssertThrowsError(try RemoteControlNWListenerConfiguration.make(
             localHost: "192.168.1.23",
             port: nil
-        )
-
-        XCTAssertEqual(configuration.listenerPort, .any)
-        XCTAssertEqual(
-            configuration.parameters.requiredLocalEndpoint,
-            .hostPort(host: "192.168.1.23", port: .any)
-        )
+        ))
+        XCTAssertThrowsError(try RemoteControlNWListenerConfiguration.make(
+            localHost: "192.168.1.23",
+            port: 0
+        ))
     }
 
     func testServerIsDisabledByDefault() {

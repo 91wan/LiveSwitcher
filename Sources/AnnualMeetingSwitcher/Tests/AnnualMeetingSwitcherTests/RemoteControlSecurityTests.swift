@@ -33,6 +33,13 @@ final class RemoteControlSecurityTests: XCTestCase {
         XCTAssertFalse(source.contains("authorization == \"Bearer "))
     }
 
+    func testProductionListenerBindsWithoutPortOverride() throws {
+        let source = try sourceText("RemoteControl/RemoteControlServer.swift")
+
+        XCTAssertTrue(source.contains("listener = try NWListener(using: configuration.parameters)"))
+        XCTAssertFalse(source.contains("on: configuration.listenerPort"))
+    }
+
     func testBadJSONReturnsSafeError() {
         let router = router()
 
