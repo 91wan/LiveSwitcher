@@ -54,11 +54,17 @@ struct RemoteDangerConfirmationChallenge: Equatable {
     var consumedAt: Date?
 }
 
+enum RemoteControlCommandReplayPolicy {
+    static let maxAcceptedCommandIDs = 4_096
+}
+
 struct RemoteControlSessionStore {
     private(set) var activeSession: RemoteControlSession?
     private(set) var controllerClientID: RemoteControlClientID?
     private(set) var acceptedCommandIDs: Set<UUID> = []
     private(set) var dangerConfirmationChallenges: [String: RemoteDangerConfirmationChallenge] = [:]
+    private var acceptedCommandIDOrder: [UUID] = []
+    private var nextAcceptedCommandIDEvictionIndex = 0
 
     var isEnabled: Bool {
         activeSession != nil
@@ -67,14 +73,14 @@ struct RemoteControlSessionStore {
     mutating func enable(token: RemoteControlToken, now: Date) {
         activeSession = RemoteControlSession(token: token, createdAt: now)
         controllerClientID = nil
-        acceptedCommandIDs.removeAll()
+        resetAcceptedCommandIDHistory()
         dangerConfirmationChallenges.removeAll()
     }
 
     mutating func disable() {
         activeSession = nil
         controllerClientID = nil
-        acceptedCommandIDs.removeAll()
+        resetAcceptedCommandIDHistory()
         dangerConfirmationChallenges.removeAll()
     }
 
@@ -100,7 +106,28 @@ struct RemoteControlSessionStore {
             return false
         }
 
-        return acceptedCommandIDs.insert(id).inserted
+        guard !acceptedCommandIDs.contains(id) else {
+            return false
+        }
+
+        if acceptedCommandIDOrder.count < RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs {
+            acceptedCommandIDOrder.append(id)
+        } else {
+            let evictedID = acceptedCommandIDOrder[nextAcceptedCommandIDEvictionIndex]
+            acceptedCommandIDs.remove(evictedID)
+            acceptedCommandIDOrder[nextAcceptedCommandIDEvictionIndex] = id
+            nextAcceptedCommandIDEvictionIndex = (
+                nextAcceptedCommandIDEvictionIndex + 1
+            ) % RemoteControlCommandReplayPolicy.maxAcceptedCommandIDs
+        }
+        acceptedCommandIDs.insert(id)
+        return true
+    }
+
+    private mutating func resetAcceptedCommandIDHistory() {
+        acceptedCommandIDs.removeAll()
+        acceptedCommandIDOrder.removeAll()
+        nextAcceptedCommandIDEvictionIndex = 0
     }
 
     mutating func issueDangerConfirmation(
