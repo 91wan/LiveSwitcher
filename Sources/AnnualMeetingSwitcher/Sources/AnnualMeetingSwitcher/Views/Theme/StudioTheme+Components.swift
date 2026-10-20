@@ -110,56 +110,6 @@ struct EmptyStateView: View {
     }
 }
 
-struct CriticalActionButton: View {
-    let title: String
-    let subtitle: String?
-    let systemImage: String
-    let isActive: Bool
-    let action: () -> Void
-
-    init(
-        title: String,
-        subtitle: String? = nil,
-        systemImage: String,
-        isActive: Bool = false,
-        action: @escaping () -> Void
-    ) {
-        self.title = title
-        self.subtitle = subtitle
-        self.systemImage = systemImage
-        self.isActive = isActive
-        self.action = action
-    }
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: StudioTheme.spacingS) {
-                Image(systemName: systemImage)
-                    .font(StudioTheme.TypeScale.heading.weight(.black))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(StudioTheme.TypeScale.body.weight(.black))
-                    if let subtitle {
-                        Text(subtitle)
-                            .font(StudioTheme.caption())
-                            .opacity(0.88)
-                    }
-                }
-            }
-            .foregroundStyle(.white)
-            .frame(minWidth: 104, minHeight: StudioTheme.controlHeightL)
-            .padding(.horizontal, StudioTheme.spacingM)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.radiusM, style: .continuous)
-                    .fill(isActive ? StudioTheme.Action.danger : StudioTheme.Action.primary)
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(title)
-        .accessibilityHint(subtitle ?? "")
-    }
-}
-
 struct SecondaryActionButton: View {
     let title: String
     let systemImage: String?

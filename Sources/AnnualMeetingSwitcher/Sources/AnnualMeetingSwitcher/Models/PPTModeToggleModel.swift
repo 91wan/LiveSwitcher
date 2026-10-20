@@ -5,9 +5,3 @@ enum PPTModeToggleSource: String {
     case toolbar
     case programmatic
 }
-
-struct PPTModeToggleModel {
-    static func nextState(isEnabled: Bool) -> Bool {
-        !isEnabled
-    }
-}

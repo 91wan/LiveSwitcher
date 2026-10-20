@@ -2,9 +2,29 @@ import XCTest
 @testable import LiveSwitcher
 
 final class PPTModeCommandTests: XCTestCase {
-    func testPPTModeToggleModelFlipsTheCurrentState() {
-        XCTAssertTrue(PPTModeToggleModel.nextState(isEnabled: false))
-        XCTAssertFalse(PPTModeToggleModel.nextState(isEnabled: true))
+    func testCommandToggleHandlesAllRequestedAndActiveStates() {
+        let scenarios: [(requested: Bool, active: Bool, expectedRequested: Bool, effects: [LiveRuntimeEffect])] = [
+            (false, false, true, [.startPPTEventTap]),
+            (false, true, false, [.stopPPTEventTap(reason: .operatorDisabled)]),
+            (true, false, false, [.stopPPTEventTap(reason: .operatorDisabled)]),
+            (true, true, false, [.stopPPTEventTap(reason: .operatorDisabled)])
+        ]
+
+        for scenario in scenarios {
+            var state = LiveRuntimeState()
+            state.ppt.isRequested = scenario.requested
+            state.ppt.isEventTapActive = scenario.active
+
+            let mutation = LiveRuntimeReducer.reduce(
+                state: state,
+                action: .operatorToggledPPTMode(source: .command),
+                environment: .productionPPTOwning()
+            )
+
+            XCTAssertEqual(mutation.state.ppt.isRequested, scenario.expectedRequested)
+            XCTAssertFalse(mutation.state.ppt.isEventTapActive)
+            XCTAssertEqual(mutation.effects, scenario.effects)
+        }
     }
 
     func testCommandPathUsesTogglePPTMode() throws {

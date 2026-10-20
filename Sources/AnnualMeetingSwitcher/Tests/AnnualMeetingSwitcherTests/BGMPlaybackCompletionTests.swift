@@ -432,10 +432,13 @@ final class BGMPlaybackCompletionTests: XCTestCase {
     }
 
     private func makeViewModel() -> SwitcherViewModel {
-        SwitcherViewModel(
+        let suiteName = "BGMPlaybackCompletionTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        return SwitcherViewModel(
             loadPersistedData: false,
             enableSystemVolumeObserver: false,
-            userDefaults: .standard
+            userDefaults: defaults
         )
     }
 
@@ -462,19 +465,6 @@ final class BGMPlaybackCompletionTests: XCTestCase {
     }
 
     private func writeSineWaveFixture(to url: URL, duration: Double = 0.25) throws {
-        let sampleRate = 44_100.0
-        let frameCount = AVAudioFrameCount(sampleRate * duration)
-        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
-        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount)!
-        buffer.frameLength = frameCount
-
-        let channel = buffer.floatChannelData![0]
-        for frame in 0..<Int(frameCount) {
-            let phase = (Double(frame) / sampleRate) * 440.0 * 2.0 * Double.pi
-            channel[frame] = Float(sin(phase) * 0.8)
-        }
-
-        let file = try AVAudioFile(forWriting: url, settings: format.settings)
-        try file.write(from: buffer)
+        try BGMAudioFixture.writeSineWave(to: url, duration: duration)
     }
 }
