@@ -51,7 +51,6 @@ extension StudioTheme {
 
     enum Surface {
         enum Opacity {
-            static let subtle = 0.55
             static let medium = 0.72
             static let strong = 0.92
             static let overlay = 0.78
@@ -94,11 +93,5 @@ extension StudioTheme {
         colors: [canvasTop, canvasBottom],
         startPoint: .top,
         endPoint: .bottom
-    )
-
-    static let actionGradient = LinearGradient(
-        colors: [Action.primary, Action.secondary],
-        startPoint: .leading,
-        endPoint: .trailing
     )
 }
