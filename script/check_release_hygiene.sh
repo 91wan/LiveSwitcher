@@ -77,6 +77,7 @@ require_file README_ZH.md
 require_file "$CURRENT_README_SCREENSHOT"
 require_file script/check_workspace_guard.sh
 require_file script/test_workspace_guard.sh
+require_file script/assemble_app_bundle.sh
 require_file "docs/qa/release-hygiene-v$CURRENT_VERSION.md"
 require_file "docs/qa/workspace-guard-v$CURRENT_VERSION.md"
 require_package_manifest_sync
@@ -126,7 +127,7 @@ search_pattern "$local_path_pattern" . \
 
 previous_version_pattern="$(printf '%s' "$PREVIOUS_VERSION" | sed 's/[.]/\\./g')"
 search_pattern "${previous_version_pattern}|${PREVIOUS_TAG}|LiveSwitcher-macOS-${PREVIOUS_TAG}" \
-  Sources/AnnualMeetingSwitcher/Sources script/build_and_run.sh Sources/AnnualMeetingSwitcher/build_v33.sh .github \
+  Sources/AnnualMeetingSwitcher/Sources script/build_and_run.sh script/assemble_app_bundle.sh Sources/AnnualMeetingSwitcher/build_v33.sh .github \
   && fail "stale active version reference found"
 
 search_pattern "static let appVersion = \"$CURRENT_VERSION\"" Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/AppConfiguration.swift >/dev/null \
@@ -180,9 +181,13 @@ for tcc_key in \
   NSCameraUsageDescription \
   NSMicrophoneUsageDescription
 do
-  require_literal_in_file script/build_and_run.sh "$tcc_key" "$tcc_key"
-  require_literal_in_file Sources/AnnualMeetingSwitcher/build_v33.sh "$tcc_key" "$tcc_key"
+  require_literal_in_file script/assemble_app_bundle.sh "$tcc_key" "$tcc_key"
 done
+
+require_literal_in_file script/build_and_run.sh 'source "$ROOT_DIR/script/assemble_app_bundle.sh"' "shared bundle assembler source"
+require_literal_in_file script/build_and_run.sh 'assemble_live_switcher_bundle "$build_dir" if-available' "optional debug signing policy"
+require_literal_in_file Sources/AnnualMeetingSwitcher/build_v33.sh 'source "$REPO_ROOT/script/assemble_app_bundle.sh"' "shared bundle assembler source"
+require_literal_in_file Sources/AnnualMeetingSwitcher/build_v33.sh 'assemble_live_switcher_bundle "$BUILD_DIR" required' "required release signing policy"
 
 search_pattern '#if DEBUG' Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Output/OutputHTMLLayer.swift >/dev/null \
   || fail "WKWebView developer extras are not debug-gated"
