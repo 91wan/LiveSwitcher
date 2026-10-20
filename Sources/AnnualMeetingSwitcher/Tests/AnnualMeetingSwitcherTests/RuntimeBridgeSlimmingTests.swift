@@ -29,44 +29,109 @@ final class RuntimeBridgeSlimmingTests: XCTestCase {
         }
     }
 
-    func testBGMRuntimeCleanupCoordinatorIsNotDeclaredInViewModel() throws {
-        let viewModel = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/ViewModel.swift")
-        let coordinator = try sourceText("Sources/AnnualMeetingSwitcher/Sources/AnnualMeetingSwitcher/Models/BGMRuntimeCleanupCoordinator.swift")
+    func testBGMPreparationRetiresPreviousAudioPlayerThroughCleanupBag() async throws {
+        let viewModel = makeViewModel()
+        let url = try makeAudioFixture()
+        let retired = try AVAudioPlayer(contentsOf: url)
+        defer { retired.stop(); viewModel.bgmAudioPlayer?.stop() }
+        retired.delegate = viewModel.bgmDelegate
+        viewModel.bgmAudioPlayer = retired
+        viewModel.liveAudioFadeDuration = 0.03
+        XCTAssertTrue(retired.play())
+        XCTAssertTrue(retired.isPlaying)
+        XCTAssertNotNil(retired.delegate)
+        let previousTaskIDs = Set(viewModel.cleanupBag.bgmTransitionTasks.keys)
+        let item = BGMItem(title: "Replacement", url: url, category: .warmUp)
 
-        XCTAssertFalse(viewModel.contains("protocol BGMRuntimeCleanupHandle"))
-        XCTAssertFalse(viewModel.contains("final class BGMRuntimeCleanupCoordinator"))
-        XCTAssertTrue(coordinator.contains("protocol BGMRuntimeCleanupHandle"))
-        XCTAssertTrue(coordinator.contains("final class BGMRuntimeCleanupCoordinator"))
+        viewModel.prepareRuntimeBGMPlayer(item, generation: viewModel.runtime.state.bgm.generation)
+        let current = try XCTUnwrap(viewModel.bgmAudioPlayer)
+        XCTAssertFalse(current === retired)
+        let taskIDs = Set(viewModel.cleanupBag.bgmTransitionTasks.keys).subtracting(previousTaskIDs)
+        XCTAssertFalse(taskIDs.isEmpty)
+        let tasks = try taskIDs.map { try XCTUnwrap(viewModel.cleanupBag.bgmTransitionTasks[$0]) }
+        for task in tasks { await task.value }
+
+        XCTAssertFalse(retired.isPlaying)
+        XCTAssertNil(retired.delegate)
+        XCTAssertEqual(retired.volume, 0, accuracy: 0.0001)
+        XCTAssertTrue(viewModel.bgmAudioPlayer === current)
+        for taskID in taskIDs { XCTAssertNil(viewModel.cleanupBag.bgmTransitionTasks[taskID]) }
     }
 
-    func testViewModelDoesNotDefineBGMRuntimeCleanupCoordinator() throws {
-        try testBGMRuntimeCleanupCoordinatorIsNotDeclaredInViewModel()
-    }
+    func testBGMFallbackRetirementReleasesCleanupBagRegistryEntry() async throws {
+        let viewModel = makeViewModel()
+        let retired = AVPlayer(playerItem: AVPlayerItem(url: try makeAudioFixture()))
+        retired.volume = 0.5
+        viewModel.bgmFallbackPlayer = retired
+        XCTAssertNotNil(retired.currentItem)
+        let previousTaskIDs = Set(viewModel.cleanupBag.bgmTransitionTasks.keys)
 
-    func testBGMRuntimeCleanupCoordinatorStillCompilesAndKeepsCurrentPlayerGenerationGuard() {
-        let coordinator = BGMRuntimeCleanupCoordinator()
-        let current = RuntimeBridgeSlimmingCleanupHandle(volume: 1)
-        coordinator.currentPlayer = current
-        coordinator.currentGeneration = 2
+        viewModel.retireCurrentBGMFallbackPlayerForSwitch(duration: 0)
+        let taskID = try XCTUnwrap(Set(viewModel.cleanupBag.bgmTransitionTasks.keys).subtracting(previousTaskIDs).first)
+        let task = try XCTUnwrap(viewModel.cleanupBag.bgmTransitionTasks[taskID])
+        XCTAssertFalse(viewModel.bgmFallbackPlayer === retired)
+        XCTAssertTrue(viewModel.cleanupBag.retiredBGMFallbackPlayers[taskID] === retired)
+        await task.value
 
-        coordinator.fadeCurrentPlayerVolume(to: 0, generation: 1)
-
-        XCTAssertEqual(current.volume, 1)
-    }
-
-    func testBGMRuntimeCleanupCoordinatorRetiredFallbackCleanupStillRuns() {
-        let coordinator = BGMRuntimeCleanupCoordinator()
-        let retired = RuntimeBridgeSlimmingCleanupHandle(volume: 0.8)
-        let token = coordinator.trackRetiredFallback(retired)
-        coordinator.currentGeneration = 1
-
-        coordinator.currentGeneration = 2
-        coordinator.cleanupRetiredFallback(retired, token: token)
-
+        XCTAssertFalse(task.isCancelled)
         XCTAssertEqual(retired.volume, 0)
-        XCTAssertTrue(retired.didPause)
-        XCTAssertTrue(retired.didClear)
-        XCTAssertFalse(coordinator.hasRetiredFallback(token))
+        XCTAssertEqual(retired.rate, 0)
+        XCTAssertNil(retired.currentItem)
+        XCTAssertNil(viewModel.cleanupBag.retiredBGMFallbackPlayers[taskID])
+        XCTAssertNil(viewModel.cleanupBag.bgmTransitionTasks[taskID])
+    }
+
+    func testCurrentBGMFallbackFadeUsesRuntimeGenerationGuard() async throws {
+        let viewModel = makeViewModel()
+        let current = AVPlayer(playerItem: AVPlayerItem(url: try makeAudioFixture()))
+        viewModel.bgmFallbackPlayer = current
+        defer { current.pause(); current.replaceCurrentItem(with: nil) }
+        var state = viewModel.runtime.state
+        state.bgm.generation = 2
+        viewModel.runtime.replaceStateForFacadeSync(state)
+
+        for duration in [0.0, 0.03] {
+            current.volume = 0.8
+            viewModel.fadeCurrentBGMFallbackVolume(to: 0.1, duration: duration, generation: 1)
+            if duration > 0 {
+                let staleTask = try XCTUnwrap(viewModel.cleanupBag.bgmFallbackVolumeFadeTask)
+                await staleTask.value
+            }
+            XCTAssertEqual(current.volume, 0.8, accuracy: 0.0001)
+
+            viewModel.fadeCurrentBGMFallbackVolume(to: 0.4, duration: duration, generation: state.bgm.generation)
+            if duration > 0 {
+                let currentTask = try XCTUnwrap(viewModel.cleanupBag.bgmFallbackVolumeFadeTask)
+                await currentTask.value
+            }
+            XCTAssertTrue(viewModel.bgmFallbackPlayer === current)
+            XCTAssertEqual(current.volume, 0.4, accuracy: 0.0001)
+        }
+    }
+
+    func testRetiredBGMFallbackCleanupSurvivesRuntimeGenerationAdvance() async throws {
+        let viewModel = makeViewModel()
+        let retired = AVPlayer(playerItem: AVPlayerItem(url: try makeAudioFixture()))
+        retired.volume = 0.8
+        viewModel.bgmFallbackPlayer = retired
+        XCTAssertNotNil(retired.currentItem)
+        let previousTaskIDs = Set(viewModel.cleanupBag.bgmTransitionTasks.keys)
+
+        viewModel.retireCurrentBGMFallbackPlayerForSwitch(duration: 0.03)
+        let taskID = try XCTUnwrap(Set(viewModel.cleanupBag.bgmTransitionTasks.keys).subtracting(previousTaskIDs).first)
+        let task = try XCTUnwrap(viewModel.cleanupBag.bgmTransitionTasks[taskID])
+        XCTAssertTrue(viewModel.cleanupBag.retiredBGMFallbackPlayers[taskID] === retired)
+        var state = viewModel.runtime.state
+        state.bgm.generation += 1
+        viewModel.runtime.replaceStateForFacadeSync(state)
+        await task.value
+
+        XCTAssertFalse(task.isCancelled)
+        XCTAssertEqual(retired.volume, 0)
+        XCTAssertEqual(retired.rate, 0)
+        XCTAssertNil(retired.currentItem)
+        XCTAssertNil(viewModel.cleanupBag.retiredBGMFallbackPlayers[taskID])
+        XCTAssertNil(viewModel.cleanupBag.bgmTransitionTasks[taskID])
     }
 
     func testViewModelCleanupBagIsNotDeclaredInViewModel() throws {
@@ -143,6 +208,27 @@ final class RuntimeBridgeSlimmingTests: XCTestCase {
         XCTAssertFalse(viewModel.contains("shouldSyncSupportFacadeAfterRuntimeAction"))
     }
 
+    private func makeViewModel() -> SwitcherViewModel {
+        let suiteName = "RuntimeBridgeSlimmingTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        addTeardownBlock { defaults.removePersistentDomain(forName: suiteName) }
+        return SwitcherViewModel(
+            loadPersistedData: false,
+            enableSystemVolumeObserver: false,
+            userDefaults: defaults
+        )
+    }
+
+    private func makeAudioFixture() throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("RuntimeBridgeSlimmingTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("cleanup.wav")
+        try BGMAudioFixture.writeSineWave(to: url, duration: 20)
+        return url
+    }
+
     private func sourceText(_ relativePath: String) throws -> String {
         let url = try repositoryRoot().appendingPathComponent(relativePath)
         return try String(contentsOf: url, encoding: .utf8)
@@ -157,25 +243,5 @@ final class RuntimeBridgeSlimmingTests: XCTestCase {
             }
         }
         throw XCTSkip("Could not locate repository root from test source path.")
-    }
-}
-
-private final class RuntimeBridgeSlimmingCleanupHandle: BGMRuntimeCleanupHandle {
-    var volume: Float
-    private(set) var didPause = false
-    private(set) var didClear = false
-
-    init(volume: Float = 1) {
-        self.volume = volume
-    }
-
-    func stop() {}
-
-    func pause() {
-        didPause = true
-    }
-
-    func clear() {
-        didClear = true
     }
 }
